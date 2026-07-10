@@ -72,8 +72,79 @@ function SplitBar({ agreePct, disagreePct }) {
   );
 }
 
-/* The party-free opinion map, restyled into the Keystone `.pm` gridded card. */
-function PolisMap({ scope, a11ySummary }) {
+/* The real pol.is-style OPINION MAP: PCA-projected sessions clustered by
+   answer similarity (k-means) into soft opinion-group fields. Party-free
+   (DECISION #116): groups are labelled by SIZE ("Group A/B/C"), never party;
+   colours are neutral Bold Flag cluster tokens, never D/R/I. Renders only when
+   the API returns a `clusterMap` (enough sessions AND the groups genuinely
+   separate) — otherwise we fall back to the single-cloud SVG below, honest
+   about not having a real cluster structure to show. */
+function ClusterMap({ clusterMap, a11ySummary }) {
+  const { dots, clusters, you } = clusterMap;
+  return (
+    <div className="pm-wrap">
+      <div className="pm cluster" role="img" aria-label={a11ySummary}>
+        {/* soft opinion-group fields */}
+        {clusters.map((g) => (
+          <div
+            key={"blob" + g.id}
+            className={"pm-blob c" + g.id}
+            style={{
+              left: g.cx + "%",
+              top: g.cy + "%",
+              width: g.spread * 2.4 + "%",
+              height: g.spread * 2.0 + "%",
+            }}
+          />
+        ))}
+
+        {/* one dot per session, coloured by its opinion group */}
+        {dots.map((d, i) => (
+          <span
+            key={"d" + i}
+            className={"pm-dot c" + d.cluster}
+            style={{ left: d.x + "%", top: d.y + "%" }}
+          />
+        ))}
+
+        {/* neutral group labels above each field */}
+        {clusters.map((g) => (
+          <span
+            key={"lab" + g.id}
+            className="pm-glab"
+            style={{
+              left: g.cx + "%",
+              top: Math.max(3, g.cy - g.spread - 3) + "%",
+            }}
+          >
+            {g.label} · {g.sharePercent}%
+          </span>
+        ))}
+
+        {/* you — heavy gold marker + pill */}
+        {you && (
+          <>
+            <span
+              className="pm-you"
+              style={{ left: you.x + "%", top: you.y + "%" }}
+            />
+            <span
+              className="pm-you-lab"
+              style={{ left: you.x + "%", top: you.y + "%" }}
+            >
+              You
+            </span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* The party-free single-population overlap cloud, restyled into the Keystone
+   `.pm` gridded card. Shown when no real cluster structure is available (thin
+   data, or opinion that hasn't separated into groups). */
+function OverlapCloud({ scope, a11ySummary }) {
   return (
     <div className="pm-wrap">
       <div className="pm" role="img" aria-label={a11ySummary}>
@@ -147,6 +218,16 @@ function PolisMap({ scope, a11ySummary }) {
   );
 }
 
+/* Prefer the real cluster map when the API produced one; else the honest
+   single-cloud fallback. */
+function PolisMap({ scope, a11ySummary }) {
+  return scope.clusterMap ? (
+    <ClusterMap clusterMap={scope.clusterMap} a11ySummary={a11ySummary} />
+  ) : (
+    <OverlapCloud scope={scope} a11ySummary={a11ySummary} />
+  );
+}
+
 export function PolisClose({ polis }) {
   const [scopeId, setScopeId] = React.useState(polis.scopes[0].id);
   const scope = polis.scopes.find((s) => s.id === scopeId) || polis.scopes[0];
@@ -157,14 +238,25 @@ export function PolisClose({ polis }) {
   const mostCommon = scope.overlap?.mostCommon ?? null;
   const bridges = scope.bridges ?? [];
   const divided = scope.divided ?? [];
+  const clusterMap = scope.clusterMap ?? null;
 
-  const a11ySummary = `${fmtN(scope.sampleSize)} people finished ${scope.scopePhrase}. ${
-    headlineStat
-      ? `${headlineStat.percent}% share your top priority, ${headlineStat.issueLabel}.`
-      : mostCommon
-        ? `Their most shared priority is ${mostCommon.issueLabel} at ${mostCommon.percent}%.`
-        : ""
-  } Each dot is one anonymous finished session; you are marked by a gold square.`;
+  const a11ySummary = clusterMap
+    ? `${fmtN(scope.sampleSize)} people finished ${scope.scopePhrase}. Their answers form ${
+        clusterMap.clusters.length
+      } opinion groups by answer similarity — ${clusterMap.clusters
+        .map((g) => `${g.label} at ${g.sharePercent}%`)
+        .join(", ")}. Each dot is one anonymous finished session; ${
+        clusterMap.you
+          ? "you are marked by a gold square."
+          : "no group is a party — people are grouped only by how they answered."
+      }`
+    : `${fmtN(scope.sampleSize)} people finished ${scope.scopePhrase}. ${
+        headlineStat
+          ? `${headlineStat.percent}% share your top priority, ${headlineStat.issueLabel}.`
+          : mostCommon
+            ? `Their most shared priority is ${mostCommon.issueLabel} at ${mostCommon.percent}%.`
+            : ""
+      } Each dot is one anonymous finished session; you are marked by a gold square.`;
 
   return (
     <section className="polis pr" data-palette="white">
@@ -230,14 +322,45 @@ export function PolisClose({ polis }) {
           <PolisMap scope={scope} a11ySummary={a11ySummary} />
           <div className="pm-cap">
             <div className="pm-key">
-              <span>
-                <i className="dot"></i>Each dot · one finished session
-              </span>
-              <span className="you">
-                <i></i>You
-              </span>
+              {clusterMap ? (
+                <>
+                  {clusterMap.clusters.map((g) => (
+                    <span key={"key" + g.id}>
+                      <i className={"c" + g.id}></i>
+                      {g.label} · {g.sharePercent}%
+                    </span>
+                  ))}
+                  {clusterMap.you && (
+                    <span className="you">
+                      <i></i>You
+                    </span>
+                  )}
+                </>
+              ) : (
+                <>
+                  <span>
+                    <i className="dot"></i>Each dot · one finished session
+                  </span>
+                  <span className="you">
+                    <i></i>You
+                  </span>
+                </>
+              )}
             </div>
-            {headlineStat ? (
+            {clusterMap ? (
+              <p>
+                Each dot is one finished session; people who answered alike sit
+                together, forming{" "}
+                <b>
+                  {clusterMap.clusters.length} opinion groups by answer
+                  similarity
+                </b>{" "}
+                — never by party.{" "}
+                {clusterMap.you
+                  ? "You’re the gold square; you land in a camp like everyone else."
+                  : "No group is a party — the split is only in how people answered."}
+              </p>
+            ) : headlineStat ? (
               <p>
                 <b>{headlineStat.percent}%</b> of the {fmtN(scope.sampleSize)}{" "}
                 people who finished {scope.scopePhrase} share your top priority

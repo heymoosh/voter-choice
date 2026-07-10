@@ -614,6 +614,13 @@
   --keep-soft: oklch(0.93 0.045 159);
   --replace: oklch(0.53 0.205 27); /* flag red */
   --replace-soft: oklch(0.94 0.05 27);
+  /* Opinion-map cluster hues — NEUTRAL, party-free (DECISION #116). Three
+     distinct Bold-Flag-family tones (indigo / teal / violet) assigned to
+     Group A/B/C by SIZE, never to any party. Deliberately NOT the canvas's
+     red-vs-blue pairing so the map can never be misread as D-vs-R. */
+  --cluster-a: oklch(0.52 0.16 264); /* indigo */
+  --cluster-b: oklch(0.58 0.11 195); /* teal */
+  --cluster-c: oklch(0.55 0.16 320); /* violet */
   background: var(--paper);
 }
 .standing2-wrap {
@@ -838,6 +845,89 @@
   white-space: nowrap;
   pointer-events: none;
 }
+
+/* ---- real pol.is cluster map (.pm.cluster): PCA + k-means opinion groups ----
+   Soft group fields + per-cluster dots, positioned in container percentages
+   (left/top). Party-free: colours are the neutral --cluster-* tokens above,
+   assigned to Group A/B/C by size — never a party. Scoped to `.pm.cluster` so
+   the single-cloud SVG `.pm-dot`/`.pm-field` styling above is untouched. */
+.pm.cluster .pm-blob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.14;
+  filter: blur(3px);
+  pointer-events: none;
+}
+.pm.cluster .pm-blob.c0 {
+  background: var(--cluster-a);
+}
+.pm.cluster .pm-blob.c1 {
+  background: var(--cluster-b);
+}
+.pm.cluster .pm-blob.c2 {
+  background: var(--cluster-c);
+}
+.pm.cluster .pm-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.66;
+  box-shadow: 0 1px 2px oklch(0.2 0.03 255 / 0.25);
+}
+.pm.cluster .pm-dot.c0 {
+  background: var(--cluster-a);
+}
+.pm.cluster .pm-dot.c1 {
+  background: var(--cluster-b);
+}
+.pm.cluster .pm-dot.c2 {
+  background: var(--cluster-c);
+}
+.pm.cluster .pm-glab {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: oklch(1 0 0 / 0.8);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  z-index: 2;
+  pointer-events: none;
+}
+.pm.cluster .pm-you {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  transform: translate(-50%, -50%);
+  background: var(--gold);
+  border: 2.5px solid var(--paper);
+  box-shadow:
+    0 0 0 2.5px var(--ink),
+    0 3px 8px oklch(0.2 0.03 255 / 0.4);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* legend swatches for the cluster key */
+.pm-key i.c0 {
+  background: var(--cluster-a);
+}
+.pm-key i.c1 {
+  background: var(--cluster-b);
+}
+.pm-key i.c2 {
+  background: var(--cluster-c);
+}
+
 .pm-cap {
   margin-top: 14px;
 }

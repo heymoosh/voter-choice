@@ -38,6 +38,35 @@ export interface Divided {
   disagreePct: number;
 }
 
+/** One session's dot on the opinion map: display position + opinion-group id. */
+export interface ClusterDot {
+  x: number;
+  y: number;
+  cluster: number;
+}
+
+/** A soft opinion-group field. Neutral label ("Group A") — never a party. */
+export interface ClusterGroup {
+  id: number;
+  label: string;
+  sharePercent: number;
+  cx: number;
+  cy: number;
+  spread: number;
+}
+
+/**
+ * The real pol.is-style opinion map: PCA-projected sessions clustered by answer
+ * similarity. Party-free (DECISION #116): positions + counts + neutral ids
+ * only. Present only when the API found enough separated groups; otherwise the
+ * scope carries `clusterMap: null` and the FE draws the single-cloud fallback.
+ */
+export interface ClusterMap {
+  dots: ClusterDot[];
+  clusters: ClusterGroup[];
+  you: { x: number; y: number; cluster: number } | null;
+}
+
 export interface PolisScopeVM {
   id: string;
   label: string;
@@ -46,6 +75,8 @@ export interface PolisScopeVM {
   scopePhrase: string;
   dots: Array<{ x: number; y: number }>;
   you: [number, number] | null;
+  /** Real cluster map when available; null → single-cloud fallback. */
+  clusterMap: ClusterMap | null;
   overlap: {
     mostCommon: IssueStat | null;
     youShares: IssueStat[];
@@ -63,6 +94,7 @@ interface ApiPolisResponse {
   sampleSize: number;
   dots: Array<{ x: number; y: number }>;
   you: { x: number; y: number } | null;
+  clusterMap?: ClusterMap | null;
   consensus?: IssueStat[];
   overlap?: {
     mostCommon: IssueStat | null;
@@ -182,6 +214,7 @@ function toScopeVM(
     scopePhrase,
     dots: api.dots ?? [],
     you: api.you ? [api.you.x, api.you.y] : null,
+    clusterMap: locked ? null : (api.clusterMap ?? null),
     overlap: api.overlap ?? { mostCommon: null, youShares: [] },
     issueRegions: (api.issueRegions ?? []).map((r) => ({
       label: r.issueLabel,
