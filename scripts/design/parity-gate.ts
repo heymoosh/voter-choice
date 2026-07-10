@@ -1084,17 +1084,34 @@ const CONTENT_PROBES: ContentProbe[] = [
         description:
           "the How it works dek (second half, split after the em-dash)",
       },
+      {
+        text: "we extract canonical issues and a directional stance",
+        description:
+          "step 1 body (Issues come from you) — canvas's actual wording, not the repo's prior " +
+          '"Every score in this app traces back to your own words" phrasing',
+      },
+      {
+        text: "the raw vote",
+        description:
+          "step 4 body (“With you / against you” is your stance vs. the vote) — " +
+          'canvas ends the step with "we show the raw vote", confirming the step-4 paragraph ' +
+          "was restored verbatim rather than left as the repo's prior wording",
+      },
     ],
     note:
-      "Genuine FAIL, confirmed by reading both sides directly: MethodologyPage " +
-      "(src/prototype/VoterChoiceApp.tsx) calls <StaticPage onBack={onBack} " +
+      "Previously a genuine FAIL (confirmed by reading both sides directly): MethodologyPage " +
+      "(src/prototype/VoterChoiceApp.tsx) called <StaticPage onBack={onBack} " +
       'eyebrow="Methodology" title="How we score candidates."> with no dek prop at all, and ' +
       "StaticPage's own signature (function StaticPage({ title, eyebrow, children, onBack })) " +
-      "doesn't even accept one — so this sentence never renders anywhere on the page today. " +
-      "This is the exact class of gap (a)/(b) both miss: '08b-howitworks' already has a " +
-      "structural WAIVER (renders the same probed sp-wrap/sp-back shell as 08a-about — no class " +
-      "signal to catch a missing dek), and the coarse downscaled visual diff isn't built to " +
-      "notice one missing paragraph of text.",
+      "didn't even accept one — so the dek sentence never rendered anywhere on the page. Fixed: " +
+      "StaticPage now accepts dek (see 08d-tipjar's identical fix), MethodologyPage passes the " +
+      "verbatim canvas dek, and its 4 steps were rebuilt onto canvas's .sp-step/.n numbered-badge " +
+      "structure with per-step body copy restored verbatim (bullet-list sub-items collapsed back " +
+      "to canvas's single flowing paragraphs). The 2 added assertions above lock in that the step " +
+      "bodies were actually replaced, not just the dek — the original class of gap (a)/(b) both " +
+      "miss: '08b-howitworks' has a structural WAIVER (renders the same probed sp-wrap/sp-back " +
+      "shell as 08a-about — no class signal to catch missing/drifted copy), and the coarse " +
+      "downscaled visual diff isn't built to notice a paragraph of drifted text.",
   },
   // A 08d-tipjar CONTENT_PROBES entry is a natural follow-up once
   // wt/tipjar-bold-flag-pass (a separate, not-yet-merged branch fixing that

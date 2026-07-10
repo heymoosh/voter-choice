@@ -2950,6 +2950,107 @@ Bumps
   color: var(--ab-ink);
 }
 
+/* ---------- Methodology — Bold Flag / Keystone parity (08b-howitworks) ----------
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"] + statics.css .sp-step.
+   Scoped to .sp-methodology only — does not touch the shared civic palette or
+   any other static page. */
+.sp-wrap.sp-methodology {
+  --mt-paper: oklch(1 0 0);
+  --mt-paper-2: oklch(0.985 0.003 258);
+  --mt-ink: oklch(0.2 0.035 260);
+  --mt-ink-2: oklch(0.37 0.032 260);
+  --mt-ink-3: oklch(0.54 0.026 260);
+  --mt-brand: oklch(0.4 0.155 262);
+  --mt-gold: oklch(0.72 0.125 76);
+  --mt-rule: oklch(0.88 0.006 260);
+  --mt-rule-2: oklch(0.93 0.005 260);
+  --mt-replace: oklch(0.53 0.205 27);
+  --mt-serif: "Newsreader", Georgia, serif;
+  --mt-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--mt-paper);
+}
+.sp-wrap.sp-methodology .sp-back {
+  color: var(--mt-brand);
+}
+.sp-wrap.sp-methodology .sp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--mt-replace);
+}
+.sp-wrap.sp-methodology .sp-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--mt-replace);
+}
+.sp-wrap.sp-methodology .sp-title {
+  font-family: var(--mt-serif);
+  color: var(--mt-ink);
+}
+.sp-wrap.sp-methodology .sp-dek {
+  font-family: var(--mt-serif);
+  color: var(--mt-ink-2);
+  border-bottom: 2px solid var(--mt-ink);
+  padding-bottom: 24px;
+}
+.sp-wrap.sp-methodology .sp-article {
+  font-family: var(--mt-serif);
+  color: var(--mt-ink-2);
+}
+.sp-wrap.sp-methodology .sp-article h2 {
+  font-family: var(--mt-serif);
+  color: var(--mt-ink);
+}
+.sp-wrap.sp-methodology .sp-article b {
+  color: var(--mt-ink);
+}
+.sp-wrap.sp-methodology .sp-article a {
+  color: var(--mt-brand);
+}
+.sp-wrap.sp-methodology .sp-step {
+  display: grid;
+  grid-template-columns: 38px 1fr;
+  gap: 16px;
+  padding: 18px 0;
+  border-top: 1px solid var(--mt-rule-2);
+}
+.sp-wrap.sp-methodology .sp-step .n {
+  font-family: var(--mt-mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--mt-paper-2);
+  background: var(--mt-brand);
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+}
+.sp-wrap.sp-methodology .sp-step:nth-child(even) .n {
+  background: var(--mt-gold);
+  color: var(--mt-ink);
+}
+.sp-wrap.sp-methodology .sp-step h3 {
+  font-family: var(--mt-serif);
+  font-weight: 600;
+  font-size: 19px;
+  margin: 4px 0 6px;
+  color: var(--mt-ink);
+  letter-spacing: -0.01em;
+}
+.sp-wrap.sp-methodology .sp-step p {
+  font-family: var(--mt-serif);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--mt-ink-2);
+  margin: 0;
+}
+.sp-wrap.sp-methodology .sp-step a {
+  color: var(--mt-brand);
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
