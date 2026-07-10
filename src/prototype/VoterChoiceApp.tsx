@@ -637,6 +637,8 @@ const TRANSLATIONS = {
       generated: 'Generated {datetime}',
       pageOf: 'Page 1 of 1',
       aligned: '{pct}% aligned ({kept}/{total} votes)',
+      votesMatchedYou: 'votes matched you',
+      incumbentMatch: 'incumbent match',
     },
     whyNowPage: {
       kicker: 'The case · America’s 250th election',
@@ -1141,6 +1143,8 @@ const TRANSLATIONS = {
       generated: 'Generado {datetime}',
       pageOf: 'Página 1 de 1',
       aligned: '{pct}% alineado ({kept}/{total} votos)',
+      votesMatchedYou: 'votos coincidieron contigo',
+      incumbentMatch: 'coincidencia del titular',
     },
     whyNowPage: {
       kicker: 'El caso · La elección número 250 de EE. UU.',

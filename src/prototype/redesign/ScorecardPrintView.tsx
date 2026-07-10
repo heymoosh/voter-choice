@@ -53,7 +53,7 @@ export function ScorecardPrintView({
   const unreviewed = scorecardSeats.filter((s) => !verdicts[s.id]);
   // Lead with a percentage (B). Falls back to null when there's no scored
   // voting record (researched seats / total 0) so the row stays honest.
-  const alignFor = (s) => {
+  const scoreFor = (s) => {
     if (s.researched || !s.alignmentEntry?.scores) return null;
     const kept = s.alignmentEntry.scores.reduce(
       (n, sc) => n + (sc.kept ?? 0),
@@ -65,7 +65,7 @@ export function ScorecardPrintView({
     );
     if (total === 0) return null;
     const pct = Math.round((kept / total) * 100);
-    return t("scorecardPrint.aligned", { pct, kept, total });
+    return { pct, kept, total };
   };
 
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -136,11 +136,14 @@ export function ScorecardPrintView({
                 <div className="gtitle">{section}</div>
                 {ss.map((s) => {
                   const v = verdicts[s.id];
-                  const align = alignFor(s);
+                  const score = scoreFor(s);
+                  const align = score
+                    ? t("scorecardPrint.aligned", score)
+                    : null;
                   return (
                     <div className={"br checked verdict-row " + v} key={s.id}>
                       <div className="bx"></div>
-                      <div>
+                      <div className="br-main">
                         <div className="race-name">
                           {s.office} · {s.districtLabel}
                         </div>
@@ -169,6 +172,20 @@ export function ScorecardPrintView({
                           {s.nextElection ? s.nextElection.label : ""}
                         </div>
                       </div>
+                      {score && (
+                        <div
+                          className={
+                            "br-score " + (v === "keep" ? "good" : "bad")
+                          }
+                        >
+                          <div className="br-score-pct">{score.pct}%</div>
+                          <div className="br-score-lab">
+                            {v === "keep"
+                              ? t("scorecardPrint.votesMatchedYou")
+                              : t("scorecardPrint.incumbentMatch")}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   );
                 })}
