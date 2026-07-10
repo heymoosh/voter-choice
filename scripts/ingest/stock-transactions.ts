@@ -939,8 +939,15 @@ async function loadFederalCandidateRows(
  *  that slips past the pre-insert bounds checks above from aborting the
  *  ENTIRE batch — Postgres fails the whole multi-row INSERT as one
  *  statement, so a bad row anywhere in a giant single batch would otherwise
- *  drop every good row alongside it. */
-const UPSERT_CHUNK_SIZE = 200;
+ *  drop every good row alongside it.
+ *
+ *  Sized down from 200 → 50 after the first live run (2026-07-10): at 200,
+ *  chunks carrying large `raw_metadata` JSON blobs pushed the Neon HTTP
+ *  request over its body-size limit and returned HTTP 413, forcing ~12 chunks
+ *  (~2.4k rows) down the slow per-row retry path (no data lost, but slow and
+ *  noisy). 50 keeps every request comfortably under the limit; the per-row
+ *  fallback below still backstops any single genuinely-oversized row. */
+const UPSERT_CHUNK_SIZE = 50;
 
 async function upsertRowChunk(
   db: DbClient,
