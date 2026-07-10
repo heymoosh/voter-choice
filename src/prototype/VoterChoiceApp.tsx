@@ -4959,32 +4959,41 @@ function AboutPage({ onBack }) {
 
 function MethodologyPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Methodology" title="How we score candidates.">
-      <h2>Step 1 · Issues come from you</h2>
-      <p>Every score in this app traces back to <b>your own words</b>. When you type your concerns in the cold open, we extract canonical issues + a directional stance ("favors lower drug prices"). You confirm, rename, or remove before any scoring happens. We don't pre-bake an issue list and check boxes against it.</p>
+    <StaticPage onBack={onBack} eyebrow="Methodology" title="How we score candidates." dek="Every number on a card traces to your own words and to an official source — never to a guess." className="sp-methodology">
+      <div className="sp-step">
+        <div className="n">1</div>
+        <div>
+          <h3>Issues come from you</h3>
+          <p>When you describe your concerns, we extract canonical issues and a directional stance (“favors lower drug prices”). You confirm, rename, or remove before any scoring happens. We don't pre-bake a list and check boxes against it.</p>
+        </div>
+      </div>
+      <div className="sp-step">
+        <div className="n">2</div>
+        <div>
+          <h3>Votes come from official roll-call data</h3>
+          <p>Federal from <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov</a>, state from each legislature. For each issue our editors select 2–5 “case file” votes — the bills that most directly test it. No curated case file? The score reads <i>“thin record”</i> instead of guessing.</p>
+        </div>
+      </div>
+      <div className="sp-step">
+        <div className="n">3</div>
+        <div>
+          <h3>Donor data comes from FEC + state filings</h3>
+          <p>Federal from the <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> and <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>; state from ethics commissions. Named issue PACs are broken out only when they have a public, citable agenda.</p>
+        </div>
+      </div>
+      <div className="sp-step">
+        <div className="n">4</div>
+        <div>
+          <h3>“With you / against you” is your stance vs. the vote</h3>
+          <p>If you favor lower drug prices, a vote FOR Medicare price negotiation reads “WITH YOU”; a vote AGAINST reads “AGAINST YOU.” When the record is mixed, we show the raw vote — never a softened summary.</p>
+        </div>
+      </div>
 
-      <h2>Step 2 · Votes come from official roll-call data</h2>
-      <ul>
-        <li>Federal: <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov roll-call votes</a>.</li>
-        <li>State: per-state legislative reporting via <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates</a> and your state legislature's official records.</li>
-      </ul>
-      <p>For each issue, our editorial team selects 2–5 "case file" votes — the bills that most directly test the issue. Every score on a candidate card is computed from these case file votes only. If we don't have a curated case file for an issue × jurisdiction, the score reads <i>"thin record"</i> instead of guessing.</p>
-
-      <h2>Step 3 · Donor data comes from FEC + state filings</h2>
-      <ul>
-        <li>Federal candidates: <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> + <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>.</li>
-        <li>State candidates: your state's ethics commission or campaign finance disclosure office.</li>
-        <li><b>Named issue PACs</b> are editorially vetted — we only break a PAC out separately if it has a public stated agenda we can cite.</li>
-      </ul>
-
-      <h2>Step 4 · "With you / against you" is your stance vs. the vote</h2>
-      <p>If you said you favor lower drug prices, a vote FOR Medicare drug-price negotiation reads "WITH YOU." A vote AGAINST reads "AGAINST YOU." When the record is mixed, we show the raw vote — never a softened summary.</p>
-
-      <h2>AI's role</h2>
-      <p>The AI's job is to <b>route + summarize</b>, not to invent. It pulls from our structured database (votes, donors, narratives) and presents them. It does not generate vote claims. If a vote isn't in our database, we don't show it.</p>
+      <h2>The AI's role</h2>
+      <p>The AI's job is to <b>route and summarize</b>, not to invent. It pulls from our structured database of votes, donors, and narratives. It does not generate vote claims — if a vote isn't in our database, we don't show it.</p>
 
       <h2>Mistakes</h2>
-      <p>We will make them. When we do, we publish a correction and update the case file. Every claim links to a primary source so you can verify yourself. If you find one, email <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>.</p>
+      <p>We'll make them. When we do, we publish a correction and update the case file. Every claim links to a primary source so you can verify it yourself. Found one? Email <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>.</p>
     </StaticPage>
   );
 }
