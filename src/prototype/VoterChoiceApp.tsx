@@ -4915,13 +4915,14 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    es) so WhyNowPage can render a localized set via t(). Keep every entry
    cited (no uncited stats) and non-partisan. */
 
-function StaticPage({ title, eyebrow, children, onBack, className }) {
+function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
   return (
     <div className={`sp-wrap${className ? ' ' + className : ''}`}>
       <div className="sp-inner">
         <button className="sp-back" onClick={onBack}>← Back</button>
         <div className="sp-eyebrow">{eyebrow}</div>
         <h1 className="sp-title">{title}</h1>
+        {dek && <p className="sp-dek">{dek}</p>}
         <article className="sp-article">{children}</article>
       </div>
     </div>
@@ -4995,7 +4996,7 @@ const TIP_AMOUNTS = [
 
 function TipJarPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive." className="sp-tipjar">
+    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive." dek="No ads, no tracking, no data sales. Tips and small individual contributions are the only revenue." className="sp-tipjar">
       <ul className="tip-list tip-list--amounts">
         {TIP_AMOUNTS.map(({ label, url, lead }) => (
           <li key={label}>
@@ -5010,9 +5011,9 @@ function TipJarPage({ onBack }) {
       <h2>Where it goes</h2>
       <ul>
         <li><b>Anthropic API spend</b> — the AI chat budget that runs out when too many voters use it at once.</li>
-        <li><b>Server + hosting</b> — Vercel + a small Redis instance for rate-limiting.</li>
+        <li><b>Server + hosting</b> — Vercel plus a small Redis instance for rate-limiting.</li>
       </ul>
-      <p>Voter Choice is built by <b>Grey Bird LLC</b>. No ads, no tracking, no accounts, no data sales. Tips and small individual contributions are the only revenue.</p>
+      <p>Voter Choice is built by <b>Grey Bird LLC</b>. When the community budget runs out you can bring your own Anthropic key rather than pay us — we'd rather pause than monetize you.</p>
     </StaticPage>
   );
 }

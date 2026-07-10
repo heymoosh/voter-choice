@@ -49,17 +49,17 @@
 </head>
 <body>
   <h1>Keystone review — Statics (About / How it works / Privacy / Tip jar / Loading)</h1>
-  <div class="sub">ref: <code>HEAD (6f514315)</code> &middot; generated 2026-07-10T05:29:56.841Z</div>
+  <div class="sub">ref: <code>HEAD (6cecf125)</code> &middot; generated 2026-07-10T13:29:53.711Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (6f514315))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (6cecf125))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">08a-about</div>
           <div class="label">Statics — About</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Nav → 'About'.</div>
         </td>
@@ -71,7 +71,7 @@
         <td class="meta">
           <div class="id">08b-howitworks</div>
           <div class="label">Statics — How it works (MethodologyPage)</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Nav → 'How it works' (label renamed from 'Methodology' by #213, 2026-07-08 — confirmed by reading App2.tsx: it renders the base AppNav, whose link uses t('nav.howItWorks') = 'How it works', not AppNavWithChrome's t('nav.methodology'). Still navigates to the same methodology stage/MethodologyPage. This scenario used to click the old 'Methodology' label and timed out post-rename (Phase 0 finding #8). Scoped to the 'Main' nav landmark — the homepage's own address-box copy also contains an unrelated 'Read about how it works…' link (dead navigate('howitworks') branch) whose accessible name substring-matches 'How it works' too, so an unscoped getByRole hits a strict-mode violation (2 matches).</div>
         </td>
@@ -83,7 +83,7 @@
         <td class="meta">
           <div class="id">08c-privacy</div>
           <div class="label">Statics — Privacy</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Nav → 'Privacy'.</div>
         </td>
@@ -95,7 +95,7 @@
         <td class="meta">
           <div class="id">08d-tipjar</div>
           <div class="label">Statics — Tip jar</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Nav → 'Tip jar'.</div>
         </td>
@@ -107,7 +107,7 @@
         <td class="meta">
           <div class="id">08e-loading</div>
           <div class="label">Statics — Loading state</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">The checklist is a self-advancing 600ms/step client timer, independent of network timing — /api/delegation is deliberately delayed ~2.5s so the stage doesn't flip away before the screenshot.</div>
         </td>

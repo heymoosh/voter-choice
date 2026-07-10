@@ -1016,6 +1016,14 @@
   color: var(--ink-3);
   margin-bottom: 24px;
 }
+.sp-dek {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: -18px 0 32px;
+  max-width: 640px;
+}
 .sp-article {
   font-family: var(--serif);
   font-size: 17px;
@@ -2805,6 +2813,10 @@ Bumps
 .sp-wrap.sp-tipjar .sp-title {
   font-family: var(--tj-serif);
   color: var(--tj-ink);
+}
+.sp-wrap.sp-tipjar .sp-dek {
+  font-family: var(--tj-serif);
+  color: var(--tj-ink-2);
   border-bottom: 2px solid var(--tj-ink);
   padding-bottom: 24px;
 }
@@ -2852,6 +2864,7 @@ Bumps
 .sp-wrap.sp-tipjar .tip-note {
   font-family: var(--tj-mono);
   color: var(--tj-ink-3);
+  text-align: left;
 }
 
 /* ============ NoContestedView — upload-first redesign ============
