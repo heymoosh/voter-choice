@@ -31,6 +31,17 @@
 //       pixelmatch algorithm @playwright/test already vendors (no new
 //       dependency — see "reusing playwright's own comparator" below).
 //
+//   (c) CONTENT — verbatim substring assertions (CONTENT_PROBES below) that
+//       specific canvas copy actually appears in the rendered page's text.
+//       Neither (a) nor (b) can catch wrong-but-similarly-shaped copy: a
+//       structural probe only checks that a selector/class exists, not what
+//       text it contains, and the visual diff is deliberately downscaled to
+//       be copy-tolerant (see "why downscale" below) — it exists to ignore
+//       exactly this kind of difference. Confirmed 2026-07-09: a real fix
+//       shipped a page (tip jar) with a missing subtitle and a mutated
+//       closing paragraph, and both (a) and (b) passed it. Independent,
+//       parallel registry — like (b), it doesn't touch STRUCTURAL_PROBES.
+//
 // Usage:
 //   npm run design:parity-gate -- --only 02a-results-main,02b-results-funding-expanded
 //   npm run design:parity-gate -- --all
@@ -452,7 +463,7 @@ const STRUCTURAL_PROBES: Probe[] = [
         selector: ".prov",
         description:
           "renders a distinct provenance badge (canvas's ProvBadge: 'Roll-call record' vs. " +
-          "'Researched · cited', className=\"prov rollcall\"/\"prov researched\") — HeadToHead.tsx " +
+          '\'Researched · cited\', className="prov rollcall"/"prov researched") — HeadToHead.tsx ' +
           "already ports this exact badge (confirmed by reading it directly) but RepCard.tsx's " +
           "single-card view (the one this scenario captures) has zero '.prov' markup anywhere",
       },
@@ -475,14 +486,15 @@ const STRUCTURAL_PROBES: Probe[] = [
       },
       {
         selector: ".addr-card",
-        description: "renders the address-entry card (canvas's vh-addr equivalent)",
+        description:
+          "renders the address-entry card (canvas's vh-addr equivalent)",
       },
       {
         selector: '[class*="preview"], [class*="vh-stack"]',
         description:
           "renders a second-column live preview panel ('What you'll get' scorecard stack) " +
           "alongside the address form — canvas's HomeHero is a two-column .vh-left/.vh-preview " +
-          "layout; the repo's hero is explicitly single-column (className=\"hp-hero hp-hero-solo\", " +
+          'layout; the repo\'s hero is explicitly single-column (className="hp-hero hp-hero-solo", ' +
           "confirmed by reading HomeView directly — no preview/stack markup exists anywhere)",
       },
     ],
@@ -509,7 +521,7 @@ const STRUCTURAL_PROBES: Probe[] = [
         selector: ".tip-amount-btn.lead, .tip-amount-btn[data-lead]",
         description:
           "one amount is visually marked as the suggested/lead amount (canvas's TipJarVC " +
-          "gives $5 className=\"sp-tip lead\") — repo's TIP_AMOUNTS array (VoterChoiceApp.tsx) has " +
+          'gives $5 className="sp-tip lead") — repo\'s TIP_AMOUNTS array (VoterChoiceApp.tsx) has ' +
           "no lead/suggested flag at all, confirmed by reading it directly: all four buttons " +
           "render identically",
       },
@@ -1032,6 +1044,109 @@ async function runStructuralCheck(
 }
 
 // ---------------------------------------------------------------------------
+// (c) CONTENT check
+// ---------------------------------------------------------------------------
+
+/** Verbatim copy-verification probe — see file header (c). Independent of
+ *  both STRUCTURAL_PROBES and the visual diff: it doesn't check that a
+ *  selector exists (that's (a)) or that pixels roughly match (that's (b),
+ *  and deliberately too coarse for this — see "why downscale" above); it
+ *  checks that specific, exact strings — copied verbatim out of the canvas
+ *  design source, the same source-of-truth convention ClassDiffProbe.designFile
+ *  already follows — actually render as text on the live page. This is what
+ *  catches a missing paragraph or drifted copy that a structural/visual pass
+ *  would wave through. */
+interface ContentProbe {
+  scenarioId: string;
+  assertions: { text: string; description: string }[];
+  note: string;
+}
+
+/**
+ * Curated, not exhaustive — one real entry today. Extending this list: copy
+ * the assertion text verbatim (Read the design source directly, don't retype
+ * from memory) and split around any em-dash/smart-quote so each assertion
+ * stays plain-ASCII-safe; see the 08b-howitworks entry below.
+ */
+const CONTENT_PROBES: ContentProbe[] = [
+  {
+    scenarioId: "08b-howitworks",
+    assertions: [
+      {
+        text: "Every number on a card traces to your own words and to an official source",
+        description:
+          "the How it works dek (first half, split before the em-dash) — canvas's HowItWorksVC " +
+          '(screens-statics.jsx) passes dek="Every number on a card traces to your own words ' +
+          'and to an official source — never to a guess." to StaticPageVC',
+      },
+      {
+        text: "never to a guess.",
+        description:
+          "the How it works dek (second half, split after the em-dash)",
+      },
+    ],
+    note:
+      "Genuine FAIL, confirmed by reading both sides directly: MethodologyPage " +
+      "(src/prototype/VoterChoiceApp.tsx) calls <StaticPage onBack={onBack} " +
+      'eyebrow="Methodology" title="How we score candidates."> with no dek prop at all, and ' +
+      "StaticPage's own signature (function StaticPage({ title, eyebrow, children, onBack })) " +
+      "doesn't even accept one — so this sentence never renders anywhere on the page today. " +
+      "This is the exact class of gap (a)/(b) both miss: '08b-howitworks' already has a " +
+      "structural WAIVER (renders the same probed sp-wrap/sp-back shell as 08a-about — no class " +
+      "signal to catch a missing dek), and the coarse downscaled visual diff isn't built to " +
+      "notice one missing paragraph of text.",
+  },
+  // A 08d-tipjar CONTENT_PROBES entry is a natural follow-up once
+  // wt/tipjar-bold-flag-pass (a separate, not-yet-merged branch fixing that
+  // page's copy) lands — not added here, see this worktree's task brief.
+];
+
+function contentProbeForScenario(scenarioId: string): ContentProbe | undefined {
+  return CONTENT_PROBES.find((p) => p.scenarioId === scenarioId);
+}
+
+interface ContentResult {
+  ran: boolean;
+  pass?: boolean;
+  missing?: string[];
+  checkedCount?: number;
+  skipReason?: string;
+  note?: string;
+}
+
+/** Whitespace-normalizes before substring-matching so line-wrapping/DOM
+ *  whitespace differences don't produce false negatives. */
+function normalizeWhitespace(s: string): string {
+  return s.replace(/\s+/g, " ");
+}
+
+async function runContentCheck(
+  probe: ContentProbe | undefined,
+  page: Page,
+): Promise<ContentResult> {
+  if (!probe) {
+    return {
+      ran: false,
+      skipReason: "no content probe defined for this scenario",
+    };
+  }
+  const bodyText = normalizeWhitespace(await page.locator("body").innerText());
+  const missing: string[] = [];
+  for (const assertion of probe.assertions) {
+    if (!bodyText.includes(normalizeWhitespace(assertion.text))) {
+      missing.push(assertion.description);
+    }
+  }
+  return {
+    ran: true,
+    pass: missing.length === 0,
+    missing,
+    checkedCount: probe.assertions.length,
+    note: probe.note,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // (b) VISUAL check
 // ---------------------------------------------------------------------------
 
@@ -1250,16 +1365,18 @@ interface GateResult {
   scenario: Scenario;
   captureError?: string;
   structural: StructuralResult;
+  content: ContentResult;
   visual: VisualResult;
 }
 
 function overallPass(r: GateResult): boolean | null {
   if (r.captureError) return false;
   const structuralOk = !r.structural.ran || r.structural.pass === true;
+  const contentOk = !r.content.ran || r.content.pass === true;
   const visualOk = !r.visual.ran || r.visual.pass === true;
-  const anyRan = r.structural.ran || r.visual.ran;
+  const anyRan = r.structural.ran || r.content.ran || r.visual.ran;
   if (!anyRan) return null; // nothing to gate on for this scenario
-  return structuralOk && visualOk;
+  return structuralOk && contentOk && visualOk;
 }
 
 function printReport(results: GateResult[], threshold: number): boolean {
@@ -1289,7 +1406,8 @@ function printReport(results: GateResult[], threshold: number): boolean {
     }
     if (r.structural.ran) {
       const s = r.structural;
-      const unitLabel = s.kind === "marker" ? "structural markers" : "design classes";
+      const unitLabel =
+        s.kind === "marker" ? "structural markers" : "design classes";
       console.log(
         `  structural: ${s.pass ? "PASS" : "FAIL"} — ${s.designClassCount} ${unitLabel} checked, ` +
           `${s.missing?.length ?? 0} missing, ${s.extra?.length ?? 0} extra`,
@@ -1312,6 +1430,19 @@ function printReport(results: GateResult[], threshold: number): boolean {
       if (s.note) console.log(`    note: ${s.note}`);
     } else {
       console.log(`  structural: skipped (${r.structural.skipReason})`);
+    }
+    if (r.content.ran) {
+      const c = r.content;
+      console.log(
+        `  content: ${c.pass ? "PASS" : "FAIL"} — ${c.checkedCount} assertions checked, ` +
+          `${c.missing?.length ?? 0} missing`,
+      );
+      if (c.missing && c.missing.length > 0) {
+        console.log(`    missing: ${c.missing.join(", ")}`);
+      }
+      if (c.note) console.log(`    note: ${c.note}`);
+    } else {
+      console.log(`  content: skipped (${r.content.skipReason})`);
     }
     if (r.visual.ran) {
       const v = r.visual;
@@ -1380,6 +1511,7 @@ async function main(): Promise<void> {
           results.push({
             scenario,
             structural: { ran: false, skipReason: "scenario not automatable" },
+            content: { ran: false, skipReason: "scenario not automatable" },
             visual: { ran: false, skipReason: "scenario not automatable" },
           });
           continue;
@@ -1395,6 +1527,10 @@ async function main(): Promise<void> {
           await page.screenshot({ path: screenshotPath, fullPage: true });
 
           const structural = await runStructuralCheck(scenario, page);
+          const content = await runContentCheck(
+            contentProbeForScenario(scenario.id),
+            page,
+          );
           const visual = await runVisualCheck(
             scenario,
             screenshotPath,
@@ -1402,7 +1538,7 @@ async function main(): Promise<void> {
             args.threshold,
             pixelmatch,
           );
-          results.push({ scenario, structural, visual });
+          results.push({ scenario, structural, content, visual });
           console.log(`  ${scenario.id} captured + checked`);
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -1410,6 +1546,7 @@ async function main(): Promise<void> {
             scenario,
             captureError: message,
             structural: { ran: false, skipReason: "capture failed" },
+            content: { ran: false, skipReason: "capture failed" },
             visual: { ran: false, skipReason: "capture failed" },
           });
           console.log(
