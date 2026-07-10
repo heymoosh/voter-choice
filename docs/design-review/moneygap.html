@@ -49,34 +49,34 @@
 </head>
 <body>
   <h1>Keystone review — Money-gap</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (71b432af)</code> &middot; generated 2026-07-10T04:48:58.015Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (71b432af))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">11a-fieldmoneygap</div>
           <div class="label">Money-gap — whole field on one scale</div>
-          <span class="badge unchanged">unchanged since base</span>
-          <span class="tag proxy">proxy</span>
-          <div class="note">The canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by reading RepCard.tsx: it calls &lt;MoneyGapScale subject=... peer=...&gt; WITHOUT a `field` prop, so only the single subject row ever renders in the card. Proxy: same funding-expanded panel as 02b, with a chamberMedian mock so the populated (non-blank) scale shows.</div>
+          
+          <span class="tag no">not automatable</span>
+          <div class="note">NOT AUTOMATABLE: the canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by reading RepCard.tsx: it calls &lt;MoneyGapScale subject=... peer=...&gt; WITHOUT a `field` prop, so only the single subject row ever renders in the card. A prior 'proxy' capture reused 02b's single-subject funding-expanded panel and pixel-diffed it against the real whole-field canvas ref — a structurally different screen — which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until the field prop is wired.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11a-fieldmoneygap.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/11a-fieldmoneygap.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
       </tr>
 
       <tr>
         <td class="meta">
           <div class="id">11b-scalestates</div>
           <div class="label">Money-gap — reading the scale, 4 states + honest blank</div>
-          <span class="badge unchanged">unchanged since base</span>
-          <span class="tag proxy">proxy</span>
-          <div class="note">The canvas artboard is a style-guide-style enumeration of 4 states + the collapsed chip side by side — there is no single app screen that shows all of them at once (the real app renders whichever ONE band the data produces per card). Proxy: the same funding-expanded panel (chamberMedian mock puts this candidate in the 'above median' band); the collapsed MedianChip glance is visible elsewhere on the same card, collapsed.</div>
+          
+          <span class="tag no">not automatable</span>
+          <div class="note">NOT AUTOMATABLE: the canvas artboard is a style-guide-style enumeration of 4 states + the collapsed chip side by side — there is no single app screen that shows all of them at once (the real app renders whichever ONE band the data produces per card). A prior 'proxy' capture reused 02b/11a's single-band funding-expanded panel and pixel-diffed it against the real 4-state enumeration canvas ref — a structurally different screen — which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable as a single screenshot.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11b-scalestates.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/11b-scalestates.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
       </tr>
 
       <tr>

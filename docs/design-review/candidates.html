@@ -49,11 +49,11 @@
 </head>
 <body>
   <h1>Keystone review — Candidates</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (71b432af)</code> &middot; generated 2026-07-10T04:48:58.015Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (71b432af))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
@@ -85,9 +85,9 @@
           <div class="label">Candidates — DelegationOverview (multi-seat scored cards before drill-down)</div>
           
           <span class="tag no">not automatable</span>
-          <div class="note">NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Canvas source exists (design-handoff/keystone-canvas/src/screens-delegation.jsx + delegation.css: DelegationOverview/SeatCard/SeatDeepView/SeatRail — HANDOFF-EXACT-MATCH.md §5a, 'designed 2026-07-07, not yet wired'), but no .png artboard was ever exported to .keystone-canvas-refs/, so there's no reference image either. Today the app goes straight to the single-seat deep view (02a-results-main) with no scored multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not merged to main as of this report).</div>
+          <div class="note">NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Today the app goes straight to the single-seat deep view (02a-results-main) with no scored multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not merged to main as of this report) — capture() below is a real, PR #243-verified sequence (data-testid="delegation-overview"), ready to flip automatable to 'yes'/'proxy' once #243 merges. The canvas ref PNG that was previously missing now exists: the real design source turned out to live in a different, newer, untracked folder (design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/keystone-canvas/ which predates this screen) — screens-delegation.jsx's DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured 2026-07-08 by serving that folder locally and screenshotting the artboard's [data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same fidelity as the viewer's own Download-PNG export, just driven headlessly. See .keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows. automatable stays 'no' for now — flips to 'yes'/'proxy' once PR #243 merges and the delegation-overview testid actually exists on main (same pattern as reachWorkspace()'s PR #243 comment above).</div>
         </td>
-        <td class="shot"><div class="missing">no canvas export — not yet built on this branch (see note)</div></td>
+        <td class="shot"><img src="screenshots/refs/05c-candidates-overview.png" alt="reference artboard"></td>
         <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
       </tr></tbody>
   </table>

@@ -49,22 +49,22 @@
 </head>
 <body>
   <h1>Keystone review — Polis</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (71b432af)</code> &middot; generated 2026-07-10T04:48:58.015Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (71b432af))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">10a-polis-entry</div>
           <div class="label">Polis — entry point</div>
-          <span class="badge unchanged">unchanged since base</span>
-          <span class="tag proxy">proxy</span>
-          <div class="note">The canvas's dedicated PolisEntry screen (invite panel + preview scatter) doesn't exist — per e2e/redesign-core.spec.ts's own comment, 'the see where you stand teaser was removed ([P1])'; entry today is only the inline '.all-done … where you stand' link on the completed workspace. Proxy: the completed workspace showing that link.</div>
+          
+          <span class="tag no">not automatable</span>
+          <div class="note">NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — data-testid="polis-entry-see-standing") isn't merged to main yet (PR #237); it replaces today's inline '.all-done … where you stand' link, which currently jumps straight to the standing report with no interstitial. A prior 'proxy' capture stopped at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas ref — a screen it never actually reaches — which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until #237 lands.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/10a-polis-entry.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/10a-polis-entry.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
       </tr>
 
       <tr>
@@ -85,7 +85,7 @@
           <div class="label">Polis — report, common-ground state</div>
           <span class="badge unchanged">unchanged since base</span>
           <span class="tag yes">automated</span>
-          <div class="note">Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated.</div>
+          <div class="note">Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated, plus one divided statement → 'Where it split' renders too (the realistic 'mostly consensus, some friction' mix). Bridges/divided rendering is real content today; PolisClose.tsx doesn't consume the divided field yet (PR #240, not merged) so that second panel doesn't show on main until then — see STRUCTURAL_WAIVERS in parity-gate.ts for why the residual visual diff is expected either way (DECISION #116, party-free).</div>
         </td>
         <td class="shot"><img src="screenshots/refs/10c-polis-report-consensus.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/10c-polis-report-consensus.png" alt="repo screenshot"></td>
@@ -97,7 +97,7 @@
           <div class="label">Polis — report, divided/no-common-ground state</div>
           <span class="badge unchanged">unchanged since base</span>
           <span class="tag proxy">proxy</span>
-          <div class="note">PolisClose has no computed 'divided/split' branch (only an early-days vs. normal lede, toggled purely by sampleSize&lt;30 — see LOW_N in PolisClose.tsx). There is no 'Where it split' section anywhere in the component. Proxy: bridges mock returns a single, low-agreement statement (vs. 10c's four strong ones) to approximate a thin-consensus cycle within the UI that actually exists; the canvas's dedicated divided narrative is not ported.</div>
+          <div class="note">PolisClose has no computed 'divided/split' branch yet (PR #240, not merged to main — only an early-days vs. normal lede, toggled purely by sampleSize&lt;30, see LOW_N in PolisClose.tsx). Bridges mock now returns zero bridges + several real divided statements — on #240 this renders the true 'genuinely split' branch (no Common ground panel, 'Where it split' populated instead); on main today it exercises the existing bridges.length===0 fallback (the 'big stat panel' branch) since divided isn't read yet. Proxy until #240 lands. See STRUCTURAL_WAIVERS in parity-gate.ts for why the residual visual diff is expected either way (DECISION #116, party-free).</div>
         </td>
         <td class="shot"><img src="screenshots/refs/10d-polis-report-divided.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/10d-polis-report-divided.png" alt="repo screenshot"></td>
