@@ -2769,6 +2769,91 @@ Bumps
   margin: 0 0 24px !important;
 }
 
+/* ---------- Tip jar — Bold Flag / Keystone parity (08d-tipjar) ----------
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"] + statics.css .sp-tip*.
+   Scoped to .sp-tipjar only — does not touch the shared civic palette or
+   any other static page. */
+.sp-wrap.sp-tipjar {
+  --tj-paper: oklch(1 0 0);
+  --tj-paper-2: oklch(0.985 0.003 258);
+  --tj-ink: oklch(0.2 0.035 260);
+  --tj-ink-2: oklch(0.37 0.032 260);
+  --tj-ink-3: oklch(0.54 0.026 260);
+  --tj-brand: oklch(0.4 0.155 262);
+  --tj-rule: oklch(0.88 0.006 260);
+  --tj-replace: oklch(0.53 0.205 27);
+  --tj-serif: "Newsreader", Georgia, serif;
+  --tj-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--tj-paper);
+}
+.sp-wrap.sp-tipjar .sp-back {
+  color: var(--tj-brand);
+}
+.sp-wrap.sp-tipjar .sp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--tj-replace);
+}
+.sp-wrap.sp-tipjar .sp-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--tj-replace);
+}
+.sp-wrap.sp-tipjar .sp-title {
+  font-family: var(--tj-serif);
+  color: var(--tj-ink);
+  border-bottom: 2px solid var(--tj-ink);
+  padding-bottom: 24px;
+}
+.sp-wrap.sp-tipjar .sp-article {
+  font-family: var(--tj-serif);
+  color: var(--tj-ink-2);
+}
+.sp-wrap.sp-tipjar .sp-article h2 {
+  font-family: var(--tj-serif);
+  color: var(--tj-ink);
+}
+.sp-wrap.sp-tipjar .sp-article li::marker {
+  color: var(--tj-brand);
+}
+.sp-wrap.sp-tipjar .sp-article b {
+  color: var(--tj-ink);
+}
+.sp-wrap.sp-tipjar .tip-list--amounts {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.sp-wrap.sp-tipjar .tip-amount-btn {
+  min-width: 96px;
+  padding: 16px 22px;
+  background: var(--tj-paper-2);
+  border: 1.5px solid var(--tj-rule);
+  border-radius: 12px;
+  font-family: var(--tj-serif);
+  color: var(--tj-ink);
+  box-shadow:
+    0 1px 0 oklch(0.92 0.012 85),
+    0 12px 30px -22px oklch(0.2 0.03 255 / 0.18);
+}
+.sp-wrap.sp-tipjar .tip-amount-btn:hover {
+  border-color: var(--tj-brand);
+  background: var(--tj-paper-2);
+  color: var(--tj-brand);
+}
+.sp-wrap.sp-tipjar .tip-amount-btn.lead {
+  background: var(--tj-brand);
+  color: var(--tj-paper-2);
+  border-color: var(--tj-brand);
+}
+.sp-wrap.sp-tipjar .tip-note {
+  font-family: var(--tj-mono);
+  color: var(--tj-ink-3);
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
