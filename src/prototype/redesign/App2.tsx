@@ -148,29 +148,72 @@ function StandingLocked({ onBack }) {
    keep/replace → scorecard). Not skippable/remembered: it's a single click on
    the happy path, and the edit-issues re-score path bypasses it entirely
    (analyze() is called directly there), so a returning reviewer never sees it
-   again within a session unless they re-run the cold open. */
+   again within a session unless they re-run the cold open.
+
+   Bold Flag / Keystone parity: markup + classes ported verbatim from
+   design-handoff/keystone-canvas/src/screens-orientation.jsx's
+   OrientationActivated per HANDOFF-EXACT-MATCH.md §1. AppNav (not canvas's
+   SCNav) still carries the app's real nav — the flag hairline + card
+   treatment are scoped to .ori-body in redesign2.css so the Bold Flag white
+   palette doesn't bleed into AppNav's shared civic styling. */
 function OrientationView({ onContinue }) {
   const { t } = useI18n();
   return (
-    <>
+    <div className="screen orientation ori">
+      <div className="flagbar">
+        <i></i>
+        <i></i>
+        <i></i>
+      </div>
       <AppNav />
-      <div className="coldopen orientation">
-        <div className="orient-lede">
-          <div className="kick">{t("orientation.kick")}</div>
-          <h2>{t("orientation.heading")}</h2>
-          <p dangerouslySetInnerHTML={{ __html: t("orientation.body") }} />
-        </div>
-        <div className="orient-foot">
-          <button
-            className="lock"
-            onClick={onContinue}
-            data-testid="orientation-continue"
-          >
-            {t("orientation.continueLabel")}
-          </button>
+      <div className="ori-body">
+        <div className="ori-card activated">
+          <div className="ori-ey">
+            <span className="kick">
+              <span className="star" aria-hidden="true">
+                ★
+              </span>{" "}
+              {t("orientation.kick")}
+            </span>
+          </div>
+          <h1>{t("orientation.heading")}</h1>
+          <p className="ori-lede">{t("orientation.lede")}</p>
+          <div className="ori-steps">
+            <div className="ori-step">
+              <span className="n">1</span>
+              <div>
+                <div className="st-t">{t("orientation.step1Title")}</div>
+                <div className="st-d">{t("orientation.step1Body")}</div>
+              </div>
+            </div>
+            <div className="ori-step">
+              <span className="n">2</span>
+              <div>
+                <div className="st-t">{t("orientation.step2Title")}</div>
+                <div className="st-d">{t("orientation.step2Body")}</div>
+              </div>
+            </div>
+            <div className="ori-step">
+              <span className="n">3</span>
+              <div>
+                <div className="st-t">{t("orientation.step3Title")}</div>
+                <div className="st-d">{t("orientation.step3Body")}</div>
+              </div>
+            </div>
+          </div>
+          <div className="ori-cta">
+            <button
+              className="btn-primary"
+              onClick={onContinue}
+              data-testid="orientation-continue"
+            >
+              {t("orientation.continueLabel")}
+            </button>
+            <span className="ori-meta">{t("orientation.meta")}</span>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 

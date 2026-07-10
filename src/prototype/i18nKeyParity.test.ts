@@ -80,7 +80,14 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["whyNowPage", "whatToDo"],
     ["orientation", "kick"],
     ["orientation", "heading"],
-    ["orientation", "body"],
+    ["orientation", "lede"],
+    ["orientation", "step1Title"],
+    ["orientation", "step1Body"],
+    ["orientation", "step2Title"],
+    ["orientation", "step2Body"],
+    ["orientation", "step3Title"],
+    ["orientation", "step3Body"],
+    ["orientation", "meta"],
     ["orientation", "continueLabel"],
   ];
 
@@ -125,16 +132,5 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
         expect(s.cite.length).toBeGreaterThan(0);
       }
     }
-  });
-
-  it("keeps the orientation.body <b> markup usable via dangerouslySetInnerHTML", () => {
-    // OrientationView renders orientation.body via dangerouslySetInnerHTML
-    // (matching the tierFedWhat/tierExecWhat pattern) so the embedded
-    // "replace or keep" emphasis survives translation.
-    expect(TRANSLATIONS.en.orientation.body).toContain(
-      "<b>replace or keep</b>",
-    );
-    expect(TRANSLATIONS.es.orientation.body).toContain("<b>");
-    expect(TRANSLATIONS.es.orientation.body).toContain("</b>");
   });
 });

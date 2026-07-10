@@ -1225,44 +1225,201 @@
   }
 }
 
-/* ---- orientation interstitial (after lock-issues, before first rep) ---- */
-.coldopen.orientation {
-  padding-top: 64px;
+/* ---------- Orientation interstitial — Bold Flag / Keystone parity ----------
+   (after lock-issues, before first rep). Structure + classes ported
+   verbatim from design-handoff/keystone-canvas/src/screens-orientation.jsx's
+   OrientationActivated + screens.css's .ori/.flagbar/.ori-card rules, per
+   HANDOFF-EXACT-MATCH.md §1. The white/navy/red palette is locally scoped
+   to .ori-body (--ori-* tokens) so it doesn't bleed into AppNav's shared
+   civic styling — AppNav is a sibling, not a descendant, of .ori-body. */
+.ori {
+  display: flex;
+  flex-direction: column;
 }
-.orient-lede .kick {
+.flagbar {
+  height: 4px;
+  display: flex;
+  flex: 0 0 auto;
+}
+.flagbar i {
+  flex: 1;
+}
+.flagbar i:nth-child(1) {
+  background: oklch(0.4 0.155 262);
+}
+.flagbar i:nth-child(2) {
+  background: oklch(1 0 0);
+}
+.flagbar i:nth-child(3) {
+  background: oklch(0.53 0.205 27);
+}
+.ori-body {
+  --ori-paper: oklch(1 0 0);
+  --ori-paper-2: oklch(0.985 0.003 258);
+  --ori-ink: oklch(0.2 0.035 260);
+  --ori-ink-2: oklch(0.37 0.032 260);
+  --ori-ink-3: oklch(0.54 0.026 260);
+  --ori-brand: oklch(0.4 0.155 262);
+  --ori-brand-2: oklch(0.31 0.145 262);
+  --ori-replace: oklch(0.53 0.205 27);
+  --ori-rule: oklch(0.88 0.006 260);
+  --ori-rule-2: oklch(0.93 0.005 260);
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 40px 32px;
+  min-height: calc(100vh - 90px);
+  background: var(--ori-paper);
+}
+.ori-card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--ori-paper-2);
+  border: 1px solid var(--ori-rule);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 0 var(--ori-rule),
+    0 30px 60px -34px oklch(0.2 0.03 255 / 0.3);
+  padding: 40px 44px 36px;
+  position: relative;
+  overflow: hidden;
+}
+.ori-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--ori-brand) 0 38%,
+    transparent 38% 62%,
+    var(--ori-replace) 62% 100%
+  );
+}
+.ori-card.activated::before {
+  height: 6px;
+}
+.ori-ey {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.ori-ey .kick {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--civic);
   font-weight: 600;
+  color: var(--ori-brand);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.orient-lede h2 {
+.ori-ey .star {
+  color: var(--ori-replace);
+}
+.ori-card h1 {
   font-family: var(--serif);
-  font-size: clamp(28px, 4vw, 44px);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  margin: 10px 0 16px;
-  line-height: 1.1;
+  font-size: 40px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  color: var(--ori-ink);
   text-wrap: balance;
 }
-.orient-lede p {
-  font-size: 17px;
-  color: var(--ink-2);
-  margin: 0;
-  max-width: 640px;
-  line-height: 1.6;
+.ori-card h1 em {
+  font-style: italic;
+  color: var(--ori-brand);
 }
-.orient-foot {
-  margin-top: 28px;
+.ori-lede {
+  font-family: var(--serif);
+  font-size: 18.5px;
+  line-height: 1.5;
+  color: var(--ori-ink-2);
+  margin: 0 0 28px;
+  max-width: 520px;
 }
-.orient-foot .lock {
-  background: var(--civic);
-  color: var(--paper-2);
-  border: 0;
-  padding: 12px 22px;
-  border-radius: 8px;
+.ori-steps {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 30px;
+  border: 1px solid var(--ori-rule-2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ori-step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 14px;
+  padding: 15px 18px;
+  background: var(--ori-paper);
+  align-items: start;
+}
+.ori-step + .ori-step {
+  border-top: 1px solid var(--ori-rule-2);
+}
+.ori-step .n {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ori-paper-2);
+  background: var(--ori-brand);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+.ori-step:last-child .n {
+  background: var(--ori-replace);
+}
+.ori-step .st-t {
   font-weight: 600;
   font-size: 14.5px;
+  color: var(--ori-ink);
+}
+.ori-step .st-d {
+  font-size: 13px;
+  color: var(--ori-ink-3);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.ori-cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ori-cta .btn-primary {
+  background: var(--ori-brand);
+  color: var(--ori-paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 22px;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
+  box-shadow:
+    0 1px 0 var(--ori-rule-2),
+    0 12px 30px -22px oklch(0.2 0.03 255 / 0.18);
+  white-space: nowrap;
+}
+.ori-cta .btn-primary:hover {
+  background: var(--ori-brand-2);
+}
+.ori-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ori-ink-3);
+  letter-spacing: 0.02em;
 }
