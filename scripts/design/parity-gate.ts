@@ -1251,12 +1251,24 @@ interface BBox {
  *  the app is entirely light/white/cream-themed, and the lightbox's dimmed
  *  backdrop + dark annotation chrome sit well below this. */
 const CONTENT_BRIGHTNESS_THRESHOLD = 200;
-/** A row/column only counts as part of the content card if it has a
- *  contiguous run of light pixels spanning at least this fraction of the
- *  image — filters out small bright specks (annotation text, nav-arrow
- *  glyphs, the light dots in the lightbox's page-index strip) that sit
- *  outside the actual card. */
-const CONTENT_RUN_FRACTION = 0.5;
+/** A row/column counts as part of the content card if its longest contiguous
+ *  run of light pixels is at least this fraction of the WIDEST such run in the
+ *  image (i.e. of the card's own detected width) — NOT a fraction of the full
+ *  1600px frame. The lightbox scales each artboard to fit the fixed frame, so
+ *  a tall page (About / How-it-works / Privacy) renders a much narrower card;
+ *  the old "0.5 of the 1600px frame = 800px" bar rejected every row of those
+ *  cards (their widest bright run is only ~710-730px), so cropping was skipped
+ *  and the dark lightbox chrome stayed in the diff, inflating the ratio to
+ *  ~0.35 on pages that actually matched. Keying off the card's own width crops
+ *  them correctly and leaves every already-cropping scenario's box unchanged. */
+const CARD_RUN_FRACTION = 0.6;
+/** Absolute floor for the widest bright run, as a fraction of frame width:
+ *  below this there is no real light card (a dark/empty ref, or only stray
+ *  annotation/nav specks), so cropping is skipped and the caller falls back to
+ *  the full frame. The narrowest real card in the ref set is ~340px (21% of
+ *  1600); annotation/nav specks run well under 100px, so 0.15 (240px) cleanly
+ *  separates a genuine narrow card from chrome noise. */
+const CARD_MIN_RUN_FRACTION = 0.15;
 
 /** Detects the bounding box of the light "app content card" inside a canvas
  *  review-lightbox screenshot. The ref PNGs in .keystone-canvas-refs/ are
@@ -1279,7 +1291,11 @@ function detectContentBBox(img: RgbaImage): BBox | null {
     const i = (y * W + x) * 4;
     return (data[i] + data[i + 1] + data[i + 2]) / 3;
   };
-  const rowsWithBigRun: number[] = [];
+  // Longest contiguous bright run in each row; the widest of these ≈ the card's
+  // own width (the card is the brightest structure — the dimmed backdrop sits
+  // below CONTENT_BRIGHTNESS_THRESHOLD).
+  const rowRuns = new Array<number>(H);
+  let maxRowRun = 0;
   for (let y = 0; y < H; y++) {
     let run = 0;
     let best = 0;
@@ -1291,13 +1307,24 @@ function detectContentBBox(img: RgbaImage): BBox | null {
         run = 0;
       }
     }
-    if (best > W * CONTENT_RUN_FRACTION) rowsWithBigRun.push(y);
+    rowRuns[y] = best;
+    if (best > maxRowRun) maxRowRun = best;
   }
-  if (rowsWithBigRun.length === 0) return null;
+  // No real light card present (dark/empty ref, or only stray chrome specks).
+  if (maxRowRun < W * CARD_MIN_RUN_FRACTION) return null;
+
+  const rowThreshold = maxRowRun * CARD_RUN_FRACTION;
+  const rowsWithBigRun: number[] = [];
+  for (let y = 0; y < H; y++) {
+    if (rowRuns[y] >= rowThreshold) rowsWithBigRun.push(y);
+  }
   const y0 = rowsWithBigRun[0];
   const y1 = rowsWithBigRun[rowsWithBigRun.length - 1];
 
-  const colsWithBigRun: number[] = [];
+  // Same, per column, within the detected vertical band — threshold relative to
+  // the widest column run (the card's own height in this band).
+  const colRuns = new Array<number>(W);
+  let maxColRun = 0;
   for (let x = 0; x < W; x++) {
     let run = 0;
     let best = 0;
@@ -1309,9 +1336,14 @@ function detectContentBBox(img: RgbaImage): BBox | null {
         run = 0;
       }
     }
-    if (best > (y1 - y0) * CONTENT_RUN_FRACTION) colsWithBigRun.push(x);
+    colRuns[x] = best;
+    if (best > maxColRun) maxColRun = best;
   }
-  if (colsWithBigRun.length === 0) return null;
+  const colThreshold = maxColRun * CARD_RUN_FRACTION;
+  const colsWithBigRun: number[] = [];
+  for (let x = 0; x < W; x++) {
+    if (colRuns[x] >= colThreshold) colsWithBigRun.push(x);
+  }
   const x0 = colsWithBigRun[0];
   const x1 = colsWithBigRun[colsWithBigRun.length - 1];
 
