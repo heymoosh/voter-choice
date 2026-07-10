@@ -1119,55 +1119,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/DelegationWorkspace.tsx",
       "src/prototype/redesign/App2.tsx",
     ],
-    automatable: "proxy",
+    automatable: "no",
     note:
-      "PolisEntry.tsx (canvas's dedicated invite/preview screen — data-testid=\"polis-entry-" +
-      "see-standing\") isn't merged to main yet (PR #237); it replaces today's inline '.all-done " +
-      "… where you stand' link, which currently jumps straight to the standing report with no " +
-      "interstitial (per e2e/redesign-core.spec.ts's comment, 'the see where you stand teaser " +
-      "was removed ([P1])'). capture() clicks that link and, when PolisEntry appears, stops " +
-      "there to shoot the real thing. Until #237 lands the click can't be undone (no screen to " +
-      "hold on), so this rebuilds and stops at the prior proxy instead: the completed workspace " +
-      "showing that link, unclicked.",
-    async capture(page) {
-      const reachAllDone = async () => {
-        // Same sessionStorage gotcha as 09c-intake-locked's reachPreLock —
-        // see its comment. Needed here because the redo below calls
-        // reachWorkspace() a second time within the same page.
-        await page.evaluate(() => sessionStorage.clear()).catch(() => {});
-        await mockDelegation(page);
-        await mockSeatRaceDataMedian(page);
-        await mockResearch(page);
-        await mockPolis(page, true);
-        await mockCounters(page);
-        await reachWorkspace(page);
-        const rows = page.locator(".b-row");
-        const count = await rows.count();
-        for (let i = 0; i < count; i++) {
-          await rows.nth(i).click();
-          const keep = page
-            .getByRole("button", { name: /Worth keeping/ })
-            .first();
-          await keep.waitFor({ timeout: 15000 });
-          await keep.click();
-          await page.waitForTimeout(700);
-        }
-        await rows.first().click();
-        await page.locator(".all-done").waitFor({ timeout: 15000 });
-      };
-      await reachAllDone();
-      await page
-        .getByRole("button", { name: /where you stand among your neighbors/ })
-        .click();
-      const reachedPolisEntry = await page
-        .getByTestId("polis-entry-see-standing")
-        .waitFor({ state: "visible", timeout: 2000 })
-        .then(() => true)
-        .catch(() => false);
-      if (!reachedPolisEntry) {
-        await reachAllDone();
-      }
-    },
+      "NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — " +
+      "data-testid=\"polis-entry-see-standing\") isn't merged to main yet (PR #237); it " +
+      "replaces today's inline '.all-done … where you stand' link, which currently jumps " +
+      "straight to the standing report with no interstitial. A prior 'proxy' capture stopped " +
+      "at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas " +
+      "ref — a screen it never actually reaches — which silently false-passed (STOP-SHIP " +
+      "2026-07-09 finding). Genuinely not gradable until #237 lands.",
   },
   {
     id: "10b-polis-contribute",
@@ -1295,21 +1255,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/MoneyGap.tsx",
       "src/prototype/redesign/peerComparison.ts",
     ],
-    automatable: "proxy",
+    automatable: "no",
     note:
-      "The canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by " +
-      "reading RepCard.tsx: it calls <MoneyGapScale subject=... peer=...> WITHOUT a `field` " +
-      "prop, so only the single subject row ever renders in the card. Proxy: same funding-" +
-      "expanded panel as 02b, with a chamberMedian mock so the populated (non-blank) scale shows.",
-    async capture(page) {
-      await mockDelegation(page);
-      await mockSeatRaceDataMedian(page);
-      await mockResearch(page);
-      await mockPolis(page);
-      await mockCounters(page);
-      await reachWorkspace(page);
-      await setMoneyDisclosure(page, true);
-    },
+      "NOT AUTOMATABLE: the canvas's 'whole field' (3+ candidates on one scale) is not wired — " +
+      "confirmed by reading RepCard.tsx: it calls <MoneyGapScale subject=... peer=...> WITHOUT " +
+      "a `field` prop, so only the single subject row ever renders in the card. A prior 'proxy' " +
+      "capture reused 02b's single-subject funding-expanded panel and pixel-diffed it against " +
+      "the real whole-field canvas ref — a structurally different screen — which silently " +
+      "false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until the field prop " +
+      "is wired.",
   },
   {
     id: "11b-scalestates",
@@ -1319,22 +1273,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/MoneyGap.tsx",
       "src/prototype/redesign/peerComparison.ts",
     ],
-    automatable: "proxy",
+    automatable: "no",
     note:
-      "The canvas artboard is a style-guide-style enumeration of 4 states + the collapsed chip " +
-      "side by side — there is no single app screen that shows all of them at once (the real " +
-      "app renders whichever ONE band the data produces per card). Proxy: the same funding-" +
-      "expanded panel (chamberMedian mock puts this candidate in the 'above median' band); the " +
-      "collapsed MedianChip glance is visible elsewhere on the same card, collapsed.",
-    async capture(page) {
-      await mockDelegation(page);
-      await mockSeatRaceDataMedian(page);
-      await mockResearch(page);
-      await mockPolis(page);
-      await mockCounters(page);
-      await reachWorkspace(page);
-      await setMoneyDisclosure(page, true);
-    },
+      "NOT AUTOMATABLE: the canvas artboard is a style-guide-style enumeration of 4 states + " +
+      "the collapsed chip side by side — there is no single app screen that shows all of them " +
+      "at once (the real app renders whichever ONE band the data produces per card). A prior " +
+      "'proxy' capture reused 02b/11a's single-band funding-expanded panel and pixel-diffed it " +
+      "against the real 4-state enumeration canvas ref — a structurally different screen — " +
+      "which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable as a " +
+      "single screenshot.",
   },
   {
     id: "11c-moneygaph2h",

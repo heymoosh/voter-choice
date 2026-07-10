@@ -121,6 +121,10 @@ jobs:
           path: scripts/design/.parity-gate-out/
           retention-days: 30
           if-no-files-found: warn
+          # scripts/design/.parity-gate-out/ is a dotfile dir — upload-artifact@v4
+          # silently excludes dotfile dirs by default, which meant this upload
+          # never actually included the diff PNGs (STOP-SHIP 2026-07-09 finding).
+          include-hidden-files: true
 
   # Phase 3 ("review artifact regenerates per PR, linked from PR body") of
   # docs/operations/keystone-fidelity-fix-plan-2026-07-08.md. Reruns Phase 1's
@@ -184,6 +188,11 @@ jobs:
           path: docs/design-review/
           retention-days: 30
           if-no-files-found: warn
+          # Same dotfile-exclusion default as the parity-gate job above — this
+          # path has no dotfiles today, but keep the flag consistent so a
+          # future dotfile-named asset under docs/design-review/ doesn't
+          # silently drop out of the artifact again.
+          include-hidden-files: true
 
       - name: Comment on PR with review artifact link
         if: ${{ !cancelled() && github.event_name == 'pull_request' }}

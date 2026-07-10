@@ -470,36 +470,23 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "diff (zero literal overlap). The one part of this flow that IS a confirmed verbatim port " +
     "(IssueDeltaBanner's ad-list ledger) is probed separately at 09e-edit-rescored, the scenario " +
     "where it actually renders.",
-  "10a-polis-entry":
-    "PolisClose.tsx uses its own polis-*/overlap-*/bridge*/scatter* vocabulary — confirmed by a " +
-    "full class-token diff against screens-polis.jsx's PolisReport/PolisEntry (pr-*/pe-* " +
-    "prefixes): zero overlap. Also itself a documented proxy — no dedicated PolisEntry screen " +
-    "exists yet (see this scenario's own note in parity-gallery-scenarios.ts).",
   "10c-polis-report-consensus":
-    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. The mock " +
-    "now feeds real bridges + divided data (parity-gallery-scenarios.ts), but PolisClose.tsx " +
-    "doesn't render a divided/'where it split' section at all until PR #240 merges (not yet " +
-    "merged as of this waiver). Once it does, the remaining VISUAL diff against the canvas ref " +
-    "is EXPECTED, not a bug: the canvas's divided panel groups by D/R/I party cluster, while " +
-    "this repo deliberately stays population-level with no party breakdown, ever — the " +
-    "approved party-free pivot (DECISION #116, voter-choice-backlog.md 'KEEP the existing " +
-    "party-free product decision (#116)'). This waiver documents that expected gap; it does not " +
-    "silence the visual check, which still runs and gates this scenario same as any other.",
+    "PolisClose.tsx uses its own polis-*/overlap-*/bridge*/scatter* vocabulary — confirmed by a " +
+    "full class-token diff against screens-polis.jsx's PolisReport (pr-* prefix): zero overlap. " +
+    "The mock now feeds real bridges + divided data (parity-gallery-scenarios.ts), but " +
+    "PolisClose.tsx doesn't render a divided/'where it split' section at all until PR #240 " +
+    "merges (not yet merged as of this waiver). Once it does, the remaining VISUAL diff against " +
+    "the canvas ref is EXPECTED, not a bug: the canvas's divided panel groups by D/R/I party " +
+    "cluster, while this repo deliberately stays population-level with no party breakdown, " +
+    "ever — the approved party-free pivot (DECISION #116, voter-choice-backlog.md 'KEEP the " +
+    "existing party-free product decision (#116)'). This waiver documents that expected gap; " +
+    "it does not silence the visual check, which still runs and gates this scenario same as " +
+    "any other.",
   "10d-polis-report-divided":
-    "Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Same " +
-    "divided-data + party-free-diff reasoning as 10c-polis-report-consensus's waiver above " +
-    "(DECISION #116) — also still a documented proxy itself until PR #240 merges: PolisClose " +
-    "has no computed divided/split branch on main today (see this scenario's own note in " +
-    "parity-gallery-scenarios.ts).",
-  "11a-fieldmoneygap":
-    "Proxy scenario — its capture() renders the same funding-expanded panel DOM as " +
-    "02b-results-funding-expanded, already probed via FieldMoneyGap/.mgap. The canvas's 'whole " +
-    "field' (3+ candidates on one scale) isn't wired in the repo at all (RepCard.tsx never " +
-    "passes MoneyGapScale a `field` prop) — a real, documented gap, but re-probing 02b's " +
-    "identical DOM under this id would add no new signal.",
-  "11b-scalestates":
-    "Proxy scenario — same funding-expanded DOM as 02b-results-funding-expanded and " +
-    "11a-fieldmoneygap; see 11a's waiver note.",
+    "Same PolisClose.tsx vocabulary gap as 10c-polis-report-consensus — see that waiver's " +
+    "note. Same divided-data + party-free-diff reasoning (DECISION #116) — also still a " +
+    "documented proxy itself until PR #240 merges: PolisClose has no computed divided/split " +
+    "branch on main today (see this scenario's own note in parity-gallery-scenarios.ts).",
   "11c-moneygaph2h":
     "MoneyGapH2H was removed as dead code (#239, 2026-07-08) — the duel screen's money " +
     "treatment is the '.cmp-fund' PAC-percentage footnote instead, which the 05b-headtohead " +
