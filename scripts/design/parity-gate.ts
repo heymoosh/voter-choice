@@ -6,13 +6,23 @@
 // card. Design cards' goal condition changes from "match the canvas" prose
 // to "diff <= threshold vs ref NN-*.png". Two checks per artboard:
 //
-//   (a) STRUCTURAL — the rendered DOM's class set at a known root selector
-//       vs. the literal classes the design source (design-handoff/
-//       keystone-canvas/src/ or design-handoff/design-session/) uses for the
-//       matching component. Flags missing (gate-failing) and extra
-//       (informational) classes. Only defined for scenarios wired into
-//       STRUCTURAL_PROBES below — see that block's comment for why most of
-//       the 27 parity-gallery scenarios don't have one yet.
+//   (a) STRUCTURAL — two probe kinds, both defined in STRUCTURAL_PROBES below:
+//         (a1) class-diff: the rendered DOM's class set at a known root
+//              selector vs. the literal classes the design source
+//              (design-handoff/keystone-canvas/src/ or design-handoff/
+//              design-session/) uses for the matching component. Flags
+//              missing (gate-failing) and extra (informational) classes.
+//              Only applies where the repo component is a confirmed literal
+//              port of the design source's own class vocabulary.
+//         (a2) marker: for scenarios where a class-diff genuinely can't apply
+//              (the repo component uses its own, unrelated class vocabulary —
+//              zero literal overlap with the design source), checks the
+//              REPO's own real selectors for specific structural markers the
+//              design intends (e.g. "does a distinct provenance badge
+//              exist"), instead of diffing against design-source classes.
+//       Only defined for scenarios wired into STRUCTURAL_PROBES below — see
+//       that block's comment for why most of the 27 parity-gallery scenarios
+//       don't have one yet (STRUCTURAL_WAIVERS covers those explicitly).
 //
 //   (b) VISUAL — pixel-diff of the scenario's screenshot against its ref PNG
 //       in .keystone-canvas-refs/, with a COPY-TOLERANT ratio threshold: both
@@ -20,6 +30,17 @@
 //       "why downscale" below), then compared with the anti-aliasing-aware
 //       pixelmatch algorithm @playwright/test already vendors (no new
 //       dependency — see "reusing playwright's own comparator" below).
+//
+//   (c) CONTENT — verbatim substring assertions (CONTENT_PROBES below) that
+//       specific canvas copy actually appears in the rendered page's text.
+//       Neither (a) nor (b) can catch wrong-but-similarly-shaped copy: a
+//       structural probe only checks that a selector/class exists, not what
+//       text it contains, and the visual diff is deliberately downscaled to
+//       be copy-tolerant (see "why downscale" below) — it exists to ignore
+//       exactly this kind of difference. Confirmed 2026-07-09: a real fix
+//       shipped a page (tip jar) with a missing subtitle and a mutated
+//       closing paragraph, and both (a) and (b) passed it. Independent,
+//       parallel registry — like (b), it doesn't touch STRUCTURAL_PROBES.
 //
 // Usage:
 //   npm run design:parity-gate -- --only 02a-results-main,02b-results-funding-expanded
@@ -212,7 +233,11 @@ function parseCliArgs(): Args {
 // (a) STRUCTURAL check
 // ---------------------------------------------------------------------------
 
-interface StructuralProbe {
+type ProbeKind = "class-diff" | "marker";
+
+/** (a1) Literal design-source class-diff probe — see file header (a1). */
+interface ClassDiffProbe {
+  kind: "class-diff";
   /** Which SCENARIOS[].id this probe rides along with (reuses its capture()). */
   scenarioId: string;
   /** CSS selector for the root of the surface being checked in the rendered app. */
@@ -237,6 +262,37 @@ interface StructuralProbe {
   ignoreMissing?: string[];
   note: string;
 }
+
+/** (a2) Repo-real structural-marker probe — see file header (a2). Used where
+ *  a class-diff genuinely can't apply because the repo component was built
+ *  (or renamed) with its own class vocabulary, zero literal overlap with the
+ *  design source (the same condition STRUCTURAL_WAIVERS documents for
+ *  surfaces with no probe at all). Instead of diffing against the design
+ *  source's classes, each marker checks one concrete, present-or-absent
+ *  structural fact about the REPO's own rendered DOM — named in `description`
+ *  for the report, not a class-name lookup against the canvas.
+ *
+ *  Correctness bar (Muxin, STOP-SHIP 2026-07-09): at least one marker per
+ *  probe must genuinely FAIL against today's unfixed app — that's the honest
+ *  signal that the probe measures something real instead of decorating a
+ *  scenario that would pass regardless — and each should be written so it
+ *  flips to PASS once the corresponding FE gap actually closes.
+ */
+interface MarkerProbe {
+  kind: "marker";
+  scenarioId: string;
+  markers: {
+    /** CSS selector checked against the LIVE rendered app — the repo's own
+     *  real selectors/classes/testids, never a design-source class. */
+    selector: string;
+    /** What finding this selector present-or-absent proves; shown in the
+     *  report in place of a class name. */
+    description: string;
+  }[];
+  note: string;
+}
+
+type Probe = ClassDiffProbe | MarkerProbe;
 
 /**
  * Curated, not exhaustive. Most of the 27 parity-gallery scenarios render
@@ -269,8 +325,9 @@ interface StructuralProbe {
  * MoneyGap.tsx documents its own provenance) — don't guess a mapping onto a
  * component that was only ever asked to be functionally equivalent.
  */
-const STRUCTURAL_PROBES: StructuralProbe[] = [
+const STRUCTURAL_PROBES: Probe[] = [
   {
+    kind: "class-diff",
     scenarioId: "01-orientation-activated",
     domSelector: ".orientation",
     designFile: "design-handoff/keystone-canvas/src/screens-orientation.jsx",
@@ -280,6 +337,7 @@ const STRUCTURAL_PROBES: StructuralProbe[] = [
       "bare div — none of the flagbar/ori-card/ori-step/ori-cta structure has been ported yet.",
   },
   {
+    kind: "class-diff",
     scenarioId: "02a-results-main",
     domSelector: ".median-chip",
     designFile: "design-handoff/design-session/screens-funding.jsx",
@@ -296,6 +354,7 @@ const STRUCTURAL_PROBES: StructuralProbe[] = [
       "port per MoneyGap.tsx's own docstring.",
   },
   {
+    kind: "class-diff",
     scenarioId: "02b-results-funding-expanded",
     domSelector: ".mgap",
     designFile: "design-handoff/design-session/screens-funding.jsx",
@@ -307,9 +366,290 @@ const STRUCTURAL_PROBES: StructuralProbe[] = [
       "MoneyGapH2H too); its one known non-match is 'mgap-src' vs. the design's 'fund-src' " +
       "(which lives outside .mgap in the page chrome there) — reported as an extra, not a gap.",
   },
+  {
+    kind: "class-diff",
+    scenarioId: "02d-results-allvotes-sheet",
+    domSelector: ".av-panel",
+    designFile: "design-handoff/keystone-canvas/src/screens-results.jsx",
+    componentName: "AllVotesSheet",
+    // The repo has no literal "av-panel" class in its own DOM tree that the
+    // design source also uses (canvas's shell is "avsheet"/"avsheet-scrim"),
+    // so getDesignClasses falls back to AllVotesSheet's whole slice (same
+    // documented fallback orientation's ".orientation" probe relies on) —
+    // that's fine, it's still the honest answer: report every design class
+    // found anywhere under the rendered .av-panel subtree as present, the
+    // rest as missing.
+    note:
+      "VoterChoiceApp.tsx's AllVotesPanel literally reuses av-head/av-filters/active from " +
+      "AllVotesSheet (confirmed by grep — not coincidence, same feature) but flattens the " +
+      "canvas's grouped-by-issue/collapsible-detail structure (av-body/av-group/av-row/" +
+      "avr-*/av-detail/avd-*) into a single flat vote list (av-list/av-vote-*) — a real, " +
+      "confirmed structural divergence, matching Muxin's flagged 'the see all votes sheet " +
+      "doesn't match' finding (docs/operations/keystone-parity-failure-handoff-2026-07-08.md).",
+  },
+  {
+    kind: "class-diff",
+    scenarioId: "05b-headtohead",
+    domSelector: ".cmp",
+    designFile: "design-handoff/keystone-canvas/src/screens-candidates.jsx",
+    componentName: "HeadToHead",
+    // "up" is one of three mutually-exclusive ternary classes on the same
+    // <span className={"arrow " + (d > 0 ? "up" : d < 0 ? "down" : "even")}>
+    // element — verbatim-identical code on both sides (confirmed by reading
+    // both files side by side), so the repo can and would render "up" given
+    // a positive-delta ledger row; this scenario's fixture just never
+    // produces one. Genuine unreached state-variant sibling, same category
+    // as MedianChip's "none" above — not a structural gap. ("cmp-empty" is
+    // the repo's own honest no-challengers-filed state, not a canvas class
+    // at all — HeadToHead.tsx's docstring: "only the data bindings and the
+    // honest empty states are new" — so it never appears as "missing" here
+    // and needs no entry.)
+    ignoreMissing: ["up"],
+    note:
+      "HeadToHead.tsx's own docstring: 'PORT of claude-code-handoff/design-session/" +
+      "screens-candidates.jsx → the down-selected DIRECTION B (HeadToHead) ... markup/class " +
+      "names are the design's' — the clearest documented verbatim-port precedent in the repo " +
+      "alongside MoneyGap.tsx's.",
+  },
+  {
+    kind: "class-diff",
+    scenarioId: "08a-about",
+    domSelector: ".sp-wrap",
+    designFile: "design-handoff/keystone-canvas/src/screens-statics.jsx",
+    componentName: "StaticPageVC",
+    note:
+      "The shared shell every static page (About/How it works/Privacy/Tip jar) renders " +
+      "through — repo's StaticPage (VoterChoiceApp.tsx) reuses '.sp-wrap'/'.sp-back' literally " +
+      "but flattens the canvas's sp-mast/sp-kicker/dek grouping into flat sp-eyebrow/sp-title, " +
+      "and renders 'sp-article' instead of 'sp-prose' for the body — a real, confirmed partial " +
+      "port. Probed once here (rather than once per static-page scenario) since all four share " +
+      "this exact component; see the STRUCTURAL_WAIVERS entries for 08b/08c cross-referencing " +
+      "this probe instead of duplicating it (08d-tipjar now has its own marker probe below).",
+  },
+  {
+    kind: "class-diff",
+    scenarioId: "09e-edit-rescored",
+    domSelector: ".ad-list",
+    designFile: "design-handoff/keystone-canvas/src/screens-intake.jsx",
+    componentName: "EditRescored",
+    note:
+      "IssueDeltaBanner.tsx's own docstring: 'the shipped AmendDeltaMessage visuals " +
+      "(.amend-delta / .ad-* classes) over REAL deltas' — a confirmed verbatim port of " +
+      "EditRescored's ad-list/ad-row/ad-race/ad-score/ad-revisit ledger, the same documented " +
+      "precedent as MoneyGap.tsx and HeadToHead.tsx.",
+  },
+  // ---------------------------------------------------------------------
+  // Marker probes (a2) — added STOP-SHIP 2026-07-09 for the 3 surfaces
+  // previously waived outright in STRUCTURAL_WAIVERS because their repo
+  // components (RepCard.tsx's cv2-*, HomeView's hp-hero/addr-*, TipJarPage's
+  // tip-*) share zero class-token overlap with the canvas source. A
+  // class-diff probe would just re-find that same zero-overlap result, so
+  // these check specific, named structural facts against the REPO's own
+  // real selectors instead. Each one below was verified BEFORE being added
+  // to genuinely fail against today's app (see the STOP-SHIP validation
+  // report for the exact command run and output).
+  // ---------------------------------------------------------------------
+  {
+    kind: "marker",
+    scenarioId: "05a-candidates-parity",
+    markers: [
+      {
+        selector: '[data-testid="web-search-alignment-banner"]',
+        description:
+          "renders the researched-alignment panel for a research-basis seat (the repo's " +
+          "closest analog to a non-roll-call card)",
+      },
+      {
+        selector: ".prov",
+        description:
+          "renders a distinct provenance badge (canvas's ProvBadge: 'Roll-call record' vs. " +
+          '\'Researched · cited\', className="prov rollcall"/"prov researched") — HeadToHead.tsx ' +
+          "already ports this exact badge (confirmed by reading it directly) but RepCard.tsx's " +
+          "single-card view (the one this scenario captures) has zero '.prov' markup anywhere",
+      },
+    ],
+    note:
+      "RepCard.tsx (cv2-* prefix) shares zero class-token overlap with screens-candidates.jsx's " +
+      "CandidateParity (cd-* prefix) — same non-literal-port situation as 02c-results-" +
+      "votes-drilldown. The confirmed, checkable gap is the missing provenance badge: the " +
+      "canvas's whole point for this artboard is 'one card, every seat' unified by a roll-call-" +
+      "vs-researched badge (ProvBadge); the repo's single-card view has no equivalent element " +
+      "at all, only a plain italic note for researched candidates.",
+  },
+  {
+    kind: "marker",
+    scenarioId: "06-homehero",
+    markers: [
+      {
+        selector: ".hp-hero",
+        description: "renders the homepage hero section at all",
+      },
+      {
+        selector: ".addr-card",
+        description:
+          "renders the address-entry card (canvas's vh-addr equivalent)",
+      },
+      {
+        selector: '[class*="preview"], [class*="vh-stack"]',
+        description:
+          "renders a second-column live preview panel ('What you'll get' scorecard stack) " +
+          "alongside the address form — canvas's HomeHero is a two-column .vh-left/.vh-preview " +
+          'layout; the repo\'s hero is explicitly single-column (className="hp-hero hp-hero-solo", ' +
+          "confirmed by reading HomeView directly — no preview/stack markup exists anywhere)",
+      },
+    ],
+    note:
+      "HomeView (VoterChoiceApp.tsx) uses its own hp-hero/addr-*/eyebrow/lede vocabulary — " +
+      "confirmed by a full class-token diff against screens-home.jsx's HomeHero (vh-* prefix): " +
+      "zero overlap. The confirmed, checkable gap is structural, not just naming: the repo's " +
+      "own 'hp-hero-solo' class name self-documents that the canvas's second-column live " +
+      "scorecard preview was dropped, not merely renamed.",
+  },
+  {
+    kind: "marker",
+    scenarioId: "08d-tipjar",
+    markers: [
+      {
+        selector: ".tip-list",
+        description: "renders the tip-amount list at all",
+      },
+      {
+        selector: ".tip-amount-btn",
+        description: "renders individual tip-amount buttons",
+      },
+      {
+        selector: ".tip-amount-btn.lead, .tip-amount-btn[data-lead]",
+        description:
+          "one amount is visually marked as the suggested/lead amount (canvas's TipJarVC " +
+          'gives $5 className="sp-tip lead") — repo\'s TIP_AMOUNTS array (VoterChoiceApp.tsx) has ' +
+          "no lead/suggested flag at all, confirmed by reading it directly: all four buttons " +
+          "render identically",
+      },
+    ],
+    note:
+      "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about, plus " +
+      "TipJarPage's own tip-list/tip-amount-btn/tip-note markup with no matching canvas " +
+      "TipJarVC vocabulary (sp-tip/sp-tips/sp-tipnote — a different prefix, zero overlap). The " +
+      "confirmed, checkable gap is the missing lead-amount emphasis, not just the class rename.",
+  },
 ];
 
-function probeForScenario(scenarioId: string): StructuralProbe | undefined {
+/**
+ * Scenarios with NO structural probe, and why. Every one of the 24 gateable
+ * scenarios (all of SCENARIOS except 10a-polis-entry/10b-polis-contribute/
+ * 11a-fieldmoneygap/11b-scalestates, none of which are automatable at all —
+ * see each one's own note in parity-gallery-scenarios.ts) now resolves to
+ * exactly one of STRUCTURAL_PROBES above (class-diff or marker) or this
+ * map — silently skipping a scenario (the pre-existing "24 of 27 uncovered,
+ * unexplained" state this file's own header used to describe) is exactly
+ * the failure Phase 2 of docs/operations/keystone-fidelity-fix-plan-
+ * 2026-07-08.md exists to close. STOP-SHIP 2026-07-09 moved 3 of these
+ * (05a-candidates-parity/06-homehero/08d-tipjar) into STRUCTURAL_PROBES as
+ * marker probes instead — a waiver on its own was a dead end for those
+ * three (see reason (a) below): it correctly explained why a class-diff
+ * can't apply, but left the surface with no structural check at all, only
+ * the downscaled visual diff — exactly the gap that let those surfaces
+ * false-pass.
+ *
+ * A waiver is NOT a pass and never silences the VISUAL check, which still
+ * runs and gates every waived scenario same as any other — it only means
+ * "no design-source class vocabulary survives to literal-diff against this
+ * repo component," for one of two reasons, always stated explicitly below:
+ *   (a) the repo component was built (or later renamed) with its own class
+ *       convention rather than a verbatim port — confirmed by a full
+ *       class-token diff between the design source and the repo file finding
+ *       ~0 overlap, not assumed from a filename match; or
+ *   (b) the scenario's capture() is a documented proxy that reuses another,
+ *       already-probed scenario's exact DOM (see that scenario's own
+ *       automatable:"proxy" note in parity-gallery-scenarios.ts) — probing it
+ *       separately would just re-report the anchor probe's result under a
+ *       different id, not add new signal.
+ * Extending STRUCTURAL_PROBES later: if a waived surface gets rebuilt as a
+ * literal port, move its entry from here into STRUCTURAL_PROBES rather than
+ * leaving a stale waiver reason next to a probe that would now pass. If a
+ * literal port genuinely can't apply (reason (a)) but the surface still has
+ * no structural check, consider a marker probe instead of leaving it waived
+ * — see MarkerProbe's doc comment above for the correctness bar.
+ */
+const STRUCTURAL_WAIVERS: Record<string, string> = {
+  "02c-results-votes-drilldown":
+    "RepCard.tsx's vote-drilldown markup uses its own cv2-drill/cv2-drill-head prefix — " +
+    "confirmed by a full class-token diff against screens-results.jsx's align-band/align-row/" +
+    "align-track/at-* tokens (zero overlap). HANDOFF-EXACT-MATCH.md §2 only ever claims " +
+    "functional equivalence for RepCard, never a literal class port (the same reason 02a/02b's " +
+    "probes above target MedianChip/FieldMoneyGap, not RepCard's own markup).",
+  "03-color-bold-flag":
+    "Proxy scenario (see parity-gallery-scenarios.ts) — its capture() is the same sequence as " +
+    "02a-results-main's (mockSeatRaceDataMedian + setMoneyDisclosure(false)), so a probe here " +
+    "would just re-report 02a's already-covered .median-chip result under a different id. The " +
+    "canvas's own '03-color' artboard is a trimmed side-by-side palette-demo card with no " +
+    "standalone repo surface to compare against anyway.",
+  "04-scorecard":
+    "ScorecardPrintView.tsx uses its own print-sheet/ballot-list/verdict-row/voter-meta-" +
+    "logistics vocabulary — confirmed by a full class-token diff against screens-scorecard.jsx's " +
+    "sheet/dec/dec-badge/sheet-mast/sheet-meta tokens (zero overlap). HANDOFF §4 only claims " +
+    "structural/behavioral parity (decisions lead, percentage copy, non-2026 filter), never a " +
+    "class port. Known real gap this can't localize by class-diffing alone: the 'Not on your " +
+    "ballot this year' section has no repo equivalent — ScorecardPrintView.tsx:43-46 filters " +
+    "non-2026 seats out entirely (Phase 0 finding #4, docs/operations/" +
+    "keystone-phase0-findings-2026-07-08.md).",
+  "07-whynow":
+    "WhyNowPage (VoterChoiceApp.tsx) uses its own stat-stack vocabulary — confirmed by a full " +
+    "class-token diff against screens-whynow.jsx's WhyNow (wn-* prefix): zero overlap beyond " +
+    "single-letter tokens too generic to probe meaningfully (cite/l/v).",
+  "08b-howitworks":
+    "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
+    "that probe's note. MethodologyPage's own body content sits outside the probed shell.",
+  "08c-privacy":
+    "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
+    "that probe's note.",
+  "08e-loading":
+    "LoadingView (VoterChoiceApp.tsx) uses its own loading-screen/loading-card/pulse " +
+    "vocabulary — confirmed by a full class-token diff against screens-statics.jsx's LoadingVC " +
+    "(ldg-* prefix): zero overlap beyond the generic 'ck' checkmark token. Phase 0 already " +
+    "confirmed the underlying checklist-timing behavior is correct; this waiver is about class " +
+    "vocabulary only, not a behavioral gap.",
+  "09a-intake-ask":
+    "IssueConversation.tsx/IntakeView.tsx use their own co-*/msg/bubble/chip/send vocabulary — " +
+    "confirmed by a full class-token diff against screens-intake.jsx's IqShell/IqMsg/IqRow/" +
+    "IqComposer family (iq-* prefix): zero exact-token overlap (semantically similar names " +
+    "like 'chip'/'iq-chip' don't count as a literal-class match, only identical tokens do).",
+  "09b-intake-propose":
+    "Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.",
+  "09c-intake-locked":
+    "Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.",
+  "09d-edit-issues":
+    "EditIssuesModal.tsx renamed the canvas's amd-* prefix (screens-intake.jsx's EditIssues) to " +
+    "amend-*/amend-modal/amend-card — not an exact-token match, confirmed by a full class-token " +
+    "diff (zero literal overlap). The one part of this flow that IS a confirmed verbatim port " +
+    "(IssueDeltaBanner's ad-list ledger) is probed separately at 09e-edit-rescored, the scenario " +
+    "where it actually renders.",
+  "10c-polis-report-consensus":
+    "PolisClose.tsx uses its own polis-*/overlap-*/bridge*/scatter* vocabulary — confirmed by a " +
+    "full class-token diff against screens-polis.jsx's PolisReport (pr-* prefix): zero overlap. " +
+    "The mock now feeds real bridges + divided data (parity-gallery-scenarios.ts), but " +
+    "PolisClose.tsx doesn't render a divided/'where it split' section at all until PR #240 " +
+    "merges (not yet merged as of this waiver). Once it does, the remaining VISUAL diff against " +
+    "the canvas ref is EXPECTED, not a bug: the canvas's divided panel groups by D/R/I party " +
+    "cluster, while this repo deliberately stays population-level with no party breakdown, " +
+    "ever — the approved party-free pivot (DECISION #116, voter-choice-backlog.md 'KEEP the " +
+    "existing party-free product decision (#116)'). This waiver documents that expected gap; " +
+    "it does not silence the visual check, which still runs and gates this scenario same as " +
+    "any other.",
+  "10d-polis-report-divided":
+    "Same PolisClose.tsx vocabulary gap as 10c-polis-report-consensus — see that waiver's " +
+    "note. Same divided-data + party-free-diff reasoning (DECISION #116) — also still a " +
+    "documented proxy itself until PR #240 merges: PolisClose has no computed divided/split " +
+    "branch on main today (see this scenario's own note in parity-gallery-scenarios.ts).",
+  "11c-moneygaph2h":
+    "MoneyGapH2H was removed as dead code (#239, 2026-07-08) — the duel screen's money " +
+    "treatment is the '.cmp-fund' PAC-percentage footnote instead, which the 05b-headtohead " +
+    "probe above already covers as a required class (cmp-fund is part of HeadToHead's own " +
+    "canvas markup, not MoneyGapH2H's — confirmed by reading screens-candidates.jsx's " +
+    "HeadToHead directly).",
+};
+
+function probeForScenario(scenarioId: string): Probe | undefined {
   return STRUCTURAL_PROBES.find((p) => p.scenarioId === scenarioId);
 }
 
@@ -356,7 +696,16 @@ function extractComponentSlice(source: string, componentName: string): string {
 /** Pulls space-separated class tokens out of literal string parts of a
  *  className value — `"a b"`, `'a b'`, `` `a ${dyn} b` `` (dynamic
  *  ${...} segments are dropped, not treated as a class name), across
- *  string-concatenation (`"a " + expr`) and ternaries (`cond ? "a" : "b"`). */
+ *  string-concatenation (`"a " + expr`) and ternaries (`cond ? "a" : "b"`).
+ *
+ *  Trailing-hyphen fragments (e.g. the `"tone-"` in
+ *  `className={"tone-" + cdTone(p)}`) are dropped too: no real class in
+ *  either the canvas source or the repo ends in a bare "-" — it only ever
+ *  shows up as the literal half of a `"prefix-" + dynamicSuffix`
+ *  concatenation, which this extractor (not a real JS evaluator) can't
+ *  resolve to the actual rendered class. Reporting "tone-" itself as
+ *  missing/found is meaningless noise; observed on the 05b-headtohead probe
+ *  before this filter was added. */
 function extractLiteralTokens(exprText: string): string[] {
   const cleaned = exprText.replace(/\$\{[^}]*\}/g, " ");
   const tokens: string[] = [];
@@ -365,7 +714,7 @@ function extractLiteralTokens(exprText: string): string[] {
   while ((m = stringRe.exec(cleaned))) {
     const literal = m[1] ?? m[2] ?? m[3] ?? "";
     for (const tok of literal.split(/\s+/)) {
-      if (tok) tokens.push(tok);
+      if (tok && !tok.endsWith("-")) tokens.push(tok);
     }
   }
   return tokens;
@@ -489,7 +838,7 @@ function extractJsxElementAt(slice: string, tagStart: number): string {
  *  literally carries `classToken`, and returns each as its own subtree
  *  (children included). Used to narrow a probe's comparison down to the
  *  specific element domSelector targets, when that element is nested inside
- *  page chrome the probe was never meant to check (see the StructuralProbe
+ *  page chrome the probe was never meant to check (see the ClassDiffProbe
  *  interface doc). Returns [] when the token isn't literally used anywhere
  *  in the slice — callers should fall back to the whole slice in that case
  *  (e.g. orientation's ".orientation" selector has no "orientation" token in
@@ -561,7 +910,7 @@ function extractJsxSlicesByClass(
  *  ".mgap" — narrowing excludes that chrome's classes, which were never
  *  meant to be ported into the RepCard disclosure this probe checks).
  *  Falls back to the whole component slice when no such subtree is found. */
-function getDesignClasses(probe: StructuralProbe): Set<string> {
+function getDesignClasses(probe: ClassDiffProbe): Set<string> {
   const filePath = path.join(REPO_ROOT, probe.designFile);
   const source = fs.readFileSync(filePath, "utf8");
   const slice = extractComponentSlice(source, probe.componentName);
@@ -610,6 +959,35 @@ interface StructuralResult {
   renderedClassCount?: number;
   skipReason?: string;
   note?: string;
+  /** Which probe kind produced this result — steers printReport's wording
+   *  ("design classes" vs. "structural markers"). Omitted for legacy
+   *  class-diff results (equivalent to "class-diff"). */
+  kind?: ProbeKind;
+}
+
+/** (a2) marker check — see MarkerProbe's doc comment for what this measures
+ *  and why. Each marker is graded independently by presence/absence in the
+ *  live DOM; the probe passes only when every marker is present. */
+async function runMarkerCheck(
+  probe: MarkerProbe,
+  page: Page,
+): Promise<StructuralResult> {
+  const found: string[] = [];
+  const missing: string[] = [];
+  for (const marker of probe.markers) {
+    const count = await page.locator(marker.selector).count();
+    (count > 0 ? found : missing).push(marker.description);
+  }
+  return {
+    ran: true,
+    pass: missing.length === 0,
+    missing,
+    extra: [],
+    designClassCount: probe.markers.length,
+    renderedClassCount: found.length,
+    note: probe.note,
+    kind: "marker",
+  };
 }
 
 async function runStructuralCheck(
@@ -618,10 +996,17 @@ async function runStructuralCheck(
 ): Promise<StructuralResult> {
   const probe = probeForScenario(scenario.id);
   if (!probe) {
+    const waiver = STRUCTURAL_WAIVERS[scenario.id];
     return {
       ran: false,
-      skipReason: "no structural probe defined for this scenario yet",
+      skipReason: waiver
+        ? `WAIVED: ${waiver}`
+        : "no structural probe defined for this scenario yet (undocumented — " +
+          "add a STRUCTURAL_PROBES entry or a STRUCTURAL_WAIVERS reason)",
     };
+  }
+  if (probe.kind === "marker") {
+    return runMarkerCheck(probe, page);
   }
   const designClasses = getDesignClasses(probe);
   const { found, classes: renderedClasses } = await getRenderedClasses(
@@ -637,6 +1022,7 @@ async function runStructuralCheck(
       designClassCount: designClasses.size,
       renderedClassCount: 0,
       note: `${probe.note} [selector "${probe.domSelector}" not found in the rendered page at all]`,
+      kind: "class-diff",
     };
   }
   const ignoreSet = new Set(probe.ignoreMissing ?? []);
@@ -652,6 +1038,165 @@ async function runStructuralCheck(
     extra,
     designClassCount: designClasses.size,
     renderedClassCount: renderedClasses.size,
+    note: probe.note,
+    kind: "class-diff",
+  };
+}
+
+// ---------------------------------------------------------------------------
+// (c) CONTENT check
+// ---------------------------------------------------------------------------
+
+/** Verbatim copy-verification probe — see file header (c). Independent of
+ *  both STRUCTURAL_PROBES and the visual diff: it doesn't check that a
+ *  selector exists (that's (a)) or that pixels roughly match (that's (b),
+ *  and deliberately too coarse for this — see "why downscale" above); it
+ *  checks that specific, exact strings — copied verbatim out of the canvas
+ *  design source, the same source-of-truth convention ClassDiffProbe.designFile
+ *  already follows — actually render as text on the live page. This is what
+ *  catches a missing paragraph or drifted copy that a structural/visual pass
+ *  would wave through. */
+interface ContentProbe {
+  scenarioId: string;
+  assertions: { text: string; description: string }[];
+  note: string;
+}
+
+/**
+ * Curated, not exhaustive — one real entry today. Extending this list: copy
+ * the assertion text verbatim (Read the design source directly, don't retype
+ * from memory) and split around any em-dash/smart-quote so each assertion
+ * stays plain-ASCII-safe; see the 08b-howitworks entry below.
+ */
+const CONTENT_PROBES: ContentProbe[] = [
+  {
+    scenarioId: "08b-howitworks",
+    assertions: [
+      {
+        text: "Every number on a card traces to your own words and to an official source",
+        description:
+          "the How it works dek (first half, split before the em-dash) — canvas's HowItWorksVC " +
+          '(screens-statics.jsx) passes dek="Every number on a card traces to your own words ' +
+          'and to an official source — never to a guess." to StaticPageVC',
+      },
+      {
+        text: "never to a guess.",
+        description:
+          "the How it works dek (second half, split after the em-dash)",
+      },
+      {
+        text: "we extract canonical issues and a directional stance",
+        description:
+          "step 1 body (Issues come from you) — canvas's actual wording, not the repo's prior " +
+          '"Every score in this app traces back to your own words" phrasing',
+      },
+      {
+        text: "the raw vote",
+        description:
+          "step 4 body (“With you / against you” is your stance vs. the vote) — " +
+          'canvas ends the step with "we show the raw vote", confirming the step-4 paragraph ' +
+          "was restored verbatim rather than left as the repo's prior wording",
+      },
+    ],
+    note:
+      "Previously a genuine FAIL (confirmed by reading both sides directly): MethodologyPage " +
+      "(src/prototype/VoterChoiceApp.tsx) called <StaticPage onBack={onBack} " +
+      'eyebrow="Methodology" title="How we score candidates."> with no dek prop at all, and ' +
+      "StaticPage's own signature (function StaticPage({ title, eyebrow, children, onBack })) " +
+      "didn't even accept one — so the dek sentence never rendered anywhere on the page. Fixed: " +
+      "StaticPage now accepts dek (see 08d-tipjar's identical fix), MethodologyPage passes the " +
+      "verbatim canvas dek, and its 4 steps were rebuilt onto canvas's .sp-step/.n numbered-badge " +
+      "structure with per-step body copy restored verbatim (bullet-list sub-items collapsed back " +
+      "to canvas's single flowing paragraphs). The 2 added assertions above lock in that the step " +
+      "bodies were actually replaced, not just the dek — the original class of gap (a)/(b) both " +
+      "miss: '08b-howitworks' has a structural WAIVER (renders the same probed sp-wrap/sp-back " +
+      "shell as 08a-about — no class signal to catch missing/drifted copy), and the coarse " +
+      "downscaled visual diff isn't built to notice a paragraph of drifted text.",
+  },
+  // A 08d-tipjar CONTENT_PROBES entry is a natural follow-up once
+  // wt/tipjar-bold-flag-pass (a separate, not-yet-merged branch fixing that
+  // page's copy) lands — not added here, see this worktree's task brief.
+  {
+    scenarioId: "08a-about",
+    assertions: [
+      {
+        text: "Built and operated by Grey Bird LLC",
+        description:
+          "the About dek (first half, split before the em-dash) — canvas's AboutVC " +
+          '(screens-statics.jsx) passes dek="Built and operated by Grey Bird LLC — a small ' +
+          "independent shop closing the gap between what a candidate says and what they " +
+          'actually did." to StaticPageVC',
+      },
+      {
+        text: "a small independent shop closing the gap between what a candidate says and what they actually did.",
+        description: "the About dek (second half, split after the em-dash)",
+      },
+      {
+        text: "The one thing we deliberately keep: your",
+        description:
+          "the Polis-retention paragraph (first half, split before the bold 'chosen issues') — " +
+          "previously 100% missing from AboutPage (src/prototype/VoterChoiceApp.tsx), which had " +
+          "no mention of Polis at all",
+      },
+      {
+        text: "retained de-identified and in aggregate to power",
+        description:
+          "the Polis-retention paragraph (second half, split around the bold 'state')",
+      },
+    ],
+    note:
+      "Genuine FAIL before the fix, confirmed by reading both sides directly: AboutPage " +
+      '(src/prototype/VoterChoiceApp.tsx) called <StaticPage onBack={onBack} eyebrow="About ' +
+      'Voter Choice" title="A free, non-partisan Congress-assessment tool."> with no dek prop ' +
+      "and different title wording, and its body had no Polis-retention paragraph anywhere — " +
+      "the exact class of gap (a)/(b) both miss: '08a-about' already has a STRUCTURAL FAIL for " +
+      "an unrelated reason (the sp-mast/sp-kicker/dek/sp-prose class-diff above), so a passing " +
+      "structural check would never have caught this, and the coarse downscaled visual diff " +
+      "isn't built to notice one missing paragraph of text.",
+  },
+];
+
+function contentProbeForScenario(scenarioId: string): ContentProbe | undefined {
+  return CONTENT_PROBES.find((p) => p.scenarioId === scenarioId);
+}
+
+interface ContentResult {
+  ran: boolean;
+  pass?: boolean;
+  missing?: string[];
+  checkedCount?: number;
+  skipReason?: string;
+  note?: string;
+}
+
+/** Whitespace-normalizes before substring-matching so line-wrapping/DOM
+ *  whitespace differences don't produce false negatives. */
+function normalizeWhitespace(s: string): string {
+  return s.replace(/\s+/g, " ");
+}
+
+async function runContentCheck(
+  probe: ContentProbe | undefined,
+  page: Page,
+): Promise<ContentResult> {
+  if (!probe) {
+    return {
+      ran: false,
+      skipReason: "no content probe defined for this scenario",
+    };
+  }
+  const bodyText = normalizeWhitespace(await page.locator("body").innerText());
+  const missing: string[] = [];
+  for (const assertion of probe.assertions) {
+    if (!bodyText.includes(normalizeWhitespace(assertion.text))) {
+      missing.push(assertion.description);
+    }
+  }
+  return {
+    ran: true,
+    pass: missing.length === 0,
+    missing,
+    checkedCount: probe.assertions.length,
     note: probe.note,
   };
 }
@@ -706,12 +1251,24 @@ interface BBox {
  *  the app is entirely light/white/cream-themed, and the lightbox's dimmed
  *  backdrop + dark annotation chrome sit well below this. */
 const CONTENT_BRIGHTNESS_THRESHOLD = 200;
-/** A row/column only counts as part of the content card if it has a
- *  contiguous run of light pixels spanning at least this fraction of the
- *  image — filters out small bright specks (annotation text, nav-arrow
- *  glyphs, the light dots in the lightbox's page-index strip) that sit
- *  outside the actual card. */
-const CONTENT_RUN_FRACTION = 0.5;
+/** A row/column counts as part of the content card if its longest contiguous
+ *  run of light pixels is at least this fraction of the WIDEST such run in the
+ *  image (i.e. of the card's own detected width) — NOT a fraction of the full
+ *  1600px frame. The lightbox scales each artboard to fit the fixed frame, so
+ *  a tall page (About / How-it-works / Privacy) renders a much narrower card;
+ *  the old "0.5 of the 1600px frame = 800px" bar rejected every row of those
+ *  cards (their widest bright run is only ~710-730px), so cropping was skipped
+ *  and the dark lightbox chrome stayed in the diff, inflating the ratio to
+ *  ~0.35 on pages that actually matched. Keying off the card's own width crops
+ *  them correctly and leaves every already-cropping scenario's box unchanged. */
+const CARD_RUN_FRACTION = 0.6;
+/** Absolute floor for the widest bright run, as a fraction of frame width:
+ *  below this there is no real light card (a dark/empty ref, or only stray
+ *  annotation/nav specks), so cropping is skipped and the caller falls back to
+ *  the full frame. The narrowest real card in the ref set is ~340px (21% of
+ *  1600); annotation/nav specks run well under 100px, so 0.15 (240px) cleanly
+ *  separates a genuine narrow card from chrome noise. */
+const CARD_MIN_RUN_FRACTION = 0.15;
 
 /** Detects the bounding box of the light "app content card" inside a canvas
  *  review-lightbox screenshot. The ref PNGs in .keystone-canvas-refs/ are
@@ -734,7 +1291,11 @@ function detectContentBBox(img: RgbaImage): BBox | null {
     const i = (y * W + x) * 4;
     return (data[i] + data[i + 1] + data[i + 2]) / 3;
   };
-  const rowsWithBigRun: number[] = [];
+  // Longest contiguous bright run in each row; the widest of these ≈ the card's
+  // own width (the card is the brightest structure — the dimmed backdrop sits
+  // below CONTENT_BRIGHTNESS_THRESHOLD).
+  const rowRuns = new Array<number>(H);
+  let maxRowRun = 0;
   for (let y = 0; y < H; y++) {
     let run = 0;
     let best = 0;
@@ -746,13 +1307,24 @@ function detectContentBBox(img: RgbaImage): BBox | null {
         run = 0;
       }
     }
-    if (best > W * CONTENT_RUN_FRACTION) rowsWithBigRun.push(y);
+    rowRuns[y] = best;
+    if (best > maxRowRun) maxRowRun = best;
   }
-  if (rowsWithBigRun.length === 0) return null;
+  // No real light card present (dark/empty ref, or only stray chrome specks).
+  if (maxRowRun < W * CARD_MIN_RUN_FRACTION) return null;
+
+  const rowThreshold = maxRowRun * CARD_RUN_FRACTION;
+  const rowsWithBigRun: number[] = [];
+  for (let y = 0; y < H; y++) {
+    if (rowRuns[y] >= rowThreshold) rowsWithBigRun.push(y);
+  }
   const y0 = rowsWithBigRun[0];
   const y1 = rowsWithBigRun[rowsWithBigRun.length - 1];
 
-  const colsWithBigRun: number[] = [];
+  // Same, per column, within the detected vertical band — threshold relative to
+  // the widest column run (the card's own height in this band).
+  const colRuns = new Array<number>(W);
+  let maxColRun = 0;
   for (let x = 0; x < W; x++) {
     let run = 0;
     let best = 0;
@@ -764,9 +1336,14 @@ function detectContentBBox(img: RgbaImage): BBox | null {
         run = 0;
       }
     }
-    if (best > (y1 - y0) * CONTENT_RUN_FRACTION) colsWithBigRun.push(x);
+    colRuns[x] = best;
+    if (best > maxColRun) maxColRun = best;
   }
-  if (colsWithBigRun.length === 0) return null;
+  const colThreshold = maxColRun * CARD_RUN_FRACTION;
+  const colsWithBigRun: number[] = [];
+  for (let x = 0; x < W; x++) {
+    if (colRuns[x] >= colThreshold) colsWithBigRun.push(x);
+  }
   const x0 = colsWithBigRun[0];
   const x1 = colsWithBigRun[colsWithBigRun.length - 1];
 
@@ -815,6 +1392,9 @@ async function runVisualCheck(
   threshold: number,
   pixelmatch: PixelmatchFn,
 ): Promise<VisualResult> {
+  if (!scenario.refFile) {
+    return { ran: false, skipReason: "no canvas export for this scenario" };
+  }
   const refPath = path.join(REFS_DIR, scenario.refFile);
   if (!fs.existsSync(refPath)) {
     return { ran: false, skipReason: `ref PNG missing: ${scenario.refFile}` };
@@ -872,16 +1452,18 @@ interface GateResult {
   scenario: Scenario;
   captureError?: string;
   structural: StructuralResult;
+  content: ContentResult;
   visual: VisualResult;
 }
 
 function overallPass(r: GateResult): boolean | null {
   if (r.captureError) return false;
   const structuralOk = !r.structural.ran || r.structural.pass === true;
+  const contentOk = !r.content.ran || r.content.pass === true;
   const visualOk = !r.visual.ran || r.visual.pass === true;
-  const anyRan = r.structural.ran || r.visual.ran;
+  const anyRan = r.structural.ran || r.content.ran || r.visual.ran;
   if (!anyRan) return null; // nothing to gate on for this scenario
-  return structuralOk && visualOk;
+  return structuralOk && contentOk && visualOk;
 }
 
 function printReport(results: GateResult[], threshold: number): boolean {
@@ -911,8 +1493,10 @@ function printReport(results: GateResult[], threshold: number): boolean {
     }
     if (r.structural.ran) {
       const s = r.structural;
+      const unitLabel =
+        s.kind === "marker" ? "structural markers" : "design classes";
       console.log(
-        `  structural: ${s.pass ? "PASS" : "FAIL"} — ${s.designClassCount} design classes checked, ` +
+        `  structural: ${s.pass ? "PASS" : "FAIL"} — ${s.designClassCount} ${unitLabel} checked, ` +
           `${s.missing?.length ?? 0} missing, ${s.extra?.length ?? 0} extra`,
       );
       if (s.missing && s.missing.length > 0) {
@@ -933,6 +1517,19 @@ function printReport(results: GateResult[], threshold: number): boolean {
       if (s.note) console.log(`    note: ${s.note}`);
     } else {
       console.log(`  structural: skipped (${r.structural.skipReason})`);
+    }
+    if (r.content.ran) {
+      const c = r.content;
+      console.log(
+        `  content: ${c.pass ? "PASS" : "FAIL"} — ${c.checkedCount} assertions checked, ` +
+          `${c.missing?.length ?? 0} missing`,
+      );
+      if (c.missing && c.missing.length > 0) {
+        console.log(`    missing: ${c.missing.join(", ")}`);
+      }
+      if (c.note) console.log(`    note: ${c.note}`);
+    } else {
+      console.log(`  content: skipped (${r.content.skipReason})`);
     }
     if (r.visual.ran) {
       const v = r.visual;
@@ -1001,6 +1598,7 @@ async function main(): Promise<void> {
           results.push({
             scenario,
             structural: { ran: false, skipReason: "scenario not automatable" },
+            content: { ran: false, skipReason: "scenario not automatable" },
             visual: { ran: false, skipReason: "scenario not automatable" },
           });
           continue;
@@ -1016,6 +1614,10 @@ async function main(): Promise<void> {
           await page.screenshot({ path: screenshotPath, fullPage: true });
 
           const structural = await runStructuralCheck(scenario, page);
+          const content = await runContentCheck(
+            contentProbeForScenario(scenario.id),
+            page,
+          );
           const visual = await runVisualCheck(
             scenario,
             screenshotPath,
@@ -1023,7 +1625,7 @@ async function main(): Promise<void> {
             args.threshold,
             pixelmatch,
           );
-          results.push({ scenario, structural, visual });
+          results.push({ scenario, structural, content, visual });
           console.log(`  ${scenario.id} captured + checked`);
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
@@ -1031,6 +1633,7 @@ async function main(): Promise<void> {
             scenario,
             captureError: message,
             structural: { ran: false, skipReason: "capture failed" },
+            content: { ran: false, skipReason: "capture failed" },
             visual: { ran: false, skipReason: "capture failed" },
           });
           console.log(

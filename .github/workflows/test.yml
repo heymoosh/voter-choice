@@ -39,6 +39,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      # scripts/design/capture-shared.test.ts launches a real headless
+      # browser (not jsdom) to regression-test the scroll-trap capture fix,
+      # so the unit-test step needs Chromium installed too.
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Unit tests
         run: npm run test
 

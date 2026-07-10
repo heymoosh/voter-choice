@@ -4915,13 +4915,14 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    es) so WhyNowPage can render a localized set via t(). Keep every entry
    cited (no uncited stats) and non-partisan. */
 
-function StaticPage({ title, eyebrow, children, onBack }) {
+function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
   return (
-    <div className="sp-wrap">
+    <div className={`sp-wrap${className ? ' ' + className : ''}`}>
       <div className="sp-inner">
         <button className="sp-back" onClick={onBack}>← Back</button>
         <div className="sp-eyebrow">{eyebrow}</div>
         <h1 className="sp-title">{title}</h1>
+        {dek && <p className="sp-dek">{dek}</p>}
         <article className="sp-article">{children}</article>
       </div>
     </div>
@@ -4930,22 +4931,24 @@ function StaticPage({ title, eyebrow, children, onBack }) {
 
 function AboutPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan Congress-assessment tool.">
-      <p>Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
+    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan Congress-assessment tool." dek="Built and operated by Grey Bird LLC — a small independent shop closing the gap between what a candidate says and what they actually did." className="sp-about">
+      <p>We made Voter Choice because the distance between “what a candidate says in their ads” and “what they actually voted on” has widened every cycle. Voters deserve a tool that closes it.</p>
 
       <h2>What we do</h2>
-      <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues you told us matter, vote by vote.</p>
+      <p>For every race on your ballot we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote. We score how each candidate aligns with the issues <i>you</i> told us matter — vote by vote.</p>
 
       <h2>What we don't do</h2>
       <ul>
         <li><b>No accounts.</b> No sign-up, no email, no password.</li>
-        <li><b>No tracking.</b> No analytics, no telemetry, no pixels.</li>
-        <li><b>No endorsement.</b> We don't tell you who to vote for. We show you what the candidates have done. The final choice is yours.</li>
-        <li><b>No data hoarding.</b> Your address, draft picks, and chat history live in your browser. If you close the tab and didn't save a profile, it's gone.</li>
+        <li><b>No third-party analytics.</b> No ad pixels, no telemetry, no cross-site tracking.</li>
+        <li><b>No endorsement.</b> We don't tell you who to vote for — we show you what they've done. The choice is yours.</li>
+        <li><b>No data hoarding.</b> Your address, draft picks, and chat live in your browser. Close the tab without saving and it's gone.</li>
       </ul>
 
+      <p>The one thing we deliberately keep: your <b>chosen issues</b> and your <b>state</b> — never your street address — retained de-identified and in aggregate to power <b>Polis</b>, our shared opinion map. Everything else stays on your device.</p>
+
       <h2>Who pays for this?</h2>
-      <p>Server costs, Anthropic API budget, and the editorial work behind CAN2026 case files are funded by <b>Grey Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial. We publish a quarterly funding statement.</p>
+      <p>Server costs, the Anthropic API budget, and the editorial work behind our case files are funded by <b>Grey Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial.</p>
       <p>When our community AI budget runs out, you can bring your own Anthropic API key (Settings → BYOK) or hand off to any chatbot with a portable prompt. We'd rather pause than monetize you.</p>
 
       <h2>Get in touch</h2>
@@ -4956,50 +4959,59 @@ function AboutPage({ onBack }) {
 
 function MethodologyPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Methodology" title="How we score candidates.">
-      <h2>Step 1 · Issues come from you</h2>
-      <p>Every score in this app traces back to <b>your own words</b>. When you type your concerns in the cold open, we extract canonical issues + a directional stance ("favors lower drug prices"). You confirm, rename, or remove before any scoring happens. We don't pre-bake an issue list and check boxes against it.</p>
+    <StaticPage onBack={onBack} eyebrow="Methodology" title="How we score candidates." dek="Every number on a card traces to your own words and to an official source — never to a guess." className="sp-methodology">
+      <div className="sp-step">
+        <div className="n">1</div>
+        <div>
+          <h3>Issues come from you</h3>
+          <p>When you describe your concerns, we extract canonical issues and a directional stance (“favors lower drug prices”). You confirm, rename, or remove before any scoring happens. We don't pre-bake a list and check boxes against it.</p>
+        </div>
+      </div>
+      <div className="sp-step">
+        <div className="n">2</div>
+        <div>
+          <h3>Votes come from official roll-call data</h3>
+          <p>Federal from <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov</a>, state from each legislature. For each issue our editors select 2–5 “case file” votes — the bills that most directly test it. No curated case file? The score reads <i>“thin record”</i> instead of guessing.</p>
+        </div>
+      </div>
+      <div className="sp-step">
+        <div className="n">3</div>
+        <div>
+          <h3>Donor data comes from FEC + state filings</h3>
+          <p>Federal from the <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> and <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>; state from ethics commissions. Named issue PACs are broken out only when they have a public, citable agenda.</p>
+        </div>
+      </div>
+      <div className="sp-step">
+        <div className="n">4</div>
+        <div>
+          <h3>“With you / against you” is your stance vs. the vote</h3>
+          <p>If you favor lower drug prices, a vote FOR Medicare price negotiation reads “WITH YOU”; a vote AGAINST reads “AGAINST YOU.” When the record is mixed, we show the raw vote — never a softened summary.</p>
+        </div>
+      </div>
 
-      <h2>Step 2 · Votes come from official roll-call data</h2>
-      <ul>
-        <li>Federal: <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov roll-call votes</a>.</li>
-        <li>State: per-state legislative reporting via <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates</a> and your state legislature's official records.</li>
-      </ul>
-      <p>For each issue, our editorial team selects 2–5 "case file" votes — the bills that most directly test the issue. Every score on a candidate card is computed from these case file votes only. If we don't have a curated case file for an issue × jurisdiction, the score reads <i>"thin record"</i> instead of guessing.</p>
-
-      <h2>Step 3 · Donor data comes from FEC + state filings</h2>
-      <ul>
-        <li>Federal candidates: <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> + <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>.</li>
-        <li>State candidates: your state's ethics commission or campaign finance disclosure office.</li>
-        <li><b>Named issue PACs</b> are editorially vetted — we only break a PAC out separately if it has a public stated agenda we can cite.</li>
-      </ul>
-
-      <h2>Step 4 · "With you / against you" is your stance vs. the vote</h2>
-      <p>If you said you favor lower drug prices, a vote FOR Medicare drug-price negotiation reads "WITH YOU." A vote AGAINST reads "AGAINST YOU." When the record is mixed, we show the raw vote — never a softened summary.</p>
-
-      <h2>AI's role</h2>
-      <p>The AI's job is to <b>route + summarize</b>, not to invent. It pulls from our structured database (votes, donors, narratives) and presents them. It does not generate vote claims. If a vote isn't in our database, we don't show it.</p>
+      <h2>The AI's role</h2>
+      <p>The AI's job is to <b>route and summarize</b>, not to invent. It pulls from our structured database of votes, donors, and narratives. It does not generate vote claims — if a vote isn't in our database, we don't show it.</p>
 
       <h2>Mistakes</h2>
-      <p>We will make them. When we do, we publish a correction and update the case file. Every claim links to a primary source so you can verify yourself. If you find one, email <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>.</p>
+      <p>We'll make them. When we do, we publish a correction and update the case file. Every claim links to a primary source so you can verify it yourself. Found one? Email <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>.</p>
     </StaticPage>
   );
 }
 
 const TIP_AMOUNTS = [
   { label: '$3',  url: 'https://buy.stripe.com/7sY3cvcQ54cxeL34xc00005' },
-  { label: '$5',  url: 'https://buy.stripe.com/4gM6oH6rHdN76exgfU00006' },
+  { label: '$5',  url: 'https://buy.stripe.com/4gM6oH6rHdN76exgfU00006', lead: true },
   { label: '$10', url: 'https://buy.stripe.com/fZu14n17n4cxauN1l000007' },
   { label: '$25', url: 'https://buy.stripe.com/14AfZheYd9wRbyR4xc00008' },
 ];
 
 function TipJarPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive.">
+    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive." dek="No ads, no tracking, no data sales. Tips and small individual contributions are the only revenue." className="sp-tipjar">
       <ul className="tip-list tip-list--amounts">
-        {TIP_AMOUNTS.map(({ label, url }) => (
+        {TIP_AMOUNTS.map(({ label, url, lead }) => (
           <li key={label}>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="tip-amount-btn">
+            <a href={url} target="_blank" rel="noopener noreferrer" className={`tip-amount-btn${lead ? ' lead' : ''}`}>
               {label}
             </a>
           </li>
@@ -5010,9 +5022,9 @@ function TipJarPage({ onBack }) {
       <h2>Where it goes</h2>
       <ul>
         <li><b>Anthropic API spend</b> — the AI chat budget that runs out when too many voters use it at once.</li>
-        <li><b>Server + hosting</b> — Vercel + a small Redis instance for rate-limiting.</li>
+        <li><b>Server + hosting</b> — Vercel plus a small Redis instance for rate-limiting.</li>
       </ul>
-      <p>Voter Choice is built by <b>Grey Bird LLC</b>. No ads, no tracking, no accounts, no data sales. Tips and small individual contributions are the only revenue.</p>
+      <p>Voter Choice is built by <b>Grey Bird LLC</b>. When the community budget runs out you can bring your own Anthropic key rather than pay us — we'd rather pause than monetize you.</p>
     </StaticPage>
   );
 }

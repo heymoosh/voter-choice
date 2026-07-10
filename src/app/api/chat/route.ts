@@ -1275,6 +1275,14 @@ function createSSEStream(
   // latent under-count: previously a single end-of-turn call only ever saw
   // the LAST round's numbers (overwritten by every later round), silently
   // dropping every earlier round's real spend from the durable total.
+  //
+  // The same overwrite semantics also undercounted the anonymous per-request
+  // cost telemetry (recordChatUsage) — it was left as a single end-of-turn
+  // call when the budget-store fix landed. recordChatUsage is a plain INSERT
+  // (no running total to maintain), so it needs no accumulation logic — just
+  // flush it here too, once per round, so a multi-round turn produces one
+  // telemetry row per round instead of a single row holding only the last
+  // round's numbers.
   async function flushRoundUsage(): Promise<void> {
     const hasUsage =
       usage.input > 0 ||
@@ -1291,6 +1299,19 @@ function createSSEStream(
       searchCount: usage.searchCount,
     };
     await recordUsageAsync(record);
+    // Anonymous per-request cost telemetry. Fail-soft — a metrics write
+    // failure never affects the chat response. Stores NO identifier (no
+    // session, no IP, no address, no prompt text).
+    await recordChatUsage(
+      {
+        inputTokens: usage.input,
+        cacheReadTokens: usage.cachedInput,
+        cacheWriteTokens: usage.cacheWrite,
+        outputTokens: usage.output,
+        webSearchCount: usage.searchCount,
+      },
+      { model, callKind: "chat" },
+    );
   }
 
   return new ReadableStream({
@@ -1473,30 +1494,9 @@ function createSSEStream(
           );
         }
 
-        // Budget-store recording already happened per-round (flushRoundUsage
-        // above) — this final block only covers the anonymous per-request
-        // cost telemetry below, which stays one row per whole turn.
-        if (
-          usage.input > 0 ||
-          usage.output > 0 ||
-          usage.cachedInput > 0 ||
-          usage.cacheWrite > 0 ||
-          usage.searchCount > 0
-        ) {
-          // Anonymous per-request cost telemetry. Fail-soft — a metrics
-          // write failure never affects the chat response. Stores NO
-          // identifier (no session, no IP, no address, no prompt text).
-          await recordChatUsage(
-            {
-              inputTokens: usage.input,
-              cacheReadTokens: usage.cachedInput,
-              cacheWriteTokens: usage.cacheWrite,
-              outputTokens: usage.output,
-              webSearchCount: usage.searchCount,
-            },
-            { model, callKind: "chat" },
-          );
-        }
+        // Both the durable budget store and the anonymous cost telemetry
+        // table are recorded per-round by flushRoundUsage above — nothing
+        // left to record here at end-of-turn.
         // If this was a handoff-tier request, mark it served so the next
         // request at exhaustion returns 503 instead of another handoff.
         if (requestTier === "handoff") {

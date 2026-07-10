@@ -11,7 +11,10 @@ import { describe, expect, it } from "vitest";
 import {
   parseAmountRange,
   parseSourceDate,
+  hasImplausibleDates,
   isValidFilingUrl,
+  isAllowedFilingHost,
+  isExternalIdWithinBounds,
   stripHtml,
   normalizeTicker,
   normalizeTransactionType,
@@ -115,6 +118,39 @@ describe("parseSourceDate", () => {
 
   it("accepts a valid leap-day date", () => {
     expect(parseSourceDate("02/29/2024")).toBe("2024-02-29");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// hasImplausibleDates
+// ---------------------------------------------------------------------------
+
+/** An ISO date guaranteed to be in the future (today + `years`). */
+function isoInFutureYears(years: number): string {
+  const d = new Date();
+  d.setUTCFullYear(d.getUTCFullYear() + years);
+  return d.toISOString().slice(0, 10);
+}
+
+describe("hasImplausibleDates", () => {
+  it("flags a transaction dated in the future", () => {
+    expect(hasImplausibleDates(isoInFutureYears(1), null)).toBe(true);
+  });
+
+  it("flags a transaction disclosed before it occurred", () => {
+    expect(hasImplausibleDates("2021-02-11", "2021-02-10")).toBe(true);
+  });
+
+  it("passes a normal past transaction disclosed afterward", () => {
+    expect(hasImplausibleDates("2021-02-11", "2021-03-10")).toBe(false);
+  });
+
+  it("passes a same-day disclosure (disclosed the day it occurred)", () => {
+    expect(hasImplausibleDates("2021-02-11", "2021-02-11")).toBe(false);
+  });
+
+  it("passes a past transaction with a null disclosure date", () => {
+    expect(hasImplausibleDates("2021-02-11", null)).toBe(false);
   });
 });
 
@@ -328,6 +364,51 @@ describe("parseHouseRow", () => {
       parseHouseRow({ ...GOOD_HOUSE_ROW, source_url: "/relative/path.pdf" }),
     ).toBeNull();
   });
+
+  it("returns null when source_url is well-formed but not on the House Clerk host", () => {
+    expect(
+      parseHouseRow({
+        ...GOOD_HOUSE_ROW,
+        source_url: "https://example.com/fake-filing.pdf",
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null when disclosure_date is before transaction_date (impossible)", () => {
+    expect(
+      parseHouseRow({
+        ...GOOD_HOUSE_ROW,
+        transaction_date: "06/17/2026",
+        disclosure_date: "06/16/2026",
+      }),
+    ).toBeNull();
+  });
+
+  it("returns null when transaction_date is in the future (impossible)", () => {
+    const future = new Date();
+    future.setUTCFullYear(future.getUTCFullYear() + 1);
+    const mm = String(future.getUTCMonth() + 1).padStart(2, "0");
+    const dd = String(future.getUTCDate()).padStart(2, "0");
+    const yyyy = future.getUTCFullYear();
+    expect(
+      parseHouseRow({
+        ...GOOD_HOUSE_ROW,
+        transaction_date: `${mm}/${dd}/${yyyy}`,
+        disclosure_date: `${mm}/${dd}/${yyyy}`,
+      }),
+    ).toBeNull();
+  });
+
+  it("still parses when disclosure_date equals transaction_date (same-day, must not over-reject)", () => {
+    const parsed = parseHouseRow({
+      ...GOOD_HOUSE_ROW,
+      transaction_date: "06/16/2026",
+      disclosure_date: "06/16/2026",
+    });
+    expect(parsed).not.toBeNull();
+    expect(parsed?.transactionDate).toBe("2026-06-16");
+    expect(parsed?.disclosureDate).toBe("2026-06-16");
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -350,6 +431,70 @@ describe("isValidFilingUrl", () => {
     expect(isValidFilingUrl("/relative/path.pdf")).toBe(false);
     expect(isValidFilingUrl("")).toBe(false);
     expect(isValidFilingUrl(undefined)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isAllowedFilingHost
+// ---------------------------------------------------------------------------
+
+describe("isAllowedFilingHost", () => {
+  it("accepts the House Clerk and Senate eFD hosts", () => {
+    expect(
+      isAllowedFilingHost(
+        "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034807.pdf",
+      ),
+    ).toBe(true);
+    expect(
+      isAllowedFilingHost(
+        "https://efdsearch.senate.gov/search/view/ptr/32550a8f-923e-416f-84f3-e19ab4f148b1/",
+      ),
+    ).toBe(true);
+  });
+
+  it("is case-insensitive on hostname", () => {
+    expect(
+      isAllowedFilingHost(
+        "https://DISCLOSURES-CLERK.HOUSE.GOV/public_disc/ptr-pdfs/2026/x.pdf",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects any other host, even a well-formed http(s) URL", () => {
+    expect(isAllowedFilingHost("https://example.com/filing.pdf")).toBe(false);
+    expect(
+      isAllowedFilingHost("https://evil.example/disclosures-clerk.house.gov"),
+    ).toBe(false);
+    expect(
+      isAllowedFilingHost("https://house.gov.evil.example/filing.pdf"),
+    ).toBe(false);
+  });
+
+  it("rejects malformed or empty values", () => {
+    expect(isAllowedFilingHost("not a url")).toBe(false);
+    expect(isAllowedFilingHost("")).toBe(false);
+    expect(isAllowedFilingHost(undefined)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isExternalIdWithinBounds
+// ---------------------------------------------------------------------------
+
+describe("isExternalIdWithinBounds", () => {
+  it("accepts an ordinary externalId", () => {
+    expect(
+      isExternalIdWithinBounds(
+        "house_stock_watcher::federal-V000135::GOOGL::Alphabet Inc.::2026-06-16::Sale::$1,001 - $15,000::Self",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects an externalId built from a pathologically long field", () => {
+    const huge = "x".repeat(3000);
+    expect(isExternalIdWithinBounds(`house_stock_watcher::${huge}`)).toBe(
+      false,
+    );
   });
 });
 
@@ -434,6 +579,24 @@ describe("parseSenateFilingGroup", () => {
     expect(parsed).toHaveLength(1);
   });
 
+  it("skips only the transaction with impossible dates (disclosed before it occurred)", () => {
+    // Filing disclosed 03/10/2021; one txn dated 04/01/2021 was thus
+    // "disclosed" three weeks before it happened — a source typo to drop.
+    const mixed: SenateWatcherFilingGroup = {
+      ...GOOD_SENATE_GROUP,
+      transactions: [
+        GOOD_SENATE_GROUP.transactions![0], // 02/11/2021 — valid
+        {
+          ...GOOD_SENATE_GROUP.transactions![1],
+          transaction_date: "04/01/2021", // after the 03/10/2021 disclosure
+        },
+      ],
+    };
+    const parsed = parseSenateFilingGroup(mixed);
+    expect(parsed).toHaveLength(1);
+    expect(parsed[0].transactionDate).toBe("2021-02-11");
+  });
+
   it("skips a transaction whose ptr_link is not a well-formed http(s) URL", () => {
     const badLink: SenateWatcherFilingGroup = {
       ...GOOD_SENATE_GROUP,
@@ -443,6 +606,17 @@ describe("parseSenateFilingGroup", () => {
       ],
     };
     expect(parseSenateFilingGroup(badLink)).toEqual([]);
+  });
+
+  it("skips a transaction whose ptr_link is well-formed but not on the Senate eFD host", () => {
+    const wrongHost: SenateWatcherFilingGroup = {
+      ...GOOD_SENATE_GROUP,
+      ptr_link: "https://example.com/fake-ptr",
+      transactions: [
+        { ...GOOD_SENATE_GROUP.transactions![0], ptr_link: undefined },
+      ],
+    };
+    expect(parseSenateFilingGroup(wrongHost)).toEqual([]);
   });
 });
 
@@ -693,6 +867,24 @@ describe("buildHouseTransactionRows", () => {
     const { rows, counts } = buildHouseTransactionRows([garbage], index);
     expect(rows).toHaveLength(0);
     expect(counts.malformed).toBe(1);
+  });
+
+  it("skips (as malformed) a row whose asset_description is so long the externalId would trip the btree index limit — never crashes, never builds it", () => {
+    const pathological: HouseWatcherRow = {
+      ...GOOD_HOUSE_ROW,
+      asset_description: "A".repeat(5000),
+    };
+    expect(() =>
+      buildHouseTransactionRows([pathological], index),
+    ).not.toThrow();
+    const { rows, counts } = buildHouseTransactionRows([pathological], index);
+    expect(rows).toHaveLength(0);
+    expect(counts).toEqual({
+      read: 1,
+      malformed: 1,
+      unmatchedMember: 0,
+      built: 0,
+    });
   });
 });
 

@@ -25,8 +25,11 @@ export type Automatable = "yes" | "proxy" | "no";
 
 export interface Scenario {
   id: string;
-  /** Filename under .keystone-canvas-refs/ */
-  refFile: string;
+  /** Filename under .keystone-canvas-refs/. Absent when no canvas artboard
+   *  was ever exported for this surface (e.g. a screen the canvas designed
+   *  but the repo hasn't built yet) — the gallery renders an explicit
+   *  "no canvas export" note instead of a broken image in that case. */
+  refFile?: string;
   label: string;
   /** Repo-relative substrings — a changed file counts if it CONTAINS one of these. */
   files: string[];
@@ -387,9 +390,17 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
   });
 }
 
+/** `divided` is the /api/polis/bridges response's "where it split" honest
+ *  complement of `bridges` (same {statement, agreementPercent} shape) — see
+ *  PR #240 (not yet merged to main as of this fix): src/prototype/redesign/
+ *  polisAdapter.ts's mapStatementList() reads both keys off this same
+ *  endpoint. Feeding it here is forward-compatible (harmless no-op today,
+ *  since main's PolisClose.tsx doesn't consume a `divided` field yet) and
+ *  starts working the moment #240 lands. */
 async function mockBridges(
   page: Page,
   bridges: Array<{ statement: string; agreementPercent: number }>,
+  divided: Array<{ statement: string; agreementPercent: number }> = [],
 ): Promise<void> {
   await page.route("**/api/polis/bridges?*", async (route) => {
     await route.fulfill({
@@ -398,9 +409,10 @@ async function mockBridges(
       body: JSON.stringify({
         scope: "state",
         threshold: 200,
-        count: bridges.length,
-        status: bridges.length ? "ok" : "no_bridges_yet",
+        count: bridges.length + divided.length,
+        status: bridges.length || divided.length ? "ok" : "no_bridges_yet",
         bridges,
+        divided,
       }),
     });
   });
@@ -434,7 +446,20 @@ async function mockDelegationSlow(page: Page): Promise<void> {
 async function gotoHomeClean(page: Page): Promise<void> {
   await mockChatLocal(page);
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  // Clear BOTH storages, not just localStorage: App2.tsx's SESSION_KEY (in-
+  // progress stage/address/verdicts) lives in sessionStorage specifically so
+  // it "survives a same-tab reload" (its own comment) — a real product
+  // feature for users, but it also means a bare localStorage.clear() here
+  // does NOT undo progress within the same Playwright page/tab. Scenarios
+  // that call this (or reachWorkspace below) more than once per capture —
+  // e.g. 09c-intake-locked / 10a-polis-entry's reachPreLock()/reachAllDone()
+  // retry after an irreversible "Lock"/"where you stand" click — need a
+  // genuine fresh start, or the address screen never reappears and
+  // submitAddress() hangs waiting for a placeholder that's no longer there.
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.goto("/");
 }
 
@@ -476,9 +501,7 @@ async function sendFirstIssue(page: Page): Promise<void> {
 async function lockIssues(page: Page): Promise<void> {
   await page.getByTestId("issue-primary").click();
   const confirmBtn = page.getByTestId("issue-locked-confirm-btn");
-  await confirmBtn
-    .waitFor({ state: "visible", timeout: 2000 })
-    .catch(() => {});
+  await confirmBtn.waitFor({ state: "visible", timeout: 2000 }).catch(() => {});
   if (await confirmBtn.isVisible()) {
     await confirmBtn.click();
   }
@@ -525,14 +548,39 @@ async function reachOrientation(page: Page): Promise<void> {
 async function reachWorkspace(page: Page): Promise<void> {
   await mockChatLocal(page);
   await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
+  // See gotoHomeClean's comment above: clear sessionStorage too, not just
+  // localStorage, so 10a-polis-entry's reachAllDone() retry (called twice in
+  // the same capture when PolisEntry isn't merged yet) actually restarts
+  // from the address screen instead of resuming the already-completed
+  // session.
+  await page.evaluate(() => {
+    localStorage.clear();
+    sessionStorage.clear();
+  });
   await page.goto("/");
   await submitAddress(page);
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await sendFirstIssue(page);
   await lockIssues(page);
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
-  await page.locator(".b-row").first().waitFor({ timeout: 20000 });
+  // PR #243 (not yet merged) makes DelegationOverview the default landing
+  // screen (App2.tsx's seatOverviewOpen defaults true) instead of landing
+  // directly on the single-seat rail — its cards carry a shared
+  // data-testid="seat-card" (src/prototype/redesign/DelegationOverview.tsx
+  // on that branch). Race both markers rather than a fixed pre-wait, so a
+  // branch without the overview pays no extra latency (.b-row just wins the
+  // race as before) and a branch with it clicks through the first card
+  // before falling through to the same rail wait every scenario expects.
+  const seatCard = page.getByTestId("seat-card").first();
+  const rail = page.locator(".b-row").first();
+  await Promise.race([
+    seatCard.waitFor({ timeout: 20000 }),
+    rail.waitFor({ timeout: 20000 }),
+  ]).catch(() => {});
+  if (await seatCard.isVisible().catch(() => false)) {
+    await seatCard.click();
+  }
+  await rail.waitFor({ timeout: 20000 });
 }
 
 async function setMoneyDisclosure(page: Page, open: boolean): Promise<void> {
@@ -578,6 +626,17 @@ export const SCENARIOS: Scenario[] = [
       "per HANDOFF-EXACT-MATCH.md §1.1: today's OrientationView is a bare div, no flagbar/" +
       "ori-card/3-step list — the screenshot documents that gap, it is not a tooling limitation.",
     async capture(page) {
+      // mockDelegation + mockChatLocal aren't required locally (a dev
+      // .env.local's real DATABASE_URL/API creds let the real /api/delegation
+      // + /api/chat calls succeed) but CI's dev server has neither, so an
+      // unmocked submitAddress() resolves to the "dberror" stage instead of
+      // "coldopen" — issue-convo-input then never renders, and this scenario
+      // (and 09a/09b/09c, the only other reachColdOpen callers) burn the full
+      // 15s waitFor before failing. Every other scenario in this file already
+      // mocks delegation before touching the address form; this just matches
+      // that pattern instead of relying on real network/DB access.
+      await mockDelegation(page);
+      await mockChatLocal(page);
       await reachOrientation(page);
     },
   },
@@ -770,6 +829,45 @@ export const SCENARIOS: Scenario[] = [
     },
   },
   {
+    id: "05c-candidates-overview",
+    refFile: "05c-candidates-overview.png",
+    label:
+      "Candidates — DelegationOverview (multi-seat scored cards before drill-down)",
+    files: ["src/prototype/redesign/DelegationWorkspace.tsx"],
+    automatable: "no",
+    note:
+      "NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Today the " +
+      "app goes straight to the single-seat deep view (02a-results-main) with no scored " +
+      "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not " +
+      "merged to main as of this report) — capture() below is a real, PR #243-verified " +
+      "sequence (data-testid=\"delegation-overview\"), ready to flip automatable to 'yes'/" +
+      "'proxy' once #243 merges. The canvas ref PNG that was previously missing now exists: " +
+      "the real design source turned out to live in a different, newer, untracked folder " +
+      "(design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/" +
+      "keystone-canvas/ which predates this screen) — screens-delegation.jsx's " +
+      "DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter " +
+      "Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured " +
+      "2026-07-08 by serving that folder locally and screenshotting the artboard's " +
+      '[data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same ' +
+      "fidelity as the viewer's own Download-PNG export, just driven headlessly. See " +
+      ".keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows. " +
+      "automatable stays 'no' for now — flips to 'yes'/'proxy' once PR #243 merges and the " +
+      "delegation-overview testid actually exists on main (same pattern as reachWorkspace()'s " +
+      "PR #243 comment above).",
+    async capture(page) {
+      await mockDelegation(page);
+      await mockSeatRaceDataMedian(page);
+      await mockResearch(page);
+      await mockPolis(page);
+      await mockCounters(page);
+      await reachColdOpen(page);
+      await sendFirstIssue(page);
+      await lockIssues(page);
+      await page.getByTestId("orientation-continue").click({ timeout: 15000 });
+      await page.getByTestId("delegation-overview").waitFor({ timeout: 20000 });
+    },
+  },
+  {
     id: "06-homehero",
     refFile: "06-homehero.png",
     label: "Homepage — HomeHero",
@@ -819,12 +917,21 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
     note:
-      "Nav → 'Methodology' (confirmed current label — HANDOFF §8 flags the rename to " +
-      "'How it works' as not yet shipped; the dead navigate('howitworks') branch just " +
-      "falls back to home, per App2.tsx's PAGE_STAGES/navigate()).",
+      "Nav → 'How it works' (label renamed from 'Methodology' by #213, 2026-07-08 — " +
+      "confirmed by reading App2.tsx: it renders the base AppNav, whose link uses " +
+      "t('nav.howItWorks') = 'How it works', not AppNavWithChrome's t('nav.methodology'). " +
+      "Still navigates to the same methodology stage/MethodologyPage. This scenario used to " +
+      "click the old 'Methodology' label and timed out post-rename (Phase 0 finding #8). " +
+      "Scoped to the 'Main' nav landmark — the homepage's own address-box copy also contains " +
+      "an unrelated 'Read about how it works…' link (dead navigate('howitworks') branch) whose " +
+      "accessible name substring-matches 'How it works' too, so an unscoped getByRole hits a " +
+      "strict-mode violation (2 matches).",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Methodology" }).click();
+      await page
+        .getByRole("navigation", { name: "Main" })
+        .getByRole("link", { name: "How it works" })
+        .click();
     },
   },
   {
@@ -883,6 +990,9 @@ export const SCENARIOS: Scenario[] = [
     automatable: "yes",
     note: "Fresh cold-open, before any message is sent.",
     async capture(page) {
+      // See 01-orientation-activated's capture() comment: reachColdOpen
+      // needs a delegation mock in any environment without a real DB (CI).
+      await mockDelegation(page);
       await reachColdOpen(page);
     },
   },
@@ -894,6 +1004,11 @@ export const SCENARIOS: Scenario[] = [
     automatable: "yes",
     note: "After the first (extraction) turn — 2 starter issues + quick-reply chips.",
     async capture(page) {
+      // See 01-orientation-activated's capture() comment: reachColdOpen
+      // needs a delegation mock, and sendFirstIssue needs a chat mock, in
+      // any environment without real DB/API creds (CI).
+      await mockDelegation(page);
+      await mockChatLocal(page);
       await reachColdOpen(page);
       await sendFirstIssue(page);
     },
@@ -908,14 +1023,42 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "The canvas's distinct pre-lock confirmation state (green 'Your issues are set' banner, " +
-      "drag-to-rerank) is not built — current UI reuses the same running issues-card for every " +
-      "turn (up/down-arrow rerank, not drag). Proxy: same UI one turn further (3 issues, after a " +
-      "refinement reply), right before clicking Lock.",
+      "IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues " +
+      "are set' banner, editable review card, Back/Continue — data-testid=\"issue-locked-" +
+      "confirm-btn\") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, " +
+      "when that screen appears, stops there to shoot the real thing. Until #236 lands, that " +
+      "click completes the lock instantly with no interstitial to hold on (jumps straight to " +
+      "orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy " +
+      "instead: same UI one turn further (3 issues, after a refinement reply), right before " +
+      "clicking Lock.",
     async capture(page) {
-      await reachColdOpen(page);
-      await sendFirstIssue(page);
-      await sendFollowUpIssue(page);
+      // See 01-orientation-activated's capture() comment: reachColdOpen
+      // needs a delegation mock, and sendFirstIssue/sendFollowUpIssue need a
+      // chat mock, in any environment without real DB/API creds (CI).
+      await mockDelegation(page);
+      await mockChatLocal(page);
+      const reachPreLock = async () => {
+        // App2.tsx persists in-progress state to sessionStorage (not
+        // localStorage — see its SESSION_KEY), which gotoHomeClean() never
+        // clears; every other scenario only calls it once per fresh page so
+        // this never mattered, but a second call here (the redo below) would
+        // otherwise resume straight into the stale conversation instead of
+        // reaching a clean home page.
+        await page.evaluate(() => sessionStorage.clear()).catch(() => {});
+        await reachColdOpen(page);
+        await sendFirstIssue(page);
+        await sendFollowUpIssue(page);
+      };
+      await reachPreLock();
+      await page.getByTestId("issue-primary").click();
+      const reachedIntakeLocked = await page
+        .getByTestId("issue-locked-confirm-btn")
+        .waitFor({ state: "visible", timeout: 2000 })
+        .then(() => true)
+        .catch(() => false);
+      if (!reachedIntakeLocked) {
+        await reachPreLock();
+      }
     },
   },
   {
@@ -976,33 +1119,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/DelegationWorkspace.tsx",
       "src/prototype/redesign/App2.tsx",
     ],
-    automatable: "proxy",
+    automatable: "no",
     note:
-      "The canvas's dedicated PolisEntry screen (invite panel + preview scatter) doesn't exist " +
-      "— per e2e/redesign-core.spec.ts's own comment, 'the see where you stand teaser was " +
-      "removed ([P1])'; entry today is only the inline '.all-done … where you stand' link on " +
-      "the completed workspace. Proxy: the completed workspace showing that link.",
-    async capture(page) {
-      await mockDelegation(page);
-      await mockSeatRaceDataMedian(page);
-      await mockResearch(page);
-      await mockPolis(page, true);
-      await mockCounters(page);
-      await reachWorkspace(page);
-      const rows = page.locator(".b-row");
-      const count = await rows.count();
-      for (let i = 0; i < count; i++) {
-        await rows.nth(i).click();
-        const keep = page
-          .getByRole("button", { name: /Worth keeping/ })
-          .first();
-        await keep.waitFor({ timeout: 15000 });
-        await keep.click();
-        await page.waitForTimeout(700);
-      }
-      await rows.first().click();
-      await page.locator(".all-done").waitFor({ timeout: 15000 });
-    },
+      "NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — " +
+      "data-testid=\"polis-entry-see-standing\") isn't merged to main yet (PR #237); it " +
+      "replaces today's inline '.all-done … where you stand' link, which currently jumps " +
+      "straight to the standing report with no interstitial. A prior 'proxy' capture stopped " +
+      "at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas " +
+      "ref — a screen it never actually reaches — which silently false-passed (STOP-SHIP " +
+      "2026-07-09 finding). Genuinely not gradable until #237 lands.",
   },
   {
     id: "10b-polis-contribute",
@@ -1027,30 +1152,47 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/polisAdapter.ts",
     ],
     automatable: "yes",
-    note: "Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated.",
+    note:
+      "Bridges mock returns several high-agreement statements → 'Common ground' panel renders " +
+      "populated, plus one divided statement → 'Where it split' renders too (the realistic " +
+      "'mostly consensus, some friction' mix). Bridges/divided rendering is real content today; " +
+      "PolisClose.tsx doesn't consume the divided field yet (PR #240, not merged) so that " +
+      "second panel doesn't show on main until then — see STRUCTURAL_WAIVERS in parity-gate.ts " +
+      "for why the residual visual diff is expected either way (DECISION #116, party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
       await mockResearch(page);
       await mockPolis(page, true);
-      await mockBridges(page, [
-        {
-          statement: "Congress should cap prescription drug price increases.",
-          agreementPercent: 86,
-        },
-        {
-          statement: "Federal spending needs independent audits every year.",
-          agreementPercent: 79,
-        },
-        {
-          statement: "Members of Congress should not trade individual stocks.",
-          agreementPercent: 71,
-        },
-        {
-          statement: "Rent assistance should scale with local cost of living.",
-          agreementPercent: 82,
-        },
-      ]);
+      await mockBridges(
+        page,
+        [
+          {
+            statement: "Congress should cap prescription drug price increases.",
+            agreementPercent: 86,
+          },
+          {
+            statement: "Federal spending needs independent audits every year.",
+            agreementPercent: 79,
+          },
+          {
+            statement:
+              "Members of Congress should not trade individual stocks.",
+            agreementPercent: 71,
+          },
+          {
+            statement:
+              "Rent assistance should scale with local cost of living.",
+            agreementPercent: 82,
+          },
+        ],
+        [
+          {
+            statement: "Congress should raise the federal minimum wage.",
+            agreementPercent: 52,
+          },
+        ],
+      );
       await mockCounters(page);
       await reachWorkspace(page);
       await goToStanding(page);
@@ -1067,22 +1209,38 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "PolisClose has no computed 'divided/split' branch (only an early-days vs. normal lede, " +
-      "toggled purely by sampleSize<30 — see LOW_N in PolisClose.tsx). There is no 'Where it " +
-      "split' section anywhere in the component. Proxy: bridges mock returns a single, low-" +
-      "agreement statement (vs. 10c's four strong ones) to approximate a thin-consensus cycle " +
-      "within the UI that actually exists; the canvas's dedicated divided narrative is not ported.",
+      "PolisClose has no computed 'divided/split' branch yet (PR #240, not merged to main — " +
+      "only an early-days vs. normal lede, toggled purely by sampleSize<30, see LOW_N in " +
+      "PolisClose.tsx). Bridges mock now returns zero bridges + several real divided " +
+      "statements — on #240 this renders the true 'genuinely split' branch (no Common ground " +
+      "panel, 'Where it split' populated instead); on main today it exercises the existing " +
+      "bridges.length===0 fallback (the 'big stat panel' branch) since divided isn't read yet. " +
+      "Proxy until #240 lands. See STRUCTURAL_WAIVERS in parity-gate.ts for why the residual " +
+      "visual diff is expected either way (DECISION #116, party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
       await mockResearch(page);
       await mockPolis(page, true);
-      await mockBridges(page, [
-        {
-          statement: "This cycle, almost nothing bridged every group.",
-          agreementPercent: 58,
-        },
-      ]);
+      await mockBridges(
+        page,
+        [],
+        [
+          {
+            statement: "This cycle, almost nothing bridged every group.",
+            agreementPercent: 58,
+          },
+          {
+            statement: "Congress should raise the federal minimum wage.",
+            agreementPercent: 44,
+          },
+          {
+            statement:
+              "The federal government should fund more affordable housing.",
+            agreementPercent: 39,
+          },
+        ],
+      );
       await mockCounters(page);
       await reachWorkspace(page);
       await goToStanding(page);
@@ -1097,21 +1255,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/MoneyGap.tsx",
       "src/prototype/redesign/peerComparison.ts",
     ],
-    automatable: "proxy",
+    automatable: "no",
     note:
-      "The canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by " +
-      "reading RepCard.tsx: it calls <MoneyGapScale subject=... peer=...> WITHOUT a `field` " +
-      "prop, so only the single subject row ever renders in the card. Proxy: same funding-" +
-      "expanded panel as 02b, with a chamberMedian mock so the populated (non-blank) scale shows.",
-    async capture(page) {
-      await mockDelegation(page);
-      await mockSeatRaceDataMedian(page);
-      await mockResearch(page);
-      await mockPolis(page);
-      await mockCounters(page);
-      await reachWorkspace(page);
-      await setMoneyDisclosure(page, true);
-    },
+      "NOT AUTOMATABLE: the canvas's 'whole field' (3+ candidates on one scale) is not wired — " +
+      "confirmed by reading RepCard.tsx: it calls <MoneyGapScale subject=... peer=...> WITHOUT " +
+      "a `field` prop, so only the single subject row ever renders in the card. A prior 'proxy' " +
+      "capture reused 02b's single-subject funding-expanded panel and pixel-diffed it against " +
+      "the real whole-field canvas ref — a structurally different screen — which silently " +
+      "false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until the field prop " +
+      "is wired.",
   },
   {
     id: "11b-scalestates",
@@ -1121,22 +1273,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/MoneyGap.tsx",
       "src/prototype/redesign/peerComparison.ts",
     ],
-    automatable: "proxy",
+    automatable: "no",
     note:
-      "The canvas artboard is a style-guide-style enumeration of 4 states + the collapsed chip " +
-      "side by side — there is no single app screen that shows all of them at once (the real " +
-      "app renders whichever ONE band the data produces per card). Proxy: the same funding-" +
-      "expanded panel (chamberMedian mock puts this candidate in the 'above median' band); the " +
-      "collapsed MedianChip glance is visible elsewhere on the same card, collapsed.",
-    async capture(page) {
-      await mockDelegation(page);
-      await mockSeatRaceDataMedian(page);
-      await mockResearch(page);
-      await mockPolis(page);
-      await mockCounters(page);
-      await reachWorkspace(page);
-      await setMoneyDisclosure(page, true);
-    },
+      "NOT AUTOMATABLE: the canvas artboard is a style-guide-style enumeration of 4 states + " +
+      "the collapsed chip side by side — there is no single app screen that shows all of them " +
+      "at once (the real app renders whichever ONE band the data produces per card). A prior " +
+      "'proxy' capture reused 02b/11a's single-band funding-expanded panel and pixel-diffed it " +
+      "against the real 4-state enumeration canvas ref — a structurally different screen — " +
+      "which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable as a " +
+      "single screenshot.",
   },
   {
     id: "11c-moneygaph2h",

@@ -860,3 +860,105 @@ export const memberStockTransactions = pgTable(
     index("member_stock_transactions_chamber_idx").on(t.chamber),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// lobbying_issue_activity — LDA LD-2 quarterly lobbying-activity disclosures
+// (client x issue-area x chamber x quarter). Populated by
+// scripts/ingest/lobbying-issue-activity.ts from the lda.gov REST API.
+//
+// NOT MEMBER-KEYED, DELIBERATELY: LD-2 filings disclose only the chamber(s)
+// contacted ("SENATE", "HOUSE OF REPRESENTATIVES"), never an individual
+// Member of Congress — there is no field for it on the form. A row here
+// means "this client's lobbyists disclosed contacting the House/Senate on
+// this issue this quarter," never "lobbied Rep./Sen. X." Render accordingly:
+// issue-level context only, never attached to a member.
+// ---------------------------------------------------------------------------
+export const lobbyingIssueActivity = pgTable(
+  "lobbying_issue_activity",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    filingUuid: text("filing_uuid").notNull(),
+    filingType: text("filing_type").notNull(),
+    filingYear: integer("filing_year").notNull(),
+    filingPeriod: text("filing_period").notNull(),
+    registrantName: text("registrant_name").notNull(),
+    clientName: text("client_name").notNull(),
+    clientDescription: text("client_description"),
+    clientState: text("client_state"),
+    issueAreaCode: text("issue_area_code").notNull(),
+    issueAreaLabel: text("issue_area_label").notNull(),
+    specificIssues: text("specific_issues"),
+    chamber: text("chamber").notNull(), // "house" | "senate"
+    incomeAmount: numeric("income_amount", { precision: 14, scale: 2 }),
+    expensesAmount: numeric("expenses_amount", { precision: 14, scale: 2 }),
+    filingUrl: text("filing_url").notNull(),
+    sourceDataset: text("source_dataset").notNull(), // "lda_gov"
+    // Idempotency key: one row per (filing, issue area, chamber) — see
+    // buildLobbyingExternalId in lobbying-issue-activity.ts.
+    externalId: text("external_id").notNull(),
+    rawMetadata: jsonb("raw_metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("lobbying_issue_activity_external_id_uidx").on(t.externalId),
+    index("lobbying_issue_activity_issue_idx").on(t.issueAreaCode),
+    index("lobbying_issue_activity_chamber_idx").on(t.chamber),
+    index("lobbying_issue_activity_period_idx").on(
+      t.filingYear,
+      t.filingPeriod,
+    ),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// member_civic_positions — Financial Disclosure Schedule E ("Positions Held
+// Outside U.S. Government") for sitting Members of Congress. Populated by
+// scripts/ingest/member-civic-positions.ts. SENATE ONLY in this first pass
+// (Senate EFD e-filed HTML is structured/parseable without OCR; House Clerk
+// filings are PDFs, some scanned, needing OCR — deferred). Bioguide-keyed
+// like member_stock_transactions.
+//
+// LEGAL / HONESTY CONTRACT: 5 U.S.C. app. 4 Sec. 105(c)(1),(2) restricts
+// commercial/solicitation use of Financial Disclosure data. Mitigation
+// (decided by Muxin, 2026-07-08): build read-only, and every surfaced row
+// MUST link back to source_filing_url so this app is never the disclosure
+// of record, only a citation-linked pointer to it. Never omit or fabricate
+// source_filing_url.
+// ---------------------------------------------------------------------------
+export const memberCivicPositions = pgTable(
+  "member_civic_positions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    bioguideId: text("bioguide_id").notNull(),
+    chamber: text("chamber").notNull(), // "senate" (house deferred)
+    entityName: text("entity_name").notNull(),
+    entityType: text("entity_type"),
+    positionHeld: text("position_held").notNull(),
+    positionDates: text("position_dates"),
+    comments: text("comments"),
+    filingYear: integer("filing_year").notNull(),
+    sourceFilingUrl: text("source_filing_url").notNull(),
+    sourceDataset: text("source_dataset").notNull(), // "senate_efd"
+    externalId: text("external_id").notNull(),
+    rawMetadata: jsonb("raw_metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("member_civic_positions_external_id_uidx").on(t.externalId),
+    index("member_civic_positions_candidate_idx").on(t.candidateId),
+    index("member_civic_positions_filing_year_idx").on(t.filingYear),
+  ],
+);

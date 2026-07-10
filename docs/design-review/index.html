@@ -1,0 +1,74 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Keystone design review</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; background: #f6f7f8; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) { body { background: #14161a; color: #e8e8e8; } }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0; }
+  a { color: #1e5b8f; }
+  @media (prefers-color-scheme: dark) { a { color: #7ab8ea; } }
+  .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+  @media (prefers-color-scheme: dark) { .sub { color: #999; } }
+  .nav-links { margin: 16px 0; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #888; padding: 8px; }
+  td { border-top: 1px solid #ddd; padding: 10px 8px; vertical-align: top; }
+  @media (prefers-color-scheme: dark) { td { border-top: 1px solid #333; } }
+  td.meta { width: 260px; font-size: 12px; }
+  td.meta .id { font-weight: 600; font-family: ui-monospace, monospace; }
+  td.meta .label { color: #555; margin: 2px 0 6px; }
+  @media (prefers-color-scheme: dark) { td.meta .label { color: #aaa; } }
+  td.meta .note { color: #777; margin-top: 6px; line-height: 1.4; }
+  td.shot { width: 37.5%; }
+  td.shot img { width: 100%; height: auto; border: 1px solid #ccc; display: block; }
+  @media (prefers-color-scheme: dark) { td.shot img { border-color: #444; } }
+  .missing, .error, .not-automatable { font-size: 12px; padding: 10px; border: 1px dashed #999; color: #999; }
+  .error { color: #b3261e; border-color: #b3261e33; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+  .badge.changed { background: #ffe1a8; color: #7a4b00; }
+  .badge.unchanged { background: #e5e5e5; color: #666; }
+  @media (prefers-color-scheme: dark) { .badge.unchanged { background: #333; color: #aaa; } }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-right: 4px; text-transform: uppercase; }
+  .tag.yes { background: #d7f0d7; color: #1e6b1e; }
+  .tag.proxy { background: #fff0c2; color: #7a5c00; }
+  .tag.no { background: #f5d5d5; color: #8a1f1f; }
+  .cov { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+  .cov-tile { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; font-size: 13px; }
+  @media (prefers-color-scheme: dark) { .cov-tile { border-color: #333; } }
+  .cov-tile b { font-size: 18px; display: block; }
+  .section-list { list-style: none; padding: 0; margin: 0; }
+  .section-list li { border-top: 1px solid #ddd; padding: 12px 4px; display: flex; align-items: center; justify-content: space-between; }
+  @media (prefers-color-scheme: dark) { .section-list li { border-color: #333; } }
+  .section-list a { font-size: 15px; font-weight: 600; text-decoration: none; }
+  .section-list .counts { font-size: 12px; color: #777; }
+</style>
+</head>
+<body>
+  <h1>Keystone design review</h1>
+  <div class="sub">ref: <code>HEAD (aea5992a)</code> (<code>aea5992a</code>) &middot; changed-since: <code>origin/main</code> &middot; generated 2026-07-10T14:27:57.518Z</div>
+  
+  <div class="cov">
+    <div class="cov-tile"><b>20</b>automated</div>
+    <div class="cov-tile"><b>4</b>proxy (documented substitute)</div>
+    <div class="cov-tile"><b>5</b>not automatable / not built</div>
+    <div class="cov-tile"><b>0</b>capture errors</div>
+  </div>
+  <ul class="section-list"><li><a href="orientation.html">Orientation</a><span class="counts">1 scenario</span></li>
+<li><a href="results.html">Results (workspace)</a><span class="counts">4 scenarios · 2 changed</span></li>
+<li><a href="color.html">Color</a><span class="counts">1 scenario</span></li>
+<li><a href="scorecard.html">Scorecard</a><span class="counts">1 scenario</span></li>
+<li><a href="candidates.html">Candidates</a><span class="counts">3 scenarios</span></li>
+<li><a href="homepage.html">Homepage</a><span class="counts">1 scenario · 1 changed</span></li>
+<li><a href="whynow.html">Why Now</a><span class="counts">1 scenario · 1 changed</span></li>
+<li><a href="statics.html">Statics (About / How it works / Privacy / Tip jar / Loading)</a><span class="counts">5 scenarios · 5 changed</span></li>
+<li><a href="intake.html">Intake</a><span class="counts">5 scenarios</span></li>
+<li><a href="polis.html">Polis</a><span class="counts">4 scenarios</span></li>
+<li><a href="moneygap.html">Money-gap</a><span class="counts">3 scenarios</span></li></ul>
+  
+  <p class="sub">Regenerate: <code>npm run design:review-gallery -- --ref &lt;branch&gt;</code></p>
+</body>
+</html>

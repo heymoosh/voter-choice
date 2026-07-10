@@ -1,0 +1,233 @@
+name: Design Parity
+
+# Keystone design-fidelity gate (scripts/design/parity-gate.ts, PR #242) —
+# was merged 2026-07-08 but never wired into CI, so no PR ever actually ran
+# it (docs/operations/keystone-parity-failure-handoff-2026-07-08.md). This
+# workflow closes that: the `parity-gate` job below is the required check,
+# always firing on PRs to main so it can be required without deadlocking
+# non-Keystone PRs — the actual gate run is gated by a paths-filter step
+# inside the job (same pattern as test.yml's `e2e` job and mutation.yml's
+# `mutation` job). Pushes to main always run the full gate, unfiltered, so
+# main's own parity state stays visible in Actions history.
+#
+# Per docs/operations/keystone-fidelity-fix-plan-2026-07-08.md Phase 2:
+# STOP-SHIP is still in effect while this lands — the gate currently fails
+# on main's own HEAD (real, confirmed design gaps; see that plan doc and
+# scripts/design/parity-gate.ts's STRUCTURAL_WAIVERS for the honest list).
+# A red required check on a Keystone-touching PR is the intended behavior
+# until Phase 4's re-audit fixes land, not a bug in this workflow.
+#
+# Phase 3 of that same plan ("gate-green before human review") adds the
+# `review-gallery` job below: it regenerates the Phase 1 review artifact
+# (scripts/design/review-gallery.ts) against the PR's own branch, uploads it,
+# and posts/updates one PR comment linking to it plus the gate's pass/fail
+# tally — so what a reviewer looks at is always current, never a stale
+# worktree export. It `needs: parity-gate` purely to reuse that job's
+# paths-filter result and read its gate tally, not because the two captures
+# depend on each other.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  parity-gate:
+    runs-on: ubuntu-latest
+    # Dev-server boot + chromium launch + ~27 scenario captures/diffs.
+    # Observed ~4-6 min locally; this leaves real headroom for a cold CI
+    # runner without letting a genuine hang eat the 360-min job default.
+    timeout-minutes: 20
+    outputs:
+      scoped: ${{ steps.filter.outputs.scoped }}
+      summary: ${{ steps.gate-summary.outputs.summary }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Detect Keystone-mapped path changes (PR only)
+        id: filter
+        if: github.event_name == 'pull_request'
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+        with:
+          filters: |
+            scoped:
+              - 'src/prototype/redesign/**'
+              - 'src/prototype/VoterChoiceApp.tsx'
+              - 'src/app/page.tsx'
+              - 'public/*.css'
+              - 'design-handoff/keystone-canvas/**'
+              - 'design-handoff/design-session/**'
+              - '.keystone-canvas-refs/**'
+              - 'scripts/design/**'
+              - 'e2e/helpers/redesign-mocks.ts'
+              - '.github/workflows/design-parity.yml'
+
+      - name: Note skip when no Keystone-mapped changes
+        if: github.event_name == 'pull_request' && steps.filter.outputs.scoped == 'false'
+        run: |
+          echo "::notice::No Keystone-mapped paths changed in this PR; parity gate skipped. Gate reports passed."
+          echo "See design-handoff/keystone-canvas/HANDOFF-EXACT-MATCH.md §4 for the scoped file map."
+
+      - name: Setup Node
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        run: npm ci
+
+      - name: Install Playwright browsers
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        run: npx playwright install --with-deps chromium
+
+      # parity-gate.ts boots its own `next dev` (scripts/design/dev-server.ts)
+      # and drives it via Playwright route mocks (e2e/helpers/redesign-mocks.ts)
+      # — no build step, no DATABASE_URL/API secrets, no seeded DB needed; every
+      # scenario's data comes from in-process page.route() interception, mirroring
+      # how npm run e2e's own specs work against `next start`.
+      - name: Run Keystone parity gate
+        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        run: npm run design:parity-gate -- --all
+
+      # Runs even when the gate step above failed (a red gate still has a
+      # report.json — see parity-gate.ts's main(), which writes it before
+      # computing the exit code) so the job output always carries a real
+      # tally for review-gallery's PR comment, not a blank one.
+      - name: Summarize gate result
+        id: gate-summary
+        if: always() && (github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true')
+        run: npm run design:gate-summary
+
+      - name: Upload parity gate report + diffs
+        if: always() && (github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true')
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: parity-gate-report
+          path: scripts/design/.parity-gate-out/
+          retention-days: 30
+          if-no-files-found: warn
+          # scripts/design/.parity-gate-out/ is a dotfile dir — upload-artifact@v4
+          # silently excludes dotfile dirs by default, which meant this upload
+          # never actually included the diff PNGs (STOP-SHIP 2026-07-09 finding).
+          include-hidden-files: true
+
+  # Phase 3 ("review artifact regenerates per PR, linked from PR body") of
+  # docs/operations/keystone-fidelity-fix-plan-2026-07-08.md. Reruns Phase 1's
+  # review-gallery.ts (scripts/design/review-gallery.ts) against this PR's own
+  # branch, so the artifact a reviewer opens always reflects the current push
+  # rather than a stale worktree export. `needs: parity-gate` only to reuse
+  # its paths-filter output (`scoped`) and its gate tally (`summary`) instead
+  # of recomputing either — not a real execution dependency between the two
+  # captures, so this runs even when the gate itself fails (`!cancelled()`,
+  # not `always()`, so it still skips on a cancelled run).
+  review-gallery:
+    needs: parity-gate
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs['parity-gate'].outputs.scoped == 'true') }}
+    runs-on: ubuntu-latest
+    # Dev-server boot + chromium launch + ~27 scenario captures, same budget
+    # reasoning as the parity-gate job above.
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      # Only permission this job needs beyond the default `contents: read`:
+      # updating/creating the one PR comment below (Issues API — PRs are
+      # issues under the hood, and `pull-requests: write` is the scoped grant
+      # for that, not the broader `issues: write`). No `actions: write` is
+      # needed for actions/upload-artifact — see the parity-gate job above,
+      # which already uploads an artifact under plain `contents: read`.
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+        with:
+          # review-gallery.ts diffs against --base (default origin/main) to
+          # badge each scenario "changed since base" — a shallow, ref-only
+          # checkout wouldn't have a local origin/main to resolve. Full
+          # history is the simplest correct fix; the job already budgets
+          # ~20 min for a much heavier browser-capture step.
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      # Default --ref HEAD resolves to this checkout's own commit, so
+      # resolveAppInstance (capture-shared.ts) runs the current worktree
+      # directly instead of checking out a second temp worktree.
+      - name: Regenerate Keystone review artifact
+        run: npm run design:review-gallery
+
+      - name: Upload review artifact
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: keystone-design-review
+          path: docs/design-review/
+          retention-days: 30
+          if-no-files-found: warn
+          # Same dotfile-exclusion default as the parity-gate job above — this
+          # path has no dotfiles today, but keep the flag consistent so a
+          # future dotfile-named asset under docs/design-review/ doesn't
+          # silently drop out of the artifact again.
+          include-hidden-files: true
+
+      - name: Comment on PR with review artifact link
+        if: ${{ !cancelled() && github.event_name == 'pull_request' }}
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const marker = "<!-- keystone-design-review-bot -->";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const summary = ${{ toJSON(needs['parity-gate'].outputs.summary) }} || "gate summary unavailable (see workflow run)";
+            const body = [
+              marker,
+              `**Keystone design review** — parity gate: ${summary}`,
+              "",
+              `Full-page before/after screenshots for every scenario: download the \`keystone-design-review\` artifact from [this workflow run](${runUrl}) (bottom of the Summary page, under Artifacts).`,
+            ].join("\n");
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              per_page: 100,
+            });
+            const existing = comments.find((c) => c.body?.includes(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }

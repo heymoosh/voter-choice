@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Keystone review — Intake</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; background: #f6f7f8; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) { body { background: #14161a; color: #e8e8e8; } }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0; }
+  a { color: #1e5b8f; }
+  @media (prefers-color-scheme: dark) { a { color: #7ab8ea; } }
+  .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+  @media (prefers-color-scheme: dark) { .sub { color: #999; } }
+  .nav-links { margin: 16px 0; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #888; padding: 8px; }
+  td { border-top: 1px solid #ddd; padding: 10px 8px; vertical-align: top; }
+  @media (prefers-color-scheme: dark) { td { border-top: 1px solid #333; } }
+  td.meta { width: 260px; font-size: 12px; }
+  td.meta .id { font-weight: 600; font-family: ui-monospace, monospace; }
+  td.meta .label { color: #555; margin: 2px 0 6px; }
+  @media (prefers-color-scheme: dark) { td.meta .label { color: #aaa; } }
+  td.meta .note { color: #777; margin-top: 6px; line-height: 1.4; }
+  td.shot { width: 37.5%; }
+  td.shot img { width: 100%; height: auto; border: 1px solid #ccc; display: block; }
+  @media (prefers-color-scheme: dark) { td.shot img { border-color: #444; } }
+  .missing, .error, .not-automatable { font-size: 12px; padding: 10px; border: 1px dashed #999; color: #999; }
+  .error { color: #b3261e; border-color: #b3261e33; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+  .badge.changed { background: #ffe1a8; color: #7a4b00; }
+  .badge.unchanged { background: #e5e5e5; color: #666; }
+  @media (prefers-color-scheme: dark) { .badge.unchanged { background: #333; color: #aaa; } }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-right: 4px; text-transform: uppercase; }
+  .tag.yes { background: #d7f0d7; color: #1e6b1e; }
+  .tag.proxy { background: #fff0c2; color: #7a5c00; }
+  .tag.no { background: #f5d5d5; color: #8a1f1f; }
+  .cov { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+  .cov-tile { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; font-size: 13px; }
+  @media (prefers-color-scheme: dark) { .cov-tile { border-color: #333; } }
+  .cov-tile b { font-size: 18px; display: block; }
+  .section-list { list-style: none; padding: 0; margin: 0; }
+  .section-list li { border-top: 1px solid #ddd; padding: 12px 4px; display: flex; align-items: center; justify-content: space-between; }
+  @media (prefers-color-scheme: dark) { .section-list li { border-color: #333; } }
+  .section-list a { font-size: 15px; font-weight: 600; text-decoration: none; }
+  .section-list .counts { font-size: 12px; color: #777; }
+</style>
+</head>
+<body>
+  <h1>Keystone review — Intake</h1>
+  <div class="sub">ref: <code>HEAD (aea5992a)</code> &middot; generated 2026-07-10T14:27:57.518Z</div>
+  
+  <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
+  <table>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (aea5992a))</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="meta">
+          <div class="id">09a-intake-ask</div>
+          <div class="label">Intake step 1 — the ask</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Fresh cold-open, before any message is sent.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/09a-intake-ask.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/09a-intake-ask.png" alt="repo screenshot"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09b-intake-propose</div>
+          <div class="label">Intake step 2 — AI proposes + running issues card</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">After the first (extraction) turn — 2 starter issues + quick-reply chips.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/09b-intake-propose.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/09b-intake-propose.png" alt="repo screenshot"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09c-intake-locked</div>
+          <div class="label">Intake step 3 — ready to lock</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues are set' banner, editable review card, Back/Continue — data-testid="issue-locked-confirm-btn") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, when that screen appears, stops there to shoot the real thing. Until #236 lands, that click completes the lock instantly with no interstitial to hold on (jumps straight to orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy instead: same UI one turn further (3 issues, after a refinement reply), right before clicking Lock.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/09c-intake-locked.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/09c-intake-locked.png" alt="repo screenshot"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09d-edit-issues</div>
+          <div class="label">Intake step 4 — edit issues from workspace</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/09d-edit-issues.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/09d-edit-issues.png" alt="repo screenshot"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">09e-edit-rescored</div>
+          <div class="label">Intake step 5 — apply → re-scored with Revisit flags</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Race-data mock swings the House score hard (83%→17%) once 'congressional accountability' enters the issue list, so Apply produces a real &gt;5pt REVISIT flag instead of the flat 'nothing moved' branch.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/09e-edit-rescored.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/09e-edit-rescored.png" alt="repo screenshot"></td>
+      </tr></tbody>
+  </table>
+  <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
+</body>
+</html>

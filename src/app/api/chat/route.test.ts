@@ -40,6 +40,10 @@ vi.mock("../../../lib/server/budget", () => ({
   wasHandoffServed: vi.fn().mockReturnValue(false),
 }));
 
+vi.mock("../../../lib/server/chat-usage-metrics", () => ({
+  recordChatUsage: vi.fn().mockResolvedValue(undefined),
+}));
+
 vi.mock("../../../lib/server/alignment", () => ({
   resolveCandidateId: vi.fn().mockResolvedValue("openstates-tx-123"),
   lookupAlignment: vi.fn().mockResolvedValue({
@@ -102,6 +106,7 @@ import {
   getBudgetStatusAsync,
   recordUsageAsync,
 } from "../../../lib/server/budget";
+import { recordChatUsage } from "../../../lib/server/chat-usage-metrics";
 import {
   resolveCandidateId,
   lookupAlignment,
@@ -1565,6 +1570,32 @@ describe("POST /api/chat — per-round usage recording", () => {
       cacheWriteTokens: 0,
       searchCount: 0,
     });
+
+    // The anonymous per-request cost telemetry table must get the same
+    // per-round treatment — a single end-of-turn call would only ever see
+    // round 2's numbers (overwritten by every later round), silently
+    // dropping round 1's real spend from this table too.
+    expect(recordChatUsage).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(recordChatUsage).mock.calls[0][0]).toEqual({
+      inputTokens: 20,
+      outputTokens: 8,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      webSearchCount: 0,
+    });
+    expect(vi.mocked(recordChatUsage).mock.calls[0][1]).toEqual(
+      expect.objectContaining({ callKind: "chat" }),
+    );
+    expect(vi.mocked(recordChatUsage).mock.calls[1][0]).toEqual({
+      inputTokens: 10,
+      outputTokens: 5,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+      webSearchCount: 0,
+    });
+    expect(vi.mocked(recordChatUsage).mock.calls[1][1]).toEqual(
+      expect.objectContaining({ callKind: "chat" }),
+    );
   });
 
   it("does not carry a stale searchCount from an earlier round into a later round with no search tool use", async () => {

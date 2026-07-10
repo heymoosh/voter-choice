@@ -1,0 +1,108 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>Keystone review — Polis</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; margin: 0; padding: 24px; background: #f6f7f8; color: #1a1a1a; }
+  @media (prefers-color-scheme: dark) { body { background: #14161a; color: #e8e8e8; } }
+  h1 { font-size: 20px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 0; }
+  a { color: #1e5b8f; }
+  @media (prefers-color-scheme: dark) { a { color: #7ab8ea; } }
+  .sub { color: #666; font-size: 13px; margin-bottom: 20px; }
+  @media (prefers-color-scheme: dark) { .sub { color: #999; } }
+  .nav-links { margin: 16px 0; font-size: 13px; }
+  table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: #888; padding: 8px; }
+  td { border-top: 1px solid #ddd; padding: 10px 8px; vertical-align: top; }
+  @media (prefers-color-scheme: dark) { td { border-top: 1px solid #333; } }
+  td.meta { width: 260px; font-size: 12px; }
+  td.meta .id { font-weight: 600; font-family: ui-monospace, monospace; }
+  td.meta .label { color: #555; margin: 2px 0 6px; }
+  @media (prefers-color-scheme: dark) { td.meta .label { color: #aaa; } }
+  td.meta .note { color: #777; margin-top: 6px; line-height: 1.4; }
+  td.shot { width: 37.5%; }
+  td.shot img { width: 100%; height: auto; border: 1px solid #ccc; display: block; }
+  @media (prefers-color-scheme: dark) { td.shot img { border-color: #444; } }
+  .missing, .error, .not-automatable { font-size: 12px; padding: 10px; border: 1px dashed #999; color: #999; }
+  .error { color: #b3261e; border-color: #b3261e33; }
+  .badge { display: inline-block; font-size: 11px; padding: 2px 6px; border-radius: 3px; margin-right: 4px; }
+  .badge.changed { background: #ffe1a8; color: #7a4b00; }
+  .badge.unchanged { background: #e5e5e5; color: #666; }
+  @media (prefers-color-scheme: dark) { .badge.unchanged { background: #333; color: #aaa; } }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 3px; margin-right: 4px; text-transform: uppercase; }
+  .tag.yes { background: #d7f0d7; color: #1e6b1e; }
+  .tag.proxy { background: #fff0c2; color: #7a5c00; }
+  .tag.no { background: #f5d5d5; color: #8a1f1f; }
+  .cov { display: flex; gap: 16px; margin: 16px 0; flex-wrap: wrap; }
+  .cov-tile { border: 1px solid #ddd; border-radius: 6px; padding: 10px 14px; font-size: 13px; }
+  @media (prefers-color-scheme: dark) { .cov-tile { border-color: #333; } }
+  .cov-tile b { font-size: 18px; display: block; }
+  .section-list { list-style: none; padding: 0; margin: 0; }
+  .section-list li { border-top: 1px solid #ddd; padding: 12px 4px; display: flex; align-items: center; justify-content: space-between; }
+  @media (prefers-color-scheme: dark) { .section-list li { border-color: #333; } }
+  .section-list a { font-size: 15px; font-weight: 600; text-decoration: none; }
+  .section-list .counts { font-size: 12px; color: #777; }
+</style>
+</head>
+<body>
+  <h1>Keystone review — Polis</h1>
+  <div class="sub">ref: <code>HEAD (aea5992a)</code> &middot; generated 2026-07-10T14:27:57.518Z</div>
+  
+  <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
+  <table>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (aea5992a))</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="meta">
+          <div class="id">10a-polis-entry</div>
+          <div class="label">Polis — entry point</div>
+          
+          <span class="tag no">not automatable</span>
+          <div class="note">NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — data-testid="polis-entry-see-standing") isn't merged to main yet (PR #237); it replaces today's inline '.all-done … where you stand' link, which currently jumps straight to the standing report with no interstitial. A prior 'proxy' capture stopped at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas ref — a screen it never actually reaches — which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until #237 lands.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/10a-polis-entry.png" alt="reference artboard"></td>
+        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10b-polis-contribute</div>
+          <div class="label">Polis — contribute (blind voting)</div>
+          
+          <span class="tag no">not automatable</span>
+          <div class="note">NOT AUTOMATABLE: no such UI exists in the app to screenshot. Read src/prototype/redesign/PolisClose.tsx in full and grepped the repo for Agree/Disagree/Pass/PolisStand-style markup — the current Polis feature is a passive aggregate REPORT only (opinion-map + common-ground bridges), fed by server-side counters; there is no per-statement blind agree/disagree/pass voting surface anywhere in the codebase. This is a missing feature, not a missing test hook — capturing anything here would misrepresent the app.</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/10b-polis-contribute.png" alt="reference artboard"></td>
+        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10c-polis-report-consensus</div>
+          <div class="label">Polis — report, common-ground state</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated, plus one divided statement → 'Where it split' renders too (the realistic 'mostly consensus, some friction' mix). Bridges/divided rendering is real content today; PolisClose.tsx doesn't consume the divided field yet (PR #240, not merged) so that second panel doesn't show on main until then — see STRUCTURAL_WAIVERS in parity-gate.ts for why the residual visual diff is expected either way (DECISION #116, party-free).</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/10c-polis-report-consensus.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/10c-polis-report-consensus.png" alt="repo screenshot"></td>
+      </tr>
+
+      <tr>
+        <td class="meta">
+          <div class="id">10d-polis-report-divided</div>
+          <div class="label">Polis — report, divided/no-common-ground state</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag proxy">proxy</span>
+          <div class="note">PolisClose has no computed 'divided/split' branch yet (PR #240, not merged to main — only an early-days vs. normal lede, toggled purely by sampleSize&lt;30, see LOW_N in PolisClose.tsx). Bridges mock now returns zero bridges + several real divided statements — on #240 this renders the true 'genuinely split' branch (no Common ground panel, 'Where it split' populated instead); on main today it exercises the existing bridges.length===0 fallback (the 'big stat panel' branch) since divided isn't read yet. Proxy until #240 lands. See STRUCTURAL_WAIVERS in parity-gate.ts for why the residual visual diff is expected either way (DECISION #116, party-free).</div>
+        </td>
+        <td class="shot"><img src="screenshots/refs/10d-polis-report-divided.png" alt="reference artboard"></td>
+        <td class="shot"><img src="screenshots/repo/10d-polis-report-divided.png" alt="repo screenshot"></td>
+      </tr></tbody>
+  </table>
+  <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
+</body>
+</html>

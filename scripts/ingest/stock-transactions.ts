@@ -82,9 +82,9 @@ import { candidates, memberStockTransactions } from "../../db/schema";
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOUSE_DATASET_URL =
+export const HOUSE_DATASET_URL =
   "https://raw.githubusercontent.com/TattooedHead/house-stock-watcher-data/main/data/all_transactions.json";
-const SENATE_DATASET_URL =
+export const SENATE_DATASET_URL =
   "https://raw.githubusercontent.com/timothycarambat/senate-stock-watcher-data/master/aggregate/all_transactions_for_senators.json";
 
 type Fetcher = typeof fetch;
@@ -290,6 +290,20 @@ export function parseSourceDate(raw: string | null | undefined): string | null {
   return `${m[3]}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** True when a transaction's dates are impossible and it should be dropped as
+ *  malformed: a transaction dated in the future, or disclosed before it
+ *  occurred. Both are source typos (spot-check 2026-07-10: 17 rows, ~0.12%).
+ *  Args are ISO "YYYY-MM-DD" strings (lexicographic compare == chronological). */
+export function hasImplausibleDates(
+  transactionDate: string,
+  disclosureDate: string | null,
+): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  if (transactionDate > today) return true;
+  if (disclosureDate && disclosureDate < transactionDate) return true;
+  return false;
+}
+
 /**
  * Strips embedded HTML tags (the Senate grouped dataset wraps some tickers
  * in `<a href=...>` and some bond descriptions in `<div class="text-muted">`
@@ -322,6 +336,32 @@ export function isValidFilingUrl(raw: string | null | undefined): boolean {
       (url.protocol === "http:" || url.protocol === "https:") &&
       url.hostname.length > 0
     );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * filing_url is dataset-controlled (neither source repo is pinned or
+ * checksummed — see the file header) and, once persisted, is trusted for
+ * rendering as an outbound link. `isValidFilingUrl` alone only rejects
+ * malformed/non-http(s) values; it would happily accept a well-formed URL on
+ * ANY host, including one a compromised or careless upstream dataset could
+ * point at something other than the official filing. Restrict to the two
+ * hosts these datasets are documented (in the file header) to actually use —
+ * the House Clerk's PTR PDF host and the Senate eFD search host — so a
+ * divergent host is rejected at parse time rather than trusted for display.
+ */
+const ALLOWED_FILING_URL_HOSTS = new Set([
+  "disclosures-clerk.house.gov",
+  "efdsearch.senate.gov",
+]);
+
+export function isAllowedFilingHost(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const url = new URL(raw);
+    return ALLOWED_FILING_URL_HOSTS.has(url.hostname.toLowerCase());
   } catch {
     return false;
   }
@@ -389,6 +429,26 @@ export function buildExternalId(parts: {
   ].join("::");
 }
 
+/**
+ * Postgres btree index entries are capped at roughly 2712 bytes on the
+ * default 8KB page size ("index row size exceeds btree version 4 maximum
+ * for index ..."); external_id carries a unique btree index
+ * (member_stock_transactions_external_id_uidx). Every field that feeds
+ * buildExternalId is otherwise bounded EXCEPT assetDescription and owner
+ * (free text, only stripHtml'd — no length cap), so a sufficiently garbled
+ * scrape (e.g. a PDF-extraction glitch dumping a huge text blob into
+ * asset_description) could still produce an externalId that trips the index
+ * limit and aborts the whole insert statement. Reject with a safety margin
+ * BELOW the actual Postgres limit, at row-build time, so this is caught as
+ * an ordinary "malformed row" (skipped, logged, counted) rather than an
+ * insert-time failure that risks taking the rest of the batch down with it.
+ */
+const MAX_EXTERNAL_ID_BYTES = 2000;
+
+export function isExternalIdWithinBounds(externalId: string): boolean {
+  return Buffer.byteLength(externalId, "utf8") <= MAX_EXTERNAL_ID_BYTES;
+}
+
 // ---------------------------------------------------------------------------
 // Row parsing (pure — no DB, no member matching)
 // ---------------------------------------------------------------------------
@@ -400,6 +460,7 @@ export function parseHouseRow(
   const assetDescription = stripHtml(row.asset_description);
   const filingUrl = (row.source_url ?? "").trim();
   const transactionDate = parseSourceDate(row.transaction_date);
+  const disclosureDate = parseSourceDate(row.disclosure_date);
   const district = parseHouseDistrict(row.district);
   const amount = parseAmountRange(row.amount);
 
@@ -407,9 +468,11 @@ export function parseHouseRow(
     !assetDescription ||
     !filingUrl ||
     !isValidFilingUrl(filingUrl) ||
+    !isAllowedFilingHost(filingUrl) ||
     !transactionDate ||
     !district ||
-    !amount
+    !amount ||
+    hasImplausibleDates(transactionDate, disclosureDate)
   ) {
     return null;
   }
@@ -430,7 +493,7 @@ export function parseHouseRow(
     amountHigh: amount.high,
     amountRangeLabel: amount.label,
     transactionDate,
-    disclosureDate: parseSourceDate(row.disclosure_date),
+    disclosureDate,
     owner: stripHtml(row.owner),
     filingUrl,
     rawMetadata: {
@@ -472,7 +535,9 @@ export function parseSenateFilingGroup(
       !transactionDate ||
       !amount ||
       !filingUrl ||
-      !isValidFilingUrl(filingUrl)
+      !isValidFilingUrl(filingUrl) ||
+      !isAllowedFilingHost(filingUrl) ||
+      hasImplausibleDates(transactionDate, disclosureDate)
     ) {
       continue;
     }
@@ -777,7 +842,12 @@ export function buildHouseTransactionRows(
       counts.unmatchedMember += 1;
       continue;
     }
-    rows.push(toRow(parsed, candidateId, "house_stock_watcher"));
+    const row = toRow(parsed, candidateId, "house_stock_watcher");
+    if (!isExternalIdWithinBounds(row.externalId)) {
+      counts.malformed += 1;
+      continue;
+    }
+    rows.push(row);
     counts.built += 1;
   }
 
@@ -811,7 +881,12 @@ export function buildSenateTransactionRows(
         counts.unmatchedMember += 1;
         continue;
       }
-      rows.push(toRow(parsed, candidateId, "senate_stock_watcher"));
+      const row = toRow(parsed, candidateId, "senate_stock_watcher");
+      if (!isExternalIdWithinBounds(row.externalId)) {
+        counts.malformed += 1;
+        continue;
+      }
+      rows.push(row);
       counts.built += 1;
     }
   }
@@ -877,13 +952,25 @@ async function loadFederalCandidateRows(
   return rows;
 }
 
-export async function upsertStockTransactionRows(
+/** Rows per upsert statement. Keeps a single oversized/out-of-range row
+ *  that slips past the pre-insert bounds checks above from aborting the
+ *  ENTIRE batch — Postgres fails the whole multi-row INSERT as one
+ *  statement, so a bad row anywhere in a giant single batch would otherwise
+ *  drop every good row alongside it.
+ *
+ *  Sized down from 200 → 50 after the first live run (2026-07-10): at 200,
+ *  chunks carrying large `raw_metadata` JSON blobs pushed the Neon HTTP
+ *  request over its body-size limit and returned HTTP 413, forcing ~12 chunks
+ *  (~2.4k rows) down the slow per-row retry path (no data lost, but slow and
+ *  noisy). 50 keeps every request comfortably under the limit; the per-row
+ *  fallback below still backstops any single genuinely-oversized row. */
+const UPSERT_CHUNK_SIZE = 50;
+
+async function upsertRowChunk(
   db: DbClient,
   rows: StockTransactionRow[],
-): Promise<number> {
-  if (rows.length === 0) return 0;
+): Promise<void> {
   const now = new Date();
-
   await db
     .insert(memberStockTransactions)
     .values(rows.map((row) => ({ ...row, updatedAt: now })))
@@ -915,8 +1002,47 @@ export async function upsertStockTransactionRows(
         updatedAt: sql`excluded.updated_at`,
       },
     });
+}
 
-  return rows.length;
+/**
+ * Upserts in bounded chunks rather than one giant statement, so a row that
+ * slips past the pre-insert bounds checks (buildHouseTransactionRows /
+ * buildSenateTransactionRows) and still trips a DB-side constraint only
+ * costs its own chunk, not the whole run. If a chunk itself fails, it is
+ * retried ONE ROW AT A TIME so the good rows in that chunk still land and
+ * only the actual bad row is skipped (and logged) — never the whole batch,
+ * never even the whole chunk.
+ */
+export async function upsertStockTransactionRows(
+  db: DbClient,
+  rows: StockTransactionRow[],
+): Promise<number> {
+  if (rows.length === 0) return 0;
+
+  let upserted = 0;
+  for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + UPSERT_CHUNK_SIZE);
+    try {
+      await upsertRowChunk(db, chunk);
+      upserted += chunk.length;
+    } catch (err) {
+      console.warn(
+        `[stock-transactions] chunk upsert failed (${chunk.length} rows) — retrying individually to isolate the bad row: ${err}`,
+      );
+      for (const row of chunk) {
+        try {
+          await upsertRowChunk(db, [row]);
+          upserted += 1;
+        } catch (rowErr) {
+          console.warn(
+            `[stock-transactions] skipping row — insert failed: externalId=${row.externalId.slice(0, 120)} error=${rowErr}`,
+          );
+        }
+      }
+    }
+  }
+
+  return upserted;
 }
 
 // ---------------------------------------------------------------------------

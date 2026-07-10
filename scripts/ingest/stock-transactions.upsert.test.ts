@@ -47,6 +47,39 @@ function makeDbClient() {
   };
 }
 
+/** A row builder for chunking tests — every field distinct via externalId. */
+function makeRow(externalId: string): StockTransactionRow {
+  return { ...ROW, externalId };
+}
+
+/**
+ * Same shape as makeDbClient, but the mocked onConflictDoUpdate call REJECTS
+ * whenever the values() batch it's chained off of contains a row whose
+ * externalId is in `badIds` — simulating a DB-side constraint failure (e.g.
+ * a row that slipped past the pre-insert bounds checks) on exactly that row,
+ * indistinguishable at the DB layer from any other insert error.
+ */
+function makeDbClientRejectingIds(badIds: Set<string>) {
+  const insertFn = vi.fn();
+  const calls: StockTransactionRow[][] = [];
+  insertFn.mockImplementation(() => ({
+    values: (rows: StockTransactionRow[]) => {
+      calls.push(rows);
+      const hasBadRow = rows.some((r) => badIds.has(r.externalId));
+      return {
+        onConflictDoUpdate: () =>
+          hasBadRow
+            ? Promise.reject(new Error("simulated constraint violation"))
+            : Promise.resolve(undefined),
+      };
+    },
+  }));
+  return {
+    db: { insert: insertFn } as unknown as import("../../db/client").DbClient,
+    calls,
+  };
+}
+
 describe("upsertStockTransactionRows", () => {
   it("upserts every row passed in (the batch is not dropped)", async () => {
     const { db, valuesFn } = makeDbClient();
@@ -69,5 +102,43 @@ describe("upsertStockTransactionRows", () => {
     const count = await upsertStockTransactionRows(db, []);
     expect(count).toBe(0);
     expect(insertFn).not.toHaveBeenCalled();
+  });
+
+  it("chunks a large batch into multiple insert statements rather than one giant one", async () => {
+    const { db, valuesFn } = makeDbClient();
+    const rows = Array.from({ length: 450 }, (_, i) => makeRow(`row-${i}`));
+    const count = await upsertStockTransactionRows(db, rows);
+    expect(count).toBe(450);
+    // 450 rows at 50/chunk → 9 chunks of 50 each.
+    expect(valuesFn).toHaveBeenCalledTimes(9);
+    expect(valuesFn.mock.calls[0][0]).toHaveLength(50);
+    expect(valuesFn.mock.calls[8][0]).toHaveLength(50);
+  });
+
+  it("GOAL_CONDITION: a single out-of-range row does not abort the whole batch — only that row is skipped, every good row still upserts", async () => {
+    const rows = [makeRow("good-1"), makeRow("bad-row"), makeRow("good-2")];
+    const { db } = makeDbClientRejectingIds(new Set(["bad-row"]));
+
+    const count = await upsertStockTransactionRows(db, rows);
+
+    // Both good rows landed; only the bad one was skipped.
+    expect(count).toBe(2);
+  });
+
+  it("isolates the bad row to itself — retrying a failed chunk one row at a time, not dropping chunk-mates", async () => {
+    // All 3 rows share one chunk (well under UPSERT_CHUNK_SIZE), so the
+    // whole-chunk batch insert fails first; the retry-by-row fallback must
+    // then still land the two good rows individually.
+    const rows = [makeRow("good-1"), makeRow("bad-row"), makeRow("good-2")];
+    const { db, calls } = makeDbClientRejectingIds(new Set(["bad-row"]));
+
+    const count = await upsertStockTransactionRows(db, rows);
+
+    expect(count).toBe(2);
+    // First call is the whole-chunk attempt (3 rows, fails); then 3
+    // single-row retries (2 succeed, 1 — the bad row — fails again).
+    expect(calls[0]).toHaveLength(3);
+    expect(calls.slice(1).every((c) => c.length === 1)).toBe(true);
+    expect(calls.length).toBe(4);
   });
 });
