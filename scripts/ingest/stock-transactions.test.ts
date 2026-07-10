@@ -12,6 +12,8 @@ import {
   parseAmountRange,
   parseSourceDate,
   isValidFilingUrl,
+  isAllowedFilingHost,
+  isExternalIdWithinBounds,
   stripHtml,
   normalizeTicker,
   normalizeTransactionType,
@@ -328,6 +330,15 @@ describe("parseHouseRow", () => {
       parseHouseRow({ ...GOOD_HOUSE_ROW, source_url: "/relative/path.pdf" }),
     ).toBeNull();
   });
+
+  it("returns null when source_url is well-formed but not on the House Clerk host", () => {
+    expect(
+      parseHouseRow({
+        ...GOOD_HOUSE_ROW,
+        source_url: "https://example.com/fake-filing.pdf",
+      }),
+    ).toBeNull();
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -350,6 +361,70 @@ describe("isValidFilingUrl", () => {
     expect(isValidFilingUrl("/relative/path.pdf")).toBe(false);
     expect(isValidFilingUrl("")).toBe(false);
     expect(isValidFilingUrl(undefined)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isAllowedFilingHost
+// ---------------------------------------------------------------------------
+
+describe("isAllowedFilingHost", () => {
+  it("accepts the House Clerk and Senate eFD hosts", () => {
+    expect(
+      isAllowedFilingHost(
+        "https://disclosures-clerk.house.gov/public_disc/ptr-pdfs/2026/20034807.pdf",
+      ),
+    ).toBe(true);
+    expect(
+      isAllowedFilingHost(
+        "https://efdsearch.senate.gov/search/view/ptr/32550a8f-923e-416f-84f3-e19ab4f148b1/",
+      ),
+    ).toBe(true);
+  });
+
+  it("is case-insensitive on hostname", () => {
+    expect(
+      isAllowedFilingHost(
+        "https://DISCLOSURES-CLERK.HOUSE.GOV/public_disc/ptr-pdfs/2026/x.pdf",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects any other host, even a well-formed http(s) URL", () => {
+    expect(isAllowedFilingHost("https://example.com/filing.pdf")).toBe(false);
+    expect(
+      isAllowedFilingHost("https://evil.example/disclosures-clerk.house.gov"),
+    ).toBe(false);
+    expect(
+      isAllowedFilingHost("https://house.gov.evil.example/filing.pdf"),
+    ).toBe(false);
+  });
+
+  it("rejects malformed or empty values", () => {
+    expect(isAllowedFilingHost("not a url")).toBe(false);
+    expect(isAllowedFilingHost("")).toBe(false);
+    expect(isAllowedFilingHost(undefined)).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// isExternalIdWithinBounds
+// ---------------------------------------------------------------------------
+
+describe("isExternalIdWithinBounds", () => {
+  it("accepts an ordinary externalId", () => {
+    expect(
+      isExternalIdWithinBounds(
+        "house_stock_watcher::federal-V000135::GOOGL::Alphabet Inc.::2026-06-16::Sale::$1,001 - $15,000::Self",
+      ),
+    ).toBe(true);
+  });
+
+  it("rejects an externalId built from a pathologically long field", () => {
+    const huge = "x".repeat(3000);
+    expect(isExternalIdWithinBounds(`house_stock_watcher::${huge}`)).toBe(
+      false,
+    );
   });
 });
 
@@ -443,6 +518,17 @@ describe("parseSenateFilingGroup", () => {
       ],
     };
     expect(parseSenateFilingGroup(badLink)).toEqual([]);
+  });
+
+  it("skips a transaction whose ptr_link is well-formed but not on the Senate eFD host", () => {
+    const wrongHost: SenateWatcherFilingGroup = {
+      ...GOOD_SENATE_GROUP,
+      ptr_link: "https://example.com/fake-ptr",
+      transactions: [
+        { ...GOOD_SENATE_GROUP.transactions![0], ptr_link: undefined },
+      ],
+    };
+    expect(parseSenateFilingGroup(wrongHost)).toEqual([]);
   });
 });
 
@@ -693,6 +779,24 @@ describe("buildHouseTransactionRows", () => {
     const { rows, counts } = buildHouseTransactionRows([garbage], index);
     expect(rows).toHaveLength(0);
     expect(counts.malformed).toBe(1);
+  });
+
+  it("skips (as malformed) a row whose asset_description is so long the externalId would trip the btree index limit — never crashes, never builds it", () => {
+    const pathological: HouseWatcherRow = {
+      ...GOOD_HOUSE_ROW,
+      asset_description: "A".repeat(5000),
+    };
+    expect(() =>
+      buildHouseTransactionRows([pathological], index),
+    ).not.toThrow();
+    const { rows, counts } = buildHouseTransactionRows([pathological], index);
+    expect(rows).toHaveLength(0);
+    expect(counts).toEqual({
+      read: 1,
+      malformed: 1,
+      unmatchedMember: 0,
+      built: 0,
+    });
   });
 });
 

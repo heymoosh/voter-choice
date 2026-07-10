@@ -327,6 +327,32 @@ export function isValidFilingUrl(raw: string | null | undefined): boolean {
   }
 }
 
+/**
+ * filing_url is dataset-controlled (neither source repo is pinned or
+ * checksummed — see the file header) and, once persisted, is trusted for
+ * rendering as an outbound link. `isValidFilingUrl` alone only rejects
+ * malformed/non-http(s) values; it would happily accept a well-formed URL on
+ * ANY host, including one a compromised or careless upstream dataset could
+ * point at something other than the official filing. Restrict to the two
+ * hosts these datasets are documented (in the file header) to actually use —
+ * the House Clerk's PTR PDF host and the Senate eFD search host — so a
+ * divergent host is rejected at parse time rather than trusted for display.
+ */
+const ALLOWED_FILING_URL_HOSTS = new Set([
+  "disclosures-clerk.house.gov",
+  "efdsearch.senate.gov",
+]);
+
+export function isAllowedFilingHost(raw: string | null | undefined): boolean {
+  if (!raw) return false;
+  try {
+    const url = new URL(raw);
+    return ALLOWED_FILING_URL_HOSTS.has(url.hostname.toLowerCase());
+  } catch {
+    return false;
+  }
+}
+
 /** "--" (both source datasets' "no ticker" sentinel) → null. */
 export function normalizeTicker(raw: string | null | undefined): string | null {
   const cleaned = stripHtml(raw);
@@ -389,6 +415,26 @@ export function buildExternalId(parts: {
   ].join("::");
 }
 
+/**
+ * Postgres btree index entries are capped at roughly 2712 bytes on the
+ * default 8KB page size ("index row size exceeds btree version 4 maximum
+ * for index ..."); external_id carries a unique btree index
+ * (member_stock_transactions_external_id_uidx). Every field that feeds
+ * buildExternalId is otherwise bounded EXCEPT assetDescription and owner
+ * (free text, only stripHtml'd — no length cap), so a sufficiently garbled
+ * scrape (e.g. a PDF-extraction glitch dumping a huge text blob into
+ * asset_description) could still produce an externalId that trips the index
+ * limit and aborts the whole insert statement. Reject with a safety margin
+ * BELOW the actual Postgres limit, at row-build time, so this is caught as
+ * an ordinary "malformed row" (skipped, logged, counted) rather than an
+ * insert-time failure that risks taking the rest of the batch down with it.
+ */
+const MAX_EXTERNAL_ID_BYTES = 2000;
+
+export function isExternalIdWithinBounds(externalId: string): boolean {
+  return Buffer.byteLength(externalId, "utf8") <= MAX_EXTERNAL_ID_BYTES;
+}
+
 // ---------------------------------------------------------------------------
 // Row parsing (pure — no DB, no member matching)
 // ---------------------------------------------------------------------------
@@ -407,6 +453,7 @@ export function parseHouseRow(
     !assetDescription ||
     !filingUrl ||
     !isValidFilingUrl(filingUrl) ||
+    !isAllowedFilingHost(filingUrl) ||
     !transactionDate ||
     !district ||
     !amount
@@ -472,7 +519,8 @@ export function parseSenateFilingGroup(
       !transactionDate ||
       !amount ||
       !filingUrl ||
-      !isValidFilingUrl(filingUrl)
+      !isValidFilingUrl(filingUrl) ||
+      !isAllowedFilingHost(filingUrl)
     ) {
       continue;
     }
@@ -777,7 +825,12 @@ export function buildHouseTransactionRows(
       counts.unmatchedMember += 1;
       continue;
     }
-    rows.push(toRow(parsed, candidateId, "house_stock_watcher"));
+    const row = toRow(parsed, candidateId, "house_stock_watcher");
+    if (!isExternalIdWithinBounds(row.externalId)) {
+      counts.malformed += 1;
+      continue;
+    }
+    rows.push(row);
     counts.built += 1;
   }
 
@@ -811,7 +864,12 @@ export function buildSenateTransactionRows(
         counts.unmatchedMember += 1;
         continue;
       }
-      rows.push(toRow(parsed, candidateId, "senate_stock_watcher"));
+      const row = toRow(parsed, candidateId, "senate_stock_watcher");
+      if (!isExternalIdWithinBounds(row.externalId)) {
+        counts.malformed += 1;
+        continue;
+      }
+      rows.push(row);
       counts.built += 1;
     }
   }
@@ -877,13 +935,18 @@ async function loadFederalCandidateRows(
   return rows;
 }
 
-export async function upsertStockTransactionRows(
+/** Rows per upsert statement. Keeps a single oversized/out-of-range row
+ *  that slips past the pre-insert bounds checks above from aborting the
+ *  ENTIRE batch — Postgres fails the whole multi-row INSERT as one
+ *  statement, so a bad row anywhere in a giant single batch would otherwise
+ *  drop every good row alongside it. */
+const UPSERT_CHUNK_SIZE = 200;
+
+async function upsertRowChunk(
   db: DbClient,
   rows: StockTransactionRow[],
-): Promise<number> {
-  if (rows.length === 0) return 0;
+): Promise<void> {
   const now = new Date();
-
   await db
     .insert(memberStockTransactions)
     .values(rows.map((row) => ({ ...row, updatedAt: now })))
@@ -915,8 +978,47 @@ export async function upsertStockTransactionRows(
         updatedAt: sql`excluded.updated_at`,
       },
     });
+}
 
-  return rows.length;
+/**
+ * Upserts in bounded chunks rather than one giant statement, so a row that
+ * slips past the pre-insert bounds checks (buildHouseTransactionRows /
+ * buildSenateTransactionRows) and still trips a DB-side constraint only
+ * costs its own chunk, not the whole run. If a chunk itself fails, it is
+ * retried ONE ROW AT A TIME so the good rows in that chunk still land and
+ * only the actual bad row is skipped (and logged) — never the whole batch,
+ * never even the whole chunk.
+ */
+export async function upsertStockTransactionRows(
+  db: DbClient,
+  rows: StockTransactionRow[],
+): Promise<number> {
+  if (rows.length === 0) return 0;
+
+  let upserted = 0;
+  for (let i = 0; i < rows.length; i += UPSERT_CHUNK_SIZE) {
+    const chunk = rows.slice(i, i + UPSERT_CHUNK_SIZE);
+    try {
+      await upsertRowChunk(db, chunk);
+      upserted += chunk.length;
+    } catch (err) {
+      console.warn(
+        `[stock-transactions] chunk upsert failed (${chunk.length} rows) — retrying individually to isolate the bad row: ${err}`,
+      );
+      for (const row of chunk) {
+        try {
+          await upsertRowChunk(db, [row]);
+          upserted += 1;
+        } catch (rowErr) {
+          console.warn(
+            `[stock-transactions] skipping row — insert failed: externalId=${row.externalId.slice(0, 120)} error=${rowErr}`,
+          );
+        }
+      }
+    }
+  }
+
+  return upserted;
 }
 
 // ---------------------------------------------------------------------------
