@@ -3051,6 +3051,434 @@ Bumps
   color: var(--mt-brand);
 }
 
+/* ---------- Why Now — Bold Flag / Keystone parity (07-whynow) ----------
+   WhyNow never used the shared StaticPage shell — canvas's own WhyNow
+   (design-handoff/keystone-canvas/src/screens-whynow.jsx + whynow.css)
+   isn't part of the StaticPageVC family either, it's its own long-form
+   editorial layout. This is a literal class-token port of that layout's
+   content sections (wn-mast/wn-sec/wn-h2/wn-cols/wn-body/wn-stats/wn-stat/
+   wn-pull/wn-ballot/wn-steps/wn-step/wn-cta) — the canvas's page chrome
+   (flagbar/SCNav) is intentionally not replicated since App2.tsx's own
+   AppNav already renders equivalent chrome around every stage. Scoped to
+   .wn-wrap only — does not touch the shared civic palette or any other
+   page. */
+.wn-wrap {
+  --wn-paper: oklch(1 0 0);
+  --wn-paper-2: oklch(0.985 0.003 258);
+  --wn-ink: oklch(0.2 0.035 260);
+  --wn-ink-2: oklch(0.37 0.032 260);
+  --wn-ink-3: oklch(0.54 0.026 260);
+  --wn-brand: oklch(0.4 0.155 262);
+  --wn-brand-2: oklch(0.31 0.145 262);
+  --wn-gold: oklch(0.72 0.125 76);
+  --wn-replace: oklch(0.53 0.205 27);
+  --wn-rule: oklch(0.88 0.006 260);
+  --wn-rule-2: oklch(0.93 0.005 260);
+  --wn-shadow-soft:
+    0 1px 0 oklch(0.92 0.012 85), 0 12px 30px -22px oklch(0.2 0.03 255 / 0.18);
+  --wn-serif: "Newsreader", Georgia, serif;
+  --wn-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --wn-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--wn-paper);
+  color: var(--wn-ink);
+  min-height: calc(100vh - 64px);
+}
+.wn-back {
+  display: block;
+  background: transparent;
+  border: 0;
+  color: var(--wn-brand);
+  font-size: 13.5px;
+  padding: 20px 90px 0;
+  cursor: pointer;
+}
+.wn-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.wn-mast {
+  padding: 40px 0 40px;
+  border-bottom: 2px solid var(--wn-ink);
+  margin: 0 90px;
+  text-align: center;
+}
+.wn-mast .ey {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-family: var(--wn-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--wn-replace);
+}
+.wn-mast h1 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 76px;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  margin: 0;
+  color: var(--wn-ink);
+}
+.wn-mast h1 em {
+  font-style: italic;
+  color: var(--wn-brand);
+}
+.wn-mast .dek {
+  font-family: var(--wn-serif);
+  font-size: 21px;
+  line-height: 1.45;
+  color: var(--wn-ink-2);
+  margin: 18px auto 0;
+  max-width: 660px;
+  text-wrap: balance;
+}
+.wn-sec {
+  padding: 52px 90px;
+  border-bottom: 1px solid var(--wn-rule-2);
+}
+.wn-sec.alt {
+  background: var(--wn-paper-2);
+}
+.wn-sec.brand {
+  background: var(--wn-brand);
+  color: oklch(0.96 0.02 262);
+  border-bottom: none;
+}
+.wn-kicker {
+  font-family: var(--wn-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--wn-replace);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wn-kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--wn-replace);
+}
+.wn-sec.brand .wn-kicker {
+  color: var(--wn-gold);
+}
+.wn-sec.brand .wn-kicker::before {
+  background: var(--wn-gold);
+}
+.wn-h2 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 42px;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 22px;
+  color: var(--wn-ink);
+  text-wrap: balance;
+  max-width: 880px;
+}
+.wn-sec.brand .wn-h2 {
+  color: oklch(0.99 0.01 262);
+  max-width: 940px;
+}
+.wn-h2 em {
+  font-style: italic;
+  color: var(--wn-brand);
+}
+.wn-sec.brand .wn-h2 em {
+  color: var(--wn-gold);
+  font-style: normal;
+}
+.wn-cols {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+.wn-body {
+  font-size: 17.5px;
+  line-height: 1.62;
+  color: var(--wn-ink-2);
+  max-width: 620px;
+}
+.wn-body p {
+  margin: 0 0 16px;
+}
+.wn-body p:last-child {
+  margin-bottom: 0;
+}
+.wn-body b {
+  color: var(--wn-ink);
+  font-weight: 600;
+}
+.wn-body .lead-in {
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  color: var(--wn-ink);
+  font-size: 0.92em;
+}
+.wn-sec.brand .wn-body {
+  color: oklch(0.92 0.02 262);
+}
+.wn-sec.brand .wn-body b {
+  color: oklch(1 0 0);
+}
+.wn-stats {
+  display: grid;
+  gap: 18px;
+}
+.wn-stat {
+  border: 1px solid var(--wn-rule);
+  border-radius: 14px;
+  background: var(--wn-paper);
+  padding: 22px 24px;
+  box-shadow: var(--wn-shadow-soft);
+}
+.wn-stat.red {
+  border-color: oklch(0.8 0.1 27);
+}
+.wn-stat .v {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 60px;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--wn-brand);
+}
+.wn-stat.red .v {
+  color: var(--wn-replace);
+}
+.wn-stat .v small {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 4px;
+  color: var(--wn-ink-3);
+}
+.wn-stat .l {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--wn-ink-2);
+  margin-top: 12px;
+}
+.wn-stat .cite {
+  font-family: var(--wn-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wn-ink-3);
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--wn-rule-2);
+}
+.wn-pull {
+  font-family: var(--wn-serif);
+  font-weight: 500;
+  font-size: 34px;
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  color: var(--wn-ink);
+  max-width: 900px;
+  margin: 0;
+  text-wrap: balance;
+}
+.wn-pull em {
+  font-style: italic;
+  color: var(--wn-brand);
+}
+.wn-pull .src {
+  display: block;
+  font-family: var(--wn-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wn-ink-3);
+  margin-top: 20px;
+}
+.wn-ballot {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 36px;
+  border: 1px solid oklch(1 0 0 / 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.wn-ballot .cell {
+  padding: 26px 24px;
+}
+.wn-ballot .cell + .cell {
+  border-left: 1px solid oklch(1 0 0 / 0.16);
+}
+.wn-ballot .v {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 52px;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: oklch(1 0 0);
+}
+.wn-ballot .v.gold {
+  color: var(--wn-gold);
+}
+.wn-ballot .l {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: oklch(0.9 0.02 262);
+  margin-top: 10px;
+}
+.wn-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 8px;
+}
+.wn-step {
+  border: 1px solid var(--wn-rule);
+  border-radius: 14px;
+  background: var(--wn-paper);
+  padding: 26px 24px;
+  box-shadow: var(--wn-shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+.wn-step::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--wn-brand);
+}
+.wn-step:nth-child(2)::before {
+  background: var(--wn-gold);
+}
+.wn-step:nth-child(3)::before {
+  background: var(--wn-replace);
+}
+.wn-step .n {
+  font-family: var(--wn-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wn-paper-2);
+  background: var(--wn-brand);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+}
+.wn-step:nth-child(2) .n {
+  background: var(--wn-gold);
+  color: var(--wn-ink);
+}
+.wn-step:nth-child(3) .n {
+  background: var(--wn-replace);
+}
+.wn-step h3 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  color: var(--wn-ink);
+}
+.wn-step p {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--wn-ink-3);
+  margin: 0;
+}
+.wn-step .tag {
+  font-family: var(--wn-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wn-brand);
+  font-weight: 700;
+  margin-top: 14px;
+  display: inline-block;
+}
+.wn-cta {
+  padding: 60px 90px;
+  text-align: center;
+  background: var(--wn-paper-2);
+}
+.wn-cta h2 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 40px;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  color: var(--wn-ink);
+  text-wrap: balance;
+}
+.wn-cta p {
+  font-size: 16px;
+  color: var(--wn-ink-2);
+  margin: 0 auto 26px;
+  max-width: 540px;
+}
+.wn-cta .btn-primary {
+  background: var(--wn-brand);
+  color: var(--wn-paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--wn-sans);
+  font-weight: 600;
+  font-size: 16px;
+  padding: 16px 26px;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--wn-shadow-soft);
+}
+.wn-cta .btn-primary:hover {
+  background: var(--wn-brand-2);
+}
+.wn-cta .sub {
+  font-family: var(--wn-mono);
+  font-size: 11px;
+  color: var(--wn-ink-3);
+  margin-top: 16px;
+  letter-spacing: 0.02em;
+}
+@media (max-width: 900px) {
+  .wn-back,
+  .wn-sec,
+  .wn-cta {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+  .wn-mast {
+    margin: 0 32px;
+  }
+  .wn-mast h1 {
+    font-size: 48px;
+  }
+  .wn-cols,
+  .wn-ballot,
+  .wn-steps {
+    grid-template-columns: 1fr;
+  }
+  .wn-ballot .cell + .cell {
+    border-left: none;
+    border-top: 1px solid oklch(1 0 0 / 0.16);
+  }
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds

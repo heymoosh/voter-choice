@@ -594,9 +594,18 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "non-2026 seats out entirely (Phase 0 finding #4, docs/operations/" +
     "keystone-phase0-findings-2026-07-08.md).",
   "07-whynow":
-    "WhyNowPage (VoterChoiceApp.tsx) uses its own stat-stack vocabulary — confirmed by a full " +
-    "class-token diff against screens-whynow.jsx's WhyNow (wn-* prefix): zero overlap beyond " +
-    "single-letter tokens too generic to probe meaningfully (cite/l/v).",
+    "UPDATED 2026-07-10 (07-whynow build pass): WhyNowPage (VoterChoiceApp.tsx) was rebuilt as a " +
+    "literal class-token port of screens-whynow.jsx's WhyNow content sections (wn-mast/wn-sec/" +
+    "wn-h2/wn-cols/wn-body/wn-stats/wn-stat/wn-pull/wn-ballot/wn-steps/wn-step/wn-cta), so the " +
+    "prior 'zero overlap' claim no longer holds for that vocabulary. Still waived rather than " +
+    "promoted to a class-diff probe: canvas's WhyNow also renders its own page chrome (the " +
+    "outer .screen/.wn wrapper, .flagbar, <SCNav/>) inside the same function, which this repo " +
+    "deliberately does NOT replicate — App2.tsx's own AppNav already renders equivalent chrome " +
+    "around every stage — so an accurate class-diff would need a hand-verified ignoreMissing " +
+    "list for every chrome class SCNav itself renders (out of scope for this page-only fix; " +
+    "see the 'Extending STRUCTURAL_PROBES later' note above for the promotion path). The visual " +
+    "check still runs and gates this scenario same as any other; see also the 07-whynow " +
+    "CONTENT_PROBES entry below for verbatim-copy assertions this waiver can't catch.",
   "08b-howitworks":
     "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
     "that probe's note. MethodologyPage's own body content sits outside the probed shell.",
@@ -1153,6 +1162,44 @@ const CONTENT_PROBES: ContentProbe[] = [
       "an unrelated reason (the sp-mast/sp-kicker/dek/sp-prose class-diff above), so a passing " +
       "structural check would never have caught this, and the coarse downscaled visual diff " +
       "isn't built to notice one missing paragraph of text.",
+  },
+  {
+    scenarioId: "07-whynow",
+    assertions: [
+      {
+        text: "Average time a member of Congress spends fundraising, per call-time guidance shown to incoming freshmen.",
+        description:
+          "the '6 hrs / day' problem-section stat card label — canvas's screens-whynow.jsx " +
+          "WhyNow renders this exact wording on its first .wn-stat card",
+      },
+      {
+        text: "Shortcuts are exactly what the money buys.",
+        description:
+          "closing line of the 'why it's hard' pull quote (.wn-pull) — only present once the " +
+          "page was rebuilt onto canvas's masthead/problem/moment/pull-quote/how-it-works/CTA " +
+          "structure; the prior stat-stack layout had no pull-quote section at all",
+      },
+      {
+        text: "Judge them on what they",
+        description:
+          "the how-it-works section heading (.wn-h2 inside the 4th .wn-sec), split before the " +
+          "em-dash — 'did' renders inside an <em> but stays inline with the surrounding text",
+      },
+      {
+        text: "Politicians want one thing: to get re-elected.",
+        description:
+          "the closing CTA heading (.wn-cta h2) — the prior layout ended at a plain 'What to " +
+          "do with it' paragraph with no CTA section",
+      },
+    ],
+    note:
+      "Added alongside the 07-whynow build pass that replaced WhyNowPage's generic 3-snippet " +
+      "stat-stack with a literal port of canvas's long-form editorial structure (masthead → " +
+      "problem section with 2 cited stat cards → brand-colored 'why now' ballot-count section " +
+      "→ pull quote → 3-step how-it-works → closing CTA). Neither the structural waiver above " +
+      "nor the coarse visual diff can confirm the actual copy landed verbatim; these 4 " +
+      "assertions span all four new sections so a future regression back toward the old copy " +
+      "or a partially-applied rebuild both fail loudly here.",
   },
 ];
 
