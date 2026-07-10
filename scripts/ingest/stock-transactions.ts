@@ -82,9 +82,9 @@ import { candidates, memberStockTransactions } from "../../db/schema";
 // Constants
 // ---------------------------------------------------------------------------
 
-const HOUSE_DATASET_URL =
+export const HOUSE_DATASET_URL =
   "https://raw.githubusercontent.com/TattooedHead/house-stock-watcher-data/main/data/all_transactions.json";
-const SENATE_DATASET_URL =
+export const SENATE_DATASET_URL =
   "https://raw.githubusercontent.com/timothycarambat/senate-stock-watcher-data/master/aggregate/all_transactions_for_senators.json";
 
 type Fetcher = typeof fetch;
