@@ -1099,6 +1099,44 @@ const CONTENT_PROBES: ContentProbe[] = [
   // A 08d-tipjar CONTENT_PROBES entry is a natural follow-up once
   // wt/tipjar-bold-flag-pass (a separate, not-yet-merged branch fixing that
   // page's copy) lands — not added here, see this worktree's task brief.
+  {
+    scenarioId: "08a-about",
+    assertions: [
+      {
+        text: "Built and operated by Grey Bird LLC",
+        description:
+          "the About dek (first half, split before the em-dash) — canvas's AboutVC " +
+          '(screens-statics.jsx) passes dek="Built and operated by Grey Bird LLC — a small ' +
+          "independent shop closing the gap between what a candidate says and what they " +
+          'actually did." to StaticPageVC',
+      },
+      {
+        text: "a small independent shop closing the gap between what a candidate says and what they actually did.",
+        description: "the About dek (second half, split after the em-dash)",
+      },
+      {
+        text: "The one thing we deliberately keep: your",
+        description:
+          "the Polis-retention paragraph (first half, split before the bold 'chosen issues') — " +
+          "previously 100% missing from AboutPage (src/prototype/VoterChoiceApp.tsx), which had " +
+          "no mention of Polis at all",
+      },
+      {
+        text: "retained de-identified and in aggregate to power",
+        description:
+          "the Polis-retention paragraph (second half, split around the bold 'state')",
+      },
+    ],
+    note:
+      "Genuine FAIL before the fix, confirmed by reading both sides directly: AboutPage " +
+      '(src/prototype/VoterChoiceApp.tsx) called <StaticPage onBack={onBack} eyebrow="About ' +
+      'Voter Choice" title="A free, non-partisan Congress-assessment tool."> with no dek prop ' +
+      "and different title wording, and its body had no Polis-retention paragraph anywhere — " +
+      "the exact class of gap (a)/(b) both miss: '08a-about' already has a STRUCTURAL FAIL for " +
+      "an unrelated reason (the sp-mast/sp-kicker/dek/sp-prose class-diff above), so a passing " +
+      "structural check would never have caught this, and the coarse downscaled visual diff " +
+      "isn't built to notice one missing paragraph of text.",
+  },
 ];
 
 function contentProbeForScenario(scenarioId: string): ContentProbe | undefined {

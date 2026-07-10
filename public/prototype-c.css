@@ -2867,6 +2867,89 @@ Bumps
   text-align: left;
 }
 
+/* ---------- About — Bold Flag / Keystone parity (08a-about) ----------
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"] + statics.css .sp-mast/
+   .sp-kicker/.dek/.sp-prose rules. Scoped to .sp-about only — does not touch
+   the shared civic palette or any other static page. */
+.sp-wrap.sp-about {
+  --ab-paper: oklch(1 0 0);
+  --ab-paper-2: oklch(0.985 0.003 258);
+  --ab-ink: oklch(0.2 0.035 260);
+  --ab-ink-2: oklch(0.37 0.032 260);
+  --ab-ink-3: oklch(0.54 0.026 260);
+  --ab-brand: oklch(0.4 0.155 262);
+  --ab-rule: oklch(0.88 0.006 260);
+  --ab-replace: oklch(0.53 0.205 27);
+  --ab-tag-bg: oklch(0.95 0.006 260);
+  --ab-serif: "Newsreader", Georgia, serif;
+  --ab-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--ab-paper);
+}
+.sp-wrap.sp-about .sp-back {
+  color: var(--ab-brand);
+}
+.sp-wrap.sp-about .sp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--ab-replace);
+}
+.sp-wrap.sp-about .sp-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--ab-replace);
+}
+.sp-wrap.sp-about .sp-title {
+  font-family: var(--ab-serif);
+  color: var(--ab-ink);
+}
+.sp-wrap.sp-about .sp-dek {
+  font-family: var(--ab-serif);
+  font-size: 19px;
+  color: var(--ab-ink-2);
+  border-bottom: 2px solid var(--ab-ink);
+  padding-bottom: 24px;
+}
+.sp-wrap.sp-about .sp-article {
+  font-family: var(--ab-serif);
+  color: var(--ab-ink-2);
+}
+.sp-wrap.sp-about .sp-article h2 {
+  font-family: var(--ab-serif);
+  color: var(--ab-ink);
+}
+.sp-wrap.sp-about .sp-article b {
+  color: var(--ab-ink);
+}
+.sp-wrap.sp-about .sp-article ul {
+  list-style: none;
+  padding-left: 0;
+}
+.sp-wrap.sp-about .sp-article li {
+  padding-left: 26px;
+  position: relative;
+}
+.sp-wrap.sp-about .sp-article li::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--ab-brand);
+  transform: rotate(45deg);
+}
+.sp-wrap.sp-about .sp-article a {
+  color: var(--ab-brand);
+}
+.sp-wrap.sp-about .sp-article code {
+  background: var(--ab-tag-bg);
+  color: var(--ab-ink);
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
