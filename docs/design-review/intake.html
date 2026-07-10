@@ -49,11 +49,11 @@
 </head>
 <body>
   <h1>Keystone review — Intake</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (71b432af)</code> &middot; generated 2026-07-10T04:48:58.015Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (71b432af))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
@@ -85,7 +85,7 @@
           <div class="label">Intake step 3 — ready to lock</div>
           <span class="badge unchanged">unchanged since base</span>
           <span class="tag proxy">proxy</span>
-          <div class="note">The canvas's distinct pre-lock confirmation state (green 'Your issues are set' banner, drag-to-rerank) is not built — current UI reuses the same running issues-card for every turn (up/down-arrow rerank, not drag). Proxy: same UI one turn further (3 issues, after a refinement reply), right before clicking Lock.</div>
+          <div class="note">IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues are set' banner, editable review card, Back/Continue — data-testid="issue-locked-confirm-btn") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, when that screen appears, stops there to shoot the real thing. Until #236 lands, that click completes the lock instantly with no interstitial to hold on (jumps straight to orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy instead: same UI one turn further (3 issues, after a refinement reply), right before clicking Lock.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/09c-intake-locked.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/09c-intake-locked.png" alt="repo screenshot"></td>
