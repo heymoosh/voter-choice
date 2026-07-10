@@ -1,0 +1,27 @@
+name: Check Stock Watcher Liveness
+
+on:
+  # Daily — catches upstream feed breakage (403s, schema changes, empty
+  # responses) before the stock-transactions ingest becomes a scheduled job.
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch: {}
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Stock Watcher feed liveness + anomalies
+        run: npx tsx scripts/ops/check-stock-watcher-liveness.ts
