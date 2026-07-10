@@ -5335,7 +5335,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
     <>
       <AppNav />
       <main id="main-content">
-      <section className="hp-hero hp-hero-solo">
+      <section className="hp-hero">
         <div>
           <div className="eyebrow"><span className="star">★</span> {t('homeHero.eyebrow')}</div>
           <h1 dangerouslySetInnerHTML={{ __html: t('homeHero.headline') }} />
@@ -5416,6 +5416,67 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               onStartOver={onStartOver}
             />
           )}
+        </div>
+
+        <div className="hp-preview" aria-hidden="true">
+          <div className="hp-preview-cap">What you'll get</div>
+          <div className="hp-stack">
+            <div className="hp-sheet">
+              <div className="hp-sheet-pad">
+                <h5>My Scorecard</h5>
+                <div className="hp-sheet-sub">General Election · Nov 3, 2026</div>
+                <div className="hp-sheet-row">
+                  <span className="hp-sheet-badge replace">⇄</span>
+                  <span className="hp-sheet-tx">
+                    <span className="hp-sheet-o">U.S. House</span>
+                    <span className="hp-sheet-n">Replace</span>
+                  </span>
+                  <span className="hp-sheet-pct tone-bad">58%</span>
+                </div>
+                <div className="hp-sheet-row">
+                  <span className="hp-sheet-badge keep">✓</span>
+                  <span className="hp-sheet-tx">
+                    <span className="hp-sheet-o">U.S. Senate</span>
+                    <span className="hp-sheet-n">Keep</span>
+                  </span>
+                  <span className="hp-sheet-pct tone-good">82%</span>
+                </div>
+              </div>
+            </div>
+            <div className="hp-rcard">
+              <div className="hp-rcard-strip">
+                <span className="hp-rcard-tag">This seat</span>
+                <span className="hp-rcard-up">Up Nov 2026</span>
+              </div>
+              <div className="hp-rcard-head">
+                <div className="hp-rcard-av">?</div>
+                <div className="hp-rcard-who">
+                  <div className="hp-rcard-name">This seat's incumbent</div>
+                  <div className="hp-rcard-sub">Judge the record, not the name</div>
+                </div>
+              </div>
+              <div className="hp-rcard-align">
+                <div className="hp-rcard-atop">
+                  <span className="hp-rcard-lab">Voted with you</span>
+                  <span className="hp-rcard-pct">58%</span>
+                </div>
+                <div className="hp-rcard-bars">
+                  <div className="hp-rcard-bar">
+                    <span className="hp-rcard-bar-k">Healthcare access</span>
+                    <span className="hp-rcard-bar-t"><i className="bar-good" style={{ width: '75%' }} /></span>
+                  </div>
+                  <div className="hp-rcard-bar">
+                    <span className="hp-rcard-bar-k">Housing affordability</span>
+                    <span className="hp-rcard-bar-t"><i className="bar-bad" style={{ width: '40%' }} /></span>
+                  </div>
+                </div>
+              </div>
+              <div className="hp-rcard-verd">
+                <span className="hp-rcard-vb keep">✓ Keep</span>
+                <span className="hp-rcard-vb replace">Replace</span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
