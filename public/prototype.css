@@ -4287,6 +4287,320 @@ body[data-treatment="inkwell"] .cv2-iss-row.open {
   border-top: 1px solid var(--rule-2);
 }
 
+/* ── All Votes sheet — Bold Flag / Keystone parity (02d-results-allvotes-sheet) ──
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"], restructuring the panel into
+   the canvas AllVotesSheet's grouped-by-issue / one-row-expanded shape. Every
+   rule below is scoped under .avsheet (or the compound .be-modal-overlay.avsheet-scrim
+   / .av-panel.avsheet), so it overrides the legacy flat-list rules above by
+   specificity without touching them — other modals (Budget, Resume, Compare)
+   that still use the bare .be-modal-overlay/.av-panel/.be-eyebrow/.be-x classes
+   are unaffected. */
+.be-modal-overlay.avsheet-scrim {
+  background: oklch(0.2 0.035 260 / 0.55);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 34px;
+}
+.av-panel.avsheet {
+  --av-paper: oklch(1 0 0);
+  --av-paper-2: oklch(0.985 0.003 258);
+  --av-ink: oklch(0.2 0.035 260);
+  --av-ink-2: oklch(0.37 0.032 260);
+  --av-ink-3: oklch(0.54 0.026 260);
+  --av-brand: oklch(0.4 0.155 262);
+  --av-brand-2: oklch(0.31 0.145 262);
+  --av-brand-soft: oklch(0.94 0.04 262);
+  --av-keep: oklch(0.44 0.115 159);
+  --av-keep-soft: oklch(0.93 0.045 159);
+  --av-replace: oklch(0.53 0.205 27);
+  --av-replace-soft: oklch(0.94 0.05 27);
+  --av-rule: oklch(0.88 0.006 260);
+  --av-rule-2: oklch(0.93 0.005 260);
+  --av-tag-bg: oklch(0.95 0.006 260);
+  --av-serif: "Newsreader", Georgia, serif;
+  --av-mono: "IBM Plex Mono", ui-monospace, monospace;
+  width: 100%;
+  max-width: 600px;
+  max-height: 100%;
+  padding: 0;
+  background: var(--av-paper);
+  border-color: var(--av-rule);
+  border-radius: 16px;
+  box-shadow: 0 40px 90px -40px oklch(0.2 0.03 255 / 0.7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.avsheet .av-head {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--av-rule-2);
+}
+.avsheet .av-eyebrow {
+  font-family: var(--av-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--av-brand);
+  font-weight: 700;
+}
+.avsheet .av-head h3 {
+  font-family: var(--av-serif);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--av-ink);
+  margin: 5px 0 0;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.avsheet .av-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid var(--av-rule);
+  background: var(--av-paper);
+  color: var(--av-ink-2);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.avsheet .av-filters {
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--av-rule-2);
+  background: var(--av-paper);
+}
+.avsheet .avf,
+.avsheet .av-filter {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--av-ink-2);
+  background: var(--av-paper-2);
+  border: 1px solid var(--av-rule-2);
+  border-radius: 999px;
+  padding: 4px 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.avsheet .avf.active,
+.avsheet .av-filter.active {
+  background: var(--av-brand);
+  color: var(--av-paper-2);
+  border-color: var(--av-brand);
+  font-weight: 600;
+}
+.avsheet .avf-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--av-rule);
+  margin: 0 2px;
+}
+.avsheet .av-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 22px 14px;
+}
+.avsheet .av-group {
+  margin-top: 14px;
+}
+.avsheet .av-glab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--av-rule-2);
+  margin-bottom: 4px;
+}
+.avsheet .avg-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--av-ink);
+}
+.avsheet .avg-frac {
+  font-family: var(--av-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.avsheet .avg-frac.good {
+  background: var(--av-keep-soft);
+  color: var(--av-keep);
+}
+.avsheet .avg-frac.bad {
+  background: var(--av-replace-soft);
+  color: var(--av-replace);
+}
+.avsheet .av-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto auto 12px;
+  gap: 11px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--av-rule-2);
+  cursor: pointer;
+}
+.avsheet .av-row:last-child {
+  border-bottom: none;
+}
+.avsheet .av-row.open {
+  background: var(--av-brand-soft);
+  margin: 0 -22px;
+  padding: 10px 22px;
+  border-bottom: none;
+}
+.avsheet .av-row .avr-chev {
+  font-size: 8px;
+  color: var(--av-ink-3);
+  text-align: center;
+}
+.avsheet .av-row.open .avr-chev {
+  color: var(--av-brand);
+}
+.avsheet .avr-flag {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.avsheet .avr-flag.with {
+  background: var(--av-keep-soft);
+  color: var(--av-keep);
+}
+.avsheet .avr-flag.against {
+  background: var(--av-replace-soft);
+  color: var(--av-replace);
+}
+.avsheet .avr-bill {
+  font-size: 12.5px;
+  color: var(--av-ink-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avsheet .avr-bill b {
+  color: var(--av-ink);
+  font-weight: 600;
+}
+.avsheet .avr-cast {
+  font-family: var(--av-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.avsheet .avr-cast.yea,
+.avsheet .avr-cast.with {
+  background: var(--av-brand-soft);
+  color: var(--av-brand-2);
+}
+.avsheet .avr-cast.nay,
+.avsheet .avr-cast.against {
+  background: var(--av-tag-bg);
+  color: var(--av-ink-2);
+}
+.avsheet .avr-date {
+  font-family: var(--av-mono);
+  font-size: 10px;
+  color: var(--av-ink-3);
+  white-space: nowrap;
+}
+.avsheet .av-detail {
+  background: var(--av-brand-soft);
+  margin: 0 -22px 4px;
+  padding: 0 22px 14px;
+  display: grid;
+  gap: 11px;
+}
+.avsheet .avd-what {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--av-ink);
+}
+.avsheet .avd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.avsheet .avd-pair,
+.avsheet .av-vote-tag {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--av-paper-2);
+  border: 1px solid var(--av-rule-2);
+  border-radius: 8px;
+  padding: 7px 11px;
+}
+.avsheet .avd-pair .k {
+  font-family: var(--av-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--av-ink-3);
+  font-weight: 700;
+}
+.avsheet .avd-pair .val {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--av-ink);
+}
+.avsheet .avd-pair .val.with {
+  color: var(--av-keep);
+}
+.avsheet .avd-pair .val.against {
+  color: var(--av-replace);
+}
+.avsheet .avd-link {
+  font-family: var(--av-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--av-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.avsheet .av-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 22px;
+  border-top: 1px solid var(--av-rule-2);
+  background: var(--av-paper);
+  font-family: var(--av-mono);
+  font-size: 10px;
+  color: var(--av-ink-3);
+}
+.avsheet .av-src {
+  letter-spacing: 0.02em;
+}
+.avsheet .av-src a {
+  color: inherit;
+}
+@media (max-width: 767px) {
+  .av-panel.avsheet {
+    max-width: 100%;
+  }
+}
+
 /* Inkwell treatment tweaks for modals */
 body[data-treatment="inkwell"] .be-modal,
 body[data-treatment="inkwell"] .cmp-modal,

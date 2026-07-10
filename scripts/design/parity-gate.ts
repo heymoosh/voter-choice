@@ -369,23 +369,47 @@ const STRUCTURAL_PROBES: Probe[] = [
   {
     kind: "class-diff",
     scenarioId: "02d-results-allvotes-sheet",
-    domSelector: ".av-panel",
+    domSelector: ".avsheet",
     designFile: "design-handoff/keystone-canvas/src/screens-results.jsx",
     componentName: "AllVotesSheet",
-    // The repo has no literal "av-panel" class in its own DOM tree that the
-    // design source also uses (canvas's shell is "avsheet"/"avsheet-scrim"),
-    // so getDesignClasses falls back to AllVotesSheet's whole slice (same
-    // documented fallback orientation's ".orientation" probe relies on) —
-    // that's fine, it's still the honest answer: report every design class
-    // found anywhere under the rendered .av-panel subtree as present, the
-    // rest as missing.
+    // Fixed 2026-07-10 (02d-results-allvotes-sheet rebuild): AllVotesPanel now
+    // literally carries the canvas's own "avsheet" root class (dual-classed
+    // with the legacy "av-panel" other e2e coverage still selects on), so this
+    // probe narrows to AllVotesSheet's own <div className="avsheet"> subtree —
+    // the same narrowing MedianChip/FieldMoneyGap's probes already rely on —
+    // instead of falling back to the whole component slice. That narrowing
+    // correctly excludes "avsheet-scrim" (the *parent* wrapper in the design
+    // source, never a descendant of .avsheet, so a root-down DOM walk rooted
+    // at .avsheet could never find it either) — reporting it "missing" before
+    // was a probe artifact, not a real gap.
+    ignoreMissing: [
+      // "against"/avr-flag.against/avr-cast.nay are genuine ternary siblings
+      // of "with" (className={... + (v.voteCast === 'with' ? 'with' : 'against')})
+      // — same category as HeadToHead's "up" and MedianChip's "none" above.
+      // This scenario's fixture (mockSeatRaceDataMedian) only ever produces a
+      // "with" vote for house-TX-37 (kept=5 > total/2=3); e2e/redesign-mocks.ts
+      // has the same shape. Confirmed reachable by reading the conditional.
+      "against",
+      // avd-what renders v.narrative when present (the real CAN2026-sourced
+      // explanatory paragraph — structured-blocks.ts's ContributingVote.narrative
+      // is optional). mockSeatRaceDataMedian's contributingVotes entry has no
+      // narrative field at all, so it never renders for this fixture; real
+      // production votes commonly do carry one. Not shown unconditionally
+      // because there's no honest fallback "what this bill does" text without
+      // real narrative data — showing a placeholder would fabricate content.
+      "avd-what",
+    ],
     note:
-      "VoterChoiceApp.tsx's AllVotesPanel literally reuses av-head/av-filters/active from " +
-      "AllVotesSheet (confirmed by grep — not coincidence, same feature) but flattens the " +
-      "canvas's grouped-by-issue/collapsible-detail structure (av-body/av-group/av-row/" +
-      "avr-*/av-detail/avd-*) into a single flat vote list (av-list/av-vote-*) — a real, " +
-      "confirmed structural divergence, matching Muxin's flagged 'the see all votes sheet " +
-      "doesn't match' finding (docs/operations/keystone-parity-failure-handoff-2026-07-08.md).",
+      "Rebuilt 2026-07-10: AllVotesPanel now groups contributingVotes by issue " +
+      "(av-group/av-glab/avg-name/avg-frac) with av-row/avr-flag/avr-bill/avr-cast/avr-date/" +
+      "avr-chev rows and a single av-detail/avd-what/avd-meta/avd-pair/avd-link expansion " +
+      "(defaulting to the first vote open, matching the canvas's HR 3421 default), replacing " +
+      "the old flat always-expanded av-list/av-vote-* markup — resolves the structural " +
+      "divergence Muxin flagged in docs/operations/keystone-parity-failure-handoff-2026-07-08.md. " +
+      "Dual-classed with the legacy av-panel/av-filter/av-vote-tag/be-x/be-eyebrow/vote-badge " +
+      "selectors so e2e/redesign-record.spec.ts and this probe's own capture-step wait " +
+      '(".be-modal-overlay .av-panel") keep working; the new avsheet-scoped CSS in ' +
+      "public/prototype.css overrides the legacy flat-list rules by specificity.",
   },
   {
     kind: "class-diff",

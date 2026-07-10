@@ -4356,116 +4356,155 @@ function CompareModal({ open, race, issues, blindMode, revealedCandidates, onRev
 }
 
 /* ============ AllVotesPanel ============
-   Opened by clicking "See all votes →" on a candidate card. */
+   Opened by clicking "See all votes →" on a candidate card.
+   Structure ported from design-handoff/keystone-canvas/src/screens-results.jsx's
+   AllVotesSheet (02d-results-allvotes-sheet): votes grouped by issue under an
+   av-group/av-glab header, one row expanded by default (avr-* row + av-detail),
+   filter chips (avf) for all/with/against + per-issue. Dual-classed with the
+   legacy be-modal-overlay/av-panel/av-filter/av-vote-tag/be-x/vote-badge/be-eyebrow
+   selectors so the existing e2e coverage (e2e/redesign-record.spec.ts) and the
+   parity gate's own capture step (which waits on ".be-modal-overlay .av-panel")
+   keep working; visual styling comes from the new avsheet-scoped rules in
+   public/prototype.css, which override the legacy flat-list rules by specificity. */
 function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onClose }) {
   const [filter, setFilter] = useStateS('all');
+  const [expandedKey, setExpandedKey] = useStateS(null);
   if (!open || !candidate) return null;
 
   const anonCtx = { blindMode, realLastName: candidateDisplayLast(candidate?.name || ''), alias };
 
-  const allVotes = [];
-  (alignmentEntry?.scores || []).forEach(score => {
-    (score.contributingVotes || []).forEach(v => {
-      allVotes.push({ ...v, issueLabel: score.issueLabel, canonicalIssue: score.canonicalIssue });
-    });
-  });
+  const groups = (alignmentEntry?.scores || [])
+    .filter(score => (score.contributingVotes || []).length > 0)
+    .map(score => ({
+      canonicalIssue: score.canonicalIssue,
+      issueLabel: score.issueLabel,
+      kept: score.kept,
+      total: score.total,
+      votes: score.contributingVotes.map((v, i) => ({ ...v, key: score.canonicalIssue + '-' + i })),
+    }));
+  const allVotes = groups.flatMap(g => g.votes);
+  const withCount = allVotes.filter(v => v.voteCast === 'with').length;
+  const againstCount = allVotes.length - withCount;
+  const openKey = expandedKey !== null ? expandedKey : (allVotes[0] ? allVotes[0].key : null);
 
-  const issueLabels = [...new Set(allVotes.map(v => v.canonicalIssue))];
-  const filtered = filter === 'all' ? allVotes : allVotes.filter(v => v.canonicalIssue === filter);
+  const matchesFilter = (v, g) => {
+    if (filter === 'all') return true;
+    if (filter === 'with') return v.voteCast === 'with';
+    if (filter === 'against') return v.voteCast === 'against';
+    return g.canonicalIssue === filter;
+  };
+  const filteredGroups = groups
+    .map(g => ({ ...g, votes: g.votes.filter(v => matchesFilter(v, g)) }))
+    .filter(g => g.votes.length > 0);
 
   const headerName = blindMode ? alias : candidate.name;
 
   return (
-    <div className="be-modal-overlay" onClick={onClose}>
-      <div className="av-panel" onClick={(e) => e.stopPropagation()}>
+    <div className="be-modal-overlay avsheet-scrim" onClick={onClose}>
+      <div className="av-panel avsheet" onClick={(e) => e.stopPropagation()}>
         <header className="av-head">
-          <div>
-            <div className="be-eyebrow">{headerName} · all curated votes</div>
-            <h3>{allVotes.length} votes across {issueLabels.length} of your issues</h3>
+          <div className="av-htext">
+            <div className="be-eyebrow av-eyebrow">{headerName} · all curated votes</div>
+            <h3>{allVotes.length} votes across {groups.length} of your issues</h3>
           </div>
-          <button className="be-x" onClick={onClose} aria-label="Close">×</button>
+          <button className="be-x av-close" onClick={onClose} aria-label="Close">✕</button>
         </header>
 
         <div className="av-filters">
-          <button className={"av-filter " + (filter === 'all' ? 'active' : '')} onClick={() => setFilter('all')}>
-            All <span className="av-filter-ct">{allVotes.length}</span>
+          <button className={"avf av-filter " + (filter === 'all' ? 'active' : '')} onClick={() => setFilter('all')}>
+            All {allVotes.length}
           </button>
-          {issueLabels.map(ci => {
-            const count = allVotes.filter(v => v.canonicalIssue === ci).length;
-            const label = allVotes.find(v => v.canonicalIssue === ci).issueLabel;
-            return (
-              <button key={ci} className={"av-filter " + (filter === ci ? 'active' : '')} onClick={() => setFilter(ci)}>
-                {label} <span className="av-filter-ct">{count}</span>
-              </button>
-            );
-          })}
+          <button className={"avf av-filter " + (filter === 'with' ? 'active' : '')} onClick={() => setFilter('with')}>
+            ✓ With you {withCount}
+          </button>
+          <button className={"avf av-filter " + (filter === 'against' ? 'active' : '')} onClick={() => setFilter('against')}>
+            ✗ Against you {againstCount}
+          </button>
+          {groups.length > 0 && <span className="avf-sep" />}
+          {groups.map(g => (
+            <button key={g.canonicalIssue} className={"avf av-filter " + (filter === g.canonicalIssue ? 'active' : '')} onClick={() => setFilter(g.canonicalIssue)}>
+              {g.issueLabel}
+            </button>
+          ))}
         </div>
 
-        <div className="av-list">
-          {filtered.length === 0 && (
+        <div className="av-body">
+          {filteredGroups.length === 0 && (
             <p style={{ padding: 20, color: 'var(--ink-3)', fontStyle: 'italic' }}>No votes on this issue yet.</p>
           )}
-          {filtered.map((v, i) => {
-            const avHasNum = (v.billTitle || '').includes(' · ');
-            const avNum = avHasNum ? v.billTitle.split(' · ')[0] : '';
-            const avTtl = avHasNum ? v.billTitle.split(' · ')[1] : (v.billTitle || '');
+          {filteredGroups.map(g => {
+            const groupWith = g.votes.filter(v => v.voteCast === 'with').length;
+            const hasKeptTotal = typeof g.kept === 'number' && typeof g.total === 'number' && g.total > 0;
+            const fracKept = hasKeptTotal ? g.kept : groupWith;
+            const fracTotal = hasKeptTotal ? g.total : g.votes.length;
             return (
-              <div className="av-vote" key={i}>
-                <div className="av-vote-head">
-                  <div>
-                    <div className="av-vote-num">{avNum}</div>
-                    <div className="av-vote-ttl">{avTtl}</div>
-                  </div>
-                  <div className={"vote-badge " + (v.voteCast === 'with' ? 'yea' : v.voteCast === 'against' ? 'nay' : 'other')}>
-                    {v.voteCast === 'with' ? 'WITH YOU' : v.voteCast === 'against' ? 'AGAINST YOU' : '—'}
-                  </div>
+              <div className="av-group" key={g.canonicalIssue}>
+                <div className="av-glab">
+                  <span className="avg-name">{g.issueLabel}</span>
+                  <span className={"avg-frac " + (fracTotal > 0 && fracKept / fracTotal >= 0.5 ? 'good' : 'bad')}>
+                    {fracKept}/{fracTotal} with you
+                  </span>
                 </div>
-                <div className="av-vote-meta">
-                  <span className="av-vote-tag">{v.issueLabel}</span>
-                  <span>{new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-                </div>
-                {v.narrative && <p className="av-vote-narr">{(window.anonymizeText ? window.anonymizeText(v.narrative, anonCtx) : v.narrative)}</p>}
-                <div className="av-vote-cite">
-                  <span className="src-chip">{v.source.name}</span>
-                  {v.source.url && <a className="src-link" href={v.source.url} target="_blank" rel="noopener noreferrer">View roll call →</a>}
-                  {(v.sources || []).filter(s => s.url !== v.source.url).map((s, si) => (
-                    <span key={si}>
-                      <span className="src-chip">{s.name}</span>
-                      {s.url && <a className="src-link" href={s.url} target="_blank" rel="noopener noreferrer">View summary →</a>}
-                    </span>
-                  ))}
-                </div>
+                {g.votes.map(v => {
+                  const isRowOpen = openKey === v.key;
+                  const hasNum = (v.billTitle || '').includes(' · ');
+                  const billNum = hasNum ? v.billTitle.split(' · ')[0] : '';
+                  const billTtl = hasNum ? v.billTitle.split(' · ')[1] : (v.billTitle || '');
+                  const withYou = v.voteCast === 'with';
+                  return (
+                    <React.Fragment key={v.key}>
+                      <div
+                        className={"av-row " + (withYou ? 'with' : 'against') + (isRowOpen ? ' open' : '')}
+                        onClick={() => setExpandedKey(isRowOpen ? '' : v.key)}
+                      >
+                        <span className={"avr-flag " + (withYou ? 'with' : 'against')}>{withYou ? '✓' : '✗'}</span>
+                        <span className="avr-bill">{billNum && <b>{billNum}</b>}{billNum && billTtl ? ' · ' : ''}{billTtl}</span>
+                        <span className={"avr-cast vote-badge " + (withYou ? 'with yea' : 'against nay')}>
+                          {withYou ? 'WITH YOU' : 'AGAINST YOU'}
+                        </span>
+                        <span className="avr-date">{new Date(v.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span className="avr-chev">{isRowOpen ? '▾' : '▸'}</span>
+                      </div>
+                      {isRowOpen && (
+                        <div className="av-detail">
+                          {v.narrative && (
+                            <p className="avd-what">{(window.anonymizeText ? window.anonymizeText(v.narrative, anonCtx) : v.narrative)}</p>
+                          )}
+                          <div className="avd-meta">
+                            <span className="avd-pair av-vote-tag">
+                              <span className="k">Issue</span>
+                              <span className="val">{g.issueLabel}</span>
+                            </span>
+                            <span className="avd-pair">
+                              <span className="k">Their vote</span>
+                              <span className={"val " + (withYou ? 'with' : 'against')}>{withYou ? 'With you' : 'Against you'}</span>
+                            </span>
+                          </div>
+                          {v.source.url && (
+                            <a className="avd-link src-link" href={v.source.url} target="_blank" rel="noopener noreferrer">
+                              View roll call →
+                            </a>
+                          )}
+                          {(v.sources || []).filter(s => s.url !== v.source.url).map((s, si) => (
+                            s.url && (
+                              <a key={si} className="avd-link src-link" href={s.url} target="_blank" rel="noopener noreferrer">
+                                View summary →
+                              </a>
+                            )
+                          ))}
+                        </div>
+                      )}
+                    </React.Fragment>
+                  );
+                })}
               </div>
             );
           })}
         </div>
 
-        {/* Methodology footer — how we know "WITH/AGAINST you" */}
-        <footer className="av-method">
-          <div className="av-method-head">How we know</div>
-          <p>
-            <b>"With you" / "against you"</b> is computed by comparing each roll-call vote to your stated stance on the issue this bill touches.
-          </p>
-          <ul className="av-method-sources">
-            <li>
-              Vote data:{' '}
-              <a href="https://www.congress.gov/roll-call-votes" target="_blank" rel="noopener noreferrer">Congress.gov · federal roll calls</a>{' · '}
-              <a href="https://openstates.org" target="_blank" rel="noopener noreferrer">OpenStates · state legislature records</a>
-            </li>
-            <li>
-              Narrative context:{' '}
-              <a href="https://can2026.org" target="_blank" rel="noopener noreferrer">CAN2026 case files</a>{' · '}
-              <a href="/methodology">our methodology</a>
-            </li>
-            <li>
-              Donor breakdowns:{' '}
-              <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>{' · '}
-              <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC committee filings</a>
-            </li>
-          </ul>
-          <p className="av-method-disclaim">
-            We don't generate vote claims from AI — if a vote isn't in our database, we don't show it. Every claim on every card links to a primary source.
-          </p>
+        <footer className="av-foot">
+          <span>Every vote links to the official roll-call.</span>
+          <span className="av-src">Source · GovTrack · Congress.gov (CRS) · <a href="/methodology">our methodology</a></span>
         </footer>
       </div>
     </div>

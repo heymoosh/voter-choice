@@ -732,6 +732,16 @@ export const SCENARIOS: Scenario[] = [
       await page
         .locator(".be-modal-overlay .av-panel")
         .waitFor({ timeout: 5000 });
+      // .be-modal-overlay's own `be-fadein` opacity keyframe (public/prototype.css)
+      // is a nominal 0.15s, but confirmed by inspecting getComputedStyle directly
+      // (elementFromPoint + a parent-chain walk) that the scrim's opacity can
+      // still read literally 0 several hundred ms after the .waitFor above
+      // resolves in a headless capture, then reads back to 1 by ~3s — a headless-
+      // Chromium animation-clock-catchup quirk (the timeline only advances once
+      // something forces a real paint), not a real user-facing delay. Without
+      // this, a screenshot taken right after the .waitFor lands mid-fade and the
+      // Results workspace behind the scrim visibly bleeds through the modal.
+      await page.waitForTimeout(1500);
     },
   },
   {
@@ -1122,7 +1132,7 @@ export const SCENARIOS: Scenario[] = [
     automatable: "no",
     note:
       "NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — " +
-      "data-testid=\"polis-entry-see-standing\") isn't merged to main yet (PR #237); it " +
+      'data-testid="polis-entry-see-standing") isn\'t merged to main yet (PR #237); it ' +
       "replaces today's inline '.all-done … where you stand' link, which currently jumps " +
       "straight to the standing report with no interstitial. A prior 'proxy' capture stopped " +
       "at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas " +
