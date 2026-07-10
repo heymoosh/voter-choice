@@ -6,6 +6,48 @@
    shipped prototype.css / prototype-c.css untouched.
    ==================================================== */
 
+/* ---- provenance badge (roll-call vs researched) — canvas's ProvBadge
+   unifier, ported from HeadToHead.tsx's .cmp .prov / DelegationOverview.tsx's
+   DgProv onto RepCard's own civic-palette scope (no --brand remap needed;
+   --civic/--vote-red/--paper-2 already resolve correctly here). ---- */
+.cv2-prov-row {
+  padding: 0 18px;
+  margin-top: -2px;
+}
+.rep-card .prov {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 8px 3px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.rep-card .prov::before {
+  font-size: 9px;
+}
+.rep-card .prov.rollcall {
+  background: var(--civic);
+  color: var(--paper-2);
+  border: 1.5px solid var(--civic);
+}
+.rep-card .prov.rollcall::before {
+  content: "\25C6"; /* filled diamond */
+}
+.rep-card .prov.researched {
+  background: var(--paper-2);
+  color: var(--civic-2);
+  border: 1.5px dashed var(--civic);
+}
+.rep-card .prov.researched::before {
+  content: "\25C7"; /* hollow diamond */
+}
+
 /* ---- seat strip (top of RepCard) ---- */
 .seat-strip {
   display: flex;

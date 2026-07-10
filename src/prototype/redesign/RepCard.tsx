@@ -28,6 +28,30 @@ import {
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { MedianChip, MoneyGapScale } from "./MoneyGap";
 
+/** Provenance badge — the design's unifier (roll-call vs researched).
+ *  Mirrors HeadToHead.tsx's ProvBadge / DelegationOverview.tsx's DgProv —
+ *  same small per-screen helper, duplicated locally per that convention. */
+function ProvBadge({ researched }) {
+  const { t } = useI18n();
+  return researched ? (
+    <span className="prov researched">{t("repCard.provResearched")}</span>
+  ) : (
+    <span className="prov rollcall">{t("repCard.provRollcall")}</span>
+  );
+}
+
+/** True when a seat's alignment is backed by researched public statements
+ * rather than a roll-call voting record — either an executive seat
+ * (seat.researched) or a Congress seat whose record hasn't posted yet
+ * (alignmentEntry.scores === null + unavailable, the same condition
+ * AlignmentScoreBanner branches on internally). */
+function isResearchedBasis(seat) {
+  return !!(
+    seat.researched ||
+    (seat.alignmentEntry?.scores === null && seat.alignmentEntry?.unavailable)
+  );
+}
+
 /** Party display metadata, keyed by the raw party name from the data source.
  * A function (not a module-level const) because the display name needs
  * `t()` — party labels are user-facing and must translate. */
@@ -581,6 +605,9 @@ function UnresolvedSeatCard({
           </span>
         )}
       </div>
+      <div className="cv2-prov-row">
+        <ProvBadge researched={isResearchedBasis(seat)} />
+      </div>
       <div className="cv2-issues">
         <div className="cv2-block-head">
           <div className="lab">{seat.blindLabel}</div>
@@ -695,6 +722,10 @@ export function RepCard({
         onReveal={onReveal}
         onHide={onHide}
       />
+
+      <div className="cv2-prov-row">
+        <ProvBadge researched={isResearchedBasis(seat)} />
+      </div>
 
       <AttendanceBand2
         attendance={seat.attendance}
