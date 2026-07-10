@@ -4915,13 +4915,14 @@ function AITimeoutBanner({ onRetry, onHandoff, message }) {
    es) so WhyNowPage can render a localized set via t(). Keep every entry
    cited (no uncited stats) and non-partisan. */
 
-function StaticPage({ title, eyebrow, children, onBack }) {
+function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
   return (
-    <div className="sp-wrap">
+    <div className={`sp-wrap${className ? ' ' + className : ''}`}>
       <div className="sp-inner">
         <button className="sp-back" onClick={onBack}>← Back</button>
         <div className="sp-eyebrow">{eyebrow}</div>
         <h1 className="sp-title">{title}</h1>
+        {dek && <p className="sp-dek">{dek}</p>}
         <article className="sp-article">{children}</article>
       </div>
     </div>
@@ -4988,18 +4989,18 @@ function MethodologyPage({ onBack }) {
 
 const TIP_AMOUNTS = [
   { label: '$3',  url: 'https://buy.stripe.com/7sY3cvcQ54cxeL34xc00005' },
-  { label: '$5',  url: 'https://buy.stripe.com/4gM6oH6rHdN76exgfU00006' },
+  { label: '$5',  url: 'https://buy.stripe.com/4gM6oH6rHdN76exgfU00006', lead: true },
   { label: '$10', url: 'https://buy.stripe.com/fZu14n17n4cxauN1l000007' },
   { label: '$25', url: 'https://buy.stripe.com/14AfZheYd9wRbyR4xc00008' },
 ];
 
 function TipJarPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive.">
+    <StaticPage onBack={onBack} eyebrow="Tip jar" title="Keep the community AI budget alive." dek="No ads, no tracking, no data sales. Tips and small individual contributions are the only revenue." className="sp-tipjar">
       <ul className="tip-list tip-list--amounts">
-        {TIP_AMOUNTS.map(({ label, url }) => (
+        {TIP_AMOUNTS.map(({ label, url, lead }) => (
           <li key={label}>
-            <a href={url} target="_blank" rel="noopener noreferrer" className="tip-amount-btn">
+            <a href={url} target="_blank" rel="noopener noreferrer" className={`tip-amount-btn${lead ? ' lead' : ''}`}>
               {label}
             </a>
           </li>
@@ -5010,9 +5011,9 @@ function TipJarPage({ onBack }) {
       <h2>Where it goes</h2>
       <ul>
         <li><b>Anthropic API spend</b> — the AI chat budget that runs out when too many voters use it at once.</li>
-        <li><b>Server + hosting</b> — Vercel + a small Redis instance for rate-limiting.</li>
+        <li><b>Server + hosting</b> — Vercel plus a small Redis instance for rate-limiting.</li>
       </ul>
-      <p>Voter Choice is built by <b>Grey Bird LLC</b>. No ads, no tracking, no accounts, no data sales. Tips and small individual contributions are the only revenue.</p>
+      <p>Voter Choice is built by <b>Grey Bird LLC</b>. When the community budget runs out you can bring your own Anthropic key rather than pay us — we'd rather pause than monetize you.</p>
     </StaticPage>
   );
 }
