@@ -603,7 +603,7 @@ const en: Translations = {
     placeholder: "e.g. 123 Main St, Springfield, IL 62701",
     submit: "Find My Ballot",
     privacy:
-      "Privacy: your address may be sent to Google Places/Civic to find your ballot and polling places. We do not store it or send it to the AI chat, so we do not have a combined record of where you live and what you say.",
+      "Privacy: your address may be sent to the US Census Bureau (to look up your representatives) and to Google Places/Civic (to find your ballot and polling places). We do not store it or send it to the AI chat, so we do not have a combined record of where you live and what you say.",
   },
   loading: "Loading...",
   errors: {
@@ -1294,7 +1294,7 @@ const es: Translations = {
     placeholder: "ej. 123 Main St, Springfield, IL 62701",
     submit: "Buscar mi informaci\u00f3n electoral",
     privacy:
-      "Privacidad: tu direcci\u00f3n puede enviarse a Google Places/Civic para encontrar tu boleta y casillas. No la almacenamos ni la enviamos al chat de IA, as\u00ed que no tenemos un registro combinado de d\u00f3nde vives y lo que dices.",
+      "Privacidad: tu direcci\u00f3n puede enviarse a la Oficina del Censo de EE. UU. (para consultar tus representantes) y a Google Places/Civic (para encontrar tu boleta y casillas). No la almacenamos ni la enviamos al chat de IA, as\u00ed que no tenemos un registro combinado de d\u00f3nde vives y lo que dices.",
   },
   loading: "Cargando...",
   errors: {
