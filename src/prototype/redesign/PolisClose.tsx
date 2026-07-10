@@ -50,6 +50,45 @@ function AgreeBar({ pct }) {
   );
 }
 
+/* Per-opinion-group convergence bar: one colored dot per opinion group (Group
+   A/B/C) at that group's agree% on the statement, on a shared 0–100 track. The
+   dot colours are the SAME neutral cluster tokens the opinion map uses (`c0/c1/
+   c2` → --cluster-a/b/c), so a Group A dot here matches the Group A dots on the
+   map above. On genuine bridges the dots cluster together (they converge); on
+   divided statements they spread apart. Party-free (DECISION #116): groups are
+   opinion clusters by answer similarity, never D/R/I. */
+function GroupConvBar({ groups }) {
+  const lo = Math.min(...groups.map((g) => g.agreePct));
+  return (
+    <div className="conv groups" aria-hidden="true">
+      <div className="conv-track"></div>
+      <div className="conv-fill neutral" style={{ width: lo + "%" }}></div>
+      {groups.map((g) => (
+        <span
+          key={g.clusterId}
+          className={"conv-dot c" + g.clusterId}
+          style={{ left: g.agreePct + "%" }}
+        ></span>
+      ))}
+    </div>
+  );
+}
+
+/* The colored group chips beneath the convergence bar: "● Group A 88 · ● Group
+   B 84 · ● Group C 87". Same cluster colours as the map + the dots above. */
+function GroupChips({ groups }) {
+  return (
+    <div className="pr-split">
+      {groups.map((g) => (
+        <span key={g.clusterId} className={"chip c" + g.clusterId}>
+          <i></i>
+          {g.label} {g.agreePct}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 /* Party-free split bar: two whole-population markers — agree (green) and
    disagree (red) — with the fill spanning the gap between them, so the visual
    reads "the room split this far apart" without any party framing. */
@@ -416,6 +455,12 @@ export function PolisClose({ polis }) {
                     </div>
                     <div className="pr-conv">
                       <AgreeBar pct={row.pct} />
+                      {row.clusterAgreement?.length ? (
+                        <>
+                          <GroupConvBar groups={row.clusterAgreement} />
+                          <GroupChips groups={row.clusterAgreement} />
+                        </>
+                      ) : null}
                     </div>
                   </div>
                 </div>
@@ -458,6 +503,12 @@ export function PolisClose({ polis }) {
                         agreePct={row.agreePct}
                         disagreePct={row.disagreePct}
                       />
+                      {row.clusterAgreement?.length ? (
+                        <>
+                          <GroupConvBar groups={row.clusterAgreement} />
+                          <GroupChips groups={row.clusterAgreement} />
+                        </>
+                      ) : null}
                     </div>
                   </div>
                 </div>

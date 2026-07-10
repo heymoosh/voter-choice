@@ -120,6 +120,122 @@ describe("computePopulationAggregate", () => {
   });
 });
 
+/* ── per-opinion-group agreement enrichment (DISPLAY ONLY) ──────
+ *
+ * Deterministic 3-archetype fixture that clusters into 3 opinion groups the
+ * same way the opinion MAP does (same assembleClusterMap run) + a universal
+ * "agree" statement s0 so a real population bridge exists too. Mirrors the
+ * parity-gallery fixture so the shapes match what the report renders.
+ */
+const ENRICH_ARCHETYPES = {
+  A: ["agree", "agree", "disagree", "disagree", "pass", "pass"],
+  B: ["disagree", "disagree", "agree", "agree", "pass", "pass"],
+  C: ["disagree", "disagree", "disagree", "disagree", "agree", "agree"],
+} as const;
+
+function enrichRng(seed: number): () => number {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
+}
+
+function archetypeRows(
+  kind: "A" | "B" | "C",
+  n: number,
+  rng: () => number,
+): PolisResponseRow[] {
+  const base = ENRICH_ARCHETYPES[kind];
+  const out: PolisResponseRow[] = [];
+  for (let i = 0; i < n; i++) {
+    const v: PolisResponseRow = { s0: "agree" }; // universal → a real bridge
+    for (let j = 0; j < 6; j++) {
+      let ans = base[j] as "agree" | "disagree" | "pass";
+      if (rng() < 0.15) {
+        const alt = ["agree", "disagree", "pass"] as const;
+        ans = alt[Math.floor(rng() * 3)];
+      }
+      v[`s${j + 1}`] = ans;
+    }
+    out.push(v);
+  }
+  return out;
+}
+
+function clusteredPopulation(): PolisResponseRow[] {
+  const rng = enrichRng(42);
+  return [
+    ...archetypeRows("A", 26, rng),
+    ...archetypeRows("B", 25, rng),
+    ...archetypeRows("C", 17, rng),
+  ];
+}
+
+const CLUSTER_AGREEMENT_KEYS = ["agreePct", "clusterId", "label"];
+
+describe("computePopulationAggregate — per-opinion-group enrichment", () => {
+  it("attaches a per-group clusterAgreement to bridges/divided, reusing the map's Group A/B/C", () => {
+    const result = computePopulationAggregate(clusteredPopulation());
+
+    expect(result.bridges.length).toBeGreaterThan(0);
+    expect(result.divided.length).toBeGreaterThan(0);
+
+    for (const item of [...result.bridges, ...result.divided]) {
+      expect(item.clusterAgreement).toBeDefined();
+      // Party-free: labels are the neutral opinion groups the map assigns by
+      // size, never D/R/I.
+      expect(item.clusterAgreement!.map((c) => c.label)).toEqual([
+        "Group A",
+        "Group B",
+        "Group C",
+      ]);
+      expect(item.clusterAgreement!.map((c) => c.clusterId)).toEqual([0, 1, 2]);
+      for (const rec of item.clusterAgreement!) {
+        expect(rec.agreePct).toBeGreaterThanOrEqual(0);
+        expect(rec.agreePct).toBeLessThanOrEqual(100);
+      }
+    }
+
+    // The universal-agree bridge converges — every group at 100%.
+    const bridge = result.bridges[0];
+    expect(bridge.clusterAgreement!.every((c) => c.agreePct === 100)).toBe(
+      true,
+    );
+  });
+
+  it("clusterAgreement records carry ONLY {clusterId,label,agreePct} — no party/session/token leak", () => {
+    const result = computePopulationAggregate(clusteredPopulation());
+    const allRecords = [...result.bridges, ...result.divided].flatMap(
+      (i) => i.clusterAgreement ?? [],
+    );
+    expect(allRecords.length).toBeGreaterThan(0);
+
+    for (const rec of allRecords) {
+      expect(Object.keys(rec).sort()).toEqual(CLUSTER_AGREEMENT_KEYS);
+    }
+
+    // The whole serialized payload leaks no party / session / token strings.
+    const serialized = JSON.stringify(result).toLowerCase();
+    for (const banned of ["party", "dem", "republican", "session", "token"]) {
+      expect(serialized).not.toContain(banned);
+    }
+  });
+
+  it("omits clusterAgreement entirely when the population is too thin to cluster (map's fallback guard)", () => {
+    // 3 rows, one statement → assembleClusterMap returns null (below the
+    // minimum session count / <2 statements) → no fabricated group values.
+    const result = computePopulationAggregate([
+      { stock_trading_ban: "agree" },
+      { stock_trading_ban: "agree" },
+      { stock_trading_ban: "agree" },
+    ]);
+    for (const item of [...result.bridges, ...result.divided]) {
+      expect(item.clusterAgreement).toBeUndefined();
+    }
+  });
+});
+
 /* ── fetchPopulationAggregate (DB mocked — never a live connection) ── */
 
 describe("fetchPopulationAggregate", () => {

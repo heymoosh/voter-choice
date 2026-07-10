@@ -1076,6 +1076,70 @@
   background: var(--replace);
 }
 
+/* ---- per-opinion-group convergence bar + chips ----
+   One dot per opinion group (Group A/B/C) on a shared track, coloured with the
+   SAME neutral cluster tokens the opinion map uses (--cluster-a/b/c) so a Group
+   A dot/chip here matches the Group A dots on the map above. Party-free
+   (DECISION #116): these are opinion clusters by answer similarity, never
+   D/R/I. Dots CONVERGE on bridges, SPREAD on divided statements. */
+.conv.groups {
+  margin-top: 10px;
+}
+.conv-fill.neutral {
+  background: var(--rule);
+}
+.conv-dot.c0 {
+  background: var(--cluster-a);
+}
+.conv-dot.c1 {
+  background: var(--cluster-b);
+}
+.conv-dot.c2 {
+  background: var(--cluster-c);
+}
+.pr-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pr-split .chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pr-split .chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.pr-split .chip.c0 {
+  background: color-mix(in oklch, var(--cluster-a) 12%, var(--paper));
+  color: color-mix(in oklch, var(--cluster-a) 78%, var(--ink));
+}
+.pr-split .chip.c0 i {
+  background: var(--cluster-a);
+}
+.pr-split .chip.c1 {
+  background: color-mix(in oklch, var(--cluster-b) 14%, var(--paper));
+  color: color-mix(in oklch, var(--cluster-b) 82%, var(--ink));
+}
+.pr-split .chip.c1 i {
+  background: var(--cluster-b);
+}
+.pr-split .chip.c2 {
+  background: color-mix(in oklch, var(--cluster-c) 12%, var(--paper));
+  color: color-mix(in oklch, var(--cluster-c) 78%, var(--ink));
+}
+.pr-split .chip.c2 i {
+  background: var(--cluster-c);
+}
+
 /* ---- where it split ---- */
 .pr-fault {
   margin-top: 34px;

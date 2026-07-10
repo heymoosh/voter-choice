@@ -46,15 +46,41 @@ export interface StatementInput {
   clusterAgreement: ClusterAgreement[];
 }
 
+/**
+ * Per-opinion-group agreement on ONE statement — DISPLAY enrichment only.
+ *
+ * These are the "how each opinion group broke down" figures the report renders
+ * as convergence dots + colored group chips on each common-ground / divided
+ * row. They do NOT change which statements qualify (that stays population-level
+ * — decision e2455f56); they only annotate the ones already selected.
+ *
+ * Party-free (DECISION #116): `label` is the neutral "Group A/B/C" the opinion
+ * MAP assigns by cluster size — NEVER a party. `clusterId` is the same 0-based
+ * display id the map uses (0 = largest = Group A), so a "Group A" chip lands on
+ * the same colour token as the map's Group A dots. Privacy: this record carries
+ * ONLY these three fields — no session token, party, name, or raw response.
+ */
+export interface ClusterAgreementRecord {
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}
+
 export interface BridgeStatement {
   statement: string;
   clusters: ClusterAgreement[];
+  /** Per-opinion-group breakdown (display only). Omitted when the population
+   *  is too thin / unseparated to cluster — the map's own fallback guard. */
+  clusterAgreement?: ClusterAgreementRecord[];
 }
 
 export interface DividedStatement {
   statement: string;
   agreePercent: number;
   disagreePercent: number;
+  /** Per-opinion-group breakdown (display only). Omitted when the population
+   *  is too thin / unseparated to cluster — the map's own fallback guard. */
+  clusterAgreement?: ClusterAgreementRecord[];
 }
 
 /* ── Constants ───────────────────────────────────────────────── */

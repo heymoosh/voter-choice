@@ -5,9 +5,18 @@
  * vector as one population — no k-means cluster split, no D/R/I party
  * breakdown. This matches the approved design decision (card e2455f56,
  * 2026-07-07): keep the existing party-free product decision, threshold at
- * the population level. Deliberately does NOT use `../../polis/clustering`
- * or `../../polis/reportAssembly` (that pipeline computes PER-CLUSTER
- * agreement, the wrong methodology for this card).
+ * the population level. SELECTION (which statements qualify as bridge/divided)
+ * stays strictly population-level.
+ *
+ * On top of that population selection we attach DISPLAY-ONLY per-opinion-group
+ * agreement (`clusterAgreement`) to each selected statement, reusing the SAME
+ * k-means opinion clusters the opinion MAP renders (`assembleClusterMap` from
+ * `../../polis/pca` — same response vectors, same run, same Group A/B/C
+ * size-desc labelling). This does NOT change selection; it only annotates how
+ * each group broke down, so the report can draw convergence dots + colored
+ * group chips. When the population is too thin / unseparated to cluster (the
+ * map's own fallback guard), the enrichment is omitted and only the population
+ * figure is shown — we never fabricate group values.
  *
  * `tallyPopulationResponses` / `computePopulationAggregate` are pure and
  * unit-tested against synthetic in-memory rows. `fetchPopulationAggregate`
@@ -29,9 +38,12 @@ import {
   computeBridges,
   computeDivided,
   type BridgeStatement,
+  type ClusterAgreementRecord,
   type DividedStatement,
   type StatementInput,
 } from "./aggregates";
+import { assembleClusterMap } from "../../polis/pca";
+import type { ResponseVector } from "../../polis/clustering";
 
 // ---------------------------------------------------------------------------
 // Public types
@@ -119,15 +131,99 @@ function toDividedInput(tallies: PopulationTally[]): DividedStatement[] {
   }));
 }
 
-/** Pure: tally rows, then compose bridges/divided. No DB. */
+// ---------------------------------------------------------------------------
+// Per-opinion-group agreement enrichment (DISPLAY ONLY)
+// ---------------------------------------------------------------------------
+
+/**
+ * The row-index → opinion-group membership the opinion MAP produced, plus the
+ * neutral group labels, so per-statement agreement can be tallied within each
+ * group. Null when the map itself has nothing to show.
+ */
+interface ClusterMembership {
+  /** Non-empty opinion groups, size-desc (display id 0 = largest = Group A). */
+  groups: Array<{ id: number; label: string }>;
+  /** Display cluster id → the row indices assigned to that group. */
+  membersByCluster: Map<number, number[]>;
+}
+
+/**
+ * Reuse the SAME k-means opinion clusters the map renders. Calls
+ * `assembleClusterMap` on the same rows and reads its per-session memberships
+ * (`dots[i].cluster` — the size-desc display id) so a "Group A" here is the
+ * exact Group A the map draws. Returns null (→ chips omitted) when the map
+ * falls back to the single-cloud state (too few sessions, <2 statements, or
+ * clusters that don't separate) — the same guard the map uses.
+ */
+function buildClusterMembership(
+  rows: PolisResponseRow[],
+): ClusterMembership | null {
+  const map = assembleClusterMap(rows as ResponseVector[]);
+  if (!map) return null;
+
+  const membersByCluster = new Map<number, number[]>();
+  map.dots.forEach((dot, i) => {
+    const arr = membersByCluster.get(dot.cluster) ?? [];
+    arr.push(i);
+    membersByCluster.set(dot.cluster, arr);
+  });
+
+  return {
+    groups: map.clusters.map((c) => ({ id: c.id, label: c.label })),
+    membersByCluster,
+  };
+}
+
+/**
+ * Per-opinion-group agree% on one statement. Percent = agree / group size
+ * (members who passed/skipped/did-not-answer count against agreement), mirroring
+ * `clustering.ts`'s per-cluster convention. Records carry ONLY
+ * `{ clusterId, label, agreePct }`.
+ */
+function clusterAgreementFor(
+  statement: string,
+  membership: ClusterMembership,
+  rows: PolisResponseRow[],
+): ClusterAgreementRecord[] {
+  return membership.groups.map((g) => {
+    const members = membership.membersByCluster.get(g.id) ?? [];
+    const total = members.length;
+    const agree = members.reduce(
+      (acc, idx) => acc + (rows[idx][statement] === "agree" ? 1 : 0),
+      0,
+    );
+    return {
+      clusterId: g.id,
+      label: g.label,
+      agreePct: total > 0 ? Math.round((agree / total) * 100) : 0,
+    };
+  });
+}
+
+/** Pure: tally rows, compose population-level bridges/divided, then attach the
+ *  DISPLAY-ONLY per-opinion-group breakdown (omitted when the map has no
+ *  cluster structure to reuse). No DB. */
 export function computePopulationAggregate(
   rows: PolisResponseRow[],
 ): PopulationAggregateResult {
   const tallies = tallyPopulationResponses(rows);
+  const bridges = computeBridges(toBridgeInput(tallies));
+  const divided = computeDivided(toDividedInput(tallies));
+
+  const membership = buildClusterMembership(rows);
+  const attach = (statement: string): ClusterAgreementRecord[] | undefined =>
+    membership ? clusterAgreementFor(statement, membership, rows) : undefined;
+
   return {
     count: rows.length,
-    bridges: computeBridges(toBridgeInput(tallies)),
-    divided: computeDivided(toDividedInput(tallies)),
+    bridges: bridges.map((b) => {
+      const ca = attach(b.statement);
+      return ca ? { ...b, clusterAgreement: ca } : b;
+    }),
+    divided: divided.map((d) => {
+      const ca = attach(d.statement);
+      return ca ? { ...d, clusterAgreement: ca } : d;
+    }),
   };
 }
 

@@ -402,13 +402,27 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
  *  "Where it split" panel (agree-vs-disagree SplitBar + PT SPLIT figure).
  *  Bridges keep their flat `agreementPercent` — the shape the adapter reads for
  *  the common-ground rows. */
+/** Per-opinion-group breakdown for the convergence dots + chips. Party-free
+ *  (DECISION #116): clusterId 0/1/2 = Group A/B/C (same size-desc ids + colour
+ *  tokens the opinion map uses), NEVER D/R/I. Test fixture only. */
+type MockClusterAgreement = Array<{
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}>;
+
 async function mockBridges(
   page: Page,
-  bridges: Array<{ statement: string; agreementPercent: number }>,
+  bridges: Array<{
+    statement: string;
+    agreementPercent: number;
+    clusterAgreement?: MockClusterAgreement;
+  }>,
   divided: Array<{
     statement: string;
     agreePercent: number;
     disagreePercent: number;
+    clusterAgreement?: MockClusterAgreement;
   }> = [],
 ): Promise<void> {
   await page.route("**/api/polis/bridges?*", async (route) => {
@@ -425,6 +439,17 @@ async function mockBridges(
       }),
     });
   });
+}
+
+/** Build a party-free 3-group breakdown (Group A/B/C) for a statement's
+ *  convergence dots + chips. Colours match the map (clusterId 0/1/2 →
+ *  --cluster-a/b/c). Test fixture only. */
+function groups(a: number, b: number, c: number): MockClusterAgreement {
+  return [
+    { clusterId: 0, label: "Group A", agreePct: a },
+    { clusterId: 1, label: "Group B", agreePct: b },
+    { clusterId: 2, label: "Group C", agreePct: c },
+  ];
 }
 
 /* ---------------------------------------------------------------------------
@@ -1271,31 +1296,39 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page, true);
       await mockBridges(
         page,
+        // Common ground: per-group dots CONVERGE (all three groups near the
+        // population headline) — that's what makes it a genuine bridge.
         [
           {
             statement: "Congress should cap prescription drug price increases.",
             agreementPercent: 86,
+            clusterAgreement: groups(88, 83, 87),
           },
           {
             statement: "Federal spending needs independent audits every year.",
             agreementPercent: 79,
+            clusterAgreement: groups(81, 76, 80),
           },
           {
             statement:
               "Members of Congress should not trade individual stocks.",
             agreementPercent: 71,
+            clusterAgreement: groups(73, 68, 72),
           },
           {
             statement:
               "Rent assistance should scale with local cost of living.",
             agreementPercent: 82,
+            clusterAgreement: groups(84, 79, 83),
           },
         ],
+        // The lone divided row: groups SPREAD apart.
         [
           {
             statement: "Congress should raise the federal minimum wage.",
             agreePercent: 52,
             disagreePercent: 41,
+            clusterAgreement: groups(74, 31, 52),
           },
         ],
       );
@@ -1332,22 +1365,27 @@ export const SCENARIOS: Scenario[] = [
       await mockBridges(
         page,
         [],
+        // Every row here is genuinely split: the per-group dots SPREAD far
+        // apart (one group high, another low) — that spread is the divide.
         [
           {
             statement: "Federal spending should be cut across the board.",
             agreePercent: 58,
             disagreePercent: 34,
+            clusterAgreement: groups(79, 28, 52),
           },
           {
             statement: "Congress should raise the federal minimum wage.",
             agreePercent: 43,
             disagreePercent: 54,
+            clusterAgreement: groups(22, 71, 44),
           },
           {
             statement:
               "The federal government should fund more affordable housing.",
             agreePercent: 38,
             disagreePercent: 57,
+            clusterAgreement: groups(18, 66, 40),
           },
         ],
       );

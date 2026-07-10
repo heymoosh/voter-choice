@@ -86,6 +86,88 @@ describe("loadPolisScopes — divided[] wiring", () => {
     ]);
   });
 
+  it("threads per-opinion-group clusterAgreement onto bridges and divided, dropping malformed records", async () => {
+    stubFetch({
+      polis: polisOk,
+      bridges: {
+        scope: "state",
+        threshold: 200,
+        count: 2,
+        status: "ok",
+        bridges: [
+          {
+            statement: "Congress should cap prescription drug price increases.",
+            clusters: [{ name: "population", agreementPercent: 86 }],
+            clusterAgreement: [
+              { clusterId: 0, label: "Group A", agreePct: 88 },
+              { clusterId: 1, label: "Group B", agreePct: 83 },
+              // malformed (missing agreePct) → dropped
+              { clusterId: 2, label: "Group C" },
+            ],
+          },
+        ],
+        divided: [
+          {
+            statement: "Federal spending should be cut across the board.",
+            agreePercent: 58,
+            disagreePercent: 34,
+            clusterAgreement: [
+              { clusterId: 0, label: "Group A", agreePct: 79 },
+              { clusterId: 1, label: "Group B", agreePct: 28 },
+              { clusterId: 2, label: "Group C", agreePct: 52 },
+            ],
+          },
+        ],
+      },
+    });
+
+    const scopes = await loadPolisScopes({
+      stateCode: "TX",
+      stateName: "Texas",
+      userConcerns: [],
+    });
+    const state = scopes.find((s) => s.id === "state")!;
+
+    // Bridge keeps only the two well-formed group records.
+    expect(state.bridges[0].clusterAgreement).toEqual([
+      { clusterId: 0, label: "Group A", agreePct: 88 },
+      { clusterId: 1, label: "Group B", agreePct: 83 },
+    ]);
+    // Divided carries the full 3-group spread.
+    expect(state.divided[0].clusterAgreement).toEqual([
+      { clusterId: 0, label: "Group A", agreePct: 79 },
+      { clusterId: 1, label: "Group B", agreePct: 28 },
+      { clusterId: 2, label: "Group C", agreePct: 52 },
+    ]);
+  });
+
+  it("omits clusterAgreement when the route sends none (thin/unseparated population)", async () => {
+    stubFetch({
+      polis: polisOk,
+      bridges: {
+        scope: "state",
+        threshold: 200,
+        count: 1,
+        status: "ok",
+        bridges: [
+          {
+            statement: "Members of Congress shouldn't trade individual stocks.",
+            clusters: [{ name: "population", agreementPercent: 86 }],
+          },
+        ],
+        divided: [],
+      },
+    });
+
+    const scopes = await loadPolisScopes({
+      stateCode: "TX",
+      stateName: "Texas",
+      userConcerns: [],
+    });
+    const state = scopes.find((s) => s.id === "state")!;
+    expect(state.bridges[0].clusterAgreement).toBeUndefined();
+  });
+
   it("reads divided even when there are zero bridges (fully-divided cycle)", async () => {
     stubFetch({
       polis: polisOk,

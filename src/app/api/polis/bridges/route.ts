@@ -46,6 +46,14 @@ import {
 /** Minimum session count before the bridges reading is surfaced. */
 const BRIDGES_PER_READING_MIN = 50;
 
+/** Per-opinion-group breakdown (display only, party-free — DECISION #116).
+ *  ONLY these three fields ever ship: no session token, party, or raw response. */
+interface ClusterAgreementRecord {
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}
+
 interface BridgesResponseBody {
   scope: "national" | "county";
   county?: string;
@@ -55,11 +63,13 @@ interface BridgesResponseBody {
   bridges: Array<{
     statement: string;
     clusters: Array<{ name: string; agreementPercent: number }>;
+    clusterAgreement?: ClusterAgreementRecord[];
   }>;
   divided: Array<{
     statement: string;
     agreePercent: number;
     disagreePercent: number;
+    clusterAgreement?: ClusterAgreementRecord[];
   }>;
 }
 

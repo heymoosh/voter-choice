@@ -22,20 +22,40 @@ export interface IssueStat {
   percent: number;
 }
 
+/**
+ * How ONE opinion group broke down on a statement — DISPLAY enrichment for the
+ * convergence dots + colored group chips. Party-free (DECISION #116): `label`
+ * is the neutral "Group A/B/C" the opinion map assigns by size; `clusterId` is
+ * the same 0-based display id the map's dots use (0 = Group A), so a chip lands
+ * on the same colour token as the map's group.
+ */
+export interface ClusterAgreementRecord {
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}
+
 /** A population-level agreement statement — the party-free "common ground" row. */
 export interface Bridge {
   stmt: string;
   pct: number;
+  /** Per-opinion-group breakdown (convergence dots + chips). Absent when the
+   *  population was too thin/unseparated to cluster — chips are then omitted. */
+  clusterAgreement?: ClusterAgreementRecord[];
 }
 
 /**
- * A statement the population genuinely split on. Party-free: `agreePct` /
- * `disagreePct` are whole-population shares (no cluster or party breakdown).
+ * A statement the population genuinely split on. `agreePct` / `disagreePct` are
+ * whole-population shares (no party breakdown). `clusterAgreement` adds the
+ * per-opinion-group breakdown — here the groups SPREAD apart.
  */
 export interface Divided {
   stmt: string;
   agreePct: number;
   disagreePct: number;
+  /** Per-opinion-group breakdown (convergence dots + chips). Absent when the
+   *  population was too thin/unseparated to cluster — chips are then omitted. */
+  clusterAgreement?: ClusterAgreementRecord[];
 }
 
 /** One session's dot on the opinion map: display position + opinion-group id. */
@@ -122,11 +142,18 @@ async function fetchPolisScope(
   }
 }
 
+interface ApiClusterAgreement {
+  clusterId?: number;
+  label?: string;
+  agreePct?: number;
+}
+
 interface ApiBridge {
   statement?: string;
   stmt?: string;
   agreementPercent?: number;
   clusters?: Array<{ agreementPercent?: number }>;
+  clusterAgreement?: ApiClusterAgreement[];
 }
 
 interface ApiDivided {
@@ -134,6 +161,31 @@ interface ApiDivided {
   stmt?: string;
   agreePercent?: number;
   disagreePercent?: number;
+  clusterAgreement?: ApiClusterAgreement[];
+}
+
+/**
+ * Keep only well-formed, party-free per-group records. Drops anything missing a
+ * numeric clusterId/agreePct or a label, so malformed data never renders a
+ * bogus chip. Returns undefined when there's nothing usable → chips omitted.
+ */
+function readClusterAgreement(
+  raw: ApiClusterAgreement[] | undefined,
+): ClusterAgreementRecord[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const records = raw
+    .filter(
+      (c): c is Required<ApiClusterAgreement> =>
+        typeof c?.clusterId === "number" &&
+        typeof c?.label === "string" &&
+        typeof c?.agreePct === "number",
+    )
+    .map((c) => ({
+      clusterId: c.clusterId,
+      label: c.label,
+      agreePct: Math.round(c.agreePct),
+    }));
+  return records.length > 0 ? records : undefined;
 }
 
 /**
@@ -166,7 +218,13 @@ async function fetchBridges(
             : pcts.length > 0
               ? Math.min(...pcts)
               : null;
-        return stmt && pct !== null ? { stmt, pct: Math.round(pct) } : null;
+        if (!stmt || pct === null) return null;
+        const clusterAgreement = readClusterAgreement(b.clusterAgreement);
+        return {
+          stmt,
+          pct: Math.round(pct),
+          ...(clusterAgreement ? { clusterAgreement } : {}),
+        };
       })
       .filter((b): b is Bridge => b !== null);
 
@@ -178,15 +236,20 @@ async function fetchBridges(
         const stmt = d.statement ?? d.stmt ?? "";
         const agreePct = d.agreePercent;
         const disagreePct = d.disagreePercent;
-        return stmt &&
-          typeof agreePct === "number" &&
-          typeof disagreePct === "number"
-          ? {
-              stmt,
-              agreePct: Math.round(agreePct),
-              disagreePct: Math.round(disagreePct),
-            }
-          : null;
+        if (
+          !stmt ||
+          typeof agreePct !== "number" ||
+          typeof disagreePct !== "number"
+        ) {
+          return null;
+        }
+        const clusterAgreement = readClusterAgreement(d.clusterAgreement);
+        return {
+          stmt,
+          agreePct: Math.round(agreePct),
+          disagreePct: Math.round(disagreePct),
+          ...(clusterAgreement ? { clusterAgreement } : {}),
+        };
       })
       .filter((d): d is Divided => d !== null);
 
