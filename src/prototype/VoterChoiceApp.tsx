@@ -4931,23 +4931,24 @@ function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
 
 function AboutPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan Congress-assessment tool.">
-      <p>Voter Choice is built and operated by <b>Grey Bird LLC</b>, a small independent shop. We made it because the gap between "what a candidate says in their ads" and "what they actually voted on" has gotten wider every cycle. We thought voters deserved a tool that closes it.</p>
+    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan ballot research tool." dek="Built and operated by Grey Bird LLC — a small independent shop closing the gap between what a candidate says and what they actually did." className="sp-about">
+      <p>We made Voter Choice because the distance between “what a candidate says in their ads” and “what they actually voted on” has widened every cycle. Voters deserve a tool that closes it.</p>
 
       <h2>What we do</h2>
-      <p>For every race on your ballot, we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote (CAN2026 case files). We score how each candidate aligns with the issues you told us matter, vote by vote.</p>
+      <p>For every race on your ballot we pull the <b>actual voting record</b> of incumbents (Congress.gov, state legislatures), the <b>funding picture</b> (FEC, OpenSecrets, state ethics commissions), and the <b>editorially-curated context</b> behind each vote. We score how each candidate aligns with the issues <i>you</i> told us matter — vote by vote.</p>
 
       <h2>What we don't do</h2>
       <ul>
         <li><b>No accounts.</b> No sign-up, no email, no password.</li>
-        <li><b>No tracking.</b> No analytics, no telemetry, no pixels.</li>
-        <li><b>No endorsement.</b> We don't tell you who to vote for. We show you what the candidates have done. The final choice is yours.</li>
-        <li><b>No data hoarding.</b> Your address, draft picks, and chat history live in your browser. If you close the tab and didn't save a profile, it's gone.</li>
+        <li><b>No third-party analytics.</b> No ad pixels, no telemetry, no cross-site tracking.</li>
+        <li><b>No endorsement.</b> We don't tell you who to vote for — we show you what they've done. The choice is yours.</li>
+        <li><b>No data hoarding.</b> Your address, draft picks, and chat live in your browser. Close the tab without saving and it's gone.</li>
       </ul>
 
+      <p>The one thing we deliberately keep: your <b>chosen issues</b> and your <b>state</b> — never your street address — retained de-identified and in aggregate to power <b>Polis</b>, our shared opinion map. Everything else stays on your device.</p>
+
       <h2>Who pays for this?</h2>
-      <p>Server costs, Anthropic API budget, and the editorial work behind CAN2026 case files are funded by <b>Grey Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial. We publish a quarterly funding statement.</p>
-      <p>When our community AI budget runs out, you can bring your own Anthropic API key (Settings → BYOK) or hand off to any chatbot with a portable prompt. We'd rather pause than monetize you.</p>
+      <p>Server costs, the Anthropic API budget, and the editorial work behind our case files are funded by <b>Grey Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial.</p>
 
       <h2>Get in touch</h2>
       <p>Reach Grey Bird LLC at <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>. We answer.</p>
