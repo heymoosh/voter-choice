@@ -4931,7 +4931,7 @@ function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
 
 function AboutPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan ballot research tool." dek="Built and operated by Grey Bird LLC — a small independent shop closing the gap between what a candidate says and what they actually did." className="sp-about">
+    <StaticPage onBack={onBack} eyebrow="About Voter Choice" title="A free, non-partisan Congress-assessment tool." dek="Built and operated by Grey Bird LLC — a small independent shop closing the gap between what a candidate says and what they actually did." className="sp-about">
       <p>We made Voter Choice because the distance between “what a candidate says in their ads” and “what they actually voted on” has widened every cycle. Voters deserve a tool that closes it.</p>
 
       <h2>What we do</h2>
@@ -4949,6 +4949,7 @@ function AboutPage({ onBack }) {
 
       <h2>Who pays for this?</h2>
       <p>Server costs, the Anthropic API budget, and the editorial work behind our case files are funded by <b>Grey Bird LLC</b> and a small set of individual donors who explicitly do not buy a say in editorial.</p>
+      <p>When our community AI budget runs out, you can bring your own Anthropic API key (Settings → BYOK) or hand off to any chatbot with a portable prompt. We'd rather pause than monetize you.</p>
 
       <h2>Get in touch</h2>
       <p>Reach Grey Bird LLC at <a href="mailto:muxin.li.pro@gmail.com"><code>muxin.li.pro@gmail.com</code></a>. We answer.</p>
