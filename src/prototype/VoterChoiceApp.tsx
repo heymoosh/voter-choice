@@ -377,9 +377,9 @@ const TRANSLATIONS = {
       allDoneAlsoIntro: 'One more thing worth seeing —',
     },
     editIssues: {
-      eyebrow: 'Edit your issues',
-      heading: "Re-rank, rename, add, or remove — or just tell me what's changed.",
-      lede: "The verdicts you've already made are kept. When you apply, I re-score every member against the new list and flag any whose alignment shifts past the noise floor.",
+      eyebrow: 'Amend your issues',
+      heading: "Re-rank, rename, add — or tell me what's changed.",
+      lede: 'Your verdicts are kept. When you apply, I re-score every member against the new list and flag any whose alignment shifts past the noise floor.',
       primaryBtn: 'Apply & re-score →',
       placeholder: "What's changed? More context about what you value, a new issue, a different priority order…",
       cancelLink: 'Cancel — keep my current issues',

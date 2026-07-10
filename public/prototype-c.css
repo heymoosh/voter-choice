@@ -3549,6 +3549,70 @@ Bumps
   color: var(--pv-ink);
 }
 
+/* ---------- Edit-issues modal — Bold Flag / Keystone parity (09d-edit-issues) ----------
+   Locally-scoped white/navy/red palette, values lifted verbatim from canvas's own
+   design-handoff/design_handoff_voter_choice_redesign/screens.css
+   .screen[data-palette="white"] block ("PALETTE B — Bold Flag"), the palette behind
+   screens-intake.jsx's EditIssues (.amd-modal). EditIssuesModal.tsx keeps its own
+   amend- / be- prefixed class names (see parity-gate.ts's 09d-edit-issues waiver) but
+   they — and every shared IssueConversation/IssueRow class nested inside them
+   (.msg/.bubble/.themes-card/.theme-row/.co-input/etc, also used un-scoped by the
+   already-passing 09a/09b/09c intake scenarios) — all read the same global design
+   tokens. Re-declaring those tokens on .amend-modal cascades the Keystone palette
+   to every descendant without touching the shared civic-mood default those other
+   scenarios still rely on. Scoped to .amend-modal only. */
+.amend-modal {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --civic: oklch(0.4 0.155 262);
+  --civic-2: oklch(0.31 0.145 262);
+  --civic-soft: oklch(0.94 0.04 262);
+  --vote-red: oklch(0.53 0.205 27);
+  --tag-bg: oklch(0.95 0.006 260);
+  --serif: "Newsreader", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+/* Canvas's .iq-msg.user .iq-bubble is a soft navy-tinted bubble, not a solid-ink
+   one — .msg.user .bubble's shared rule (background: var(--ink)) is the right
+   call for the cold-open scenarios (09a/09b/09c) that already pass, so override
+   it locally instead of changing the shared rule. */
+.amend-modal .msg.user .bubble {
+  background: var(--civic-soft);
+  border: 1px solid oklch(0.84 0.05 262);
+  color: var(--civic-2);
+}
+/* .chip/.chips are otherwise unstyled outside the .ws-input sidebar context —
+   give the quick-reply chips a real pill treatment matching canvas's
+   .amd-modal .iq-opt buttons instead of bare unstyled <button>s. */
+.amend-modal .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.amend-modal .chip {
+  font-family: var(--sans);
+  font-size: 13px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.amend-modal .chip:hover:not(:disabled) {
+  border-color: var(--civic);
+  color: var(--ink);
+}
+.amend-modal .chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
