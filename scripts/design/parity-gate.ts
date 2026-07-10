@@ -1201,6 +1201,51 @@ const CONTENT_PROBES: ContentProbe[] = [
       "assertions span all four new sections so a future regression back toward the old copy " +
       "or a partially-applied rebuild both fail loudly here.",
   },
+  {
+    scenarioId: "08c-privacy",
+    assertions: [
+      {
+        text: "No analytics, no telemetry, no accounts.",
+        description:
+          "the Privacy dek (first half, split before the second sentence) — canvas's PrivacyVC " +
+          '(screens-statics.jsx) passes dek="No analytics, no telemetry, no accounts. Most of ' +
+          'what you do never leaves your browser." to StaticPageVC',
+      },
+      {
+        text: "Most of what you do never leaves your browser.",
+        description: "the Privacy dek (second half)",
+      },
+      {
+        text: "Polis — the shared opinion map",
+        description:
+          "the Polis-retention H2 — previously 100% missing from PrivacyPage " +
+          "(src/prototype/VoterChoiceApp.tsx), which had no Polis section at all despite " +
+          "Polis being the one place the site persists user data server-side",
+      },
+      {
+        text: "It's the one place your data persists beyond your browser",
+        description:
+          "the Polis-retention paragraph body, restored verbatim from canvas's PrivacyVC",
+      },
+    ],
+    note:
+      "Genuine FAIL before the fix, confirmed by reading both sides directly: PrivacyPage " +
+      '(src/prototype/VoterChoiceApp.tsx) called <StaticPage onBack={onBack} eyebrow="Privacy ' +
+      'policy" title="What stays here, what doesn\'t."> with no dek prop and no Polis section at ' +
+      "all — the exact class of gap (a)/(b) both miss: '08c-privacy' has a STRUCTURAL WAIVER " +
+      "(renders the same probed sp-wrap/sp-back shell as 08a-about — no class signal to catch " +
+      "missing/drifted copy), and the coarse downscaled visual diff already PASSED before this " +
+      "fix (ratio 0.057 vs 0.18 threshold) without the dek or Polis section rendering at all, " +
+      "confirming the visual check alone isn't built to notice a missing paragraph. Muxin's " +
+      "ruling on this page's copy (design-handoff/keystone-canvas/COPY-DIFF-REPORT.md, Statics " +
+      "section, ruled 2026-07-07 on branch wt/keystone-phase-3-copy-diff-report-b7c7178d — not " +
+      "yet merged to main) is canvas on the dek + Polis section, with the repo's additive " +
+      "'leaves your device' closing sentence kept (repo adds ≠ lossy), and repo-original BYOK / " +
+      "Voter profile uploads / Rate limiting sections kept as-is (no canvas counterpart). All " +
+      "other Privacy-page rows (Your address, Chat conversations, What we cannot provide, " +
+      "Contact) were NOT part of that ruling — left as the repo's existing copy per this task's " +
+      "explicit instruction not to invent an answer for an unruled row.",
+  },
 ];
 
 function contentProbeForScenario(scenarioId: string): ContentProbe | undefined {

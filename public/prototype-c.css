@@ -3479,6 +3479,76 @@ Bumps
   }
 }
 
+/* ---------- Privacy — Bold Flag / Keystone parity (08c-privacy) ----------
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"] + statics.css .sp-* rules.
+   Scoped to .sp-privacy only — does not touch the shared civic palette or
+   any other static page. */
+.sp-wrap.sp-privacy {
+  --pv-paper: oklch(1 0 0);
+  --pv-paper-2: oklch(0.985 0.003 258);
+  --pv-ink: oklch(0.2 0.035 260);
+  --pv-ink-2: oklch(0.37 0.032 260);
+  --pv-ink-3: oklch(0.54 0.026 260);
+  --pv-brand: oklch(0.4 0.155 262);
+  --pv-rule: oklch(0.88 0.006 260);
+  --pv-replace: oklch(0.53 0.205 27);
+  --pv-tag-bg: oklch(0.95 0.006 260);
+  --pv-serif: "Newsreader", Georgia, serif;
+  --pv-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--pv-paper);
+}
+.sp-wrap.sp-privacy .sp-back {
+  color: var(--pv-brand);
+}
+.sp-wrap.sp-privacy .sp-eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--pv-replace);
+}
+.sp-wrap.sp-privacy .sp-eyebrow::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--pv-replace);
+}
+.sp-wrap.sp-privacy .sp-title {
+  font-family: var(--pv-serif);
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-dek {
+  font-family: var(--pv-serif);
+  font-size: 19px;
+  color: var(--pv-ink-2);
+  border-bottom: 2px solid var(--pv-ink);
+  padding-bottom: 24px;
+}
+.sp-wrap.sp-privacy .sp-meta {
+  color: var(--pv-ink-3);
+}
+.sp-wrap.sp-privacy .sp-article {
+  font-family: var(--pv-serif);
+  color: var(--pv-ink-2);
+}
+.sp-wrap.sp-privacy .sp-article h2 {
+  font-family: var(--pv-serif);
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-article b {
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-article i {
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-article a {
+  color: var(--pv-brand);
+}
+.sp-wrap.sp-privacy .sp-article code {
+  background: var(--pv-tag-bg);
+  color: var(--pv-ink);
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds

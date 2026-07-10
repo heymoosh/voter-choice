@@ -5107,11 +5107,14 @@ function TipJarPage({ onBack }) {
 
 function PrivacyPage({ onBack }) {
   return (
-    <StaticPage onBack={onBack} eyebrow="Privacy policy" title="What stays here, what doesn't.">
+    <StaticPage onBack={onBack} eyebrow="Privacy policy" title="What stays here, what doesn't." dek="No analytics, no telemetry, no accounts. Most of what you do never leaves your browser." className="sp-privacy">
       <p className="sp-meta">Effective April 12, 2026 · Grey Bird LLC</p>
 
       <h2>Minimal data collection</h2>
-      <p>We do not use analytics, telemetry, tracking pixels, accounts, or sign-ups. Across visits, your browser's localStorage keeps only your <b>language preference</b>, your <b>issues</b>, a <b>county-level location</b> (never your street address), and (optionally) a <b>bring-your-own Anthropic key</b>. Your <b>precise address</b> and your <b>in-progress assessment</b> are kept only for the current browser tab and are cleared when you close it. None of this leaves your device unless you take an action that explicitly sends it.</p>
+      <p>We use no third-party analytics, ad pixels, accounts, or sign-ups. Across visits, your browser's localStorage keeps only your <b>language</b>, your <b>issues</b>, a <b>county-level location</b> (never your street address), and optionally a <b>bring-your-own Anthropic key</b>. Your <b>precise address</b> and <b>in-progress assessment</b> are kept only for the current tab and cleared when you close it. None of this leaves your device unless you take an action that explicitly sends it.</p>
+
+      <h2>Polis — the shared opinion map</h2>
+      <p>When you add your views to <b>Polis</b> (our map of where voters stand), your <b>chosen issues</b> and <b>state-level location</b> are retained on our servers — <b>de-identified and shown only in aggregate</b>, never tied to your street address, name, or chat. It's the one place your data persists beyond your browser, and it exists only so the map can show how your priorities compare to your neighbors'.</p>
 
       <h2>Your address</h2>
       <p>If you enter your street address, it may be used for autocomplete (Google Places) in your browser, is sent to the <b>US Census Bureau</b> to look up your representatives, and is sent to the <b>Google Civic Information API</b> through our server for polling-place and contest lookup. We do not intentionally log or store your address on our servers, and we do not include it in the AI chat prompt. In your browser it is held only for the current tab and cleared when you close it — only a county-level location is kept across visits.</p>
