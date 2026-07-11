@@ -18,12 +18,7 @@
        of the congress-assessment flow. */
 
 import React, { useState, useEffect } from "react";
-import {
-  AppNav,
-  AppFooter,
-  PollingStatusBar,
-  useI18n,
-} from "../VoterChoiceApp";
+import { AppNav, AppFooter, useI18n } from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
@@ -295,11 +290,6 @@ export function DelegationWorkspace({
     return (
       <div className="ws-shell delegation">
         <AppNav />
-        <PollingStatusBar
-          pollingInfo={pollingInfo}
-          stateData={stateData}
-          rows={deadlineRows}
-        />
         <DelegationOverview
           seats={seats}
           verdicts={verdicts}
@@ -343,11 +333,6 @@ export function DelegationWorkspace({
     // chrome below, without touching that chrome itself.
     <div className="ws-shell delegation dg-deep">
       <AppNav />
-      <PollingStatusBar
-        pollingInfo={pollingInfo}
-        stateData={stateData}
-        rows={deadlineRows}
-      />
       <div
         className="ws-wrap"
         data-mobile-chat={mobileChatOpen ? "open" : "closed"}

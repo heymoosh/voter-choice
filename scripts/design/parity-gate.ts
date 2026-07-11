@@ -1314,6 +1314,41 @@ const CONTENT_PROBES: ContentProbe[] = [
       "Contact) were NOT part of that ruling — left as the repo's existing copy per this task's " +
       "explicit instruction not to invent an answer for an unruled row.",
   },
+  {
+    scenarioId: "05c-candidates-overview",
+    assertions: [
+      {
+        text: "Everyone who represents you",
+        description:
+          "the overview h2 (first half, split before the em-dash) — canvas's " +
+          "screens-delegation.jsx DelegationOverview passes literal JSX text " +
+          '"Everyone who represents you — scored."',
+      },
+      {
+        text: "Scan every seat against your issues at a glance",
+        description:
+          "the overview dek (first half) — canvas's literal sub-copy, split before the comma " +
+          "so the assertion survives independent of the exact clause-joining punctuation",
+      },
+      {
+        text: "decide keep or replace",
+        description:
+          "the overview dek (closing clause) — confirms the dek was ported in full, not just " +
+          "its first half",
+      },
+    ],
+    note:
+      "Genuine FAIL before this fix, confirmed by reading both sides directly: " +
+      "delegationOverview.heading/.sub (src/prototype/VoterChoiceApp.tsx) read 'Every seat, " +
+      "scored' / \"See every seat's alignment with your issues at a glance — then open one to " +
+      "see the record behind the score.\" — a paraphrase, not the canvas's verbatim copy. Same " +
+      "class of gap the coarse downscaled visual diff already PASSED through undetected (ratio " +
+      "0.057 vs 0.18 threshold, confirmed on the unfixed screen) and 05c's marker-based " +
+      "structural probe above has no way to catch either (markers check elements exist, not " +
+      "their text) — the exact false-comfort pattern flagged after this scenario's first PASS: " +
+      "a coarse visual/structural PASS is not proof of copy fidelity. Canvas is verbatim " +
+      "source-of-truth for this surface (no recorded ruling permits a paraphrase here).",
+  },
 ];
 
 function contentProbeForScenario(scenarioId: string): ContentProbe | undefined {

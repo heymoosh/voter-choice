@@ -137,12 +137,13 @@ describe("DelegationOverview", () => {
         />
       </I18nProvider>,
     );
-    // exact match on the print CTA's full "not ready" copy — a loose
-    // /decide/i regex also matches SeatCard's "Not yet decided" status pill
-    // (itself rendered with role="button" for click-through), which isn't
-    // the control under test here.
+    // exact match on the print CTA's full "not ready" copy (canvas's "Decide
+    // N seats to print", N = the real up-2026 seat count) — a loose /decide/i
+    // regex also matches SeatCard's "Not yet decided" status pill (itself
+    // rendered with role="button" for click-through), which isn't the
+    // control under test here.
     expect(
-      screen.getByRole("button", { name: "Decide every seat to print" }),
+      screen.getByRole("button", { name: "Decide 2 seats to print" }),
     ).toBeDisabled();
     rerender(
       <I18nProvider>

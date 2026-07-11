@@ -241,7 +241,7 @@ export function DelegationOverview({
           >
             {ready
               ? t("delegationOverview.printReady")
-              : t("delegationOverview.printNotReady")}
+              : t("delegationOverview.printNotReady", { n: total })}
           </button>
         </div>
       </div>

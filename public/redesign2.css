@@ -1900,11 +1900,23 @@
    ==================================================== */
 
 .delegation {
-  /* design tokens mapped onto the shipped warm palette — same values as
-     the analogous .cmp scope in public/candidates.css */
-  --brand: var(--civic);
-  --brand-2: var(--civic-2);
-  --brand-soft: oklch(0.95 0.03 170);
+  /* --brand/--brand-2/--brand-soft point at the app-wide --bf-brand/
+     --bf-brand-2 tokens (.bf-app above), not --civic: this scope only
+     ever renders inside App2, always under #root.bf-app, so --bf-brand
+     is already in scope. --civic was the pre-.bf-app-foundation choice
+     (same "remap --civic locally" pattern candidates.css's HeadToHead
+     uses) but .bf-app's own comment is explicit that --civic is LEFT
+     UNTOUCHED app-wide — it doubles as the "keep" green elsewhere — so
+     reading it here resolved to the global green civic default, not
+     navy: brand accents (dg-kicker, the roll-call provenance badge,
+     cd-avatar, dg-print.ready) rendered civic-green instead of the
+     canvas's navy. Same fix as .pe-screen's (PolisEntry, PR #237).
+     --keep/--replace below are unaffected — already independent of
+     --civic, so the "worth keeping" chip/button and vote-fraction bars
+     stay green, matching canvas. */
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
+  --brand-soft: oklch(0.94 0.04 262);
   --keep: oklch(0.45 0.11 159);
   --keep-soft: oklch(0.94 0.04 159);
   --replace: var(--vote-red);
