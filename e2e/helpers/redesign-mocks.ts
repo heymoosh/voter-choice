@@ -525,6 +525,10 @@ export async function goToWorkspace(page: Page): Promise<void> {
  * overlay), then open a seat so the center column is visible and follow the
  * link. On mobile the center is a tap-to-open overlay that closes after each
  * verdict, so the final row click is what surfaces `.all-done`.
+ *
+ * That completion link now opens the dedicated PolisEntry invite/preview
+ * screen instead of jumping straight to standing (card 4936d17b) — follow
+ * its "See where I stand" CTA to reach the real standing/report view.
  */
 export async function goToStanding(page: Page): Promise<void> {
   const rows = page.locator(".b-row");
@@ -545,4 +549,7 @@ export async function goToStanding(page: Page): Promise<void> {
     .getByRole("button", { name: /where you stand/ });
   await standingLink.waitFor({ timeout: 15000 });
   await standingLink.click();
+  const seeStanding = page.getByTestId("polis-entry-see-standing");
+  await seeStanding.waitFor({ timeout: 15000 });
+  await seeStanding.click();
 }

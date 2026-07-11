@@ -34,6 +34,7 @@ import { HeadToHead } from "./HeadToHead";
 import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
+import { PolisEntry } from "./PolisEntry";
 import { IntakeView } from "./IntakeView";
 import { EditIssuesModal } from "./EditIssuesModal";
 import {
@@ -236,6 +237,7 @@ function App2Inner() {
       [
         "workspace",
         "print",
+        "polisEntry",
         "standing",
         "coldopen",
         "orientation",
@@ -674,6 +676,17 @@ function App2Inner() {
     setStage("standing");
   }
 
+  // Optional Polis invite/preview — replaces the old one-line "where you
+  // stand among your neighbors" link, which used to jump straight to
+  // "standing". Now that link opens this dedicated screen instead, and the
+  // screen itself offers "See where I stand" (→ seeStanding) or "No thanks"
+  // (→ back to the workspace). Purely a stage change: it never touches
+  // verdicts, printing, or the counters submit — those are unaffected
+  // whether or not this screen is ever opened.
+  function openPolisEntry() {
+    setStage("polisEntry");
+  }
+
   const districtsLine = delegation
     ? [
         delegation.districtLabel
@@ -914,6 +927,16 @@ function App2Inner() {
         />
       );
     }
+    if (stage === "polisEntry") {
+      return (
+        <PolisEntry
+          seatsCount={seats.length}
+          onPrint={() => setStage("print")}
+          onSeeStanding={seeStanding}
+          onSkip={() => setStage("workspace")}
+        />
+      );
+    }
     if (stage === "standing") {
       return (
         <div className="standing2">
@@ -998,7 +1021,7 @@ function App2Inner() {
           onSelectSeat={setActiveSeatId}
           onPrint={() => setStage("print")}
           onContinueElsewhere={() => setShowHandoff(true)}
-          onSeeStanding={seeStanding}
+          onSeeStanding={openPolisEntry}
           chatMessages={chatMessages}
           chatTimeouts={chatTimeouts}
           budgetTier={budgetTier}
