@@ -27,6 +27,11 @@
   --bf-brand: oklch(0.4 0.155 262);
   --bf-brand-2: oklch(0.31 0.145 262);
   background: var(--paper);
+  /* Short-content stages (e.g. the honest error states in App2.tsx) don't
+     fill the viewport on their own — without this, body's own un-scoped
+     civic/cream background (declared on body itself, outside .bf-app's
+     scope) shows through below the fold. */
+  min-height: 100vh;
 }
 
 /* ---- provenance badge (roll-call vs researched) — canvas's ProvBadge

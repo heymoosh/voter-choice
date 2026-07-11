@@ -137,19 +137,20 @@ textarea {
   cursor: pointer;
 }
 /* Bold Flag / Keystone: canvas's nav sits on the same white/navy/red ground
-   as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the home
-   route only via the nav's own data-current attribute -- other pages keep
-   the app-wide civic/cream nav (src/app/civic-default.test.tsx). */
-.app-nav[data-current="home"] {
-  --paper: oklch(1 0 0);
-  background: var(--paper);
-}
-.app-nav[data-current="home"] .brand .mark {
+   as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the App2
+   redesign via the .bf-app ancestor (set in src/app/page.tsx, see
+   redesign2.css) rather than the nav's own data-current attribute -- now
+   that Bold Flag white is the app-wide default for App2 (redesign2.css
+   .bf-app), the nav should read consistently on every route, not just
+   home. The legacy ballot app has no .bf-app ancestor, so it still gets
+   the base civic-styled nav below unchanged (src/app/civic-default.test.tsx
+   is unaffected -- it only pins layout.tsx's own body attributes). */
+.bf-app .app-nav .brand .mark {
   position: relative;
   overflow: hidden;
-  background: oklch(0.4 0.155 262);
+  background: var(--bf-brand);
 }
-.app-nav[data-current="home"] .brand .mark::after {
+.bf-app .app-nav .brand .mark::after {
   content: "";
   position: absolute;
   left: 0;
@@ -158,26 +159,26 @@ textarea {
   height: 6px;
   background: var(--vote-red);
 }
-.app-nav[data-current="home"] .nav-tip {
+.bf-app .app-nav .nav-tip {
   /* Canvas's SCNav (design-handoff/.../screens.css .sc-nav-links .tip) is a
      grey-rule outline with navy text -- NOT a red outline; verified against
      both the source CSS and a close re-read of the ref screenshot. */
-  border-color: oklch(0.88 0.006 260);
-  color: oklch(0.4 0.155 262);
+  border-color: var(--rule);
+  color: var(--bf-brand);
 }
-.app-nav[data-current="home"] .nav-tip:hover {
-  background: oklch(0.4 0.155 262);
+.bf-app .app-nav .nav-tip:hover {
+  background: var(--bf-brand);
   color: var(--paper);
-  border-color: oklch(0.4 0.155 262);
+  border-color: var(--bf-brand);
 }
 /* the global `a { color: var(--civic) }` rule (teal) otherwise wins over
    .app-nav .links' inherited ink-2, since a declared color on the element
    itself beats an inherited one regardless of ancestor specificity. */
-.app-nav[data-current="home"] .links a {
-  color: oklch(0.37 0.032 260);
+.bf-app .app-nav .links a {
+  color: var(--ink-2);
 }
-.app-nav[data-current="home"] .links a:hover {
-  color: oklch(0.2 0.035 260);
+.bf-app .app-nav .links a:hover {
+  color: var(--ink);
 }
 
 /* ============ HOMEPAGE ============ */
