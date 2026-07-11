@@ -214,7 +214,7 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'How it works',
       theRecord: 'The record',
-      whyNow: 'Why now?',
+      whyNow: 'Why now',
       about: 'About',
       methodology: 'Methodology',
       privacy: 'Privacy',
@@ -727,7 +727,7 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'Cómo funciona',
       theRecord: 'El registro',
-      whyNow: '¿Por qué ahora?',
+      whyNow: 'Por qué ahora',
       about: 'Acerca de',
       methodology: 'Metodología',
       privacy: 'Privacidad',
@@ -1359,17 +1359,25 @@ function AppNav({ onBrandClick }) {
         <span>Voter Choice</span>
       </div>
       <div className="links">
-        {/* "How it works" points at the methodology explainer — the brand/logo
-            above is the home affordance, so a separate direct link would be redundant. */}
-        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.howItWorks')}</a>
-        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
+        {/* Order matches the canvas SCNav (screens-orientation.jsx): About, Why
+            now, How it works, Privacy. "How it works" points at the methodology
+            explainer — the brand/logo above is the home affordance, so a
+            separate direct link would be redundant. The canvas has no "Support"
+            nav item — the mailto contact stays reachable from the About page
+            copy, so dropping it here doesn't orphan it. */}
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
+        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
+        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.howItWorks')}</a>
         <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
-        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
-        {typeof LanguageToggle === 'function' && <LanguageToggle />}
+        {/* Tip jar before the language toggle, matching the canvas order.
+            The settings gear has no canvas equivalent — the design canvas
+            never modeled Settings (BYOK key / reset / export-profile) at all,
+            it's called out as its own non-design-coupled track in DECISIONS.md
+            — and it's the only entry point into SettingsPanel, so it stays. */}
         <a className="nav-tip" onClick={() => navigate('tip')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('tip'); }}>{t('nav.tipJar')}</a>
+        {typeof LanguageToggle === 'function' && <LanguageToggle />}
         <button
           className="nav-cog"
           onClick={openSettings}

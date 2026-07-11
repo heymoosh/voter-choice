@@ -1038,10 +1038,10 @@ export const SCENARIOS: Scenario[] = [
     label: "Why Now — editorial page",
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
-    note: "Nav → 'Why now?'.",
+    note: "Nav → 'Why now' (card 24's AppNav parity pass dropped the trailing '?' to match the canvas SCNav label).",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Why now?" }).click();
+      await page.getByRole("link", { name: "Why now", exact: true }).click();
     },
   },
   {
