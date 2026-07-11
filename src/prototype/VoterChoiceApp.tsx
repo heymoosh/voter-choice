@@ -581,21 +581,25 @@ const TRANSLATIONS = {
         'Mostly small-dollar & individual donations that don’t fit a single sector tag. They’re counted in the Funding mix bar above.',
     },
     homeHero: {
-      eyebrow: "November 3, 2026 · America's 250th election",
-      headline: 'See how your members of Congress <em>actually voted</em> — before you vote.',
+      eyebrow: "Nov 3, 2026 · America's 250th election",
+      headline:
+        'How well are your elected officials really representing you? <em>Get the scorecard.</em>',
       lede:
-        'Hold Congress to its record. All 435 House seats and 33 Senate seats are on the ballot — compare what your incumbents say with how they voted, and who funded the campaign.',
-      addressLabel: 'Enter Your Registered Address',
-      addressPlaceholder: '1600 Pennsylvania Ave NW, Washington DC 20500',
+        'Voter Choice shows you how your <b>senators and representative</b> actually voted on the issues <i>you</i> choose — and who funded them — then turns your verdicts into a <b>scorecard for the polls</b>.',
+      addressLabel: 'Your registered address',
+      addressWhyAria: 'Why we ask for your address',
+      staysOnDevice: 'Stays on this device',
+      addressPlaceholder: '1100 Congress Ave, Austin, TX 78701',
       submitBtn: 'Pull my representatives →',
       unsureLede: 'Unsure?',
-      howItWorksLink: 'Read about how it works and how we use your data',
-      step1Desc:
-        'We use your address to pull local voting information so you know exactly when and where to go vote and what IDs are needed — so you have everything you need to support or vote against your representative and make a change. It stays on this device and is never stored.',
-      step2Desc:
-        'We pull your representatives and their record on the issues you care about — voting history, donors, and how much they raised and from whom. No news articles, no ads — just the record.',
-      step3Desc:
-        "Download a one-page ballot for the polling booth. Many polls don't allow phones — print it or write it down before you go.",
+      howItWorksLink: 'How it works · your data',
+      stepChip1: 'Pull your reps',
+      stepChip2: 'Pick your issues',
+      stepChip3: 'Check the record',
+      stepChip4: 'Print & vote',
+      trustNoAccount: 'No account',
+      trustNoTracking: 'No tracking',
+      trustAddressNeverStored: 'Address never stored',
     },
     byokCard: {
       title: 'Have an Anthropic API key? Use it directly in Voter Choice.',
@@ -1090,20 +1094,24 @@ const TRANSLATIONS = {
     },
     homeHero: {
       eyebrow: '3 de noviembre de 2026 · la elección 250 de Estados Unidos',
-      headline: 'Mira cómo <em>votaron realmente</em> tus miembros del Congreso — antes de que votes.',
+      headline:
+        '¿Qué tan bien te están representando realmente tus funcionarios electos? <em>Obtén tu tarjeta.</em>',
       lede:
-        'Haz que el Congreso rinda cuentas por su historial. Los 435 escaños de la Cámara y 33 escaños del Senado están en la boleta — compara lo que dicen tus representantes actuales con cómo votaron, y quién financió la campaña.',
-      addressLabel: 'Ingresa Tu Dirección Registrada',
-      addressPlaceholder: '1600 Pennsylvania Ave NW, Washington DC 20500',
+        'Voter Choice te muestra cómo votaron realmente tus <b>senadores y tu representante</b> en los temas que <i>tú</i> eliges — y quién los financió — y convierte tus veredictos en una <b>tarjeta para las urnas</b>.',
+      addressLabel: 'Tu dirección registrada',
+      addressWhyAria: 'Por qué pedimos tu dirección',
+      staysOnDevice: 'Se queda en este dispositivo',
+      addressPlaceholder: '1100 Congress Ave, Austin, TX 78701',
       submitBtn: 'Consultar mis representantes →',
       unsureLede: '¿No estás seguro/a?',
-      howItWorksLink: 'Lee cómo funciona y cómo usamos tus datos',
-      step1Desc:
-        'Usamos tu dirección para obtener información de votación local para que sepas exactamente cuándo y dónde votar y qué identificación necesitas — para que tengas todo lo necesario para apoyar o votar en contra de tu representante y generar un cambio. Se queda en este dispositivo y nunca se almacena.',
-      step2Desc:
-        'Obtenemos a tus representantes y su historial en los temas que te importan — historial de votación, donantes, y cuánto recaudaron y de quién. Sin artículos de noticias, sin anuncios — solo el registro.',
-      step3Desc:
-        'Descarga una boleta de una página para la urna. Muchas casillas no permiten teléfonos — imprímela o escríbela antes de ir.',
+      howItWorksLink: 'Cómo funciona · tus datos',
+      stepChip1: 'Consulta tus reps',
+      stepChip2: 'Elige tus temas',
+      stepChip3: 'Revisa el historial',
+      stepChip4: 'Imprime y vota',
+      trustNoAccount: 'Sin cuenta',
+      trustNoTracking: 'Sin rastreo',
+      trustAddressNeverStored: 'Dirección nunca almacenada',
     },
     byokCard: {
       title: '¿Tienes una clave de API de Anthropic? Úsala directamente en Voter Choice.',
@@ -5339,14 +5347,16 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
         <div>
           <div className="eyebrow"><span className="star">★</span> {t('homeHero.eyebrow')}</div>
           <h1 dangerouslySetInnerHTML={{ __html: t('homeHero.headline') }} />
-          <p className="lede">{t('homeHero.lede')}</p>
+          <p className="lede" dangerouslySetInnerHTML={{ __html: t('homeHero.lede') }} />
 
           <div className="addr-card">
-            <label>
-              <span className="addr-label-left">
-                <span>{t('homeHero.addressLabel')}</span>
+            <div className="addr-lab">
+              <span className="addr-lab-l">
+                <label htmlFor="hp-address-input">{t('homeHero.addressLabel')}</label>
+                <button type="button" className="addr-why" title={t('homeHero.addressWhyAria')} aria-label={t('homeHero.addressWhyAria')}>?</button>
               </span>
-            </label>
+              <span className="addr-priv">{t('homeHero.staysOnDevice')}</span>
+            </div>
             <div className="row">
               {hasPlacesKey && (
                 <div
@@ -5356,6 +5366,7 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
                 />
               )}
               <input
+                id="hp-address-input"
                 type="text"
                 ref={innerInputRef}
                 placeholder={t('homeHero.addressPlaceholder')}
@@ -5370,42 +5381,31 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
               />
               <button className="go" onClick={submit} disabled={!addr.trim()}>{t('homeHero.submitBtn')}</button>
             </div>
-          </div>
 
-          <div className="addr-steps">
-            <p className="addr-steps-lead">
-              {t('homeHero.unsureLede')}{' '}
+            <div className="addr-disclose">
               <a
-                className="addr-steps-link"
+                className="addr-disclose-link"
                 onClick={() => onNavigate && onNavigate('howitworks')}
                 role="link"
                 tabIndex={0}
                 onKeyDown={(e) => { if (e.key === 'Enter' && onNavigate) onNavigate('howitworks'); }}
-              >{t('homeHero.howItWorksLink')}</a>
-            </p>
-            <ol className="addr-steps-list">
-              <li>
-                <span className="addr-step-num">01</span>
-                <span className="addr-step-body">
-                  <span className="addr-step-ttl">{t('landing.step1Title')}</span>
-                  <span className="addr-step-desc">{t('homeHero.step1Desc')}</span>
-                </span>
-              </li>
-              <li>
-                <span className="addr-step-num">02</span>
-                <span className="addr-step-body">
-                  <span className="addr-step-ttl">{t('landing.step2Title')}</span>
-                  <span className="addr-step-desc">{t('homeHero.step2Desc')}</span>
-                </span>
-              </li>
-              <li>
-                <span className="addr-step-num">03</span>
-                <span className="addr-step-body">
-                  <span className="addr-step-ttl">{t('landing.step3Title')}</span>
-                  <span className="addr-step-desc">{t('homeHero.step3Desc')}</span>
-                </span>
-              </li>
-            </ol>
+              >{t('homeHero.unsureLede')} {t('homeHero.howItWorksLink')} <span aria-hidden="true">▾</span></a>
+              <div className="addr-chips">
+                <span className="addr-chip"><span className="addr-chip-n">1</span> {t('homeHero.stepChip1')}</span>
+                <span className="addr-chip-arw" aria-hidden="true">›</span>
+                <span className="addr-chip"><span className="addr-chip-n">2</span> {t('homeHero.stepChip2')}</span>
+                <span className="addr-chip-arw" aria-hidden="true">›</span>
+                <span className="addr-chip"><span className="addr-chip-n">3</span> {t('homeHero.stepChip3')}</span>
+                <span className="addr-chip-arw" aria-hidden="true">›</span>
+                <span className="addr-chip"><span className="addr-chip-n">4</span> {t('homeHero.stepChip4')}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="addr-trust">
+            <span>{t('homeHero.trustNoAccount')}</span>
+            <span>{t('homeHero.trustNoTracking')}</span>
+            <span>{t('homeHero.trustAddressNeverStored')}</span>
           </div>
 
           {hasDraft && (

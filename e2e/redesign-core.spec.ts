@@ -296,7 +296,7 @@ test.describe("honest failure states", () => {
     await page.evaluate(() => localStorage.clear());
     await page.goto("/");
     await page
-      .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+      .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
       .fill("asdf qwerty");
     await page
       .getByRole("button", { name: "Pull my representatives →" })
@@ -316,7 +316,7 @@ test.describe("honest failure states", () => {
     await page.evaluate(() => localStorage.clear());
     await page.goto("/");
     await page
-      .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+      .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
       .fill("1600 Pennsylvania Ave NW");
     await page
       .getByRole("button", { name: "Pull my representatives →" })

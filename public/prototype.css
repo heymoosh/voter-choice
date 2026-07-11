@@ -136,6 +136,49 @@ textarea {
   background: transparent;
   cursor: pointer;
 }
+/* Bold Flag / Keystone: canvas's nav sits on the same white/navy/red ground
+   as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the home
+   route only via the nav's own data-current attribute -- other pages keep
+   the app-wide civic/cream nav (src/app/civic-default.test.tsx). */
+.app-nav[data-current="home"] {
+  --paper: oklch(1 0 0);
+  background: var(--paper);
+}
+.app-nav[data-current="home"] .brand .mark {
+  position: relative;
+  overflow: hidden;
+  background: oklch(0.4 0.155 262);
+}
+.app-nav[data-current="home"] .brand .mark::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  background: var(--vote-red);
+}
+.app-nav[data-current="home"] .nav-tip {
+  /* Canvas's SCNav (design-handoff/.../screens.css .sc-nav-links .tip) is a
+     grey-rule outline with navy text -- NOT a red outline; verified against
+     both the source CSS and a close re-read of the ref screenshot. */
+  border-color: oklch(0.88 0.006 260);
+  color: oklch(0.4 0.155 262);
+}
+.app-nav[data-current="home"] .nav-tip:hover {
+  background: oklch(0.4 0.155 262);
+  color: var(--paper);
+  border-color: oklch(0.4 0.155 262);
+}
+/* the global `a { color: var(--civic) }` rule (teal) otherwise wins over
+   .app-nav .links' inherited ink-2, since a declared color on the element
+   itself beats an inherited one regardless of ancestor specificity. */
+.app-nav[data-current="home"] .links a {
+  color: oklch(0.37 0.032 260);
+}
+.app-nav[data-current="home"] .links a:hover {
+  color: oklch(0.2 0.035 260);
+}
 
 /* ============ HOMEPAGE ============ */
 .hp-hero {
@@ -146,6 +189,24 @@ textarea {
   align-items: center;
   max-width: 1280px;
   margin: 0 auto;
+  /* Bold Flag / Keystone: canvas's HomeHero renders on data-palette="white"
+     (design-handoff/design_handoff_voter_choice_redesign/screens.css) --
+     scope that white/navy/red palette to the hero only; the rest of the
+     app stays on its civic/cream default (pinned by
+     src/app/civic-default.test.tsx). --hh-brand is a NEW token, not a
+     --civic override: --civic doubles as the hp-preview's "keep" green,
+     so overriding it here would turn that green navy too. */
+  --hh-brand: oklch(0.4 0.155 262);
+  --hh-brand-2: oklch(0.31 0.145 262);
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  background: var(--paper);
 }
 .eyebrow {
   display: inline-flex;
@@ -158,6 +219,9 @@ textarea {
   color: var(--civic);
   margin-bottom: 22px;
 }
+.hp-hero .eyebrow {
+  color: var(--hh-brand);
+}
 .eyebrow .star {
   color: var(--vote-red);
 }
@@ -168,11 +232,12 @@ textarea {
   line-height: 0.96;
   letter-spacing: -0.025em;
   margin: 0 0 22px;
+  color: var(--ink);
   text-wrap: balance;
 }
 .hp-hero h1 em {
   font-style: italic;
-  color: var(--civic);
+  color: var(--hh-brand);
 }
 .hp-hero p.lede {
   font-family: var(--serif);
@@ -183,76 +248,101 @@ textarea {
   max-width: 520px;
   text-wrap: pretty;
 }
+.hp-hero p.lede b {
+  color: var(--ink);
+  font-weight: 600;
+}
 .addr-card {
   background: var(--paper-2);
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  padding: 18px 18px 16px;
-  box-shadow: var(--shadow-soft);
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-card);
   max-width: 560px;
 }
-.addr-card label {
+.addr-lab {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.addr-lab-l {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.addr-why {
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  background: var(--paper);
   color: var(--ink-3);
-  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.addr-priv {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--civic);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.addr-priv::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .addr-card .row {
   display: flex;
-  gap: 8px;
+  gap: 9px;
 }
 .addr-card input {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--rule);
   background: var(--paper);
-  padding: 14px 16px;
-  font-size: 15px;
+  padding: 13px 14px;
+  font-size: 14px;
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: 10px;
   outline: none;
 }
 .addr-card input:focus {
-  border-color: var(--civic);
+  border-color: var(--hh-brand);
 }
 .addr-card .go {
-  background: var(--civic);
+  background: var(--hh-brand);
   color: var(--paper-2);
   border: 0;
-  border-radius: 8px;
-  padding: 0 24px;
-  font-weight: 600;
-  font-size: 14.5px;
+  border-radius: 10px;
+  padding: 0 20px;
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
+}
+.addr-card .go:hover:not(:disabled) {
+  background: var(--hh-brand-2);
 }
 .addr-card .go:disabled {
   background: var(--rule);
   color: var(--ink-3);
   cursor: not-allowed;
-}
-.addr-card .hint {
-  margin-top: 12px;
-  font-size: 12.5px;
-  color: var(--ink-3);
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.addr-card .hint span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.addr-card .hint .dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--civic);
 }
 .addr-card .resume {
   margin-top: 10px;
@@ -264,63 +354,78 @@ textarea {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.addr-steps {
-  max-width: 560px;
-  margin-top: 16px;
+.addr-disclose {
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px dashed var(--rule-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.addr-steps-lead {
-  font-size: 13.5px;
-  color: var(--ink-2);
-  margin: 0 0 14px;
-}
-.addr-steps-link {
-  color: var(--civic);
-  font-weight: 500;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.addr-disclose-link {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hh-brand);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   cursor: pointer;
 }
-.addr-steps-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.addr-chips {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
-.addr-steps-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-.addr-step-num {
-  flex: 0 0 auto;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--civic);
-  line-height: 1.5;
-}
-.addr-step-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.addr-step-ttl {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.addr-step-desc {
-  font-size: 13px;
-  color: var(--ink-3);
-  line-height: 1.5;
-}
-.addr-label-left {
+.addr-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.addr-chip-n {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--tag-bg);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+}
+.addr-chip-arw {
+  color: var(--rule);
+}
+.addr-trust {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  max-width: 560px;
+}
+.addr-trust span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.addr-trust span::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--civic);
 }
 /* ---- hp-preview: right column, "what you'll get" product preview ---- */
 .hp-preview {
@@ -2208,6 +2313,14 @@ body[data-mood="civic"] .hp-hero h1 em {
   color: var(--ink);
   background: linear-gradient(transparent 62%, var(--civic-soft) 62%);
   padding: 0 2px;
+}
+/* Bold Flag / Keystone: canvas's italic emphasis is plain navy, no
+   highlighter-mark background -- override the civic-mood default (which
+   otherwise wins on specificity) inside the hero only. */
+body[data-mood="civic"] .hp-hero h1 em {
+  color: var(--hh-brand);
+  background: none;
+  padding: 0;
 }
 
 body[data-mood="manifesto"] {

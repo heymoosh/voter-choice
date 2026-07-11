@@ -465,7 +465,7 @@ async function gotoHomeClean(page: Page): Promise<void> {
 
 async function submitAddress(page: Page, address = ADDRESS): Promise<void> {
   await page
-    .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+    .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
     .fill(address);
   // Match on the visible label only (substring, arrow-agnostic) — some
   // branches render the trailing → as an aria-hidden span, which drops it
@@ -892,7 +892,7 @@ export const SCENARIOS: Scenario[] = [
       // The app renders via a client-only next/dynamic bundle (SSR bails out
       // on purpose) — wait for real content, not just the network 'load' event.
       await page
-        .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+        .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
         .waitFor({ timeout: 15000 });
     },
   },

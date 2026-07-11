@@ -38,7 +38,7 @@ async function goToIntakeReview(page: Page) {
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
   await page
-    .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+    .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
     .fill("1100 Congress Ave, Austin, TX 78701");
   await page.getByRole("button", { name: "Pull my representatives →" }).click();
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
