@@ -845,6 +845,91 @@
   color: var(--bf-brand);
 }
 
+/* ---- palette-audit sweep (card: Bold Flag teal leaks) — three more
+   surfaces read --civic/--civic-2/--civic-soft with no local remap at
+   all, unlike .rep-card/.delegation/.pe-screen/.cmp/.polisstand2/
+   .standing2 (which redefine the tokens they need at their own root).
+   Individually-scoped overrides here, NOT a blanket local remap on
+   .coldopen/.amend-modal/.be-modal — IntakeLocked's .issue-locked-confirm
+   (rendered inside .coldopen) derives its "worth keeping" green banner
+   from --keep: var(--civic), so remapping --civic itself at a shared
+   ancestor would silently turn that confirmation banner navy too. Scoping
+   per-selector avoids that collision entirely. ---- */
+
+/* IntakeView → IssueConversation (shared by IntakeLocked's continued
+   convo and EditIssuesModal's re-run) — the "send" CTA and the small
+   context-line dot both read --civic. */
+.bf-app .co-input .send {
+  background: var(--brand);
+}
+.bf-app .co-context::before {
+  background: var(--brand);
+}
+
+/* IssueConversation's "your priorities" card (IssueReviewCard) — border
+   accent, rank numerals, inline-rename input, quote rail, and the
+   "Lock in priorities" CTA. */
+.bf-app .themes-card {
+  border-color: var(--brand-soft);
+  border-top-color: var(--brand);
+}
+.bf-app .theme-row .rank {
+  color: var(--brand);
+}
+.bf-app .theme-row .nm input.name-edit {
+  border-color: var(--brand);
+}
+.bf-app .theme-row .quote {
+  border-left-color: var(--brand-soft);
+}
+.bf-app .themes-card .th-foot .lock {
+  background: var(--brand);
+}
+.bf-app .themes-card .th-foot .lock:hover:not(:disabled) {
+  background: var(--brand-2);
+}
+
+/* EditIssuesModal's own "amend" chrome (its outer shell — the
+   IssueConversation it hosts is already covered above). */
+.bf-app .amend-eyebrow {
+  color: var(--brand);
+}
+.bf-app .amend-rank {
+  color: var(--brand);
+}
+.bf-app .amend-name:focus {
+  border-color: var(--brand);
+}
+.bf-app .amend-add-btn {
+  background: var(--brand);
+}
+.bf-app .amend-apply {
+  background: var(--brand);
+}
+
+/* ByokCard (BudgetModal + HandoffModal's inline API-key form). */
+.bf-app .be-byok-getkey {
+  color: var(--brand);
+}
+.bf-app .be-byok-getkey:hover {
+  color: var(--brand-2);
+}
+.bf-app .be-byok-input-wrap input {
+  border-color: var(--brand);
+}
+.bf-app .be-byok-input-wrap input:focus {
+  border-color: var(--brand-2);
+}
+.bf-app .be-byok-save {
+  background: var(--brand);
+}
+.bf-app .be-byok-save:hover {
+  background: var(--brand-2);
+}
+.bf-app .be-tipjar a {
+  color: var(--brand);
+}
+
 /* ============================================================
    POLISSTAND — KEYSTONE blind agree/disagree/pass step (card fb77d0bb)
    Literal port of design-handoff/keystone-canvas/src/screens-polis.jsx's
@@ -3514,6 +3599,21 @@
    the source's brand-tinted hover instead of inventing a new selector. */
 .delegation .ws-ballot .b-row:hover {
   border-color: var(--brand);
+  background: var(--brand-soft);
+}
+/* palette-audit sweep: the base .b-row:hover rule's own "tints .pick text
+   on hover" (prototype.css) reads --civic, which .delegation never
+   redefines — so the hover text, the "done" checkmark fill, and the
+   active-row highlight were still leaking legacy teal even after the
+   border/background fix above. */
+.delegation .ws-ballot .b-row:hover .pick {
+  color: var(--brand);
+}
+.delegation .ws-ballot .b-row.done .ck {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.delegation .ws-ballot .b-row.active {
   background: var(--brand-soft);
 }
 
