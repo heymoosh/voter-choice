@@ -244,16 +244,16 @@ export function useIssueConversation({
   };
 }
 
-export function IssueConversation({
-  convo,
-  /** "Lock these in & start →" (intake) / "Apply & re-score →" (edit). */
-  primaryLabel,
-  onPrimary,
-  /** Composer placeholder for the first message. */
-  placeholder,
-}) {
+/** The editable "your issues" card — same header copy, sub-instruction, and
+ *  IssueRow list the conversation renders while chatting. Extracted so
+ *  IntakeLocked (the pre-lock confirm screen, card "Intake locked state: is
+ *  IntakeLocked meant to ship as its own screen?") and IssueConversation
+ *  itself share the identical card — with the same rename/reorder/remove
+ *  affordances — instead of each re-implementing it. `footer` renders below
+ *  the issue list (IssueConversation's own "Lock these in" button; unused by
+ *  IntakeLocked, which puts its confirm control outside the card). */
+export function IssueReviewCard({ issues, setIssues, footer = null }) {
   const { t } = useI18n();
-  const { issues, setIssues, log, busy, error, draft, setDraft, send } = convo;
 
   function moveIssue(idx, dir) {
     const next = [...issues];
@@ -270,6 +270,52 @@ export function IssueConversation({
     next.splice(to, 0, moved);
     setIssues(next);
   }
+
+  if (issues.length === 0) return null;
+
+  return (
+    <div className="themes-card" data-testid="issue-themes-card">
+      <div className="th-head">
+        <h4>{t("intake.issueHeading")}</h4>
+        <span className="of">
+          {t("intake.issueSubOf").replace("{n}", String(issues.length))}
+        </span>
+      </div>
+      <p className="th-sub">{t("intake.issueInstruction")}</p>
+
+      {issues.map((iss, i) => (
+        <IssueRow
+          key={`${i}-${iss.canonicalIssue || iss.interpretation}`}
+          issue={iss}
+          index={i}
+          total={issues.length}
+          onMoveUp={() => moveIssue(i, -1)}
+          onMoveDown={() => moveIssue(i, 1)}
+          onReorderTo={reorderIssue}
+          onRename={(name) => {
+            const next = [...issues];
+            next[i] = { ...next[i], interpretation: name };
+            setIssues(next);
+          }}
+          onRemove={() => setIssues(issues.filter((_, j) => j !== i))}
+        />
+      ))}
+
+      {footer}
+    </div>
+  );
+}
+
+export function IssueConversation({
+  convo,
+  /** "Lock these in & start →" (intake) / "Apply & re-score →" (edit). */
+  primaryLabel,
+  onPrimary,
+  /** Composer placeholder for the first message. */
+  placeholder,
+}) {
+  const { t } = useI18n();
+  const { issues, setIssues, log, busy, error, draft, setDraft, send } = convo;
 
   const chips =
     issues.length > 0
@@ -300,34 +346,10 @@ export function IssueConversation({
         </div>
       )}
 
-      {issues.length > 0 && (
-        <div className="themes-card" data-testid="issue-themes-card">
-          <div className="th-head">
-            <h4>{t("intake.issueHeading")}</h4>
-            <span className="of">
-              {t("intake.issueSubOf").replace("{n}", String(issues.length))}
-            </span>
-          </div>
-          <p className="th-sub">{t("intake.issueInstruction")}</p>
-
-          {issues.map((iss, i) => (
-            <IssueRow
-              key={`${i}-${iss.canonicalIssue || iss.interpretation}`}
-              issue={iss}
-              index={i}
-              total={issues.length}
-              onMoveUp={() => moveIssue(i, -1)}
-              onMoveDown={() => moveIssue(i, 1)}
-              onReorderTo={reorderIssue}
-              onRename={(name) => {
-                const next = [...issues];
-                next[i] = { ...next[i], interpretation: name };
-                setIssues(next);
-              }}
-              onRemove={() => setIssues(issues.filter((_, j) => j !== i))}
-            />
-          ))}
-
+      <IssueReviewCard
+        issues={issues}
+        setIssues={setIssues}
+        footer={
           <div className="th-foot">
             <button
               className="lock"
@@ -338,8 +360,8 @@ export function IssueConversation({
               {primaryLabel}
             </button>
           </div>
-        </div>
-      )}
+        }
+      />
 
       <div className="co-input" style={{ marginTop: 14 }}>
         {chips.length > 0 && (

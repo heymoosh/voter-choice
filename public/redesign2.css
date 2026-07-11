@@ -1447,6 +1447,51 @@
   }
 }
 
+/* ---- intake pre-lock confirm banner (IntakeLocked, artboard iq-locked) ----
+   Ported verbatim from design-handoff/keystone-canvas/src/intake.css's
+   .iq-locked block. Its --keep/--keep-soft tokens aren't in the global
+   palette yet (rollout pending), so — same precedent as candidates.css's
+   .cmp and this file's .mgap — they're mapped onto the shipped warm-palette
+   tokens, scoped to this screen only. */
+.issue-locked-confirm {
+  --keep: var(--civic);
+  --keep-soft: var(--civic-soft);
+}
+.iq-locked {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border-radius: 13px;
+  background: var(--keep-soft);
+  border: 1px solid var(--keep);
+  margin: 16px 0 0;
+}
+.iq-locked .tick {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--keep);
+  color: var(--paper-2);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.iq-locked .lt {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.iq-locked .ls {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-2);
+  margin-top: 1px;
+}
+
 /* ---------- Orientation interstitial — Bold Flag / Keystone parity ----------
    (after lock-issues, before first rep). Structure + classes ported
    verbatim from design-handoff/keystone-canvas/src/screens-orientation.jsx's
