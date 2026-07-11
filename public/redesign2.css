@@ -2945,9 +2945,21 @@
   border: 1px solid var(--rule-2);
   background: var(--paper);
 }
-.rep-card .cv2-block-head .lab {
-  font-size: 10px;
-  letter-spacing: 0.09em;
+/* prototype-c.css's "Section label hierarchy pass" (~line 2259) promotes
+   .cv2-block-head .lab to a big serif title with !important, for the
+   FUNDING/PACs/INDUSTRY section headers — but its selector also matches the
+   ALIGNMENT block's "Aligns with your issues" label (.cv2-issues is a
+   .cv2-block-head container too). Canvas (.at-lab, screens.css:234) keeps
+   that label as a small mono-uppercase overline, so re-win the cascade here
+   with matching !important weight, scoped to .cv2-issues only — the funding
+   block keeps the big serif treatment untouched. */
+.rep-card .cv2-issues .cv2-block-head .lab {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase !important;
+  color: var(--ink-3) !important;
 }
 .rep-card .cv2-block-head .overall {
   font-family: var(--serif);
@@ -2956,6 +2968,15 @@
   font-size: 27px;
   font-weight: 600;
   color: var(--civic-2);
+}
+/* Canvas 2-tier good(green)/bad(red) semantic for the aggregate % (screens.css
+   .at-pct.good/.bad) — more specific than the unscoped rule above, which
+   remains the fallback when rowVariant isn't 'canvas' (no class present). */
+.rep-card .cv2-block-head .overall b.good {
+  color: var(--rc-keep);
+}
+.rep-card .cv2-block-head .overall b.bad {
+  color: var(--vote-red);
 }
 .rep-card .cv2-iss-row.open {
   margin: 0 -16px;
@@ -2975,6 +2996,16 @@
   /* base .cv2-bar track is a hardcoded warm tan, not tied to --rule-2 —
      override so the empty track reads white-palette, not civic-cream. */
   background: var(--rule-2);
+}
+/* Canvas 2-tier good(green)/bad(red) bar semantic (screens.css
+   .align-track i.good/.bad), scoped to the canvas rowVariant only — the
+   legacy 3-tier blue/gold/red scheme (.cv2-bar .fill.mid/.low in
+   prototype.css) stays untouched for the ballot CandidateCard. */
+.rep-card .cv2-iss-row--canvas .cv2-bar .fill.good {
+  background: var(--rc-keep);
+}
+.rep-card .cv2-iss-row--canvas .cv2-bar .fill.bad {
+  background: var(--vote-red);
 }
 .rep-card .cv2-iss-head .meta {
   font-size: 10px;

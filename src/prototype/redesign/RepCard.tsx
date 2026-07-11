@@ -665,11 +665,7 @@ export function RepCard({
   const { t } = useI18n();
   const [expandedIssue, setExpandedIssue] = useState(null);
   const [allVotesOpen, setAllVotesOpen] = useState(false);
-  const [moneyOpen, setMoneyOpen] = useState(
-    () =>
-      typeof window !== "undefined" &&
-      window.matchMedia("(min-width: 901px)").matches,
-  );
+  const [moneyOpen, setMoneyOpen] = useState(false);
 
   const cand = seat.candidate;
   if (!cand)
