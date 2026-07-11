@@ -991,7 +991,7 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.sp-eyebrow {
+.sp-kicker {
   font-family: var(--mono);
   font-size: 11px;
   text-transform: uppercase;
@@ -999,7 +999,7 @@
   color: var(--civic);
   margin-bottom: 10px;
 }
-.sp-title {
+.sp-mast h1 {
   font-family: var(--serif);
   font-weight: 600;
   font-size: 48px;
@@ -1016,7 +1016,7 @@
   color: var(--ink-3);
   margin-bottom: 24px;
 }
-.sp-dek {
+.sp-mast .dek {
   font-family: var(--serif);
   font-size: 17px;
   line-height: 1.5;
@@ -1024,13 +1024,13 @@
   margin: -18px 0 32px;
   max-width: 640px;
 }
-.sp-article {
+.sp-prose {
   font-family: var(--serif);
   font-size: 17px;
   line-height: 1.65;
   color: var(--ink);
 }
-.sp-article h2 {
+.sp-prose h2 {
   font-family: var(--serif);
   font-weight: 600;
   font-size: 24px;
@@ -1038,22 +1038,22 @@
   letter-spacing: -0.015em;
   color: var(--ink);
 }
-.sp-article p {
+.sp-prose p {
   margin: 0 0 16px;
 }
-.sp-article ul {
+.sp-prose ul {
   margin: 0 0 16px;
   padding-left: 22px;
 }
-.sp-article li {
+.sp-prose li {
   margin-bottom: 8px;
 }
-.sp-article a {
+.sp-prose a {
   color: var(--civic);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.sp-article code {
+.sp-prose code {
   font-family: var(--mono);
   font-size: 14px;
   background: var(--tag-bg);
@@ -1061,10 +1061,10 @@
   border-radius: 4px;
 }
 @media (max-width: 700px) {
-  .sp-title {
+  .sp-mast h1 {
     font-size: 36px;
   }
-  .sp-article {
+  .sp-prose {
     font-size: 15.5px;
   }
   .gf-card,
@@ -2798,40 +2798,40 @@ Bumps
 .sp-wrap.sp-tipjar .sp-back {
   color: var(--tj-brand);
 }
-.sp-wrap.sp-tipjar .sp-eyebrow {
+.sp-wrap.sp-tipjar .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--tj-replace);
 }
-.sp-wrap.sp-tipjar .sp-eyebrow::before {
+.sp-wrap.sp-tipjar .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--tj-replace);
 }
-.sp-wrap.sp-tipjar .sp-title {
+.sp-wrap.sp-tipjar .sp-mast h1 {
   font-family: var(--tj-serif);
   color: var(--tj-ink);
 }
-.sp-wrap.sp-tipjar .sp-dek {
+.sp-wrap.sp-tipjar .dek {
   font-family: var(--tj-serif);
   color: var(--tj-ink-2);
   border-bottom: 2px solid var(--tj-ink);
   padding-bottom: 24px;
 }
-.sp-wrap.sp-tipjar .sp-article {
+.sp-wrap.sp-tipjar .sp-prose {
   font-family: var(--tj-serif);
   color: var(--tj-ink-2);
 }
-.sp-wrap.sp-tipjar .sp-article h2 {
+.sp-wrap.sp-tipjar .sp-prose h2 {
   font-family: var(--tj-serif);
   color: var(--tj-ink);
 }
-.sp-wrap.sp-tipjar .sp-article li::marker {
+.sp-wrap.sp-tipjar .sp-prose li::marker {
   color: var(--tj-brand);
 }
-.sp-wrap.sp-tipjar .sp-article b {
+.sp-wrap.sp-tipjar .sp-prose b {
   color: var(--tj-ink);
 }
 .sp-wrap.sp-tipjar .tip-list--amounts {
@@ -2889,49 +2889,49 @@ Bumps
 .sp-wrap.sp-about .sp-back {
   color: var(--ab-brand);
 }
-.sp-wrap.sp-about .sp-eyebrow {
+.sp-wrap.sp-about .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--ab-replace);
 }
-.sp-wrap.sp-about .sp-eyebrow::before {
+.sp-wrap.sp-about .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--ab-replace);
 }
-.sp-wrap.sp-about .sp-title {
+.sp-wrap.sp-about .sp-mast h1 {
   font-family: var(--ab-serif);
   color: var(--ab-ink);
 }
-.sp-wrap.sp-about .sp-dek {
+.sp-wrap.sp-about .dek {
   font-family: var(--ab-serif);
   font-size: 19px;
   color: var(--ab-ink-2);
   border-bottom: 2px solid var(--ab-ink);
   padding-bottom: 24px;
 }
-.sp-wrap.sp-about .sp-article {
+.sp-wrap.sp-about .sp-prose {
   font-family: var(--ab-serif);
   color: var(--ab-ink-2);
 }
-.sp-wrap.sp-about .sp-article h2 {
+.sp-wrap.sp-about .sp-prose h2 {
   font-family: var(--ab-serif);
   color: var(--ab-ink);
 }
-.sp-wrap.sp-about .sp-article b {
+.sp-wrap.sp-about .sp-prose b {
   color: var(--ab-ink);
 }
-.sp-wrap.sp-about .sp-article ul {
+.sp-wrap.sp-about .sp-prose ul {
   list-style: none;
   padding-left: 0;
 }
-.sp-wrap.sp-about .sp-article li {
+.sp-wrap.sp-about .sp-prose li {
   padding-left: 26px;
   position: relative;
 }
-.sp-wrap.sp-about .sp-article li::before {
+.sp-wrap.sp-about .sp-prose li::before {
   content: "";
   position: absolute;
   left: 6px;
@@ -2942,10 +2942,10 @@ Bumps
   background: var(--ab-brand);
   transform: rotate(45deg);
 }
-.sp-wrap.sp-about .sp-article a {
+.sp-wrap.sp-about .sp-prose a {
   color: var(--ab-brand);
 }
-.sp-wrap.sp-about .sp-article code {
+.sp-wrap.sp-about .sp-prose code {
   background: var(--ab-tag-bg);
   color: var(--ab-ink);
 }
@@ -2973,40 +2973,40 @@ Bumps
 .sp-wrap.sp-methodology .sp-back {
   color: var(--mt-brand);
 }
-.sp-wrap.sp-methodology .sp-eyebrow {
+.sp-wrap.sp-methodology .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--mt-replace);
 }
-.sp-wrap.sp-methodology .sp-eyebrow::before {
+.sp-wrap.sp-methodology .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--mt-replace);
 }
-.sp-wrap.sp-methodology .sp-title {
+.sp-wrap.sp-methodology .sp-mast h1 {
   font-family: var(--mt-serif);
   color: var(--mt-ink);
 }
-.sp-wrap.sp-methodology .sp-dek {
+.sp-wrap.sp-methodology .dek {
   font-family: var(--mt-serif);
   color: var(--mt-ink-2);
   border-bottom: 2px solid var(--mt-ink);
   padding-bottom: 24px;
 }
-.sp-wrap.sp-methodology .sp-article {
+.sp-wrap.sp-methodology .sp-prose {
   font-family: var(--mt-serif);
   color: var(--mt-ink-2);
 }
-.sp-wrap.sp-methodology .sp-article h2 {
+.sp-wrap.sp-methodology .sp-prose h2 {
   font-family: var(--mt-serif);
   color: var(--mt-ink);
 }
-.sp-wrap.sp-methodology .sp-article b {
+.sp-wrap.sp-methodology .sp-prose b {
   color: var(--mt-ink);
 }
-.sp-wrap.sp-methodology .sp-article a {
+.sp-wrap.sp-methodology .sp-prose a {
   color: var(--mt-brand);
 }
 .sp-wrap.sp-methodology .sp-step {
@@ -3501,23 +3501,23 @@ Bumps
 .sp-wrap.sp-privacy .sp-back {
   color: var(--pv-brand);
 }
-.sp-wrap.sp-privacy .sp-eyebrow {
+.sp-wrap.sp-privacy .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--pv-replace);
 }
-.sp-wrap.sp-privacy .sp-eyebrow::before {
+.sp-wrap.sp-privacy .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--pv-replace);
 }
-.sp-wrap.sp-privacy .sp-title {
+.sp-wrap.sp-privacy .sp-mast h1 {
   font-family: var(--pv-serif);
   color: var(--pv-ink);
 }
-.sp-wrap.sp-privacy .sp-dek {
+.sp-wrap.sp-privacy .dek {
   font-family: var(--pv-serif);
   font-size: 19px;
   color: var(--pv-ink-2);
@@ -3527,24 +3527,24 @@ Bumps
 .sp-wrap.sp-privacy .sp-meta {
   color: var(--pv-ink-3);
 }
-.sp-wrap.sp-privacy .sp-article {
+.sp-wrap.sp-privacy .sp-prose {
   font-family: var(--pv-serif);
   color: var(--pv-ink-2);
 }
-.sp-wrap.sp-privacy .sp-article h2 {
+.sp-wrap.sp-privacy .sp-prose h2 {
   font-family: var(--pv-serif);
   color: var(--pv-ink);
 }
-.sp-wrap.sp-privacy .sp-article b {
+.sp-wrap.sp-privacy .sp-prose b {
   color: var(--pv-ink);
 }
-.sp-wrap.sp-privacy .sp-article i {
+.sp-wrap.sp-privacy .sp-prose i {
   color: var(--pv-ink);
 }
-.sp-wrap.sp-privacy .sp-article a {
+.sp-wrap.sp-privacy .sp-prose a {
   color: var(--pv-brand);
 }
-.sp-wrap.sp-privacy .sp-article code {
+.sp-wrap.sp-privacy .sp-prose code {
   background: var(--pv-tag-bg);
   color: var(--pv-ink);
 }
