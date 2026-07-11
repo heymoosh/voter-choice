@@ -160,6 +160,17 @@ export function ScorecardPrintView({
               sheet; the logistics block (address, districts, where/when to
               vote) follows below. */}
           <div className="ballot-list">
+            {/* Umbrella heading (canvas screens-scorecard.jsx
+                .sheet-section-lab) — names the sheet's top-level content
+                hierarchy with a real count before the per-race groups. */}
+            <div className="sheet-section-lab">
+              {t(
+                scorecardSeats.length === 1
+                  ? "scorecardPrint.myDecisionsOne"
+                  : "scorecardPrint.myDecisionsOther",
+                { n: scorecardSeats.length },
+              )}
+            </div>
             {Object.entries(sections).map(([section, ss]) => (
               <div className="ballot-group" key={section}>
                 <div className="gtitle">{section}</div>
@@ -288,23 +299,33 @@ export function ScorecardPrintView({
               <div className="gtitle">
                 {t("scorecardPrint.judgedAgainstIssues")}
               </div>
-              <div
-                style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}
-              >
-                {issues.map((iss, i) => (
-                  <div key={iss.canonicalIssue || i}>
-                    {i + 1}. {iss.interpretation}{" "}
-                    <span
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: 10,
-                        color: "var(--ink-3)",
-                      }}
-                    >
-                      {`(${iss.level === "both" ? t("scorecardPrint.federalPlusState") : iss.level})`}
-                    </span>
-                  </div>
-                ))}
+              {/* 2026-07-11 pill treatment (Design Round 3, canvas
+                  .sheet-issues .pill is the styling base but predates this
+                  layout): pill = short issue label + inline jurisdiction
+                  tag, quick-read. A printed sheet can't expand/collapse, so
+                  the voter's own words recede beneath each pill in smaller
+                  italic serif instead of hiding behind a toggle. Falls back
+                  to the interpretation line when an issue carries no
+                  quotes, so that content stays reachable either way. */}
+              <div className="sheet-issues">
+                {issues.map((iss, i) => {
+                  const quote = iss.quotes?.[0]?.text;
+                  const levelTag =
+                    iss.level === "both"
+                      ? t("scorecardPrint.federalPlusState")
+                      : iss.level;
+                  return (
+                    <div className="sheet-issue" key={iss.canonicalIssue || i}>
+                      <span className="pill">
+                        {iss.interpretation}
+                        <span className="lvl">{`(${levelTag})`}</span>
+                      </span>
+                      <div className="quote-line">
+                        {quote ? `“${quote}”` : iss.interpretation}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
