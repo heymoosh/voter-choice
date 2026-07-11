@@ -27,6 +27,7 @@ import {
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
+import { DelegationOverview } from "./DelegationOverview";
 import { issuesForLevel } from "./delegationData";
 
 function tierIntro(section, { stateName, t }) {
@@ -268,8 +269,49 @@ export function DelegationWorkspace({
   issueDeltas,
   onRevisitSeat,
   onDismissDeltas,
+  // Navigation layer — 3-card delegation overview vs. the (unchanged) deep
+  // single-seat view. Lifted to the caller (not local state) because this
+  // component unmounts/remounts across sibling stages (duel, print,
+  // standing) — see App2.tsx's seatOverviewOpen.
+  overviewOpen,
+  onOpenSeat,
+  onBackToOverview,
 }) {
   const { t } = useI18n();
+
+  /* Mobile: same contract as the shipped WorkspaceView — the center pane
+     is hidden <768px until a row is tapped, then opens as a fixed overlay
+     with a back control. These hooks must run unconditionally on every
+     render: this component doesn't remount when overviewOpen toggles
+     (App2.tsx renders it at a stable position with no `key`), so calling
+     them after the overviewOpen early-return would violate the Rules of
+     Hooks and crash on the very transition this feature depends on. */
+  const [mobileChatOpen, setMobileChatOpen] = useState(false);
+  useEffect(() => {
+    setMobileChatOpen(false);
+  }, [seats.length]);
+
+  if (overviewOpen) {
+    return (
+      <div className="ws-shell delegation">
+        <AppNav />
+        <PollingStatusBar
+          pollingInfo={pollingInfo}
+          stateData={stateData}
+          rows={deadlineRows}
+        />
+        <DelegationOverview
+          seats={seats}
+          verdicts={verdicts}
+          userIssues={userIssues}
+          onOpen={onOpenSeat}
+          onPrint={onPrint}
+        />
+        <AppFooter compact />
+      </div>
+    );
+  }
+
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
   const doneCount = Object.keys(verdicts).filter((id) =>
@@ -277,13 +319,6 @@ export function DelegationWorkspace({
   ).length;
   const intro = tierIntro(activeSeat.section, { stateName, t });
 
-  /* Mobile: same contract as the shipped WorkspaceView — the center pane
-     is hidden <768px until a row is tapped, then opens as a fixed overlay
-     with a back control. */
-  const [mobileChatOpen, setMobileChatOpen] = useState(false);
-  useEffect(() => {
-    setMobileChatOpen(false);
-  }, [seats.length]);
   function selectAndOpen(seatId) {
     onSelectSeat(seatId);
     setTimeout(() => setMobileChatOpen(true), 0);
@@ -303,8 +338,10 @@ export function DelegationWorkspace({
 
   return (
     // `delegation` scopes redesign-only CSS fixes (redesign2.css) so the
-    // legacy workspace's shipped rules stay untouched.
-    <div className="ws-shell delegation">
+    // legacy workspace's shipped rules stay untouched. `dg-deep` layers the
+    // overview's back-control + verdict emphasis onto the reused rail/card
+    // chrome below, without touching that chrome itself.
+    <div className="ws-shell delegation dg-deep">
       <AppNav />
       <PollingStatusBar
         pollingInfo={pollingInfo}
@@ -329,6 +366,25 @@ export function DelegationWorkspace({
               {activeSeat.office} · {activeSeat.districtLabel}
             </span>
           </header>
+          {onBackToOverview && (
+            <div className="dg-back-row">
+              <span
+                className="rc-back"
+                onClick={onBackToOverview}
+                role="button"
+                tabIndex={0}
+                data-testid="back-to-overview"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" || e.key === " ") {
+                    e.preventDefault();
+                    onBackToOverview();
+                  }
+                }}
+              >
+                {t("delegationOverview.backToOverview")}
+              </span>
+            </div>
+          )}
           <div className="tier-intro">
             <span className="ti-place">{intro.place}</span>
             <div className="ti-copy">
