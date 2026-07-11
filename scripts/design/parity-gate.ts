@@ -333,8 +333,9 @@ const STRUCTURAL_PROBES: Probe[] = [
     designFile: "design-handoff/keystone-canvas/src/screens-orientation.jsx",
     componentName: "OrientationActivated",
     note:
-      "Confirmed gap, HANDOFF-EXACT-MATCH.md §1: OrientationView (App2.tsx) still renders a " +
-      "bare div — none of the flagbar/ori-card/ori-step/ori-cta structure has been ported yet.",
+      "Ported: OrientationView (App2.tsx) now renders the full flagbar/ori-card/ori-steps/" +
+      "ori-cta structure — 18/18 design classes present, 0 missing. This probe verifies that " +
+      "port stays intact going forward.",
   },
   {
     kind: "class-diff",
@@ -518,16 +519,18 @@ const STRUCTURAL_PROBES: Probe[] = [
         description:
           "renders a second-column live preview panel ('What you'll get' scorecard stack) " +
           "alongside the address form — canvas's HomeHero is a two-column .vh-left/.vh-preview " +
-          'layout; the repo\'s hero is explicitly single-column (className="hp-hero hp-hero-solo", ' +
-          "confirmed by reading HomeView directly — no preview/stack markup exists anywhere)",
+          "layout",
       },
     ],
     note:
-      "HomeView (VoterChoiceApp.tsx) uses its own hp-hero/addr-*/eyebrow/lede vocabulary — " +
-      "confirmed by a full class-token diff against screens-home.jsx's HomeHero (vh-* prefix): " +
-      "zero overlap. The confirmed, checkable gap is structural, not just naming: the repo's " +
-      "own 'hp-hero-solo' class name self-documents that the canvas's second-column live " +
-      "scorecard preview was dropped, not merely renamed.",
+      "UPDATED 2026-07-11: HomeView (VoterChoiceApp.tsx) now ports the canvas's two-column " +
+      "layout — a '.hp-preview'/'.hp-stack'/'.hp-sheet' live scorecard-preview panel renders " +
+      "alongside the address form (confirmed by reading HomeView directly, ~line 5434); the " +
+      "earlier single-column 'hp-hero-solo' variant no longer exists anywhere in the file. " +
+      "Still class-vocabulary-different from screens-home.jsx's vh-* prefix (zero literal " +
+      "token overlap, hence marker probe rather than class-diff), but all 3 markers now PASS " +
+      "— this probe verifies the structural gap it was written to catch has closed, not that " +
+      "one remains.",
   },
   {
     kind: "marker",
@@ -613,10 +616,14 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "logistics vocabulary — confirmed by a full class-token diff against screens-scorecard.jsx's " +
     "sheet/dec/dec-badge/sheet-mast/sheet-meta tokens (zero overlap). HANDOFF §4 only claims " +
     "structural/behavioral parity (decisions lead, percentage copy, non-2026 filter), never a " +
-    "class port. Known real gap this can't localize by class-diffing alone: the 'Not on your " +
-    "ballot this year' section has no repo equivalent — ScorecardPrintView.tsx:43-46 filters " +
-    "non-2026 seats out entirely (Phase 0 finding #4, docs/operations/" +
-    "keystone-phase0-findings-2026-07-08.md).",
+    "class port. UPDATED 2026-07-11: the previously-flagged 'Not on your ballot this year' gap " +
+    "is now closed — commit 9a5f1d82 added a dedicated notOnBallot section " +
+    "(ScorecardPrintView.tsx:236-263, '.ballot-group'/'.br notup'/'.verdict-print notup') that " +
+    "renders excluded non-2026 seats as unscored reference context, matching screens-" +
+    "scorecard.jsx's '.dec.notup' intent. Confirmed live: TX_SEATS already includes a non-2026 " +
+    "seat (senate-TX-b, onBallot2026: false), so 04-scorecard's own capture exercises this " +
+    "section today (visible in scripts/design/.parity-gate-out/04-scorecard.png as 'NOT ON " +
+    "YOUR BALLOT THIS YEAR' / Jordan Okafor).",
   "07-whynow":
     "UPDATED 2026-07-10 (07-whynow build pass): WhyNowPage (VoterChoiceApp.tsx) was rebuilt as a " +
     "literal class-token port of screens-whynow.jsx's WhyNow content sections (wn-mast/wn-sec/" +

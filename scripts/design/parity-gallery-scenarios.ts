@@ -235,10 +235,14 @@ async function mockSeatRaceDataMedian(page: Page): Promise<void> {
   });
 }
 
-/** Race-data mock whose House score SWINGS hard depending on whether the
- *  submitted issue list includes `congressional_accountability` — lets the
- *  edit-issues → re-score flow (09e) produce a real, visible REVISIT delta
- *  instead of the flat "nothing moved" branch. */
+/** Race-data mock whose House AND Senate scores SWING hard (opposite
+ *  directions) depending on whether the submitted issue list includes
+ *  `congressional_accountability` — lets the edit-issues → re-score flow
+ *  (09e) produce real, visible REVISIT deltas in BOTH directions instead of
+ *  the flat "nothing moved" branch: house-TX-37 drops (83%→17%), senate-TX-a
+ *  rises (17%→83%), so IssueDeltaBanner's ledger renders at least one ".ad-
+ *  row down"/".ad-arrow down" and one ".ad-row up"/".ad-arrow up" row for
+ *  real (not just theoretically supported by the dir-mapping logic). */
 async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
   await page.route("**/api/race-data", async (route) => {
     const body = route.request().postDataJSON() as {
@@ -314,6 +318,7 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
         },
       };
     } else if (body?.raceId === "senate-TX-a") {
+      const kept = hasAccountability ? 5 : 1;
       data = {
         racePatterns: {
           race: "senate-TX-a",
@@ -343,7 +348,7 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
                   issueLabel: "Lower insulin & drug prices",
                   resolvedStance: "opposed",
                   sourceType: "voting_record",
-                  kept: 1,
+                  kept,
                   total: 6,
                   contributingVotes: [],
                 },
@@ -622,9 +627,9 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/redesign/App2.tsx", "public/redesign2.css"],
     automatable: "yes",
     note:
-      "Reachable directly (lock issues → orientation interstitial). Known confirmed gap " +
-      "per HANDOFF-EXACT-MATCH.md §1.1: today's OrientationView is a bare div, no flagbar/" +
-      "ori-card/3-step list — the screenshot documents that gap, it is not a tooling limitation.",
+      "Reachable directly (lock issues → orientation interstitial). Ported: OrientationView " +
+      "now renders the full flagbar/ori-card/3-step list structure (see STRUCTURAL_PROBES in " +
+      "parity-gate.ts, 18/18 design classes present, 0 missing) — this scenario verifies it.",
     async capture(page) {
       // mockDelegation + mockChatLocal aren't required locally (a dev
       // .env.local's real DATABASE_URL/API creds let the real /api/delegation
@@ -1110,9 +1115,10 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note:
-      "Race-data mock swings the House score hard (83%→17%) once 'congressional " +
-      "accountability' enters the issue list, so Apply produces a real >5pt REVISIT flag " +
-      "instead of the flat 'nothing moved' branch.",
+      "Race-data mock swings the House score down (83%→17%) and the Senate score up " +
+      "(17%→83%) once 'congressional accountability' enters the issue list, so Apply " +
+      "produces two real >5pt REVISIT flags — one each direction — instead of the flat " +
+      "'nothing moved' branch.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataDeltaAware(page);
@@ -1309,11 +1315,12 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx at all — " +
-      "confirmed by grep: it has zero usages outside MoneyGap.tsx/MoneyGap.test.tsx. The duel " +
-      "screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not " +
-      "the ratio + shared-scale component the canvas shows. Proxy: same HeadToHead screenshot " +
-      "as 05b, so the gap is visible rather than hidden.",
+      "MoneyGapH2H was removed as dead code (#239, 2026-07-08) — MoneyGap.tsx no longer " +
+      "exports it at all (confirmed by grep: zero occurrences outside this note and the " +
+      "matching STRUCTURAL_WAIVERS entry in parity-gate.ts). The duel screen's actual money " +
+      "treatment is a simpler PAC-percentage footnote (.cmp-fund), not the ratio + shared-scale " +
+      "component the canvas shows. Proxy: same HeadToHead screenshot as 05b, so the gap is " +
+      "visible rather than hidden.",
     async capture(page) {
       await mockDelegationWithChallengers(page);
       await mockSeatRaceDataMedian(page);
