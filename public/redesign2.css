@@ -821,6 +821,225 @@
 }
 
 /* ============================================================
+   POLISSTAND — KEYSTONE blind agree/disagree/pass step (card fb77d0bb)
+   Literal port of design-handoff/keystone-canvas/src/screens-polis.jsx's
+   PolisStand artboard (polis.css `.ps-*` vocabulary) — class names, copy,
+   and layout ported as-is, NOT re-expressed like PolisClose's `.pr-*`
+   below, because this screen carries no party data to begin with (just
+   agree/disagree/pass reactions) — there's no party-free conflict forcing
+   a rewrite. Two intentional layout deltas from the canvas: (1) the canvas
+   uses a fixed-viewport single-"screen" flex shell (.ps { height:100% });
+   this app renders every stage as a normal scrolling document like every
+   other stage, so `.ps-foot` is a normal in-flow footer bar, not pinned;
+   (2) canvas's shared `.kick`/`.star` kicker classes live in its global
+   screens.css, which this app doesn't import — scoped copies below.
+   ============================================================ */
+.polisstand2 {
+  /* Same local Bold Flag token redefinition as .standing2 below, and for
+     the same reason (redesign2.css is served verbatim from public/, so
+     these survive the minifier's unused-custom-property pruning). */
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159); /* agreement green */
+  --replace: oklch(0.53 0.205 27); /* flag red — also the disagree accent */
+  background: var(--paper);
+  min-height: 100vh;
+}
+.ps-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 30px 40px 40px;
+}
+.polisstand2 .kick {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+}
+.polisstand2 .kick .star {
+  color: var(--replace);
+  margin-right: 4px;
+}
+.ps-k {
+  display: block;
+  margin-bottom: 14px;
+}
+.ps-h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 12px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.ps-h1 em {
+  font-style: italic;
+  color: var(--brand);
+}
+.ps-lede {
+  font-family: var(--serif);
+  font-size: 17.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0 0 24px;
+  max-width: 600px;
+}
+.ps-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ps-stmt {
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-2);
+  box-shadow: 0 1px 3px rgba(20, 20, 30, 0.06);
+  padding: 18px 20px;
+}
+.ps-stmt.voted {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-soft);
+}
+.ps-stmt .q {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.32;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+.ps-react {
+  display: flex;
+  gap: 9px;
+}
+.ps-btn {
+  flex: 1;
+  min-height: 46px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1.5px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ps-btn:disabled {
+  cursor: default;
+}
+.ps-btn.agree:hover:not(:disabled) {
+  border-color: var(--keep);
+  color: var(--keep);
+}
+.ps-btn.disagree:hover:not(:disabled) {
+  border-color: var(--replace);
+  color: var(--replace);
+}
+.ps-btn.pass {
+  flex: 0 0 auto;
+  padding: 0 16px;
+  color: var(--ink-3);
+}
+.ps-btn.chosen {
+  background: var(--keep);
+  border-color: var(--keep);
+  color: var(--paper-2);
+}
+.ps-btn.chosen-no {
+  background: var(--paper);
+  border-color: var(--replace);
+  color: var(--replace);
+}
+/* Pass has no canvas-specified "chosen" treatment (the artboard never shows
+   a passed statement) — styled neutral/ink rather than keep-green or
+   replace-red so it doesn't read as a third directional verdict. */
+.ps-btn.chosen-pass {
+  background: var(--ink-3);
+  border-color: var(--ink-3);
+  color: var(--paper-2);
+}
+.ps-recorded {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule-2);
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.ps-recorded .rk {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--keep);
+  margin-right: 7px;
+}
+.ps-foot {
+  border-top: 1px solid var(--rule-2);
+  background: var(--paper-2);
+  padding: 16px 30px;
+}
+.ps-foot-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+/* Primary CTA — same --brand/--paper-2 convention as .pr-share (PolisClose),
+   the sibling primary button on this same white Bold Flag surface. */
+.ps-foot .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--brand);
+  color: var(--paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 20px;
+  min-height: 50px;
+  cursor: pointer;
+}
+.ps-foot .btn-primary:hover {
+  background: var(--brand-2);
+}
+.ps-foot .later {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ps-foot .prog {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+/* ============================================================
    STANDING (polis) stage — KEYSTONE "Where you stand" report
    Ported from design-handoff/design_handoff_voter_choice_redesign/
    polis.css (the `.pr-*`, `.pm-*`, `.conv-*` vocabulary), migrated

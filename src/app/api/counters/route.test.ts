@@ -6,26 +6,7 @@ import {
 } from "../../../lib/server/counters";
 import { NextRequest } from "next/server";
 
-// Spy on collectPolisVector without losing buildVectorInput's real
-// validation logic — lets us assert call/no-call by flag state without a
-// live DB (collectVector.ts's own getDb()/DATABASE_URL gate is bypassed by
-// this mock, so this test isolates the ROUTE's flag check specifically).
-vi.mock("../../../lib/polis/collectVector", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("../../../lib/polis/collectVector")>();
-  return {
-    ...actual,
-    collectPolisVector: vi.fn().mockResolvedValue({
-      ok: true,
-      outcome: "stored",
-    }),
-  };
-});
-
 import { POST } from "./route";
-import { collectPolisVector } from "../../../lib/polis/collectVector";
-
-const mockedCollectPolisVector = vi.mocked(collectPolisVector);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -63,8 +44,6 @@ describe("POST /api/counters", () => {
     vi.unstubAllEnvs();
     _resetRateLimitForTesting();
     _resetMemoryForTesting();
-    mockedCollectPolisVector.mockClear();
-    mockedCollectPolisVector.mockResolvedValue({ ok: true, outcome: "stored" });
   });
 
   afterEach(() => {
@@ -223,55 +202,19 @@ describe("POST /api/counters", () => {
     expect(agg.sampleSize).toBe(1);
   });
 
-  it("polis vector collection: does NOT call collectPolisVector when POLIS_VECTOR_COLLECTION_ENABLED is unset", async () => {
-    delete process.env.POLIS_VECTOR_COLLECTION_ENABLED;
-    const body = { ...VALID_BODY, sessionId: `sess-polis-off-${Date.now()}` };
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(200);
-    expect(mockedCollectPolisVector).not.toHaveBeenCalled();
-  });
-
-  it("polis vector collection: does NOT call collectPolisVector when the flag is set but not exactly 'true'", async () => {
-    vi.stubEnv("POLIS_VECTOR_COLLECTION_ENABLED", "1");
-    const body = {
-      ...VALID_BODY,
-      sessionId: `sess-polis-falsy-${Date.now()}`,
-    };
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(200);
-    expect(mockedCollectPolisVector).not.toHaveBeenCalled();
-  });
-
-  it("polis vector collection: calls collectPolisVector with a derived response vector when the flag is 'true'", async () => {
-    vi.stubEnv("POLIS_VECTOR_COLLECTION_ENABLED", "true");
-    const body = { ...VALID_BODY, sessionId: `sess-polis-on-${Date.now()}` };
-    const res = await POST(makeRequest(body));
-    expect(res.status).toBe(200);
-
-    expect(mockedCollectPolisVector).toHaveBeenCalledTimes(1);
-    const input = mockedCollectPolisVector.mock.calls[0][0];
-    expect(typeof input.sessionToken).toBe("string");
-    expect(input.sessionToken.length).toBeGreaterThan(0);
-    // Fresh token, deliberately distinct from the Redis dedupe sessionId.
-    expect(input.sessionToken).not.toBe(body.sessionId);
-    expect(input.stateCode).toBe("TX");
-    expect(input.responses).toEqual({ healthcare_affordability: "agree" });
-  });
-
-  it("polis vector collection: is NOT called again on a re-POST within the dedupe window (alreadyCounted)", async () => {
+  it("retired stopgap: /api/counters response never carries Polis-vector fields, even with the flag on", async () => {
+    // Polis response-vector collection moved to POST /api/polis/respond
+    // (card fb77d0bb, PolisStand) — this route no longer touches
+    // polis_response_vectors at all. Locks in the retirement: the response
+    // shape stays exactly { ok, alreadyCounted }, flag or no flag.
     vi.stubEnv("POLIS_VECTOR_COLLECTION_ENABLED", "true");
     const body = {
       ...VALID_BODY,
-      sessionId: `sess-polis-dedupe-${Date.now()}`,
+      sessionId: `sess-polis-retired-${Date.now()}`,
     };
-    const first = await POST(makeRequest(body));
-    expect((await first.json()).alreadyCounted).toBe(false);
-    expect(mockedCollectPolisVector).toHaveBeenCalledTimes(1);
-
-    mockedCollectPolisVector.mockClear();
-
-    const second = await POST(makeRequest(body));
-    expect((await second.json()).alreadyCounted).toBe(true);
-    expect(mockedCollectPolisVector).not.toHaveBeenCalled();
+    const res = await POST(makeRequest(body));
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(Object.keys(json).sort()).toEqual(["alreadyCounted", "ok"]);
   });
 });

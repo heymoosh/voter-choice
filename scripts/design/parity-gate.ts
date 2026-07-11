@@ -806,6 +806,23 @@ const STRUCTURAL_PROBES: Probe[] = [
       "fails here even if the classes stay.",
   },
   {
+    kind: "class-diff",
+    scenarioId: "10b-polis-contribute",
+    domSelector: ".ps-cards",
+    designFile: "design-handoff/keystone-canvas/src/screens-polis.jsx",
+    componentName: "PolisStand",
+    note:
+      "PolisStand.tsx (card fb77d0bb) is a literal port of the canvas's polis-stand artboard " +
+      "(.ps-* vocabulary) — unlike PolisClose, this screen carries no party data to begin with " +
+      "(just agree/disagree/pass reactions), so there's no party-free conflict forcing a " +
+      "re-expression the way PolisClose's D/R/I bars did. This scenario's own capture answers " +
+      "one statement agree and one disagree, leaving the third unanswered, so all three " +
+      "canvas-shown card states (unvoted / chosen / chosen-no) are exercised in one screenshot " +
+      "— a real class-diff, not a waived one. ('chosen-pass' is the app's own addition for a " +
+      "passed statement, a state the canvas artboard never shows — informational extra, not " +
+      "checked as missing.)",
+  },
+  {
     kind: "marker",
     scenarioId: "08d-tipjar",
     markers: [
@@ -880,21 +897,25 @@ const STRUCTURAL_PROBES: Probe[] = [
 
 /**
  * Scenarios with NO structural probe, and why. Every one of the 25 gateable
- * scenarios (all of SCENARIOS except 10b-polis-contribute/11a-fieldmoneygap/
- * 11b-scalestates, none of which are automatable at all — see each one's
- * own note in parity-gallery-scenarios.ts; 10a-polis-entry moved into
- * STRUCTURAL_PROBES below once PR #237 made it automatable) now resolves to
- * exactly one of STRUCTURAL_PROBES above (class-diff or marker) or this
- * map — silently skipping a scenario (the pre-existing "24 of 27 uncovered,
- * unexplained" state this file's own header used to describe) is exactly
- * the failure Phase 2 of docs/operations/keystone-fidelity-fix-plan-
- * 2026-07-08.md exists to close. STOP-SHIP 2026-07-09 moved 3 of these
+ * scenarios (all of SCENARIOS except 11a-fieldmoneygap/11b-scalestates,
+ * neither of which is automatable at all — see each one's own note in
+ * parity-gallery-scenarios.ts; 10a-polis-entry moved into STRUCTURAL_PROBES
+ * once PR #237 made it automatable, and 10b-polis-contribute followed once
+ * PolisStand landed) now resolves to exactly one of STRUCTURAL_PROBES above
+ * (class-diff or marker) or this map — silently skipping a scenario (the
+ * pre-existing "24 of 27 uncovered, unexplained" state this file's own
+ * header used to describe) is exactly the failure Phase 2 of
+ * docs/operations/keystone-fidelity-fix-plan-2026-07-08.md exists to
+ * close. STOP-SHIP 2026-07-09 moved 3 of these
  * (05a-candidates-parity/06-homehero/08d-tipjar) into STRUCTURAL_PROBES as
  * marker probes instead — a waiver on its own was a dead end for those
  * three (see reason (a) below): it correctly explained why a class-diff
  * can't apply, but left the surface with no structural check at all, only
  * the downscaled visual diff — exactly the gap that let those surfaces
- * false-pass.
+ * false-pass. 10b-polis-contribute moved OUT of this "no automation" list
+ * entirely once PolisStand (card fb77d0bb) was built — it now has a real
+ * class-diff probe above, not a waiver, since it's a confirmed literal
+ * class-vocabulary port with no party-free conflict blocking one.
  *
  * A waiver is NOT a pass and never silences the VISUAL check, which still
  * runs and gates every waived scenario same as any other — it only means
@@ -1168,20 +1189,24 @@ function extractJsxElementAt(slice: string, tagStart: number): string {
   const first = tagEnd(tagStart);
   if (first.selfClose) return slice.slice(tagStart, first.end);
 
+  // Depth-balance by scanning for '<' only. A prior version also treated any
+  // '"'/"'"/'`' found here as a string-quote to skip past — but this outer
+  // loop walks JSX TEXT content between tags too, and English prose commonly
+  // contains apostrophes ("shouldn't", "it's", "you'll" — exactly what
+  // PolisStand's own canvas copy has). Each such apostrophe was wrongly
+  // treated as opening a quoted span, desyncing the depth count and
+  // overrunning the element's real closing tag — confirmed: narrowing
+  // screens-polis.jsx's PolisStand to ".ps-cards" silently ran all the way
+  // to the component's end (2150 chars instead of the true 1728), pulling in
+  // the sibling .ps-foot/.btn-primary/.prog/.later classes as false
+  // "missing" in a 10b-polis-contribute class-diff. Quotes WITHIN a tag's
+  // own attributes are still handled correctly — that's tagEnd()'s job,
+  // called below whenever '<' is hit — so this loop needs no quote-handling
+  // of its own; it only needs to find tag boundaries.
   let depth = 1;
   let i = first.end;
   while (i < slice.length && depth > 0) {
     const c = slice[i];
-    if (c === '"' || c === "'" || c === "`") {
-      const q = c;
-      i++;
-      while (i < slice.length && slice[i] !== q) {
-        if (slice[i] === "\\") i++;
-        i++;
-      }
-      i++;
-      continue;
-    }
     if (c === "<") {
       const isClose = slice[i + 1] === "/";
       const { end, selfClose } = tagEnd(i);
