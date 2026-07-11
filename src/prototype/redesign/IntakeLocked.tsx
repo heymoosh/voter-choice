@@ -76,6 +76,13 @@ export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
             {t("intake.primaryBtn")}
           </button>
         </div>
+        {/* Canvas's IqComposer renders this privacy note on every intake
+            step regardless of state (screens-intake.jsx); the port had
+            dropped it on this screen when the back link took its slot in
+            the row. */}
+        <div className="hint" style={{ marginTop: 8, textAlign: "center" }}>
+          {t("intake.inputHint")}
+        </div>
       </div>
     </div>
   );

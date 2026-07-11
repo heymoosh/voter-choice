@@ -1034,47 +1034,35 @@ export const SCENARIOS: Scenario[] = [
     refFile: "09c-intake-locked.png",
     label: "Intake step 3 — ready to lock",
     files: [
-      "src/prototype/redesign/IssueConversation.tsx",
-      "src/prototype/redesign/App2.tsx",
+      "src/prototype/redesign/IntakeLocked.tsx",
+      "src/prototype/redesign/IntakeView.tsx",
     ],
-    automatable: "proxy",
+    automatable: "yes",
     note:
-      "IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues " +
-      "are set' banner, editable review card, Back/Continue — data-testid=\"issue-locked-" +
-      "confirm-btn\") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, " +
-      "when that screen appears, stops there to shoot the real thing. Until #236 lands, that " +
-      "click completes the lock instantly with no interstitial to hold on (jumps straight to " +
-      "orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy " +
-      "instead: same UI one turn further (3 issues, after a refinement reply), right before " +
-      "clicking Lock.",
+      "IntakeLocked.tsx (PR #236, merged) is canvas's distinct pre-lock confirmation screen — " +
+      "green 'Your issues are set' banner, the same editable review card as 09a/09b, and Back/" +
+      'Continue controls (data-testid="issue-locked-confirm-btn"). capture() clicks the ' +
+      "conversation's 'Lock these in' and waits for that screen to actually appear — no silent " +
+      "fallback to a proxy state: before #236 merged, this scenario was 'automatable: proxy' and " +
+      "quietly rebuilt/re-shot the prior turn instead when the confirm screen didn't show up in " +
+      "time, which is exactly the false-pass class the STOP-SHIP Phase-4 audit flagged (capture " +
+      "'succeeding' without ever reaching the screen it claims to verify). Now a missing screen " +
+      "throws and fails the gate outright instead of quietly substituting different content.",
     async capture(page) {
       // See 01-orientation-activated's capture() comment: reachColdOpen
       // needs a delegation mock, and sendFirstIssue/sendFollowUpIssue need a
       // chat mock, in any environment without real DB/API creds (CI).
       await mockDelegation(page);
       await mockChatLocal(page);
-      const reachPreLock = async () => {
-        // App2.tsx persists in-progress state to sessionStorage (not
-        // localStorage — see its SESSION_KEY), which gotoHomeClean() never
-        // clears; every other scenario only calls it once per fresh page so
-        // this never mattered, but a second call here (the redo below) would
-        // otherwise resume straight into the stale conversation instead of
-        // reaching a clean home page.
-        await page.evaluate(() => sessionStorage.clear()).catch(() => {});
-        await reachColdOpen(page);
-        await sendFirstIssue(page);
-        await sendFollowUpIssue(page);
-      };
-      await reachPreLock();
+      await reachColdOpen(page);
+      await sendFirstIssue(page);
+      await sendFollowUpIssue(page);
       await page.getByTestId("issue-primary").click();
-      const reachedIntakeLocked = await page
+      // No silent proxy fallback here on purpose — see the note above. If
+      // IntakeLocked ever regresses to unreachable, this must fail loudly.
+      await page
         .getByTestId("issue-locked-confirm-btn")
-        .waitFor({ state: "visible", timeout: 2000 })
-        .then(() => true)
-        .catch(() => false);
-      if (!reachedIntakeLocked) {
-        await reachPreLock();
-      }
+        .waitFor({ state: "visible", timeout: 15000 });
     },
   },
   {

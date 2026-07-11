@@ -508,9 +508,7 @@ export async function goToWorkspace(page: Page): Promise<void> {
   await page.locator("button.lock").click({ timeout: 15000 });
   // IntakeLocked is a distinct pre-lock confirm screen between the
   // conversation and onLock firing; confirm through it.
-  await page
-    .getByTestId("issue-locked-confirm-btn")
-    .click({ timeout: 15000 });
+  await page.getByTestId("issue-locked-confirm-btn").click({ timeout: 15000 });
   // Guided orientation interstitial sits between locking issues and the first
   // representative; click through it to reach the workspace.
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
