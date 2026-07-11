@@ -25,15 +25,16 @@
 //   npx tsx scripts/design/design-sync-extract.ts --list
 //   npx tsx scripts/design/design-sync-extract.ts --bundle-dir /path/to/design-sync-bundle
 //
-// Extending this for a later, more-integrated tree (PolisEntry #237,
-// IntakeLocked #236, DelegationOverview #243, a redesigned PolisClose):
-// add an entry to TARGETS below. Each entry names an EXISTING scenario id
-// from parity-gallery-scenarios.ts to reach the state (write a new one there
-// first if the state isn't reachable yet) plus a CSS selector for the
-// component root once on that screen. A target whose selector never
-// resolves is reported as a skip in the summary, not a hard failure — so
-// re-running this unmodified against an older tree (before those PRs land)
-// degrades gracefully instead of crashing the whole run.
+// Extending this for a later tree: add an entry to TARGETS below. Each
+// entry names an EXISTING scenario id from parity-gallery-scenarios.ts to
+// reach the state (write a new one there first if the state isn't reachable
+// yet) plus a CSS selector for the component root once on that screen. A
+// target whose selector never resolves is reported as a skip in the
+// summary, not a hard failure — so re-running this unmodified against an
+// older tree (before some feature lands) degrades gracefully instead of
+// crashing the whole run. (PolisEntry, PolisStand, DelegationOverview, and
+// IntakeLocked all landed as of the fd8d4905 integration snapshot and have
+// targets below; the pattern still applies to whatever lands next.)
 
 import { chromium, type Page } from "@playwright/test";
 import fs from "node:fs";
@@ -41,7 +42,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { SCENARIOS, scenarioById } from "./parity-gallery-scenarios";
 import { neutralizeScrollTraps, VIEWPORT } from "./capture-shared";
-import { startNextDev } from "./dev-server";
+import { getFreePort, startNextDev } from "./dev-server";
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -253,22 +254,53 @@ const TARGETS: ComponentTarget[] = [
   {
     id: "polis-report-divided",
     group: "Polis",
-    title: "PolisClose report — divided / early-days proxy",
+    title: "PolisClose report — divided / no-common-ground state",
     scenarioId: "10d-polis-report-divided",
     selector: "section.polis",
     note:
-      "Proxy, inherited from the underlying scenario: PolisClose.tsx has no computed " +
-      "divided/split branch yet (PR #240, not merged) — see parity-gallery-scenarios.ts's " +
-      "10d-polis-report-divided note and DECISION #116 (party-free) in parity-gate.ts's " +
-      "STRUCTURAL_WAIVERS.",
+      "PolisClose now renders the true 'genuinely split' branch live (computeDivided, " +
+      "DIVIDED_MIN_SHARE=30 — card e2455f56, superseding the never-merged PR #240) — no longer " +
+      "a proxy. See DECISION #116 (party-free) in parity-gate.ts's STRUCTURAL_WAIVERS for why a " +
+      "residual visual diff vs. any party-colored canvas treatment is still expected.",
+  },
+  {
+    id: "polis-entry",
+    group: "Polis",
+    title: "PolisEntry — scorecard-done invite/preview interstitial",
+    scenarioId: "10a-polis-entry",
+    selector: ".pe-screen",
+  },
+  {
+    id: "polis-stand",
+    group: "Polis",
+    title: "PolisStand — blind per-statement voting",
+    scenarioId: "10b-polis-contribute",
+    selector: ".polisstand2",
   },
 
-  // ---- Not yet extractable on this tree (see header doc above) ----
-  // "polis-entry"      — PolisEntry.tsx, PR #237 not merged (10a-polis-entry is automatable:"no")
-  // "intake-locked"    — IntakeLocked.tsx, PR #236 not merged (09c-intake-locked is a proxy today)
-  // "delegation-overview" — DelegationOverview.tsx, PR #243 not merged (05c-candidates-overview
-  //                         is automatable:"no", but ITS capture() is already written and just
-  //                         needs the branch merged — see that scenario's note)
+  // ---- Candidates (continued) ----
+  {
+    id: "delegation-overview",
+    group: "Candidates",
+    title: "DelegationOverview — multi-seat scored cards before drill-down",
+    scenarioId: "05c-candidates-overview",
+    selector: '[data-testid="delegation-overview"]',
+  },
+
+  // ---- Intake (continued) ----
+  {
+    id: "intake-locked",
+    group: "Intake",
+    title: "IntakeLocked — pre-lock confirmation screen",
+    scenarioId: "09c-intake-locked",
+    // The full screen (data-testid="issue-locked-confirm"), NOT just its
+    // embedded ".iq-locked" banner — the banner's --keep/--keep-soft tokens
+    // are only defined on THIS wrapper (redesign2.css: "not in the global
+    // palette yet"), so extracting the banner alone renders an invisible/
+    // washed-out checkmark (confirmed: --keep resolves to nothing outside
+    // this scope).
+    selector: '[data-testid="issue-locked-confirm"]',
+  },
 ];
 
 // ---------------------------------------------------------------------------
@@ -350,14 +382,24 @@ function wrapCard(target: ComponentTarget, innerHtml: string): string {
 ${links}
     <style>
       html, body { margin: 0; }
-      /* prototype.css's own body min-height:100vh rule (and .bf-app's /
-         .cmp-screen's own copies of the same rule) exist so a real, full-
-         page app route never shows bare background below short content —
-         irrelevant (and misleading, a huge blank card) for an isolated
-         component preview, where we want the card to size to its own
-         content. Overridden here, AFTER the linked sheets in document
-         order, so it wins on equal specificity without touching them. */
-      html, body, .bf-app, .cmp-screen { min-height: 0; }
+      /* prototype.css's own body min-height:100vh rule (and every full-
+         screen surface wrapper's own copy of it — .bf-app, .cmp-screen,
+         .polisstand2, .pe-screen .ps) exist so a real, full-page app route
+         never shows bare background below short content — irrelevant (and
+         misleading, a huge blank card) for an isolated component preview,
+         where we want the card to size to its own content. Overridden
+         here; a bare-class override loses to a compound selector of higher
+         specificity regardless of source order (confirmed: .ps alone did
+         NOT beat .pe-screen's own ".pe-screen .ps" rule) — so this matches
+         each rule's own selector shape, not just its class name. */
+      html,
+      body,
+      .bf-app,
+      .cmp-screen,
+      .polisstand2,
+      .pe-screen .ps {
+        min-height: 0;
+      }
       body { background: #eceef1; padding: 32px; }
       .ds-card-frame { max-width: 1180px; margin: 0 auto; background: var(--paper, #fff); }
     </style>
@@ -441,7 +483,8 @@ async function main(): Promise<void> {
   fs.mkdirSync(path.join(args.bundleDir, "components"), { recursive: true });
 
   console.log(`Booting dev server from ${REPO_ROOT} (current worktree HEAD)…`);
-  const instance = await startNextDev(REPO_ROOT, 3113, "design-sync");
+  const port = await getFreePort();
+  const instance = await startNextDev(REPO_ROOT, port, "design-sync");
   try {
     const browser = await chromium.launch({ headless: !args.headed });
     try {
