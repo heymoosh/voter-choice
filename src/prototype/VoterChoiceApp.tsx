@@ -10,6 +10,7 @@ import {
   STATE_ELECTION_DATA, TODAY_ISO,
   getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
   getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
+  computeOverallAlignmentPct,
   computeDeadlineRow, getDeadlineRows,
   applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
   getCandidateResearch, setCandidateResearch,
@@ -214,7 +215,7 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'How it works',
       theRecord: 'The record',
-      whyNow: 'Why now?',
+      whyNow: 'Why now',
       about: 'About',
       methodology: 'Methodology',
       privacy: 'Privacy',
@@ -382,6 +383,18 @@ const TRANSLATIONS = {
         'Take your verdicts with you — print a scorecard you can bring to the ballot box.',
       allDonePrintBtn: 'Print My Scorecard',
       allDoneAlsoIntro: 'One more thing worth seeing —',
+    },
+    delegationOverview: {
+      kicker: 'Your delegation',
+      heading: 'Everyone who represents you — scored.',
+      sub: 'Scan every seat against your issues at a glance, then open any one to see the record behind the score and decide keep or replace.',
+      notDecided: 'Not yet decided',
+      reviewSeat: 'Review this seat →',
+      reopenSeat: 'Reopen this seat →',
+      printReady: 'Print my scorecard →',
+      printNotReady: 'Decide {n} seats to print',
+      excludedNote: 'Not on your ballot this year',
+      backToOverview: '← All seats',
     },
     editIssues: {
       eyebrow: 'Amend your issues',
@@ -734,7 +747,7 @@ const TRANSLATIONS = {
     nav: {
       howItWorks: 'Cómo funciona',
       theRecord: 'El registro',
-      whyNow: '¿Por qué ahora?',
+      whyNow: 'Por qué ahora',
       about: 'Acerca de',
       methodology: 'Metodología',
       privacy: 'Privacidad',
@@ -902,6 +915,18 @@ const TRANSLATIONS = {
         'Lleva tus veredictos contigo — imprime una tarjeta para llevar a la urna.',
       allDonePrintBtn: 'Imprimir Mi Tarjeta',
       allDoneAlsoIntro: 'Una cosa más que vale la pena ver —',
+    },
+    delegationOverview: {
+      kicker: 'Tu delegación',
+      heading: 'Todos los que te representan — puntuados.',
+      sub: 'Explora cada escaño frente a tus temas de un vistazo, luego abre cualquiera para ver el historial detrás del puntaje y decidir mantener o reemplazar.',
+      notDecided: 'Aún no decidido',
+      reviewSeat: 'Revisar este escaño →',
+      reopenSeat: 'Reabrir este escaño →',
+      printReady: 'Imprimir mi tarjeta →',
+      printNotReady: 'Decide {n} escaños para imprimir',
+      excludedNote: 'No está en tu boleta este año',
+      backToOverview: '← Todos los escaños',
     },
     editIssues: {
       eyebrow: 'Modifica tus temas',
@@ -1389,17 +1414,25 @@ function AppNav({ onBrandClick }) {
         <span>Voter Choice</span>
       </div>
       <div className="links">
-        {/* "How it works" points at the methodology explainer — the brand/logo
-            above is the home affordance, so a separate direct link would be redundant. */}
-        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.howItWorks')}</a>
-        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
+        {/* Order matches the canvas SCNav (screens-orientation.jsx): About, Why
+            now, How it works, Privacy. "How it works" points at the methodology
+            explainer — the brand/logo above is the home affordance, so a
+            separate direct link would be redundant. The canvas has no "Support"
+            nav item — the mailto contact stays reachable from the About page
+            copy, so dropping it here doesn't orphan it. */}
         <a onClick={() => navigate('about')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('about'); }}>{t('nav.about')}</a>
+        <a onClick={() => navigate('whynow')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('whynow'); }}>{t('nav.whyNow')}</a>
+        <a onClick={() => navigate('methodology')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('methodology'); }}>{t('nav.howItWorks')}</a>
         <a onClick={() => navigate('privacy')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('privacy'); }}>{t('nav.privacy')}</a>
-        <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
-        {typeof LanguageToggle === 'function' && <LanguageToggle />}
+        {/* Tip jar before the language toggle, matching the canvas order.
+            The settings gear has no canvas equivalent — the design canvas
+            never modeled Settings (BYOK key / reset / export-profile) at all,
+            it's called out as its own non-design-coupled track in DECISIONS.md
+            — and it's the only entry point into SettingsPanel, so it stays. */}
         <a className="nav-tip" onClick={() => navigate('tip')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('tip'); }}>{t('nav.tipJar')}</a>
+        {typeof LanguageToggle === 'function' && <LanguageToggle />}
         <button
           className="nav-cog"
           onClick={openSettings}
@@ -2009,10 +2042,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
     const score = getScoreForIssue(alignmentEntry, iss.canonicalIssue);
     return { issue: iss, score };
   });
-  const scored = rowsData.filter(r => r.score && r.score.total > 0);
-  const overallPct = scored.length
-    ? Math.round(scored.reduce((s, r) => s + (r.score.kept / r.score.total) * 100, 0) / scored.length)
-    : null;
+  const overallPct = computeOverallAlignmentPct(alignmentEntry, userIssues);
 
   return (
     <div className="cv2-issues">

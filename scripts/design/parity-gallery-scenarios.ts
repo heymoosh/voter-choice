@@ -43,6 +43,20 @@ export interface Scenario {
   note: string;
   /** Absent when automatable === 'no' — nothing to run. */
   capture?: (page: Page) => Promise<void>;
+  /**
+   * CSS selector for a modal/overlay scenario's own visible card — when set,
+   * parity-gate.ts screenshots THIS element (Playwright locator.screenshot(),
+   * an exact CDP crop) instead of the full page. Modal-overlay refs are
+   * already auto-cropped to their content card on the CANVAS side
+   * (detectContentBBox in parity-gate.ts), so diffing an uncropped app
+   * screenshot — dimmed backdrop + real workspace bleeding through behind
+   * the scrim — against that cropped ref compares mostly backdrop, not the
+   * modal itself (the app-side half of the crop gap; see parity-gate.ts's
+   * "Why crop" file-header comment for the ref-side half, fixed by PR #261).
+   * Must select the modal's own card, NOT the full-screen scrim/overlay
+   * wrapper (which is viewport-sized and would defeat the crop).
+   */
+  visualCropSelector?: string;
 }
 
 const ADDRESS = "1100 Congress Ave, Austin, TX 78701";
@@ -240,10 +254,14 @@ async function mockSeatRaceDataMedian(page: Page): Promise<void> {
   });
 }
 
-/** Race-data mock whose House score SWINGS hard depending on whether the
- *  submitted issue list includes `congressional_accountability` — lets the
- *  edit-issues → re-score flow (09e) produce a real, visible REVISIT delta
- *  instead of the flat "nothing moved" branch. */
+/** Race-data mock whose House AND Senate scores SWING hard (opposite
+ *  directions) depending on whether the submitted issue list includes
+ *  `congressional_accountability` — lets the edit-issues → re-score flow
+ *  (09e) produce real, visible REVISIT deltas in BOTH directions instead of
+ *  the flat "nothing moved" branch: house-TX-37 drops (83%→17%), senate-TX-a
+ *  rises (17%→83%), so IssueDeltaBanner's ledger renders at least one ".ad-
+ *  row down"/".ad-arrow down" and one ".ad-row up"/".ad-arrow up" row for
+ *  real (not just theoretically supported by the dir-mapping logic). */
 async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
   await page.route("**/api/race-data", async (route) => {
     const body = route.request().postDataJSON() as {
@@ -319,6 +337,7 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
         },
       };
     } else if (body?.raceId === "senate-TX-a") {
+      const kept = hasAccountability ? 5 : 1;
       data = {
         racePatterns: {
           race: "senate-TX-a",
@@ -348,7 +367,7 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
                   issueLabel: "Lower insulin & drug prices",
                   resolvedStance: "opposed",
                   sourceType: "voting_record",
-                  kept: 1,
+                  kept,
                   total: 6,
                   contributingVotes: [],
                 },
@@ -694,14 +713,14 @@ async function reachWorkspace(page: Page): Promise<void> {
   await sendFirstIssue(page);
   await lockIssues(page);
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
-  // PR #243 (not yet merged) makes DelegationOverview the default landing
-  // screen (App2.tsx's seatOverviewOpen defaults true) instead of landing
-  // directly on the single-seat rail — its cards carry a shared
-  // data-testid="seat-card" (src/prototype/redesign/DelegationOverview.tsx
-  // on that branch). Race both markers rather than a fixed pre-wait, so a
-  // branch without the overview pays no extra latency (.b-row just wins the
-  // race as before) and a branch with it clicks through the first card
-  // before falling through to the same rail wait every scenario expects.
+  // PR #243 (merged) makes DelegationOverview the default landing screen
+  // (App2.tsx's seatOverviewOpen defaults true) instead of landing directly
+  // on the single-seat rail — its cards carry a shared data-testid="seat-card"
+  // (src/prototype/redesign/DelegationOverview.tsx). Race both markers rather
+  // than a fixed pre-wait, so a branch without the overview pays no extra
+  // latency (.b-row just wins the race as before) and a branch with it
+  // clicks through the first card before falling through to the same rail
+  // wait every scenario expects.
   const seatCard = page.getByTestId("seat-card").first();
   const rail = page.locator(".b-row").first();
   await Promise.race([
@@ -753,9 +772,9 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/redesign/App2.tsx", "public/redesign2.css"],
     automatable: "yes",
     note:
-      "Reachable directly (lock issues → orientation interstitial). Known confirmed gap " +
-      "per HANDOFF-EXACT-MATCH.md §1.1: today's OrientationView is a bare div, no flagbar/" +
-      "ori-card/3-step list — the screenshot documents that gap, it is not a tooling limitation.",
+      "Reachable directly (lock issues → orientation interstitial). Ported: OrientationView " +
+      "now renders the full flagbar/ori-card/3-step list structure (see STRUCTURAL_PROBES in " +
+      "parity-gate.ts, 18/18 design classes present, 0 missing) — this scenario verifies it.",
     async capture(page) {
       // mockDelegation + mockChatLocal aren't required locally (a dev
       // .env.local's real DATABASE_URL/API creds let the real /api/delegation
@@ -850,6 +869,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note: "Opens the AllVotesPanel overlay via the 'see full record' CTA.",
+    // ".av-panel" is the modal's own visible card (onClick stopPropagation) —
+    // NOT ".be-modal-overlay"/".avsheet-scrim", the full-viewport dimmed
+    // backdrop those wrap around it (confirmed by reading
+    // VoterChoiceApp.tsx:4421-4422 directly).
+    visualCropSelector: ".av-panel",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -974,27 +998,23 @@ export const SCENARIOS: Scenario[] = [
     refFile: "05c-candidates-overview.png",
     label:
       "Candidates — DelegationOverview (multi-seat scored cards before drill-down)",
-    files: ["src/prototype/redesign/DelegationWorkspace.tsx"],
-    automatable: "no",
+    files: [
+      "src/prototype/redesign/DelegationWorkspace.tsx",
+      "src/prototype/redesign/DelegationOverview.tsx",
+    ],
+    automatable: "yes",
     note:
-      "NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Today the " +
-      "app goes straight to the single-seat deep view (02a-results-main) with no scored " +
-      "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not " +
-      "merged to main as of this report) — capture() below is a real, PR #243-verified " +
-      "sequence (data-testid=\"delegation-overview\"), ready to flip automatable to 'yes'/" +
-      "'proxy' once #243 merges. The canvas ref PNG that was previously missing now exists: " +
-      "the real design source turned out to live in a different, newer, untracked folder " +
-      "(design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/" +
-      "keystone-canvas/ which predates this screen) — screens-delegation.jsx's " +
-      "DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter " +
-      "Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured " +
-      "2026-07-08 by serving that folder locally and screenshotting the artboard's " +
-      '[data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same ' +
-      "fidelity as the viewer's own Download-PNG export, just driven headlessly. See " +
-      ".keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows. " +
-      "automatable stays 'no' for now — flips to 'yes'/'proxy' once PR #243 merges and the " +
-      "delegation-overview testid actually exists on main (same pattern as reachWorkspace()'s " +
-      "PR #243 comment above).",
+      'PR #243 merged (data-testid="delegation-overview") — capture() below drives the ' +
+      "actual repo screen (DelegationOverview.tsx), no longer a stand-in. The canvas ref PNG " +
+      "was captured from a different, newer, untracked folder (design-handoff/" +
+      "design_handoff_voter_choice_redesign/, not design-handoff/keystone-canvas/ which " +
+      "predates this screen) — screens-delegation.jsx's DelegationOverview, wired into that " +
+      "folder's own standalone canvas viewer ('Voter Choice - Keystone Design Session.html') " +
+      "as the 'dg-overview' artboard. Captured 2026-07-08 by serving that folder locally and " +
+      'screenshotting the artboard\'s [data-dc-slot="dg-overview"] .dc-card node at 3x ' +
+      "(deviceScaleFactor) — the same fidelity as the viewer's own Download-PNG export, just " +
+      "driven headlessly. See .keystone-canvas-refs/manifest.json's 05c-candidates-overview " +
+      "entry for what it shows.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -1039,10 +1059,10 @@ export const SCENARIOS: Scenario[] = [
     label: "Why Now — editorial page",
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
-    note: "Nav → 'Why now?'.",
+    note: "Nav → 'Why now' (card 24's AppNav parity pass dropped the trailing '?' to match the canvas SCNav label).",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Why now?" }).click();
+      await page.getByRole("link", { name: "Why now", exact: true }).click();
     },
   },
   {
@@ -1213,6 +1233,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note: "Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.",
+    // ".amend-card" is EditIssuesModal's own visible card (onClick
+    // stopPropagation) — NOT the outer `data-testid="edit-issues-modal"`
+    // node (".amend-modal"), which is the full-viewport dimmed backdrop
+    // (confirmed by reading EditIssuesModal.tsx directly).
+    visualCropSelector: ".amend-card",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataDeltaAware(page);
@@ -1236,9 +1261,10 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note:
-      "Race-data mock swings the House score hard (83%→17%) once 'congressional " +
-      "accountability' enters the issue list, so Apply produces a real >5pt REVISIT flag " +
-      "instead of the flat 'nothing moved' branch.",
+      "Race-data mock swings the House score down (83%→17%) and the Senate score up " +
+      "(17%→83%) once 'congressional accountability' enters the issue list, so Apply " +
+      "produces two real >5pt REVISIT flags — one each direction — instead of the flat " +
+      "'nothing moved' branch.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataDeltaAware(page);
