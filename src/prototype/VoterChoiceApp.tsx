@@ -518,10 +518,13 @@ const TRANSLATIONS = {
       positionUnclearLimited: 'Position unclear — limited public record',
       confidenceConf: '{level} conf.',
       alignsWithYourIssues: 'Aligns with your issues',
+      votedWithYou: 'Voted with you',
       provRollcall: 'Roll-call record',
       provResearched: 'Researched · cited',
       thinRecordOnIssue: 'Thin record on this issue',
       identityHiddenJudgeByRecord: 'Identity hidden · judge by record',
+      blindSeatIncumbent: "This seat's incumbent",
+      identityHiddenSentence: 'Name & party hidden — judge the record, not the person',
       revealWhoThisIs: 'Reveal who this is',
       reveal: 'Reveal',
       hideThisCandidateAgain: 'Hide this candidate again',
@@ -1055,10 +1058,13 @@ const TRANSLATIONS = {
       positionUnclearLimited: 'Postura poco clara — registro público limitado',
       confidenceConf: 'conf. {level}',
       alignsWithYourIssues: 'Se alinea con tus temas',
+      votedWithYou: 'Votó contigo',
       provRollcall: 'Historial de votación',
       provResearched: 'Investigado · citado',
       thinRecordOnIssue: 'Registro escaso en este tema',
       identityHiddenJudgeByRecord: 'Identidad oculta · juzga por el historial',
+      blindSeatIncumbent: 'El titular de este puesto',
+      identityHiddenSentence: 'Nombre y partido ocultos — juzga el historial, no a la persona',
       revealWhoThisIs: 'Revelar quién es',
       reveal: 'Revelar',
       hideThisCandidateAgain: 'Ocultar a este candidato de nuevo',
@@ -1849,7 +1855,7 @@ function computePeerLabel(totalRaised, peerTotals) {
 }
 
 /* ============ CandidateCardHeader ============ */
-function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, onReveal, onHide }) {
+function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, onReveal, onHide, variant = 'legacy' }) {
   const { t } = useI18n();
   const yearsMatch = (candidate.priorRole || '').match(/since (\d{4})/i);
   const years = yearsMatch ? new Date().getFullYear() - parseInt(yearsMatch[1], 10) : 0;
@@ -1869,7 +1875,11 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
         <div className="cv2-id">
           <div className="cv2-name blind">{alias || t('repCard.candidateFallback')}</div>
           <div className="cv2-sub blind">
-            <span className="cv2-tag">{t('repCard.identityHiddenJudgeByRecord')}</span>
+            {variant === 'canvas' ? (
+              <span className="cv2-sub-plain">{t('repCard.identityHiddenSentence')}</span>
+            ) : (
+              <span className="cv2-tag">{t('repCard.identityHiddenJudgeByRecord')}</span>
+            )}
           </div>
         </div>
         <button className="cv2-reveal" onClick={onReveal} title={t('repCard.revealWhoThisIs')}>
@@ -1999,7 +2009,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
         <div className="cv2-issues" data-testid="web-search-alignment-banner">
           <div className="cv2-block-head">
             <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
-            <div style={{ fontSize: '10px', color: 'var(--ink-3, #888)', fontStyle: 'italic' }}>
+            <div className="cv2-research-caveat">
               {t('repCard.basedOnPublicStatementsNotVoting')}
             </div>
           </div>
@@ -2024,6 +2034,9 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
       <div className="cv2-issues">
         <div className="cv2-block-head">
           <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
+          <div className="cv2-research-caveat">
+            {t('repCard.basedOnPublicStatementsNotVoting')}
+          </div>
         </div>
         <div className="cv2-norecord">
           {research &&
@@ -2071,7 +2084,11 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
   return (
     <div className="cv2-issues">
       <div className="cv2-block-head">
-        <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
+        <div className="lab">
+          {rowVariant === 'canvas' && scoredForFraction.length > 0
+            ? t('repCard.votedWithYou')
+            : t('repCard.alignsWithYourIssues')}
+        </div>
         {overallPct !== null && (
           <div className="overall">
             <b className={rowVariant === 'canvas' ? (overallPct >= 65 ? 'good' : 'bad') : undefined}>{overallPct}%</b>

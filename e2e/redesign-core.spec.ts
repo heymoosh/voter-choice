@@ -39,9 +39,13 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
-    // Blind-first: identity hidden, judged by record.
+    // Blind-first: identity hidden, judged by record. RepCard (canvas
+    // variant) shows the canvas-literal "This seat's incumbent" label
+    // (Muxin's 2026-07-11 ruling) rather than seat.blindLabel's "Your
+    // U.S. Representative" — that field is unchanged and still used
+    // elsewhere (e.g. chat grounding prompt, all-votes panel).
     await expect(page.locator(".cv2-name.blind").first()).toContainText(
-      "Your U.S. Representative",
+      "This seat's incumbent",
     );
 
     // Seat strip + attendance band + eligibility + sources are all present.
