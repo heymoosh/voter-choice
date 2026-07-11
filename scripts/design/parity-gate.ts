@@ -556,6 +556,50 @@ const STRUCTURAL_PROBES: Probe[] = [
       "TipJarVC vocabulary (sp-tip/sp-tips/sp-tipnote — a different prefix, zero overlap). The " +
       "confirmed, checkable gap is the missing lead-amount emphasis, not just the class rename.",
   },
+  {
+    kind: "marker",
+    scenarioId: "05c-candidates-overview",
+    markers: [
+      {
+        selector: '[data-testid="delegation-overview"]',
+        description:
+          "renders the overview screen at all — honest-signal root: if PR #243's " +
+          "DelegationOverview regresses out of the default landing flow (App2.tsx's " +
+          "seatOverviewOpen), this is the marker that goes missing first",
+      },
+      {
+        selector: ".dg-grid",
+        description:
+          "renders the scored-seat grid — screens-delegation.jsx's DelegationOverview literal " +
+          '".dg-grid" class (confirmed by reading design-handoff/keystone-canvas/src/screens-' +
+          "delegation.jsx directly), wrapping one card per up-for-election seat",
+      },
+      {
+        selector: '[data-testid="seat-card"]',
+        description:
+          "renders at least one scored seat card inside the grid (DelegationOverview.tsx's " +
+          "SeatCard — a literal port of screens-delegation.jsx's own SeatCard, same cd-card/" +
+          "cd-seatlab/cd-head/cd-align/cd-money/cd-foot vocabulary)",
+      },
+      {
+        selector: ".cd-align",
+        description:
+          "each card renders its alignment-score summary block (cd-align-top's cd-pct + the " +
+          "per-issue cd-irow rows) — the actual '3-card alignment-score summary' the PR ships, " +
+          "not just an empty card shell",
+      },
+    ],
+    note:
+      "DelegationOverview.tsx's own docstring: 'PORT of design-handoff/keystone-canvas/src/" +
+      "screens-delegation.jsx's DelegationOverview + SeatCard' — a confirmed literal class-" +
+      "vocabulary port (dg/dg-ov-head/dg-grid/dg-excluded + SeatCard's cd-*/dg-status family), " +
+      "same precedent as HeadToHead.tsx and IssueDeltaBanner.tsx. A full class-diff probe isn't " +
+      "used here because SeatCard is a sibling function to DelegationOverview in the source " +
+      "file (not nested JSX), so extractComponentSlice's single-function scope can't see both " +
+      "halves of the port at once from one componentName; these 4 markers cover the same real " +
+      "structural facts (overview root, grid, per-seat cards, each card's scored-alignment " +
+      "block) a class-diff would, verified against today's app: all 4 currently pass.",
+  },
 ];
 
 /**

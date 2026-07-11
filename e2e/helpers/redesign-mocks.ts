@@ -511,7 +511,10 @@ export async function goToWorkspace(page: Page): Promise<void> {
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
   // Workspace now lands on the delegation overview (one card per seat)
   // first; click into the first seat to reach its deep view.
-  await page.locator('[data-testid="seat-card"]').first().click({ timeout: 15000 });
+  await page
+    .locator('[data-testid="seat-card"]')
+    .first()
+    .click({ timeout: 15000 });
   // Workspace is ready once the scorecard rows appear. On mobile the center
   // pane (rep-card) starts hidden until a row is tapped; the scorecard rows
   // are always visible and are the safe signal for both viewports.
