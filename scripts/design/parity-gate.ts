@@ -949,12 +949,15 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "prior 'zero overlap' claim no longer holds for that vocabulary. Still waived rather than " +
     "promoted to a class-diff probe: canvas's WhyNow also renders its own page chrome (the " +
     "outer .screen/.wn wrapper, .flagbar, <SCNav/>) inside the same function, which this repo " +
-    "deliberately does NOT replicate — App2.tsx's own AppNav already renders equivalent chrome " +
-    "around every stage — so an accurate class-diff would need a hand-verified ignoreMissing " +
-    "list for every chrome class SCNav itself renders (out of scope for this page-only fix; " +
-    "see the 'Extending STRUCTURAL_PROBES later' note above for the promotion path). The visual " +
-    "check still runs and gates this scenario same as any other; see also the 07-whynow " +
-    "CONTENT_PROBES entry below for verbatim-copy assertions this waiver can't catch.",
+    "deliberately does NOT replicate — App2.tsx now wraps the 'whynow' stage in AppNav (Bold " +
+    "Flag chrome pass, 2026-07-11: this was a genuine gap until then — WhyNowPage rendered its " +
+    "own .wn-wrap directly with no nav at all, unlike the other 4 statics pages, confirmed by " +
+    "reading App2.tsx's stage switch directly) — so an accurate class-diff would need a " +
+    "hand-verified ignoreMissing list for every chrome class SCNav itself renders (out of scope " +
+    "for this page-only fix; see the 'Extending STRUCTURAL_PROBES later' note above for the " +
+    "promotion path). The visual check still runs and gates this scenario same as any other; " +
+    "see also the 07-whynow CONTENT_PROBES entry below for verbatim-copy assertions this waiver " +
+    "can't catch.",
   "08b-howitworks":
     "Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see " +
     "that probe's note. MethodologyPage's own body content sits outside the probed shell.",

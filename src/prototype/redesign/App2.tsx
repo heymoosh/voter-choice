@@ -892,8 +892,20 @@ function App2Inner() {
           </main>
         </>
       );
+    // WhyNowPage doesn't share the StaticPage shell (its own literal port of
+    // canvas's wn-* class vocabulary — see the 07-whynow STRUCTURAL_WAIVERS
+    // note in parity-gate.ts) but was missing AppNav entirely, same gap as
+    // the 4 pages above before that fix — canvas's SCNav (screens-orientation.jsx)
+    // is on every screen, this one just never got the same wrapper treatment.
     if (stage === "whynow")
-      return <WhyNowPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <WhyNowPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "methodology")
       return (
         <>
