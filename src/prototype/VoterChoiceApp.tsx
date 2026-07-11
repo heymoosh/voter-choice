@@ -676,7 +676,7 @@ const TRANSLATIONS = {
       momentBody: '2026 isn’t a quiet midterm. It’s the widest opening voters get — the moment the people who’ve been representing you have to come back and ask for the job again. Wouldn’t you want to know who’s actually been working on your behalf before you sign off?',
       ballot: [
         { value: '435', label: 'U.S. House seats up — every single one.' },
-        { value: '34', label: 'U.S. Senate seats up — a third of the chamber.' },
+        { value: '35', label: 'U.S. Senate seats up — 33 regular, plus 2 specials in Ohio and Florida.' },
         { value: '1', label: 'scorecard you bring to the polls, built from your own verdicts.' },
       ],
       hardKicker: 'Why it’s hard',
@@ -1188,7 +1188,7 @@ const TRANSLATIONS = {
       momentBody: '2026 no es una elección intermedia tranquila. Es la ventana más amplia que tienen los votantes — el momento en que quienes te han representado deben volver y pedir el puesto de nuevo. ¿No te gustaría saber quién realmente ha estado trabajando en tu nombre antes de dar tu aprobación?',
       ballot: [
         { value: '435', label: 'escaños de la Cámara de EE. UU. en juego — todos y cada uno.' },
-        { value: '34', label: 'escaños del Senado de EE. UU. en juego — un tercio de la cámara.' },
+        { value: '35', label: 'escaños del Senado de EE. UU. en juego — 33 ordinarios, más 2 especiales en Ohio y Florida.' },
         { value: '1', label: 'tarjeta de puntuación que llevas a las urnas, construida con tus propios veredictos.' },
       ],
       hardKicker: 'Por qué es difícil',
