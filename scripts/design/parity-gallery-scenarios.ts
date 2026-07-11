@@ -886,14 +886,20 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/App2.tsx",
     ],
     automatable: "yes",
-    note: "Fresh home stage, no session.",
+    note:
+      "Fresh home stage, no session. The canvas ref depicts the address field filled and the " +
+      "submit CTA in its enabled/navy state (disabled={!addr.trim()} in VoterChoiceApp.tsx " +
+      "means an empty field renders the CTA gray) — filled, not clicked, since the artboard is " +
+      "still the hero itself, not the loading/results screen submitting would navigate to.",
     async capture(page) {
       await gotoHomeClean(page);
       // The app renders via a client-only next/dynamic bundle (SSR bails out
       // on purpose) — wait for real content, not just the network 'load' event.
-      await page
-        .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
-        .waitFor({ timeout: 15000 });
+      const addressInput = page.getByPlaceholder(
+        "1100 Congress Ave, Austin, TX 78701",
+      );
+      await addressInput.waitFor({ timeout: 15000 });
+      await addressInput.fill(ADDRESS);
     },
   },
   {
