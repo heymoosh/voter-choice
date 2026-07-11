@@ -10,6 +10,7 @@ import {
   STATE_ELECTION_DATA, TODAY_ISO,
   getRacePatternsForRace, getCandidatePatterns, getAlignmentScoresForRace,
   getAlignmentEntryForCandidate, getScoreForIssue, getCandidateParty,
+  computeOverallAlignmentPct,
   computeDeadlineRow, getDeadlineRows,
   applyRealRaces, setRealStateCode, getRealStateCode, getRealElectionType,
   getCandidateResearch, setCandidateResearch,
@@ -379,6 +380,18 @@ const TRANSLATIONS = {
         'Take your verdicts with you — print a scorecard you can bring to the ballot box.',
       allDonePrintBtn: 'Print My Scorecard',
       allDoneAlsoIntro: 'One more thing worth seeing —',
+    },
+    delegationOverview: {
+      kicker: 'Your delegation',
+      heading: 'Everyone who represents you — scored.',
+      sub: 'Scan every seat against your issues at a glance, then open any one to see the record behind the score and decide keep or replace.',
+      notDecided: 'Not yet decided',
+      reviewSeat: 'Review this seat →',
+      reopenSeat: 'Reopen this seat →',
+      printReady: 'Print my scorecard →',
+      printNotReady: 'Decide {n} seats to print',
+      excludedNote: 'Not on your ballot this year',
+      backToOverview: '← All seats',
     },
     editIssues: {
       eyebrow: 'Amend your issues',
@@ -896,6 +909,18 @@ const TRANSLATIONS = {
         'Lleva tus veredictos contigo — imprime una tarjeta para llevar a la urna.',
       allDonePrintBtn: 'Imprimir Mi Tarjeta',
       allDoneAlsoIntro: 'Una cosa más que vale la pena ver —',
+    },
+    delegationOverview: {
+      kicker: 'Tu delegación',
+      heading: 'Todos los que te representan — puntuados.',
+      sub: 'Explora cada escaño frente a tus temas de un vistazo, luego abre cualquiera para ver el historial detrás del puntaje y decidir mantener o reemplazar.',
+      notDecided: 'Aún no decidido',
+      reviewSeat: 'Revisar este escaño →',
+      reopenSeat: 'Reabrir este escaño →',
+      printReady: 'Imprimir mi tarjeta →',
+      printNotReady: 'Decide {n} escaños para imprimir',
+      excludedNote: 'No está en tu boleta este año',
+      backToOverview: '← Todos los escaños',
     },
     editIssues: {
       eyebrow: 'Modifica tus temas',
@@ -1994,10 +2019,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
     const score = getScoreForIssue(alignmentEntry, iss.canonicalIssue);
     return { issue: iss, score };
   });
-  const scored = rowsData.filter(r => r.score && r.score.total > 0);
-  const overallPct = scored.length
-    ? Math.round(scored.reduce((s, r) => s + (r.score.kept / r.score.total) * 100, 0) / scored.length)
-    : null;
+  const overallPct = computeOverallAlignmentPct(alignmentEntry, userIssues);
 
   return (
     <div className="cv2-issues">

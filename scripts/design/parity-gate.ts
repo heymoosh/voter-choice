@@ -832,6 +832,50 @@ const STRUCTURAL_PROBES: Probe[] = [
       "TipJarVC vocabulary (sp-tip/sp-tips/sp-tipnote — a different prefix, zero overlap). The " +
       "confirmed, checkable gap is the missing lead-amount emphasis, not just the class rename.",
   },
+  {
+    kind: "marker",
+    scenarioId: "05c-candidates-overview",
+    markers: [
+      {
+        selector: '[data-testid="delegation-overview"]',
+        description:
+          "renders the overview screen at all — honest-signal root: if PR #243's " +
+          "DelegationOverview regresses out of the default landing flow (App2.tsx's " +
+          "seatOverviewOpen), this is the marker that goes missing first",
+      },
+      {
+        selector: ".dg-grid",
+        description:
+          "renders the scored-seat grid — screens-delegation.jsx's DelegationOverview literal " +
+          '".dg-grid" class (confirmed by reading design-handoff/keystone-canvas/src/screens-' +
+          "delegation.jsx directly), wrapping one card per up-for-election seat",
+      },
+      {
+        selector: '[data-testid="seat-card"]',
+        description:
+          "renders at least one scored seat card inside the grid (DelegationOverview.tsx's " +
+          "SeatCard — a literal port of screens-delegation.jsx's own SeatCard, same cd-card/" +
+          "cd-seatlab/cd-head/cd-align/cd-money/cd-foot vocabulary)",
+      },
+      {
+        selector: ".cd-align",
+        description:
+          "each card renders its alignment-score summary block (cd-align-top's cd-pct + the " +
+          "per-issue cd-irow rows) — the actual '3-card alignment-score summary' the PR ships, " +
+          "not just an empty card shell",
+      },
+    ],
+    note:
+      "DelegationOverview.tsx's own docstring: 'PORT of design-handoff/keystone-canvas/src/" +
+      "screens-delegation.jsx's DelegationOverview + SeatCard' — a confirmed literal class-" +
+      "vocabulary port (dg/dg-ov-head/dg-grid/dg-excluded + SeatCard's cd-*/dg-status family), " +
+      "same precedent as HeadToHead.tsx and IssueDeltaBanner.tsx. A full class-diff probe isn't " +
+      "used here because SeatCard is a sibling function to DelegationOverview in the source " +
+      "file (not nested JSX), so extractComponentSlice's single-function scope can't see both " +
+      "halves of the port at once from one componentName; these 4 markers cover the same real " +
+      "structural facts (overview root, grid, per-seat cards, each card's scored-alignment " +
+      "block) a class-diff would, verified against today's app: all 4 currently pass.",
+  },
 ];
 
 /**
@@ -1617,6 +1661,41 @@ const CONTENT_PROBES: ContentProbe[] = [
       "entries above): it fails if the right classes render with the WRONG or drifted copy " +
       "inside them, which neither the class-diff nor the coarse downscaled visual check can " +
       "catch.",
+  },
+  {
+    scenarioId: "05c-candidates-overview",
+    assertions: [
+      {
+        text: "Everyone who represents you",
+        description:
+          "the overview h2 (first half, split before the em-dash) — canvas's " +
+          "screens-delegation.jsx DelegationOverview passes literal JSX text " +
+          '"Everyone who represents you — scored."',
+      },
+      {
+        text: "Scan every seat against your issues at a glance",
+        description:
+          "the overview dek (first half) — canvas's literal sub-copy, split before the comma " +
+          "so the assertion survives independent of the exact clause-joining punctuation",
+      },
+      {
+        text: "decide keep or replace",
+        description:
+          "the overview dek (closing clause) — confirms the dek was ported in full, not just " +
+          "its first half",
+      },
+    ],
+    note:
+      "Genuine FAIL before this fix, confirmed by reading both sides directly: " +
+      "delegationOverview.heading/.sub (src/prototype/VoterChoiceApp.tsx) read 'Every seat, " +
+      "scored' / \"See every seat's alignment with your issues at a glance — then open one to " +
+      "see the record behind the score.\" — a paraphrase, not the canvas's verbatim copy. Same " +
+      "class of gap the coarse downscaled visual diff already PASSED through undetected (ratio " +
+      "0.057 vs 0.18 threshold, confirmed on the unfixed screen) and 05c's marker-based " +
+      "structural probe above has no way to catch either (markers check elements exist, not " +
+      "their text) — the exact false-comfort pattern flagged after this scenario's first PASS: " +
+      "a coarse visual/structural PASS is not proof of copy fidelity. Canvas is verbatim " +
+      "source-of-truth for this surface (no recorded ruling permits a paraphrase here).",
   },
 ];
 

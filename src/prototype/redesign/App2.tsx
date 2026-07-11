@@ -262,6 +262,16 @@ function App2Inner() {
   const [activeSeatId, setActiveSeatId] = useState(
     savedSession.activeSeatId || null,
   );
+  // Delegation-overview navigation layer: true = 3-card scored overview,
+  // false = the (unchanged) deep single-seat view for activeSeatId. Lifted
+  // here (not local to DelegationWorkspace) because that component
+  // unmounts/remounts across sibling stages (duel, print, standing) — a
+  // returning duel/print flow must land back on the seat it left, not reset
+  // to the overview. Defaults to the overview on a fresh session; a resumed
+  // session restores wherever the user left off.
+  const [seatOverviewOpen, setSeatOverviewOpen] = useState(
+    savedSession.seatOverviewOpen ?? true,
+  );
   const [revealed, setRevealed] = useState(
     () => new Set(savedSession.revealed || []),
   );
@@ -331,10 +341,19 @@ function App2Inner() {
           picks,
           activeSeatId,
           revealed: [...revealed],
+          seatOverviewOpen,
         }),
       );
     } catch {}
-  }, [stage, address, verdicts, picks, activeSeatId, revealed]);
+  }, [
+    stage,
+    address,
+    verdicts,
+    picks,
+    activeSeatId,
+    revealed,
+    seatOverviewOpen,
+  ]);
 
   // Resume: re-run the pipeline silently for a returning session.
   useEffect(() => {
@@ -641,6 +660,20 @@ function App2Inner() {
     });
   }
 
+  // Delegation-overview navigation: opening a seat card leaves the overview
+  // for that seat's (unchanged) deep view; the "← All seats" control returns.
+  function openSeatFromOverview(seatId) {
+    setActiveSeatId(seatId);
+    setSeatOverviewOpen(false);
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "auto" });
+  }
+  function backToOverview() {
+    setSeatOverviewOpen(true);
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
   // Head-to-head duel: open from a seat's "Time to replace", record from its
   // Keep / Replace foot. Replace records the verdict AND the chosen successor.
   function openDuel(seatId) {
@@ -718,6 +751,7 @@ function App2Inner() {
     setChatMessages({});
     setChatTimeouts({});
     prevChatSeatRef.current = null;
+    setSeatOverviewOpen(true);
     setStage("home");
   }
 
@@ -1035,6 +1069,9 @@ function App2Inner() {
             setIssueDeltas(null);
           }}
           onDismissDeltas={() => setIssueDeltas(null)}
+          overviewOpen={seatOverviewOpen}
+          onOpenSeat={openSeatFromOverview}
+          onBackToOverview={backToOverview}
         />
         {showHandoff && (
           <HandoffModal

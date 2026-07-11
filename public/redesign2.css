@@ -2597,3 +2597,626 @@
   border-color: var(--rc-keep);
   background: var(--rc-keep);
 }
+
+/* ====================================================
+   § DELEGATION OVERVIEW
+   PORT of design-handoff/keystone-canvas/src/delegation.css (its own "§8 ·
+   DELEGATION OVERVIEW → DRILL-DOWN" section) plus the .cd-* unified
+   candidate-card rules SeatCard reuses, from
+   design-handoff/keystone-canvas/src/candidates.css. Following the
+   RAISED-VS-MEDIAN / .cmp precedent above: design tokens (--brand/--keep/
+   --replace family) are mapped onto the shipped warm palette, scoped to
+   .delegation (already on DelegationWorkspace.tsx's root), reusing the
+   EXACT oklch values the .cmp scope in public/candidates.css already
+   chose — so keep/replace reads the same color on the compare and
+   delegation screens. --brand-2 is added alongside the tokens the plan
+   called out because .cd-seatlab .seat-t (a requested selector) needs it;
+   same value .cmp already carries.
+   The .cd- / .dg- prefixed rules themselves aren't re-scoped under
+   .delegation — they're already namespaced by their own prefix, same convention as
+   .cmp-* above. .bar-good/.bar-mid/.bar-bad (bare, generic names) ARE
+   scoped, same as .cmp .tone-good/.tone-mid/.tone-bad above.
+   NOT ported: .cd-delta/.cd-pair/.cd-stage/.cd-explain/.cd-pick-tag
+   (separate task) and .rh-dots (no matching rail-header-dots element
+   exists in this repo).
+   Two source selectors don't map to real classes here and are retargeted:
+     - ".res-rail .rseat.click" -> ".ws-ballot .b-row", the real seat-strip
+       rail row in DelegationWorkspace.tsx (already clickable).
+     - ".vbtn.keep.is-on" / ".vbtn.replace.is-on" -> ".pick.picked" /
+       ".pick.replace.picked-replace", RepCard.tsx's real verdict buttons
+       (already fully styled globally via .cv2-actions); scoped under
+       .dg-deep so this only adds emphasis inside the overview's deep
+       view. The source's `.ck::before { content: "⇄" }` accent is
+       dropped — RepCard already renders a "✕" glyph via JSX for the
+       replace state, so the pseudo-element would double the icon.
+   Loaded via redesign2.css's existing <link> in src/app/layout.tsx.
+   ==================================================== */
+
+.delegation {
+  /* --brand/--brand-2/--brand-soft point at the app-wide --bf-brand/
+     --bf-brand-2 tokens (.bf-app above), not --civic: this scope only
+     ever renders inside App2, always under #root.bf-app, so --bf-brand
+     is already in scope. --civic was the pre-.bf-app-foundation choice
+     (same "remap --civic locally" pattern candidates.css's HeadToHead
+     uses) but .bf-app's own comment is explicit that --civic is LEFT
+     UNTOUCHED app-wide — it doubles as the "keep" green elsewhere — so
+     reading it here resolved to the global green civic default, not
+     navy: brand accents (dg-kicker, the roll-call provenance badge,
+     cd-avatar, dg-print.ready) rendered civic-green instead of the
+     canvas's navy. Same fix as .pe-screen's (PolisEntry, PR #237).
+     --keep/--replace below are unaffected — already independent of
+     --civic, so the "worth keeping" chip/button and vote-fraction bars
+     stay green, matching canvas. */
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.45 0.11 159);
+  --keep-soft: oklch(0.94 0.04 159);
+  --replace: var(--vote-red);
+  --replace-soft: oklch(0.94 0.05 28);
+}
+
+/* ---------- unified seat card (SeatCard) — ported from candidates.css ---------- */
+.cd-card {
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-2);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.cd-card.is-pick {
+  border-color: var(--keep);
+  box-shadow:
+    0 0 0 2px var(--keep-soft),
+    var(--shadow-soft);
+}
+.cd-seatlab {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-3);
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--rule-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cd-seatlab .seat-t {
+  color: var(--brand-2);
+}
+.cd-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 12px;
+}
+.cd-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  border: 1px solid var(--rule-2);
+}
+.cd-card.blind .cd-avatar {
+  background: var(--tag-bg);
+  color: var(--ink-3);
+}
+.cd-who {
+  flex: 1;
+  min-width: 0;
+}
+.cd-name {
+  font-family: var(--serif);
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.15;
+}
+.cd-role {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.cd-prov-row {
+  padding: 0 16px 12px;
+}
+/* provenance badge (roll-call vs researched) — also not ported by the
+   earlier CSS commit. Mirrors .cmp .prov exactly (candidates.css), the same
+   badge HeadToHead.tsx's ProvBadge already renders under .cmp; SeatCard's
+   DgProv needs it under .delegation instead. */
+.delegation .prov {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 8px 3px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.delegation .prov::before {
+  font-size: 9px;
+}
+.delegation .prov.rollcall {
+  background: var(--brand);
+  color: var(--paper-2);
+  border: 1.5px solid var(--brand);
+}
+.delegation .prov.rollcall::before {
+  content: "\25C6"; /* filled diamond */
+}
+.delegation .prov.researched {
+  background: var(--paper-2);
+  color: var(--brand-2);
+  border: 1.5px dashed var(--brand);
+}
+.delegation .prov.researched::before {
+  content: "\25C7"; /* hollow diamond */
+}
+.cd-align {
+  margin: 0 16px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.cd-align-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cd-align-top .lab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.cd-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 27px;
+  line-height: 1;
+}
+/* alignment tone helpers for .cd-pct — NOT ported by the earlier CSS commit
+   (only the .bar-* track-fill tones were carried over); added here so
+   SeatCard's big percentage number actually colors by tone, same values as
+   the analogous .cmp .tone-good/.tone-mid/.tone-bad/.tone-na. */
+.delegation .tone-good {
+  color: var(--keep);
+}
+.delegation .tone-mid {
+  color: var(--gold);
+}
+.delegation .tone-bad {
+  color: var(--replace);
+}
+.delegation .tone-na {
+  color: var(--ink-3);
+}
+.cd-issues {
+  margin-top: 10px;
+  display: grid;
+  gap: 7px;
+}
+.cd-irow {
+  display: grid;
+  grid-template-columns: 1fr 70px 30px;
+  gap: 10px;
+  align-items: center;
+}
+.cd-irow .ik {
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cd-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.cd-track i {
+  display: block;
+  height: 100%;
+}
+.cd-irow .iv {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink-2);
+}
+.delegation .bar-good {
+  background: var(--keep);
+}
+.delegation .bar-mid {
+  background: var(--gold);
+}
+.delegation .bar-bad {
+  background: var(--replace);
+}
+/* not in the source (only good/mid/bad exist there) — added so SeatCard's
+   n/a issue tracks have a neutral fill, same idea as the .cmp .tone-na
+   precedent in public/candidates.css */
+.delegation .bar-na {
+  background: var(--ink-3);
+}
+.cd-money {
+  margin: 12px 16px 0;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.cd-money-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cd-money-top .lab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cd-bars {
+  flex: 1;
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+}
+.cd-bars i.small {
+  background: var(--keep);
+}
+.cd-bars i.large {
+  background: var(--gold);
+}
+.cd-bars i.pac {
+  background: var(--replace);
+}
+.cd-money-top .tot {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cd-money-note {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+.cd-money-note b {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.cd-foot {
+  margin-top: auto;
+  padding: 13px 16px 15px;
+}
+.cd-select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--brand);
+  color: var(--paper-2);
+  border: 1.5px solid var(--brand);
+  box-shadow: var(--shadow-soft);
+}
+.cd-select.ghost {
+  background: var(--paper);
+  color: var(--brand);
+}
+.cd-card.is-pick .cd-select {
+  background: var(--keep);
+  border-color: var(--keep);
+}
+
+/* ---------- overview shell (DelegationOverview) — ported from delegation.css ---------- */
+.dg {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.dg .flagbar {
+  flex: 0 0 auto;
+}
+
+/* ---- overview header + progress ---- */
+.dg-ov-head {
+  padding: 20px 30px 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.dg-ov-intro {
+  min-width: 0;
+}
+.dg-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+.dg-ov-head h2 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 5px 0 0;
+  color: var(--ink);
+}
+.dg-ov-head .sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 5px 0 0;
+  max-width: 560px;
+  line-height: 1.5;
+}
+.dg-prog {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.dg-prog .meter {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: flex-end;
+}
+.dg-prog .mlab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dg-prog .dots {
+  display: flex;
+  gap: 5px;
+}
+.dg-prog .dots i {
+  width: 26px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rule);
+  display: block;
+}
+.dg-prog .dots i.done {
+  background: var(--keep);
+}
+.dg-print {
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 11px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  border: 1.5px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-3);
+  cursor: not-allowed;
+  white-space: nowrap;
+}
+.dg-print.ready {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--paper-2);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---- the seat grid ---- */
+.dg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  padding: 16px 30px 10px;
+  align-items: start;
+}
+
+/* collapse the 3-col overview grid to 1 col under the mobile breakpoint —
+   NOT present in the source (delegation.css ships no media query at all).
+   Matches this file's existing ~560px breakpoint (see "stacked / compact
+   form" above); this repo runs a real Pixel-5-width (~393px)
+   chromium-mobile Playwright project, so a cramped 3-col grid there is a
+   real usability bug, not a nice-to-have. */
+@media (max-width: 560px) {
+  .dg-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* verdict-status pill in the seat label row */
+.dg-status {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.dg-status.todo {
+  background: var(--tag-bg);
+  color: var(--ink-3);
+}
+.dg-status.keep {
+  background: var(--keep-soft);
+  color: var(--keep);
+}
+.dg-status.replace {
+  background: var(--replace-soft);
+  color: var(--replace);
+}
+
+/* the card is now a button into the deep view */
+.cd-card.dg-open {
+  cursor: pointer;
+  transition:
+    box-shadow 0.13s ease,
+    transform 0.13s ease;
+}
+.cd-card.dg-open:hover {
+  box-shadow:
+    0 0 0 2px var(--brand-soft),
+    var(--shadow-card);
+  transform: translateY(-2px);
+}
+.cd-card.dg-open:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.cd-card.verdict-replace {
+  border-color: var(--replace);
+  box-shadow:
+    0 0 0 2px var(--replace-soft),
+    var(--shadow-soft);
+}
+.cd-card.verdict-replace .cd-select {
+  color: var(--replace);
+}
+/* decided (keep) card: green-filled CTA needs white text for contrast */
+.cd-card.is-pick .cd-select {
+  color: var(--paper-2);
+}
+
+/* ---- excluded (non-2026) seat row ---- */
+.dg-excluded {
+  margin: 8px 30px 0;
+  padding: 12px 16px;
+  border: 1px dashed var(--rule);
+  border-radius: 12px;
+  background: var(--tag-bg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.85;
+}
+.dg-excluded .ri {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--rule);
+  color: var(--ink-3);
+}
+.dg-excluded .ex-meta {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.dg-excluded .ex-meta b {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--ink);
+}
+.dg-excluded .ex-tag {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* ---- deep-view affordances layered on the reused rail/verdict chrome ---- */
+.dg-deep .rc-back {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.dg-deep .rc-back:hover {
+  background: var(--brand);
+  color: var(--paper-2);
+}
+/* wraps the "← All seats" control above .tier-intro — NOT in the source
+   (the design's version sits in a standalone .res-context strip this repo
+   doesn't have); .rep-center-head is desktop-hidden (mobile-only back
+   bar), so the back-to-overview control needs its own always-visible row. */
+.dg-back-row {
+  margin: 0 0 14px;
+}
+
+/* retargeted from the source's ".res-rail .rseat.click" — the real
+   seat-strip rail row in this repo is DelegationWorkspace.tsx's .b-row
+   (already clickable; already tints .pick text on hover). Extend it with
+   the source's brand-tinted hover instead of inventing a new selector. */
+.delegation .ws-ballot .b-row:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+/* retargeted from the source's ".vbtn.keep.is-on" / ".vbtn.replace.is-on"
+   — the real verdict buttons in this repo are RepCard.tsx's .pick.picked /
+   .pick.replace.picked-replace (already fully styled everywhere via
+   .cv2-actions). Scoped under .dg-deep so this only adds emphasis inside
+   the overview's deep view. */
+.dg-deep .pick.picked {
+  box-shadow:
+    0 0 0 3px var(--keep-soft),
+    var(--shadow-soft);
+}
+.dg-deep .pick.replace.picked-replace {
+  background: var(--replace);
+  color: var(--paper-2);
+}
