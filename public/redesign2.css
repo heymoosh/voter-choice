@@ -614,8 +614,8 @@
   }
   .delegation .ws-ballot .b-issues-btn {
     background: var(--paper);
-    border: 1px solid var(--civic-soft);
-    color: var(--civic);
+    border: 1px solid var(--brand-soft);
+    color: var(--brand);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -625,9 +625,9 @@
     white-space: nowrap;
   }
   .delegation .ws-ballot .b-issues-btn:hover {
-    background: var(--civic);
+    background: var(--brand);
     color: var(--paper-2);
-    border-color: var(--civic);
+    border-color: var(--brand);
   }
   .delegation .ws-ballot .b-issues-list {
     list-style: none;
@@ -648,7 +648,7 @@
   .delegation .ws-ballot .b-issues-list li .n {
     font-family: var(--mono);
     font-size: 11px;
-    color: var(--civic);
+    color: var(--brand);
     font-weight: 600;
     flex: 0 0 auto;
   }
@@ -716,7 +716,11 @@
   font-size: 10.5px;
   letter-spacing: 0.16em;
   font-weight: 700;
-  color: var(--civic);
+  /* .ti-place has no other call site (confirmed by grep across src/) —
+     it only ever renders inside DelegationWorkspace's .delegation scope,
+     so the base rule can read --brand directly rather than needing a
+     .delegation .ti-place override. */
+  color: var(--brand);
   padding-top: 6px;
   white-space: nowrap;
 }
@@ -817,6 +821,14 @@
    every .linklike call site. This harmonizes all of them to the Keystone
    navy brand color. */
 .bf-app .linklike {
+  color: var(--bf-brand);
+}
+
+/* ---- .be-eyebrow (BudgetModal, EditIssuesModal, HandoffModal) — same
+   leak as .linklike above: the shared kicker-label rule reads --civic with
+   no remap covering these three modals, so it rendered legacy green
+   instead of navy everywhere inside .bf-app. ---- */
+.bf-app .be-eyebrow {
   color: var(--bf-brand);
 }
 
