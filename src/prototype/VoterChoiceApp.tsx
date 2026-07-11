@@ -5055,15 +5055,18 @@ function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
         <button className="sp-back" onClick={onBack}>← Back</button>
         {/* sp-mast groups kicker+h1+dek as one masthead unit, matching
             screens-statics.jsx's StaticPageVC nesting (design-handoff/
-            keystone-canvas/src/screens-statics.jsx) — a pure structural
-            wrapper, no new styling: the per-page Bold Flag skins already
-            style sp-eyebrow/sp-title/sp-dek via descendant selectors. */}
+            keystone-canvas/src/screens-statics.jsx) verbatim: sp-kicker,
+            a bare h1, and "dek" (not sp-eyebrow/sp-title/sp-dek — the
+            08a-about STRUCTURAL_PROBES class-diff in scripts/design/
+            parity-gate.ts checks for these exact tokens). The per-page
+            Bold Flag skins style them via descendant selectors
+            (.sp-mast h1 for the title). */}
         <div className="sp-mast">
-          <div className="sp-eyebrow">{eyebrow}</div>
-          <h1 className="sp-title">{title}</h1>
-          {dek && <p className="sp-dek">{dek}</p>}
+          <div className="sp-kicker">{eyebrow}</div>
+          <h1>{title}</h1>
+          {dek && <p className="dek">{dek}</p>}
         </div>
-        <article className="sp-article">{children}</article>
+        <article className="sp-prose">{children}</article>
       </div>
     </div>
   );

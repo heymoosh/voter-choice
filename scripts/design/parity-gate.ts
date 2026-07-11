@@ -443,12 +443,15 @@ const STRUCTURAL_PROBES: Probe[] = [
     componentName: "StaticPageVC",
     note:
       "The shared shell every static page (About/How it works/Privacy/Tip jar) renders " +
-      "through — repo's StaticPage (VoterChoiceApp.tsx) reuses '.sp-wrap'/'.sp-back' literally " +
-      "but flattens the canvas's sp-mast/sp-kicker/dek grouping into flat sp-eyebrow/sp-title, " +
-      "and renders 'sp-article' instead of 'sp-prose' for the body — a real, confirmed partial " +
-      "port. Probed once here (rather than once per static-page scenario) since all four share " +
-      "this exact component; see the STRUCTURAL_WAIVERS entries for 08b/08c cross-referencing " +
-      "this probe instead of duplicating it (08d-tipjar now has its own marker probe below).",
+      "through — repo's StaticPage (VoterChoiceApp.tsx) reuses '.sp-wrap'/'.sp-back'/'.sp-mast' " +
+      "literally. FIXED (wt/keystone-21-statics-shell): the class vocabulary inside sp-mast was " +
+      "renamed to match the canvas verbatim — sp-eyebrow/sp-title/sp-dek/sp-article → " +
+      "sp-kicker/(bare h1)/dek/sp-prose (public/prototype-c.css's base + per-page Bold Flag skin " +
+      "blocks updated to match); sp-inner stays as an extra wrapper div the canvas doesn't have " +
+      "(no design class check fails on it — extras never fail this probe kind). Probed once here " +
+      "(rather than once per static-page scenario) since all four share this exact component; " +
+      "see the STRUCTURAL_WAIVERS entries for 08b/08c cross-referencing this probe instead of " +
+      "duplicating it (08d-tipjar now has its own marker probe below).",
   },
   {
     kind: "class-diff",
