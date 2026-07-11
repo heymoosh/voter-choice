@@ -39,12 +39,25 @@ export function IntakeView({
     },
   });
 
+  // Canvas's IqShell renders a real "Step 1 of 3 · ..." label that tracks
+  // where the conversation actually is (screens-intake.jsx's IntakeAsk /
+  // IntakePropose / IntakeLocked each pass their own `step` string to the
+  // shared shell) — not a hardcoded string. Same three states, driven by
+  // the same convo/confirmingLock state IssueConversation and IntakeLocked
+  // already switch on below.
+  const step = confirmingLock
+    ? t("intake.stepReady")
+    : convo.issues.length > 0
+      ? t("intake.stepRefine")
+      : t("intake.stepAsk");
+
   return (
     <>
       <AppNav />
       <div className="coldopen">
         <div className="co-context">
           <b>{address}</b> · {contextNote || "your representatives"}
+          <span className="step">{step}</span>
         </div>
 
         <div className="msg ai">

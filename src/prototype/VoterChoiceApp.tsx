@@ -326,7 +326,10 @@ const TRANSLATIONS = {
       issueInstruction:
         'Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking to me below and I\'ll adjust them.',
       sendBtn: 'Send →',
-      inputHint: 'Your issue list stays in your browser until you lock it in',
+      inputHint: 'Nothing leaves your browser until you lock these in',
+      stepAsk: 'Step 1 of 3 · your issues',
+      stepRefine: 'Step 1 of 3 · refine',
+      stepReady: 'Step 1 of 3 · ready',
       placeholderFirst: "Things that have been on your mind. Frustrations, hopes, fights you've watched in your community…",
       placeholderFollow: "Tell me more about what you value, ask why I picked these, or add what I missed…",
       chip1: "That's not quite right — let me explain",
@@ -843,7 +846,10 @@ const TRANSLATIONS = {
       issueInstruction:
         'Usa las flechas para reordenar · haz clic en un nombre para renombrar · Eliminar para borrar un tema · o sigue hablando conmigo abajo y los ajustaré.',
       sendBtn: 'Enviar →',
-      inputHint: 'Tu lista de temas queda en tu navegador hasta que la confirmes',
+      inputHint: 'Nada sale de tu navegador hasta que confirmes estos temas',
+      stepAsk: 'Paso 1 de 3 · tus temas',
+      stepRefine: 'Paso 1 de 3 · refinar',
+      stepReady: 'Paso 1 de 3 · listo',
       placeholderFirst: 'Las cosas que han estado en tu mente. Frustraciones, esperanzas, peleas que has visto en tu comunidad…',
       placeholderFollow: 'Cuéntame más sobre lo que valoras, pregunta por qué elegí estos, o agrega lo que olvidé…',
       chip1: 'Eso no está del todo bien — déjame explicar',
@@ -1349,7 +1355,23 @@ function AppNav({ onBrandClick }) {
   const { openSettings, navigate, current } = nav;
 
   return (
-    <nav className="app-nav" data-current={current || 'home'} aria-label="Main">
+    <>
+      {/* Canvas's IqShell/SCNav shell renders this tricolor strip above every
+          screen's nav — the app used to re-render it per-screen (orientation,
+          the 4 statics pages, PolisEntry), leaving it missing everywhere else
+          AppNav is used (intake, delegation overview, error states). Mounted
+          once here instead so every AppNav caller gets it automatically.
+          AppNav itself is shared with the legacy ballot app (App() in this
+          file also calls it, e.g. from ColdOpenView) — .app-nav .flagbar is
+          display:none by default and only shown `.bf-app .app-nav .flagbar`
+          (prototype.css), so the legacy experience (no .bf-app ancestor)
+          never sees it. */}
+      <div className="flagbar" aria-hidden="true">
+        <i></i>
+        <i></i>
+        <i></i>
+      </div>
+      <nav className="app-nav" data-current={current || 'home'} aria-label="Main">
       <div
         className="brand"
         onClick={onBrandClick || (() => navigate('home'))}
@@ -1391,6 +1413,7 @@ function AppNav({ onBrandClick }) {
         </button>
       </div>
     </nav>
+    </>
   );
 }
 

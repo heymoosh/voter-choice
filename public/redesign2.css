@@ -26,6 +26,11 @@
   --tag-bg: oklch(0.95 0.006 260);
   --bf-brand: oklch(0.4 0.155 262);
   --bf-brand-2: oklch(0.31 0.145 262);
+  /* Same hue-262 soft tint .rep-card already uses for --civic-soft under
+     its own local navy remap — reused here as the app-wide navy "soft"
+     token (canvas's --brand-soft) for anything outside .rep-card that
+     needs a light navy tint (e.g. the user chat bubble below). */
+  --bf-brand-soft: oklch(0.94 0.04 262);
   background: var(--paper);
   /* Short-content stages (e.g. the honest error states in App2.tsx) don't
      fill the viewport on their own — without this, body's own un-scoped
@@ -800,6 +805,19 @@
   font-size: 14px;
   cursor: pointer;
   padding: 0 0 0 6px;
+}
+/* Bold Flag / Keystone: .linklike is a shared secondary-action control
+   (DelegationWorkspace's "See where you stand", IntakeLocked's "Keep
+   talking", IssueDeltaBanner's "dismiss", SeatChat/RepCard/HeadToHead's
+   budget-options reveal). Its base rule above reads --civic, which .bf-app
+   deliberately leaves as legacy green (see the .bf-app block's own
+   comment) — so it already rendered correctly navy wherever it happened to
+   sit inside a locally-remapped-navy scope (.rep-card, .cmp, .amend-modal)
+   but stayed green everywhere else, an inconsistency confirmed by reading
+   every .linklike call site. This harmonizes all of them to the Keystone
+   navy brand color. */
+.bf-app .linklike {
+  color: var(--bf-brand);
 }
 
 /* ============================================================
@@ -2178,6 +2196,67 @@
   font-size: 10.5px;
   color: var(--ink-2);
   margin-top: 1px;
+}
+
+/* ---- shared intake control accents — Bold Flag / Keystone chrome pass ----
+   prototype.css's .co-input .send / .themes-card .th-foot .lock and
+   .theme-row .rank all predate the .bf-app foundation and read --civic
+   directly (green app-wide, per .bf-app's own comment above), so the
+   intake composer's send/lock CTA and the issue-review card's numbered
+   rank chips rendered civic-green instead of matching the canvas source.
+   Verified against design-handoff/keystone-canvas/src/intake.css directly:
+   .iq-send { background: var(--brand) } confirms the CTA is brand-navy;
+   .iq-rank { color: var(--ink-3) } confirms the rank number is neutral
+   grey, NOT brand — a genuine second, different bug (not just a
+   --civic-vs-bf-brand swap). Scoped under .bf-app since prototype.css is shared
+   with the legacy ballot app, which must keep its own civic-green intact. */
+.bf-app .co-input .send {
+  background: var(--bf-brand);
+}
+.bf-app .themes-card .th-foot .lock {
+  background: var(--bf-brand);
+}
+.bf-app .themes-card .th-foot .lock:hover:not(:disabled) {
+  background: var(--bf-brand-2);
+}
+.bf-app .theme-row .rank {
+  color: var(--ink-3);
+}
+
+/* ---- intake context-bar step indicator (canvas: .iq-ctx .step) ----
+   screens-intake.jsx's IqShell always renders a right-aligned "Step 1 of 3
+   · ..." label next to the address/jurisdiction line; the repo's
+   .co-context had no equivalent element at all. .co-context is already
+   `display:flex` (prototype.css), so margin-left:auto right-aligns this
+   new child the same way canvas does. Scoped under .bf-app for the same
+   shared-stylesheet reason as the block above — IntakeView (App2-only) is
+   the only caller that renders a .step child today. */
+.bf-app .co-context .step {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--bf-brand);
+}
+
+/* ---- chat "YOU" bubble — Bold Flag / Keystone parity ----
+   prototype.css's .msg.user .bubble uses `background: var(--ink); color:
+   var(--paper)` (near-black on white) everywhere, civic and Keystone
+   alike. Canvas's own intake.css renders the user bubble light-blue on
+   dark-navy text instead: `.iq-msg.user .iq-bubble { background:
+   var(--brand-soft); border: 1px solid oklch(0.84 0.05 262); color:
+   var(--brand-2); }` and `.iq-msg.user .iq-who { color: var(--brand); }`.
+   Scoped under .bf-app so the legacy ballot app's own near-black bubble
+   (never part of the Keystone canvas) is untouched. */
+.bf-app .msg.user .bubble {
+  background: var(--bf-brand-soft);
+  border: 1px solid oklch(0.84 0.05 262);
+  color: var(--bf-brand-2);
+}
+.bf-app .msg.user .who {
+  color: var(--bf-brand);
 }
 
 /* ---------- Orientation interstitial — Bold Flag / Keystone parity ----------
