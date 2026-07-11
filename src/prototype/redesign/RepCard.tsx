@@ -52,6 +52,44 @@ function isResearchedBasis(seat) {
   );
 }
 
+/** Top named-industry labels from donorCoalition, same slice FunderBars'
+ * canvas variant uses for its industry rows (industries.slice(0, n)) —
+ * the generic (non-issue-PAC) slices, in data order. */
+export function topFundingIndustries(donorCoalition, limit = 3) {
+  return (donorCoalition || [])
+    .filter((s) => s && !s.isIssuePAC && s.label)
+    .slice(0, limit)
+    .map((s) => s.label);
+}
+
+/** Canvas's collapsed-glance teaser sentence (screens-results.jsx's
+ * .money-detail/.md-who: "{pac}% PAC-funded · top: {industries}") — rides
+ * alongside MedianChip, not swapped for it. Honest-data: each half only
+ * renders when its data is present; renders nothing when neither is. */
+function MoneyTeaser({ fundingMix, donorCoalition }) {
+  const { t } = useI18n();
+  const pacPct = fundingMix?.pac;
+  const hasPac = typeof pacPct === "number";
+  const industries = topFundingIndustries(donorCoalition);
+  const hasIndustries = industries.length > 0;
+  if (!hasPac && !hasIndustries) return null;
+  const html = [
+    hasPac && t("repCard.moneyPacFunded", { pct: escapeHtml(pacPct) }),
+    hasIndustries &&
+      t("repCard.moneyTopIndustries", {
+        industries: escapeHtml(industries.join(", ")),
+      }),
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return (
+    <span
+      className="rc-money-teaser"
+      dangerouslySetInnerHTML={{ __html: html }}
+    />
+  );
+}
+
 /** Party display metadata, keyed by the raw party name from the data source.
  * A function (not a module-level const) because the display name needs
  * `t()` — party labels are user-facing and must translate. */
@@ -786,9 +824,13 @@ export function RepCard({
           label + proportional small/large/PAC bar + total $, canvas's
           compact .money-top one-liner — screens-results.jsx:271-280) that
           expands into the same FunderBars panel canvas's FunderPanel
-          shows (screens-results.jsx:258-281). MedianChip rides as a second
-          line (dashed-rule separated, like canvas's .money-detail) so the
-          real median-comparison feature isn't lost in the compacting. */}
+          shows (screens-results.jsx:258-281). The MoneyTeaser sentence
+          restores canvas's .money-detail/.md-who line ("46% PAC-funded ·
+          top: …", screens-results.jsx:265-266/277-278), dropped when the
+          glance was compacted to one line. MedianChip rides alongside it
+          as a further second line (dashed-rule separated, like canvas's
+          .money-detail) so the real median-comparison feature isn't lost
+          in the compacting either. */}
       <div className={"cv2-disclose " + (moneyOpen ? "open" : "")}>
         <div className="cv2-disclose-lab cv2-money-glance rc-money-glance">
           <span className="rc-money-lab">{t("repCard.fundingInfluence")}</span>
@@ -814,6 +856,10 @@ export function RepCard({
               {formatDollars(cand.totalRaised)}
             </span>
           )}
+          <MoneyTeaser
+            fundingMix={cand.fundingMix}
+            donorCoalition={cand.donorCoalition}
+          />
           {/* Collapsed glance — "Raised vs. the median". Renders the dollar
               amount only (no fabricated baseline) when peerComparison is
               null; here it's gated to skip entirely rather than duplicate

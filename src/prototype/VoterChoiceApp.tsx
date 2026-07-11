@@ -503,6 +503,8 @@ const TRANSLATIONS = {
       raisedWord: 'raised',
       smallDonorsMix:
         '{small}% small donors · {large}% large donors · {pac}% PACs',
+      moneyPacFunded: '<b>{pct}% PAC-funded</b>',
+      moneyTopIndustries: 'top: {industries}',
       hide: 'Hide',
       showDetails: 'Show details',
       fundersAndInfluence: 'Funders & influence',
@@ -1043,6 +1045,8 @@ const TRANSLATIONS = {
       raisedWord: 'recaudado',
       smallDonorsMix:
         '{small}% pequeños donantes · {large}% grandes donantes · {pac}% PACs',
+      moneyPacFunded: '<b>{pct}% financiado por PACs</b>',
+      moneyTopIndustries: 'principales: {industries}',
       hide: 'Ocultar',
       showDetails: 'Ver detalles',
       fundersAndInfluence: 'Financiadores e influencia',

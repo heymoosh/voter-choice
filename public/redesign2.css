@@ -2970,6 +2970,21 @@
   color: var(--ink);
   white-space: nowrap;
 }
+/* canvas's .money-detail/.md-who teaser sentence (screens.css:410-412) —
+   same dashed-rule second-line treatment as .rc-money-median below, since
+   both are "detail" rows stacked under the money-top glance row. */
+.rep-card .rc-money-teaser {
+  width: 100%;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--rule-2);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.rep-card .rc-money-teaser b {
+  color: var(--ink-2);
+  font-weight: 600;
+}
 .rep-card .rc-money-median {
   width: 100%;
   padding-top: 8px;
