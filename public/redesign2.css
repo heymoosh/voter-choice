@@ -806,13 +806,21 @@
    PORT of design-handoff/keystone-canvas/src/screens-polis.jsx +
    polis.css → PolisEntry/PolisMap. Classes are the canvas's, verbatim.
    Design tokens (--brand/--keep/--replace) the canvas authored for the
-   Bold Flag white ground are mapped onto the shipped warm-palette tokens,
-   scoped to .pe-screen — same pattern candidates.css uses for HeadToHead
-   (the MoneyGap precedent), so this rides the shipped system with no new
-   global palette. */
+   Bold Flag white ground.
+   --brand/--brand-2 point at the app-wide --bf-brand/--bf-brand-2 tokens
+   (.bf-app above) rather than --civic: this screen only ever renders
+   inside App2, which is always under #root.bf-app, so --bf-brand is
+   already in scope. --civic was the pre-foundation choice (PR #237
+   predates .bf-app, built on the same "remap --civic locally" pattern
+   candidates.css's HeadToHead uses) but .bf-app's own comment is explicit
+   that --civic is LEFT UNTOUCHED app-wide — it doubles as the "keep"
+   green elsewhere — so reading it here resolved to the global green civic
+   default, not navy: brand accents (flagbar, buttons, invite-card rail)
+   rendered civic-green instead of the canvas's navy. --keep/--replace are
+   unaffected (already independent of --civic). */
 .pe-screen {
-  --brand: var(--civic);
-  --brand-2: var(--civic-2);
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
   --keep: oklch(0.44 0.115 159);
   --replace: var(--vote-red);
 }

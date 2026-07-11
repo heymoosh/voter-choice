@@ -462,6 +462,31 @@ const STRUCTURAL_PROBES: Probe[] = [
       "EditRescored's ad-list/ad-row/ad-race/ad-score/ad-revisit ledger, the same documented " +
       "precedent as MoneyGap.tsx and HeadToHead.tsx.",
   },
+  {
+    kind: "class-diff",
+    scenarioId: "10a-polis-entry",
+    domSelector: ".pe-screen",
+    designFile: "design-handoff/keystone-canvas/src/screens-polis.jsx",
+    componentName: "PolisEntry",
+    // Root wrapper is renamed "screen" → "pe-screen" (confirmed by reading
+    // both sides directly — screens-polis.jsx's PolisEntry root carries the
+    // canvas's generic multi-artboard "screen" class; PolisEntry.tsx's own
+    // docstring explains the rename: local --brand/--keep/--replace tokens
+    // scoped to .pe-screen specifically, not the shared chrome class every
+    // other canvas artboard also uses). Every other class is identical
+    // (confirmed by a literal class-token diff of both PolisEntry function
+    // bodies: zero mismatches beyond this one root rename).
+    ignoreMissing: ["screen"],
+    note:
+      "PolisEntry.tsx's own docstring: 'PORT of design-handoff/keystone-canvas/src/screens-" +
+      "polis.jsx → PolisEntry ... markup/class names are the design's' — SCNav swapped for " +
+      "AppNav (the app's real nav, same substitution every other ported full screen makes) is " +
+      "the only non-cosmetic delta; every pe-*/ps-*/flagbar/btn-primary/go/no/k/meta class is " +
+      "verbatim. Landed via PR #237; this probe genuinely fails (selector not found at all, " +
+      "every design class reported missing) on any tree that predates it, since PolisEntry.tsx " +
+      'and its .pe-screen root don\'t exist there — App2.tsx has no stage==="polisEntry" branch ' +
+      "and the workspace's completion link still jumps straight to the standing report.",
+  },
   // ---------------------------------------------------------------------
   // Marker probes (a2) — added STOP-SHIP 2026-07-09 for the 3 surfaces
   // previously waived outright in STRUCTURAL_WAIVERS because their repo
@@ -559,10 +584,11 @@ const STRUCTURAL_PROBES: Probe[] = [
 ];
 
 /**
- * Scenarios with NO structural probe, and why. Every one of the 24 gateable
- * scenarios (all of SCENARIOS except 10a-polis-entry/10b-polis-contribute/
- * 11a-fieldmoneygap/11b-scalestates, none of which are automatable at all —
- * see each one's own note in parity-gallery-scenarios.ts) now resolves to
+ * Scenarios with NO structural probe, and why. Every one of the 25 gateable
+ * scenarios (all of SCENARIOS except 10b-polis-contribute/11a-fieldmoneygap/
+ * 11b-scalestates, none of which are automatable at all — see each one's
+ * own note in parity-gallery-scenarios.ts; 10a-polis-entry moved into
+ * STRUCTURAL_PROBES below once PR #237 made it automatable) now resolves to
  * exactly one of STRUCTURAL_PROBES above (class-diff or marker) or this
  * map — silently skipping a scenario (the pre-existing "24 of 27 uncovered,
  * unexplained" state this file's own header used to describe) is exactly
@@ -1269,6 +1295,36 @@ const CONTENT_PROBES: ContentProbe[] = [
       "other Privacy-page rows (Your address, Chat conversations, What we cannot provide, " +
       "Contact) were NOT part of that ruling — left as the repo's existing copy per this task's " +
       "explicit instruction not to invent an answer for an unruled row.",
+  },
+  {
+    scenarioId: "10a-polis-entry",
+    assertions: [
+      {
+        text: "Your scorecard's ready.",
+        description:
+          "the done-state h1 — canvas's PolisEntry (screens-polis.jsx) renders this verbatim",
+      },
+      {
+        text: "See where you stand.",
+        description: "the invite-card h3",
+      },
+      {
+        text: "You just judged your delegation on the record, not the party.",
+        description: "the invite-card body, first sentence",
+      },
+      {
+        text: "No thanks",
+        description:
+          "the skip control's label (button.no, full text 'No thanks — I'm done', split before " +
+          "the em-dash)",
+      },
+    ],
+    note:
+      "Added alongside PR #237's PolisEntry build. The class-diff probe above already covers " +
+      "the class vocabulary; this locks in the actual copy (seatsCount-driven decidedLine — " +
+      "canvas's own hardcoded 'Both seats decided.' — is deliberately NOT asserted here, per " +
+      "PolisEntry.tsx's own docstring: wired from real seat data instead, matching the seat-" +
+      "count-from-real-data convention used elsewhere).",
   },
 ];
 

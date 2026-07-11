@@ -14,6 +14,7 @@ import { type Page } from "@playwright/test";
 import {
   mockDelegation,
   mockDelegationWithChallengers,
+  mockSeatRaceData,
   mockResearch,
   mockPolis,
   mockCounters,
@@ -1132,18 +1133,62 @@ export const SCENARIOS: Scenario[] = [
     refFile: "10a-polis-entry.png",
     label: "Polis — entry point",
     files: [
-      "src/prototype/redesign/DelegationWorkspace.tsx",
+      "src/prototype/redesign/PolisEntry.tsx",
       "src/prototype/redesign/App2.tsx",
+      "public/redesign2.css",
     ],
-    automatable: "no",
+    automatable: "yes",
     note:
-      "NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — " +
-      'data-testid="polis-entry-see-standing") isn\'t merged to main yet (PR #237); it ' +
-      "replaces today's inline '.all-done … where you stand' link, which currently jumps " +
-      "straight to the standing report with no interstitial. A prior 'proxy' capture stopped " +
-      "at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas " +
-      "ref — a screen it never actually reaches — which silently false-passed (STOP-SHIP " +
-      "2026-07-09 finding). Genuinely not gradable until #237 lands.",
+      "PolisEntry.tsx (canvas's dedicated invite/preview screen, " +
+      'data-testid="polis-entry-see-standing") landed via PR #237 — the workspace\'s ' +
+      "'.all-done … where you stand' completion link now opens this interstitial instead of " +
+      "jumping straight to the standing report (the false-pass this scenario used to document, " +
+      "STOP-SHIP 2026-07-09, is resolved: capture() reaches the real screen, not an unclicked " +
+      "proxy link). capture() verdicts every seat, follows that link, and stops at PolisEntry " +
+      "itself — one step short of goToStanding()'s final click into the real standing report. " +
+      "Also fixed here: PolisEntry.tsx's .pe-screen predates the app-wide Bold Flag foundation " +
+      "(PR #237 was built before it) and pointed its --brand/--brand-2 tokens at --civic, which " +
+      ".bf-app's own comment documents as deliberately LEFT untouched app-wide (it still doubles " +
+      "as the 'keep' green) — so PolisEntry's flagbar/buttons/invite-rail rendered civic-green " +
+      "instead of the canvas's navy. Repointed at --bf-brand/--bf-brand-2 (public/redesign2.css).",
+    async capture(page) {
+      await mockDelegation(page);
+      await mockSeatRaceData(page);
+      await mockResearch(page);
+      await mockPolis(page, true);
+      await mockCounters(page);
+      await reachWorkspace(page);
+      // Verdict every seat — PolisEntry only renders once the whole
+      // delegation has a verdict (App2.tsx's ".all-done" completion link).
+      // Duplicated from goToStanding (e2e/helpers/redesign-mocks.ts) rather
+      // than reusing it directly: goToStanding drives one step further,
+      // clicking through PolisEntry's own "See where I stand" CTA into the
+      // real standing report, but this scenario needs to stop and shoot
+      // PolisEntry itself.
+      const rows = page.locator(".b-row");
+      const count = await rows.count();
+      for (let i = 0; i < count; i++) {
+        await rows.nth(i).click();
+        const keep = page
+          .getByRole("button", { name: /Worth keeping/ })
+          .first();
+        await keep.waitFor({ timeout: 15000 });
+        await keep.click();
+        // Let the verdict commit (commitVerdict defers the auto-advance ~600ms).
+        await page.waitForTimeout(700);
+      }
+      // Re-open a seat so the center column (which holds .all-done) is on
+      // screen; on mobile the last verdict closed the overlay.
+      await rows.first().click();
+      const standingLink = page
+        .locator(".all-done")
+        .getByRole("button", { name: /where you stand/ });
+      await standingLink.waitFor({ timeout: 15000 });
+      await standingLink.click();
+      await page
+        .getByTestId("polis-entry-see-standing")
+        .waitFor({ timeout: 15000 });
+    },
   },
   {
     id: "10b-polis-contribute",
