@@ -6,6 +6,29 @@
    shipped prototype.css / prototype-c.css untouched.
    ==================================================== */
 
+/* ---- app-wide Bold Flag / Keystone default (#root.bf-app, set in
+   src/app/page.tsx, scoped to App2 only — the legacy ballot app under
+   NEXT_PUBLIC_BALLOT_ENABLED keeps the civic default from layout.tsx).
+   Same white/navy/red palette .hp-hero (prototype.css) and .ori-body
+   (below) already scope locally, promoted to the whole app so every
+   shared component that reads --paper/--ink/etc. picks it up for free.
+   --civic is left untouched — it doubles as the alignment "keep" green
+   elsewhere in the app; --bf-brand/--bf-brand-2 are new tokens for
+   anything that needs the Keystone navy specifically. ---- */
+.bf-app {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --bf-brand: oklch(0.4 0.155 262);
+  --bf-brand-2: oklch(0.31 0.145 262);
+  background: var(--paper);
+}
+
 /* ---- provenance badge (roll-call vs researched) — canvas's ProvBadge
    unifier, ported from HeadToHead.tsx's .cmp .prov / DelegationOverview.tsx's
    DgProv onto RepCard's own civic-palette scope (no --brand remap needed;
