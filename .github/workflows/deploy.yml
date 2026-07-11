@@ -43,6 +43,14 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # scripts/design/capture-shared.test.ts launches a real headless
+      # browser (not jsdom) to regression-test the scroll-trap capture fix,
+      # so the deploy test run needs Chromium too — mirrors the same step
+      # already in test.yml's unit job (added 2026-07-08; deploy.yml was
+      # missed, which failed every deploy since).
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
       - name: Run tests
         run: npx vitest run
 
