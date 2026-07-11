@@ -227,14 +227,18 @@ textarea {
   color: var(--vote-red);
 }
 .hp-hero h1 {
+  /* Bold Flag / Keystone: canvas's .vh-h1 (home.css) is 40px/1.08, not a
+     display-scale 76px -- the oversized size wrapped this headline to ~6
+     lines and pushed the address card below the fold. */
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 76px;
-  line-height: 0.96;
-  letter-spacing: -0.025em;
-  margin: 0 0 22px;
+  font-size: 40px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
   color: var(--ink);
   text-wrap: balance;
+  max-width: 600px;
 }
 .hp-hero h1 em {
   font-style: italic;
