@@ -56,6 +56,7 @@ CREATE INDEX "lobbying_issue_activity_chamber_idx"
 --> statement-breakpoint
 CREATE INDEX "lobbying_issue_activity_period_idx"
   ON "lobbying_issue_activity" ("filing_year", "filing_period");
+--> statement-breakpoint
 
 -- ---------------------------------------------------------------------------
 -- member_civic_positions — Financial Disclosure Schedule E ("Positions Held

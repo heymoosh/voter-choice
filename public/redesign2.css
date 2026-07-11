@@ -6,6 +6,81 @@
    shipped prototype.css / prototype-c.css untouched.
    ==================================================== */
 
+/* ---- app-wide Bold Flag / Keystone default (#root.bf-app, set in
+   src/app/page.tsx, scoped to App2 only — the legacy ballot app under
+   NEXT_PUBLIC_BALLOT_ENABLED keeps the civic default from layout.tsx).
+   Same white/navy/red palette .hp-hero (prototype.css) and .ori-body
+   (below) already scope locally, promoted to the whole app so every
+   shared component that reads --paper/--ink/etc. picks it up for free.
+   --civic is left untouched — it doubles as the alignment "keep" green
+   elsewhere in the app; --bf-brand/--bf-brand-2 are new tokens for
+   anything that needs the Keystone navy specifically. ---- */
+.bf-app {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  --bf-brand: oklch(0.4 0.155 262);
+  --bf-brand-2: oklch(0.31 0.145 262);
+  /* Same hue-262 soft tint .rep-card already uses for --civic-soft under
+     its own local navy remap — reused here as the app-wide navy "soft"
+     token (canvas's --brand-soft) for anything outside .rep-card that
+     needs a light navy tint (e.g. the user chat bubble below). */
+  --bf-brand-soft: oklch(0.94 0.04 262);
+  background: var(--paper);
+  /* Short-content stages (e.g. the honest error states in App2.tsx) don't
+     fill the viewport on their own — without this, body's own un-scoped
+     civic/cream background (declared on body itself, outside .bf-app's
+     scope) shows through below the fold. */
+  min-height: 100vh;
+}
+
+/* ---- provenance badge (roll-call vs researched) — canvas's ProvBadge
+   unifier, ported from HeadToHead.tsx's .cmp .prov / DelegationOverview.tsx's
+   DgProv onto RepCard's own civic-palette scope (no --brand remap needed;
+   --civic/--vote-red/--paper-2 already resolve correctly here). ---- */
+.cv2-prov-row {
+  padding: 0 18px;
+  margin-top: -2px;
+}
+.rep-card .prov {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 8px 3px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.rep-card .prov::before {
+  font-size: 9px;
+}
+.rep-card .prov.rollcall {
+  background: var(--civic);
+  color: var(--paper-2);
+  border: 1.5px solid var(--civic);
+}
+.rep-card .prov.rollcall::before {
+  content: "\25C6"; /* filled diamond */
+}
+.rep-card .prov.researched {
+  background: var(--paper-2);
+  color: var(--civic-2);
+  border: 1.5px dashed var(--civic);
+}
+.rep-card .prov.researched::before {
+  content: "\25C7"; /* hollow diamond */
+}
+
 /* ---- seat strip (top of RepCard) ---- */
 .seat-strip {
   display: flex;
@@ -301,6 +376,158 @@
   color: var(--ink);
 }
 
+/* ============================================================
+   SCORECARD PRINT — Bold Flag / Keystone parity (04-scorecard)
+   ScorecardPrintView.tsx keeps its own print-sheet/ballot-list/
+   verdict-row vocabulary (see parity-gate.ts STRUCTURAL_WAIVERS —
+   HANDOFF-EXACT-MATCH.md §4 only asks for behavioral/structural
+   parity, not a literal class port). This block is palette + the
+   missing grayscale-safe score callout, scoped to .print-wrap so
+   no other surface (workspace scorecard pane, .verdict-chip) is
+   touched. Tokens ported from design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"] SCORECARD block.
+   ============================================================ */
+.print-wrap {
+  --scp-brand: oklch(0.4 0.155 262);
+  --scp-keep: oklch(0.44 0.115 159);
+  --scp-keep-ink: oklch(0.32 0.1 159);
+  --scp-keep-line: oklch(0.62 0.1 159);
+  --scp-replace: oklch(0.53 0.205 27);
+  --scp-replace-ink: oklch(0.47 0.18 27);
+}
+.print-wrap .ballot-group .gtitle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--scp-brand);
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+.print-wrap .ballot-group .gtitle::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--rule);
+}
+.print-wrap .br {
+  display: flex;
+  align-items: flex-start;
+}
+.print-wrap .br-main {
+  flex: 1;
+  min-width: 0;
+}
+.print-wrap .br .bx {
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  border-width: 2px;
+}
+.print-wrap .br.verdict-row.keep .bx {
+  border-color: var(--scp-keep-ink);
+  background: var(--scp-keep);
+}
+.print-wrap .br.verdict-row.keep .bx::after {
+  left: 6px;
+  top: 10px;
+  width: 16px;
+  height: 8px;
+  border-left-color: #fff;
+  border-bottom-color: #fff;
+}
+.print-wrap .br.verdict-row.replace .bx {
+  border-color: var(--scp-replace);
+  background: #fff;
+}
+.print-wrap .br.verdict-row.replace .bx::after {
+  left: 4px;
+  top: 1px;
+  color: var(--scp-replace);
+}
+.print-wrap .verdict-print.keep {
+  color: var(--scp-keep-ink);
+  background: oklch(0.93 0.045 159);
+  border-color: var(--scp-keep-line);
+}
+.print-wrap .verdict-print.replace {
+  color: var(--scp-replace-ink);
+  background: #fff;
+  border-color: var(--scp-replace);
+}
+/* the big match-% readout beside each decision (canvas .dec-score) — was
+   missing entirely; the % previously only existed folded into .my-note's
+   prose. Grayscale-safe: leading glyph + color, not color alone. */
+.print-wrap .br-score {
+  flex-shrink: 0;
+  text-align: right;
+  margin-left: 14px;
+}
+.print-wrap .br-score-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 24px;
+  line-height: 1;
+}
+.print-wrap .br-score.good .br-score-pct {
+  color: var(--scp-keep);
+}
+.print-wrap .br-score.good .br-score-pct::before {
+  content: "\2713  ";
+  font-size: 0.55em;
+  vertical-align: 0.2em;
+}
+.print-wrap .br-score.bad .br-score-pct {
+  color: var(--scp-replace);
+}
+.print-wrap .br-score.bad .br-score-pct::before {
+  content: "\26A0  ";
+  font-size: 0.5em;
+  vertical-align: 0.25em;
+}
+.print-wrap .br-score-lab {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+/* "Not on your ballot this year" context row (canvas .dec.notup) — a seat
+   excluded from the scored decisions above, shown de-emphasized with a dash
+   in place of a checkbox/verdict icon and a neutral (not keep/replace) pill. */
+.print-wrap .br.notup {
+  opacity: 0.62;
+}
+.print-wrap .br.notup .bx {
+  border-color: var(--rule);
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.print-wrap .br.notup .bx::before {
+  content: "\2014";
+}
+.print-wrap .verdict-print.notup {
+  color: var(--ink-3);
+  background: var(--tag-bg);
+  border-color: var(--rule);
+}
+/* logistics info grid — canvas's bordered/rounded card (sheet-meta), was a
+   bare underlined grid here */
+.print-wrap .voter-meta.voter-meta-logistics {
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.print-wrap .voter-meta.voter-meta-logistics .cell {
+  background: #fff;
+  padding: 12px 14px;
+}
+
 /* ---- rail done-check centering (shipped tick is pinned low-left) ---- */
 .ws-rail .race-list li.done .ind::after {
   left: 50%;
@@ -579,241 +806,652 @@
   cursor: pointer;
   padding: 0 0 0 6px;
 }
+/* Bold Flag / Keystone: .linklike is a shared secondary-action control
+   (DelegationWorkspace's "See where you stand", IntakeLocked's "Keep
+   talking", IssueDeltaBanner's "dismiss", SeatChat/RepCard/HeadToHead's
+   budget-options reveal). Its base rule above reads --civic, which .bf-app
+   deliberately leaves as legacy green (see the .bf-app block's own
+   comment) — so it already rendered correctly navy wherever it happened to
+   sit inside a locally-remapped-navy scope (.rep-card, .cmp, .amend-modal)
+   but stayed green everywhere else, an inconsistency confirmed by reading
+   every .linklike call site. This harmonizes all of them to the Keystone
+   navy brand color. */
+.bf-app .linklike {
+  color: var(--bf-brand);
+}
+
+/* ============================================================
+   POLISSTAND — KEYSTONE blind agree/disagree/pass step (card fb77d0bb)
+   Literal port of design-handoff/keystone-canvas/src/screens-polis.jsx's
+   PolisStand artboard (polis.css `.ps-*` vocabulary) — class names, copy,
+   and layout ported as-is, NOT re-expressed like PolisClose's `.pr-*`
+   below, because this screen carries no party data to begin with (just
+   agree/disagree/pass reactions) — there's no party-free conflict forcing
+   a rewrite. Two intentional layout deltas from the canvas: (1) the canvas
+   uses a fixed-viewport single-"screen" flex shell (.ps { height:100% });
+   this app renders every stage as a normal scrolling document like every
+   other stage, so `.ps-foot` is a normal in-flow footer bar, not pinned;
+   (2) canvas's shared `.kick`/`.star` kicker classes live in its global
+   screens.css, which this app doesn't import — scoped copies below.
+   ============================================================ */
+.polisstand2 {
+  /* Same local Bold Flag token redefinition as .standing2 below, and for
+     the same reason (redesign2.css is served verbatim from public/, so
+     these survive the minifier's unused-custom-property pruning). */
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --brand: oklch(0.4 0.155 262);
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159); /* agreement green */
+  --replace: oklch(0.53 0.205 27); /* flag red — also the disagree accent */
+  background: var(--paper);
+  min-height: 100vh;
+}
+.ps-wrap {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 30px 40px 40px;
+}
+.polisstand2 .kick {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+}
+.polisstand2 .kick .star {
+  color: var(--replace);
+  margin-right: 4px;
+}
+.ps-k {
+  display: block;
+  margin-bottom: 14px;
+}
+.ps-h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1.06;
+  letter-spacing: -0.022em;
+  margin: 0 0 12px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.ps-h1 em {
+  font-style: italic;
+  color: var(--brand);
+}
+.ps-lede {
+  font-family: var(--serif);
+  font-size: 17.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0 0 24px;
+  max-width: 600px;
+}
+.ps-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.ps-stmt {
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-2);
+  box-shadow: 0 1px 3px rgba(20, 20, 30, 0.06);
+  padding: 18px 20px;
+}
+.ps-stmt.voted {
+  border-color: var(--brand);
+  box-shadow: 0 0 0 2px var(--brand-soft);
+}
+.ps-stmt .q {
+  font-family: var(--serif);
+  font-size: 19px;
+  font-weight: 500;
+  line-height: 1.32;
+  color: var(--ink);
+  margin: 0 0 14px;
+}
+.ps-react {
+  display: flex;
+  gap: 9px;
+}
+.ps-btn {
+  flex: 1;
+  min-height: 46px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1.5px solid var(--rule);
+  background: var(--paper);
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.ps-btn:disabled {
+  cursor: default;
+}
+.ps-btn.agree:hover:not(:disabled) {
+  border-color: var(--keep);
+  color: var(--keep);
+}
+.ps-btn.disagree:hover:not(:disabled) {
+  border-color: var(--replace);
+  color: var(--replace);
+}
+.ps-btn.pass {
+  flex: 0 0 auto;
+  padding: 0 16px;
+  color: var(--ink-3);
+}
+.ps-btn.chosen {
+  background: var(--keep);
+  border-color: var(--keep);
+  color: var(--paper-2);
+}
+.ps-btn.chosen-no {
+  background: var(--paper);
+  border-color: var(--replace);
+  color: var(--replace);
+}
+/* Pass has no canvas-specified "chosen" treatment (the artboard never shows
+   a passed statement) — styled neutral/ink rather than keep-green or
+   replace-red so it doesn't read as a third directional verdict. */
+.ps-btn.chosen-pass {
+  background: var(--ink-3);
+  border-color: var(--ink-3);
+  color: var(--paper-2);
+}
+.ps-recorded {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule-2);
+  font-size: 12.5px;
+  color: var(--ink-3);
+  line-height: 1.5;
+}
+.ps-recorded .rk {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--keep);
+  margin-right: 7px;
+}
+.ps-foot {
+  border-top: 1px solid var(--rule-2);
+  background: var(--paper-2);
+  padding: 16px 30px;
+}
+.ps-foot-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+/* Primary CTA — same --brand/--paper-2 convention as .pr-share (PolisClose),
+   the sibling primary button on this same white Bold Flag surface. */
+.ps-foot .btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--brand);
+  color: var(--paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 20px;
+  min-height: 50px;
+  cursor: pointer;
+}
+.ps-foot .btn-primary:hover {
+  background: var(--brand-2);
+}
+.ps-foot .later {
+  margin-left: auto;
+  font-size: 13.5px;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.ps-foot .prog {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-3);
+}
+
+/* ============================================================
+   STANDING (polis) stage — KEYSTONE "Where you stand" report
+   Ported from design-handoff/design_handoff_voter_choice_redesign/
+   polis.css (the `.pr-*`, `.pm-*`, `.conv-*` vocabulary), migrated
+   onto the Bold Flag palette and made PARTY-FREE (DECISION #116):
+   one population overlap cloud, single-track agreement bars, an
+   honest agree-vs-disagree split — no D/R/I dots, chips, or clusters.
+
+   The whole surface flips to the Bold Flag WHITE ground here (scoped
+   to .standing2 so the rest of the app keeps its warm `--civic`
+   base). The named accent tokens (--brand/--keep/--replace…) are
+   defined globally in globals.css.
+   ============================================================ */
+.standing2 {
+  /* White ballot ground + Bold Flag (Palette B) accents, ported from the
+     Keystone design-handoff and scoped to this surface so the rest of the app
+     keeps its warm `--civic` base. Defined HERE (not globals.css) on purpose:
+     redesign2.css is served verbatim from public/, so these survive the CSS
+     minifier's unused-custom-property pruning that drops them from globals. */
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --gold: oklch(0.72 0.125 76);
+  --brand: oklch(0.4 0.155 262); /* bold navy-royal — primary action */
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159); /* agreement green */
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27); /* flag red */
+  --replace-soft: oklch(0.94 0.05 27);
+  /* Opinion-map cluster hues — NEUTRAL, party-free (DECISION #116). Three
+     distinct Bold-Flag-family tones (indigo / teal / violet) assigned to
+     Group A/B/C by SIZE, never to any party. Deliberately NOT the canvas's
+     red-vs-blue pairing so the map can never be misread as D-vs-R. */
+  --cluster-a: oklch(0.52 0.16 264); /* indigo */
+  --cluster-b: oklch(0.58 0.11 195); /* teal */
+  --cluster-c: oklch(0.55 0.16 320); /* violet */
+  background: var(--paper);
+}
+/* ---- Polis entry (invite/preview) stage ----
+   PORT of design-handoff/keystone-canvas/src/screens-polis.jsx +
+   polis.css → PolisEntry/PolisMap. Classes are the canvas's, verbatim.
+   Design tokens (--brand/--keep/--replace) the canvas authored for the
+   Bold Flag white ground.
+   --brand/--brand-2 point at the app-wide --bf-brand/--bf-brand-2 tokens
+   (.bf-app above) rather than --civic: this screen only ever renders
+   inside App2, which is always under #root.bf-app, so --bf-brand is
+   already in scope. --civic was the pre-foundation choice (PR #237
+   predates .bf-app, built on the same "remap --civic locally" pattern
+   candidates.css's HeadToHead uses) but .bf-app's own comment is explicit
+   that --civic is LEFT UNTOUCHED app-wide — it doubles as the "keep"
+   green elsewhere — so reading it here resolved to the global green civic
+   default, not navy: brand accents (flagbar, buttons, invite-card rail)
+   rendered civic-green instead of the canvas's navy. --keep/--replace are
+   unaffected (already independent of --civic). */
+.pe-screen {
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
+  --keep: oklch(0.44 0.115 159);
+  --replace: var(--vote-red);
+  /* Cluster hues for the decorative map teaser — same party-free values as
+     .standing2's real map (DECISION #116); duplicated because .standing2's
+     tokens don't reach this surface. */
+  --cluster-a: oklch(0.52 0.16 264);
+  --cluster-b: oklch(0.58 0.11 195);
+  --cluster-c: oklch(0.55 0.16 320);
+}
+.pe-screen .ps {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.pe-screen .flagbar {
+  height: 4px;
+  display: flex;
+  flex: 0 0 auto;
+}
+.pe-screen .flagbar i {
+  flex: 1;
+}
+.pe-screen .flagbar i:nth-child(1) {
+  background: var(--brand);
+}
+.pe-screen .flagbar i:nth-child(2) {
+  background: var(--paper);
+}
+.pe-screen .flagbar i:nth-child(3) {
+  background: var(--replace);
+}
+.pe-screen .ps-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 30px 30px 60px;
+}
+.pe-screen .ps-inner {
+  width: 100%;
+  max-width: 720px;
+}
+.pe-screen .btn-primary {
+  background: var(--brand);
+  color: var(--paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 15px;
+  padding: 14px 22px;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  white-space: nowrap;
+}
+.pe-screen .btn-primary:hover {
+  background: var(--brand-2);
+}
+
+.pe-done {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.pe-check {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: var(--keep);
+  color: var(--paper-2);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.pe-done h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+  color: var(--ink);
+}
+.pe-done p {
+  font-size: 15px;
+  color: var(--ink-2);
+  margin: 6px 0 0;
+}
+.pe-actions {
+  display: flex;
+  gap: 11px;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+}
+.pe-pdf {
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: 1.5px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.pe-invite {
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 26px;
+  align-items: center;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--paper-2);
+  box-shadow: var(--shadow-soft);
+  padding: 22px;
+  position: relative;
+  overflow: hidden;
+}
+.pe-invite::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  background: linear-gradient(var(--brand), var(--replace));
+}
+@media (max-width: 700px) {
+  .pe-invite {
+    grid-template-columns: 1fr;
+  }
+}
+.pe-map .pm {
+  height: 168px;
+  border-radius: 12px;
+}
+.pe-map .pm-glab {
+  display: none;
+}
+.pe-invite-body {
+  min-width: 0;
+}
+.pe-invite-body .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--brand);
+}
+.pe-invite-body h3 {
+  font-family: var(--serif);
+  font-size: 25px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 7px 0 8px;
+  color: var(--ink);
+}
+.pe-invite-body p {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0 0 16px;
+  max-width: 540px;
+}
+.pe-cta {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.pe-cta .go {
+  min-height: 48px;
+  padding: 0 20px;
+  border-radius: 10px;
+  border: none;
+  background: var(--brand);
+  color: var(--paper-2);
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pe-cta .no {
+  font-size: 13.5px;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+.pe-cta .meta {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+/* ---- opinion-map preview (shared shape: PolisEntry's decorative teaser
+   today; PolisReport's real map is a separate, not-yet-built surface) ---- */
+.pm-wrap {
+  width: 100%;
+}
+.pm {
+  position: relative;
+  width: 100%;
+  height: 320px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, var(--paper-2) 0%, var(--paper) 100%);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+.pm-wrap.compact .pm {
+  height: 220px;
+}
+.pm-blob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.12;
+  filter: blur(2px);
+}
+.pm-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.62;
+  box-shadow: 0 1px 2px oklch(0.2 0.03 255 / 0.25);
+}
+.pm-you {
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--ink);
+  border: 3px solid var(--paper-2);
+  box-shadow:
+    0 0 0 3px var(--ink),
+    0 3px 8px oklch(0.2 0.03 255 / 0.4);
+  z-index: 3;
+}
+.pm-you-lab {
+  position: absolute;
+  transform: translate(14px, -50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--ink);
+  padding: 2px 8px;
+  border-radius: 999px;
+  z-index: 3;
+  white-space: nowrap;
+}
 
 /* ---- standing (polis) stage ---- */
 .standing2-wrap {
-  max-width: 1200px;
+  max-width: 860px;
   margin: 0 auto;
-  padding: 24px 28px 100px;
+  padding: 20px 40px 100px;
 }
 .back2 {
   background: none;
   border: none;
-  color: var(--civic);
+  color: var(--brand);
   font-weight: 600;
   font-size: 13.5px;
   cursor: pointer;
   padding: 6px 0;
-}
-.standing2 .polis {
-  border-top: none;
-  margin-top: 8px;
-  padding-top: 10px;
+  font-family: var(--sans);
 }
 
-.polis-lede .kick {
+/* the report is a plain editorial article, not a card */
+.standing2 .polis.pr {
+  border-top: none;
+  margin-top: 4px;
+}
+.pr-wrap {
+  width: 100%;
+}
+
+/* ---- masthead ---- */
+.pr-mast {
+  padding: 24px 0 26px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 30px;
+}
+.pr-kicker {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--civic);
-  font-weight: 600;
-}
-.polis-lede h2 {
-  font-family: var(--serif);
-  font-size: clamp(32px, 4.5vw, 52px);
-  font-weight: 600;
-  letter-spacing: -0.03em;
-  margin: 10px 0 12px;
-  line-height: 1.08;
-  text-wrap: balance;
-}
-.polis-lede p {
-  font-size: 17px;
-  color: var(--ink-2);
-  margin: 0;
-  max-width: 680px;
-  line-height: 1.55;
-}
-
-/* Two-column: cloud left (wider), stat/bridges right.
-   When bridges panel is absent (.polis-grid--solo), the cloud expands to
-   roughly 65% and the stat panel takes the remaining 35% — giving the cloud
-   real visual mass while keeping the headline percentage legible alongside. */
-.polis-grid {
-  display: grid;
-  grid-template-columns: 1.35fr 1fr;
-  gap: 32px;
-  margin-top: 32px;
-  align-items: start;
-}
-.polis-grid--solo {
-  grid-template-columns: 1.6fr 1fr;
-}
-@media (max-width: 900px) {
-  .polis-grid,
-  .polis-grid--solo {
-    grid-template-columns: 1fr;
-  }
-}
-
-.scatter-wrap {
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: 16px;
-  padding: 20px;
-  box-shadow: var(--shadow-card);
-}
-.scatter {
-  width: 100%;
-  display: block;
-  border-radius: 10px;
-  background: var(--paper);
-}
-.scatter-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 14px;
-  margin-top: 12px;
-}
-.scatter-legend .lg {
+  font-weight: 700;
+  color: var(--replace);
+  margin-bottom: 14px;
   display: flex;
   align-items: center;
-  gap: 7px;
-  font-size: 12px;
-  color: var(--ink-2);
+  gap: 12px;
 }
-.scatter-legend .lg .sw {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
+.pr-kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--replace);
 }
-.scatter-legend .lg.you .sw {
-  border-radius: 2px;
-  outline: 2px solid var(--ink);
-  outline-offset: 1px;
-}
-.scatter-cap {
-  font-size: 12px;
-  color: var(--ink-3);
-  margin-top: 12px;
-  line-height: 1.5;
-}
-
-/* Stat panel — in the solo layout this is the right column, giving the
-   headline percentage room to breathe at a large display size. */
-.overlap-stat {
-  padding: 24px 20px;
-  background: var(--paper-2);
-  border: 1px solid var(--rule);
-  border-radius: 16px;
-  box-shadow: var(--shadow-card);
-}
-.polis-grid--solo .overlap-stat {
-  margin-top: 0;
-  padding: 28px 24px;
-  position: sticky;
-  top: 24px;
-}
-.overlap-head {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.overlap-head .num {
+.pr-mast h1 {
   font-family: var(--serif);
-  font-size: clamp(52px, 6.5vw, 88px);
-  font-weight: 700;
-  color: var(--civic-2);
+  font-weight: 600;
+  font-size: clamp(38px, 5.5vw, 52px);
   line-height: 1;
   letter-spacing: -0.03em;
-}
-.overlap-head p {
-  font-size: 16px;
-  color: var(--ink-2);
   margin: 0;
-  line-height: 1.5;
-}
-.overlap-head p strong,
-.overlap-alt strong {
   color: var(--ink);
-  font-weight: 600;
+  text-wrap: balance;
 }
-.overlap-alt {
-  font-size: 15px;
-  color: var(--ink-2);
-  margin: 0;
-  line-height: 1.5;
+.pr-mast h1 em {
+  font-style: italic;
+  color: var(--brand);
 }
-.you-shares {
-  list-style: none;
-  margin: 16px 0 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 8px;
-}
-.you-shares li {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  color: var(--ink-2);
-  background: oklch(0.95 0.01 85);
-  border-radius: 999px;
-  padding: 3px 10px;
-}
-.you-shares li .pct {
-  font-family: var(--mono);
-  font-weight: 700;
-  color: var(--civic-2);
-  font-size: 11.5px;
-}
-.bridges h3 {
+.pr-lede {
   font-family: var(--serif);
   font-size: 19px;
-  font-weight: 600;
-  margin: 0 0 4px;
-}
-.bridges .sub {
-  font-size: 13px;
-  color: var(--ink-3);
-  margin: 0 0 16px;
-}
-.bridge {
-  border-left: 3px solid var(--civic);
-  padding: 4px 0 4px 15px;
-  margin-bottom: 18px;
-}
-.bridge .stmt {
-  font-family: var(--serif);
-  font-size: 17px;
-  line-height: 1.35;
-  color: var(--ink);
-}
-.bridge .agree {
-  margin-top: 7px;
-  font-size: 12px;
+  line-height: 1.5;
   color: var(--ink-2);
-  display: flex;
-  align-items: center;
-  gap: 9px;
+  margin: 16px 0 0;
+  max-width: 660px;
 }
-.bridge .agree .pct {
-  font-family: var(--mono);
-  font-weight: 700;
-  color: var(--civic-2);
-  font-size: 13px;
-}
-.agree-bar {
-  flex: 1;
-  height: 5px;
-  background: oklch(0.93 0.014 85);
-  border-radius: 999px;
-  overflow: hidden;
-  max-width: 130px;
-}
-.agree-bar span {
-  display: block;
-  height: 100%;
-  background: var(--civic);
-}
+
+/* ---- scope switcher (kept functional, restyled onto the white ground) ---- */
 .polis-scope {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 28px;
+  margin: 0 0 4px;
   flex-wrap: wrap;
 }
 .polis-scope .scope-lab {
@@ -822,26 +1460,23 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-3);
-  font-weight: 600;
+  font-weight: 700;
 }
 .polis-scope .scope-n {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-3);
 }
-.polis-scope .seg,
-.seg2 {
+.polis-scope .seg {
   display: flex;
   gap: 4px;
-  background: oklch(0.93 0.014 85);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
   padding: 3px;
   border-radius: 8px;
+  width: 300px;
 }
-.polis-scope .seg {
-  width: 320px;
-}
-.polis-scope .seg button,
-.seg2 button {
+.polis-scope .seg button {
   flex: 1;
   border: none;
   background: none;
@@ -853,11 +1488,511 @@
   color: var(--ink-3);
   cursor: pointer;
 }
-.polis-scope .seg button.on,
-.seg2 button.on {
-  background: var(--paper-2);
+.polis-scope .seg button.on {
+  background: var(--brand);
+  color: var(--paper-2);
+}
+
+/* ---- section heads ---- */
+.pr-mapsec {
+  margin: 30px 0 8px;
+}
+.pr-maphead,
+.pr-bridgehead {
+  margin: 26px 0 14px;
+}
+.pr-maphead .k,
+.pr-bridgehead .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--replace);
+}
+.pr-maphead h2,
+.pr-bridgehead h2 {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin: 6px 0 0;
   color: var(--ink);
+}
+.pr-bridgehead {
+  margin-top: 34px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule-2);
+}
+.pr-threshold {
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.55;
+  color: var(--ink-3);
+  margin: 8px 0 0;
+  max-width: 640px;
+}
+.pr-threshold b {
+  color: var(--ink-2);
+}
+
+/* ---- opinion map (party-free .pm card) ---- */
+.pm-wrap {
+  width: 100%;
+}
+.pm {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 200 / 100;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background:
+    linear-gradient(var(--rule-2) 1px, transparent 1px) 0 0 / 100% 40px,
+    linear-gradient(90deg, var(--rule-2) 1px, transparent 1px) 0 0 / 40px 100%,
+    var(--paper-2);
+  overflow: hidden;
+}
+.pm-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.pm-field {
+  fill: var(--brand);
+  opacity: 0.07;
+}
+.pm-dot {
+  fill: var(--brand);
+  opacity: 0.55;
+}
+.pm-rlab {
+  font-family: var(--mono);
+  font-size: 3.4px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  fill: var(--ink-3);
+  opacity: 0.72;
+}
+.pm-you-mark {
+  fill: var(--gold);
+  stroke: var(--ink);
+  stroke-width: 1.4;
+}
+.pm-you-lab {
+  position: absolute;
+  transform: translate(10px, -50%);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  background: var(--paper);
+  border: 1px solid var(--ink);
+  padding: 2px 8px;
+  border-radius: 999px;
+  z-index: 3;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ---- real pol.is cluster map (.pm.cluster): PCA + k-means opinion groups ----
+   Soft group fields + per-cluster dots, positioned in container percentages
+   (left/top). Party-free: colours are the neutral --cluster-* tokens above,
+   assigned to Group A/B/C by size — never a party. Scoped to `.pm.cluster` so
+   the single-cloud SVG `.pm-dot`/`.pm-field` styling above is untouched. */
+.pm.cluster .pm-blob {
+  position: absolute;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.14;
+  filter: blur(3px);
+  pointer-events: none;
+}
+.pm.cluster .pm-blob.c0 {
+  background: var(--cluster-a);
+}
+.pm.cluster .pm-blob.c1 {
+  background: var(--cluster-b);
+}
+.pm.cluster .pm-blob.c2 {
+  background: var(--cluster-c);
+}
+.pm.cluster .pm-dot {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.66;
+  box-shadow: 0 1px 2px oklch(0.2 0.03 255 / 0.25);
+}
+.pm.cluster .pm-dot.c0 {
+  background: var(--cluster-a);
+}
+.pm.cluster .pm-dot.c1 {
+  background: var(--cluster-b);
+}
+.pm.cluster .pm-dot.c2 {
+  background: var(--cluster-c);
+}
+.pm.cluster .pm-glab {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  background: oklch(1 0 0 / 0.8);
+  padding: 2px 7px;
+  border-radius: 999px;
+  white-space: nowrap;
+  z-index: 2;
+  pointer-events: none;
+}
+.pm.cluster .pm-you {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  transform: translate(-50%, -50%);
+  background: var(--gold);
+  border: 2.5px solid var(--paper);
+  box-shadow:
+    0 0 0 2.5px var(--ink),
+    0 3px 8px oklch(0.2 0.03 255 / 0.4);
+  z-index: 3;
+  pointer-events: none;
+}
+
+/* legend swatches for the cluster key */
+.pm-key i.c0 {
+  background: var(--cluster-a);
+}
+.pm-key i.c1 {
+  background: var(--cluster-b);
+}
+.pm-key i.c2 {
+  background: var(--cluster-c);
+}
+
+.pm-cap {
+  margin-top: 14px;
+}
+.pm-key {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-bottom: 10px;
+}
+.pm-key span {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.pm-key i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  display: inline-block;
+  background: var(--brand);
+}
+.pm-key .you i {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--gold);
+  outline: 1.5px solid var(--ink);
+  outline-offset: -1px;
+}
+.pm-cap p {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 660px;
+}
+.pm-cap p b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.pm-cap .pm-disc {
+  font-family: var(--sans);
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin-top: 10px;
+}
+
+/* ---- common-ground list ---- */
+.pr-list {
+  display: flex;
+  flex-direction: column;
+}
+.pr-row {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--rule-2);
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 36px;
+  align-items: center;
+}
+.pr-q {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.pr-q .src {
+  display: block;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 8px;
+}
+.pr-stat {
+  text-align: left;
+}
+.pr-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 44px;
+  line-height: 1;
+  color: var(--keep);
+  letter-spacing: -0.02em;
+}
+.pr-pct .ag {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-left: 8px;
+}
+.pr-conv {
+  margin-top: 14px;
+}
+
+/* ---- party-free agreement / split bars ---- */
+.conv {
+  position: relative;
+  height: 26px;
+  margin: 4px 0 0;
+}
+.conv-track {
+  position: absolute;
+  top: 11px;
+  left: 0;
+  right: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--rule-2);
+}
+.conv-fill {
+  position: absolute;
+  top: 11px;
+  left: 0;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--keep-soft);
+}
+.conv-fill.gap {
+  background: var(--rule);
+}
+.conv-dot {
+  position: absolute;
+  top: 4px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2.5px solid var(--paper);
+  transform: translateX(-50%);
+  box-shadow: 0 2px 6px -1px oklch(0.2 0.03 255 / 0.35);
+}
+.conv-dot.agree {
+  background: var(--keep);
+}
+.conv-dot.disagree {
+  background: var(--replace);
+}
+
+/* ---- per-opinion-group convergence bar + chips ----
+   One dot per opinion group (Group A/B/C) on a shared track, coloured with the
+   SAME neutral cluster tokens the opinion map uses (--cluster-a/b/c) so a Group
+   A dot/chip here matches the Group A dots on the map above. Party-free
+   (DECISION #116): these are opinion clusters by answer similarity, never
+   D/R/I. Dots CONVERGE on bridges, SPREAD on divided statements. */
+.conv.groups {
+  margin-top: 10px;
+}
+.conv-fill.neutral {
+  background: var(--rule);
+}
+.conv-dot.c0 {
+  background: var(--cluster-a);
+}
+.conv-dot.c1 {
+  background: var(--cluster-b);
+}
+.conv-dot.c2 {
+  background: var(--cluster-c);
+}
+.pr-split {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+.pr-split .chip {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.pr-split .chip i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+.pr-split .chip.c0 {
+  background: color-mix(in oklch, var(--cluster-a) 12%, var(--paper));
+  color: color-mix(in oklch, var(--cluster-a) 78%, var(--ink));
+}
+.pr-split .chip.c0 i {
+  background: var(--cluster-a);
+}
+.pr-split .chip.c1 {
+  background: color-mix(in oklch, var(--cluster-b) 14%, var(--paper));
+  color: color-mix(in oklch, var(--cluster-b) 82%, var(--ink));
+}
+.pr-split .chip.c1 i {
+  background: var(--cluster-b);
+}
+.pr-split .chip.c2 {
+  background: color-mix(in oklch, var(--cluster-c) 12%, var(--paper));
+  color: color-mix(in oklch, var(--cluster-c) 78%, var(--ink));
+}
+.pr-split .chip.c2 i {
+  background: var(--cluster-c);
+}
+
+/* ---- where it split ---- */
+.pr-fault {
+  margin-top: 34px;
+  padding: 24px 26px;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--paper-2);
+}
+.pr-fault > .k {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.pr-fault h3 {
+  font-family: var(--serif);
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 7px 0 9px;
+  color: var(--ink);
+}
+.pr-fault > p {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 660px;
+}
+.pr-fault .pr-row.split {
+  border-bottom: none;
+  margin-top: 8px;
+  padding-bottom: 0;
+}
+.pr-fault .pr-row.split + .pr-row.split {
+  border-top: 1px solid var(--rule-2);
+  margin-top: 0;
+  padding-top: 20px;
+}
+.pr-pct.split {
+  color: var(--ink-3);
+}
+.pr-pct.split .ag {
+  color: var(--ink-3);
+}
+
+/* ---- provenance footer ---- */
+.pr-foot {
+  padding: 30px 0 12px;
+  margin-top: 8px;
+  border-top: 1px solid var(--rule-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.pr-foot .meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+.pr-foot .meta b {
+  color: var(--ink-2);
+}
+.pr-share {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  background: var(--brand);
+  color: var(--paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 14px;
+  padding: 13px 20px;
+  min-height: 48px;
+  cursor: pointer;
   box-shadow: var(--shadow-soft);
+}
+.pr-share:hover {
+  background: var(--brand-2);
+}
+.pr-note {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-top: 14px;
+}
+
+@media (max-width: 720px) {
+  .standing2-wrap {
+    padding: 16px 22px 80px;
+  }
+  .pr-row {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
 }
 
 /* ====================================================
@@ -1225,44 +2360,1149 @@
   }
 }
 
-/* ---- orientation interstitial (after lock-issues, before first rep) ---- */
-.coldopen.orientation {
-  padding-top: 64px;
+/* ---- intake pre-lock confirm banner (IntakeLocked, artboard iq-locked) ----
+   Ported verbatim from design-handoff/keystone-canvas/src/intake.css's
+   .iq-locked block. Its --keep/--keep-soft tokens aren't in the global
+   palette yet (rollout pending), so — same precedent as candidates.css's
+   .cmp and this file's .mgap — they're mapped onto the shipped warm-palette
+   tokens, scoped to this screen only. */
+.issue-locked-confirm {
+  --keep: var(--civic);
+  --keep-soft: var(--civic-soft);
 }
-.orient-lede .kick {
+.iq-locked {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px 16px;
+  border-radius: 13px;
+  background: var(--keep-soft);
+  border: 1px solid var(--keep);
+  margin: 16px 0 0;
+}
+.iq-locked .tick {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--keep);
+  color: var(--paper-2);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.iq-locked .lt {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.iq-locked .ls {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 10.5px;
+  color: var(--ink-2);
+  margin-top: 1px;
+}
+
+/* ---- shared intake control accents — Bold Flag / Keystone chrome pass ----
+   prototype.css's .co-input .send / .themes-card .th-foot .lock and
+   .theme-row .rank all predate the .bf-app foundation and read --civic
+   directly (green app-wide, per .bf-app's own comment above), so the
+   intake composer's send/lock CTA and the issue-review card's numbered
+   rank chips rendered civic-green instead of matching the canvas source.
+   Verified against design-handoff/keystone-canvas/src/intake.css directly:
+   .iq-send { background: var(--brand) } confirms the CTA is brand-navy;
+   .iq-rank { color: var(--ink-3) } confirms the rank number is neutral
+   grey, NOT brand — a genuine second, different bug (not just a
+   --civic-vs-bf-brand swap). Scoped under .bf-app since prototype.css is shared
+   with the legacy ballot app, which must keep its own civic-green intact. */
+.bf-app .co-input .send {
+  background: var(--bf-brand);
+}
+.bf-app .themes-card .th-foot .lock {
+  background: var(--bf-brand);
+}
+.bf-app .themes-card .th-foot .lock:hover:not(:disabled) {
+  background: var(--bf-brand-2);
+}
+.bf-app .theme-row .rank {
+  color: var(--ink-3);
+}
+
+/* ---- intake context-bar step indicator (canvas: .iq-ctx .step) ----
+   screens-intake.jsx's IqShell always renders a right-aligned "Step 1 of 3
+   · ..." label next to the address/jurisdiction line; the repo's
+   .co-context had no equivalent element at all. .co-context is already
+   `display:flex` (prototype.css), so margin-left:auto right-aligns this
+   new child the same way canvas does. Scoped under .bf-app for the same
+   shared-stylesheet reason as the block above — IntakeView (App2-only) is
+   the only caller that renders a .step child today. */
+.bf-app .co-context .step {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--bf-brand);
+}
+
+/* ---- chat "YOU" bubble — Bold Flag / Keystone parity ----
+   prototype.css's .msg.user .bubble uses `background: var(--ink); color:
+   var(--paper)` (near-black on white) everywhere, civic and Keystone
+   alike. Canvas's own intake.css renders the user bubble light-blue on
+   dark-navy text instead: `.iq-msg.user .iq-bubble { background:
+   var(--brand-soft); border: 1px solid oklch(0.84 0.05 262); color:
+   var(--brand-2); }` and `.iq-msg.user .iq-who { color: var(--brand); }`.
+   Scoped under .bf-app so the legacy ballot app's own near-black bubble
+   (never part of the Keystone canvas) is untouched. */
+.bf-app .msg.user .bubble {
+  background: var(--bf-brand-soft);
+  border: 1px solid oklch(0.84 0.05 262);
+  color: var(--bf-brand-2);
+}
+.bf-app .msg.user .who {
+  color: var(--bf-brand);
+}
+
+/* ---------- Orientation interstitial — Bold Flag / Keystone parity ----------
+   (after lock-issues, before first rep). Structure + classes ported
+   verbatim from design-handoff/keystone-canvas/src/screens-orientation.jsx's
+   OrientationActivated + screens.css's .ori/.flagbar/.ori-card rules, per
+   HANDOFF-EXACT-MATCH.md §1. The white/navy/red palette is locally scoped
+   to .ori-body (--ori-* tokens) so it doesn't bleed into AppNav's shared
+   civic styling — AppNav is a sibling, not a descendant, of .ori-body. */
+.ori {
+  display: flex;
+  flex-direction: column;
+}
+.flagbar {
+  height: 4px;
+  display: flex;
+  flex: 0 0 auto;
+}
+.flagbar i {
+  flex: 1;
+}
+.flagbar i:nth-child(1) {
+  background: oklch(0.4 0.155 262);
+}
+.flagbar i:nth-child(2) {
+  background: oklch(1 0 0);
+}
+.flagbar i:nth-child(3) {
+  background: oklch(0.53 0.205 27);
+}
+.ori-body {
+  --ori-paper: oklch(1 0 0);
+  --ori-paper-2: oklch(0.985 0.003 258);
+  --ori-ink: oklch(0.2 0.035 260);
+  --ori-ink-2: oklch(0.37 0.032 260);
+  --ori-ink-3: oklch(0.54 0.026 260);
+  --ori-brand: oklch(0.4 0.155 262);
+  --ori-brand-2: oklch(0.31 0.145 262);
+  --ori-replace: oklch(0.53 0.205 27);
+  --ori-rule: oklch(0.88 0.006 260);
+  --ori-rule-2: oklch(0.93 0.005 260);
+  flex: 1;
+  display: grid;
+  place-items: center;
+  padding: 40px 32px;
+  min-height: calc(100vh - 90px);
+  background: var(--ori-paper);
+}
+.ori-card {
+  width: 100%;
+  max-width: 640px;
+  background: var(--ori-paper-2);
+  border: 1px solid var(--ori-rule);
+  border-radius: 16px;
+  box-shadow:
+    0 1px 0 var(--ori-rule),
+    0 30px 60px -34px oklch(0.2 0.03 255 / 0.3);
+  padding: 40px 44px 36px;
+  position: relative;
+  overflow: hidden;
+}
+.ori-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(
+    90deg,
+    var(--ori-brand) 0 38%,
+    transparent 38% 62%,
+    var(--ori-replace) 62% 100%
+  );
+}
+.ori-card.activated::before {
+  height: 6px;
+}
+.ori-ey {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 18px;
+}
+.ori-ey .kick {
+  font-family: var(--mono);
+  font-size: 10.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--civic);
   font-weight: 600;
+  color: var(--ori-brand);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
-.orient-lede h2 {
+.ori-ey .star {
+  color: var(--ori-replace);
+}
+.ori-card h1 {
   font-family: var(--serif);
-  font-size: clamp(28px, 4vw, 44px);
   font-weight: 600;
-  letter-spacing: -0.03em;
-  margin: 10px 0 16px;
-  line-height: 1.1;
+  font-size: 40px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 14px;
+  color: var(--ori-ink);
   text-wrap: balance;
 }
-.orient-lede p {
-  font-size: 17px;
-  color: var(--ink-2);
-  margin: 0;
-  max-width: 640px;
-  line-height: 1.6;
+.ori-card h1 em {
+  font-style: italic;
+  color: var(--ori-brand);
 }
-.orient-foot {
-  margin-top: 28px;
+.ori-lede {
+  font-family: var(--serif);
+  font-size: 18.5px;
+  line-height: 1.5;
+  color: var(--ori-ink-2);
+  margin: 0 0 28px;
+  max-width: 520px;
 }
-.orient-foot .lock {
-  background: var(--civic);
-  color: var(--paper-2);
-  border: 0;
-  padding: 12px 22px;
-  border-radius: 8px;
+.ori-steps {
+  display: grid;
+  gap: 2px;
+  margin: 0 0 30px;
+  border: 1px solid var(--ori-rule-2);
+  border-radius: 12px;
+  overflow: hidden;
+}
+.ori-step {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 14px;
+  padding: 15px 18px;
+  background: var(--ori-paper);
+  align-items: start;
+}
+.ori-step + .ori-step {
+  border-top: 1px solid var(--ori-rule-2);
+}
+.ori-step .n {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ori-paper-2);
+  background: var(--ori-brand);
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+}
+.ori-step:last-child .n {
+  background: var(--ori-replace);
+}
+.ori-step .st-t {
   font-weight: 600;
   font-size: 14.5px;
+  color: var(--ori-ink);
+}
+.ori-step .st-d {
+  font-size: 13px;
+  color: var(--ori-ink-3);
+  line-height: 1.45;
+  margin-top: 2px;
+}
+.ori-cta {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.ori-cta .btn-primary {
+  background: var(--ori-brand);
+  color: var(--ori-paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 15px;
+  padding: 14px 22px;
+  min-height: 50px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
   cursor: pointer;
+  box-shadow:
+    0 1px 0 var(--ori-rule-2),
+    0 12px 30px -22px oklch(0.2 0.03 255 / 0.18);
+  white-space: nowrap;
+}
+.ori-cta .btn-primary:hover {
+  background: var(--ori-brand-2);
+}
+.ori-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ori-ink-3);
+  letter-spacing: 0.02em;
+}
+
+/* ====================================================
+   RepCard — Bold Flag / Keystone pass [Δ] (05a-candidates-parity, round 2)
+   ----------------------------------------------------
+   Ports the canvas's "one card, every seat" system (design-handoff/
+   keystone-canvas/src/candidates.css .cd-card / .cd-align / .cd-money) onto
+   RepCard's existing cv2-* markup. Locally-scoped white/navy/red palette,
+   same pattern as the .sp-wrap.sp-tipjar / .sp-wrap.sp-about / .sp-wrap.
+   sp-methodology fixes (PRs #252/#253/#254) — remaps the existing --civic/
+   --paper/--ink tokens under .rep-card only, no global mood/palette system
+   touched, no other page affected. New --rc-keep-* tokens because canvas's
+   "worth keeping" green is a distinct hue from its brand navy, but the
+   shipped --civic today serves both roles (roll-call badge AND the keep
+   verdict button) — decoupling them is what actually lets the provenance
+   badge read navy and the keep button read green, matching canvas.
+   ==================================================== */
+.rep-card {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --civic: oklch(0.4 0.155 262); /* canvas --brand: bold navy-royal */
+  --civic-2: oklch(0.31 0.145 262);
+  --civic-soft: oklch(0.94 0.04 262);
+  --vote-red: oklch(0.53 0.205 27); /* canvas --replace: flag red */
+  --gold: oklch(0.72 0.125 76);
+  --tag-bg: oklch(0.95 0.006 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  /* keep-green — canvas --keep, decoupled from --civic (brand navy above) */
+  --rc-keep: oklch(0.44 0.115 159);
+  --rc-keep-2: oklch(0.36 0.11 159);
+  --rc-keep-soft: oklch(0.93 0.045 159);
+}
+
+/* ---- seat kicker — flatten the office pill into canvas's single flowing
+   mono kicker line ("U.S. HOUSE · TX-21   UP NOV 2026") ---- */
+.rep-card .seat-office {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: var(--ink-3);
+}
+.rep-card .seat-office::after {
+  content: "\00B7";
+  margin-left: 10px;
+  color: var(--rule);
+}
+
+/* ---- blind-mode header — squared navy avatar + filled reveal CTA, same
+   proportions as canvas's cd-avatar/cd-select without breaking the
+   blind-first product behavior (identity stays hidden pre-reveal) ---- */
+.rep-card .cv2-head.blind {
+  background: var(--paper);
+}
+.rep-card .cv2-photo.blind {
+  border-radius: 11px;
+  background: var(--civic-soft);
+  border: 1px dashed var(--civic);
+}
+.rep-card .cv2-photo.blind::after {
+  color: var(--civic-2);
+  font-size: 20px;
+}
+.rep-card .cv2-name.blind {
+  font-size: 18px;
+  color: var(--ink);
+}
+.rep-card .cv2-sub.blind .cv2-tag {
+  background: var(--tag-bg);
+  border-color: var(--rule);
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+}
+.rep-card .cv2-reveal {
+  background: var(--civic);
+  border-color: var(--civic);
+  color: var(--paper-2);
+}
+.rep-card .cv2-reveal:hover {
+  background: var(--civic-2);
+  border-color: var(--civic-2);
+}
+/* .lab and .reveal-ic set their own color in prototype.css (dark ink /
+   --civic respectively) rather than inheriting the button's — both need an
+   explicit override or they go invisible against the new navy-filled button. */
+.rep-card .cv2-reveal .lab,
+.rep-card .cv2-reveal .reveal-ic {
+  color: var(--paper-2);
+}
+
+/* ---- alignment block — box it like canvas's .cd-align card-within-card,
+   enlarge the aggregate % (when present) to a real headline number, and
+   compact the per-issue rows toward canvas's thin-track-bar + % reading ---- */
+.rep-card .cv2-issues {
+  margin: 14px 18px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--rule-2);
+  background: var(--paper);
+}
+.rep-card .cv2-block-head .lab {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+.rep-card .cv2-block-head .overall {
+  font-family: var(--serif);
+}
+.rep-card .cv2-block-head .overall b {
+  font-size: 27px;
+  font-weight: 600;
+  color: var(--civic-2);
+}
+.rep-card .cv2-iss-row.open {
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.rep-card .cv2-iss-head {
+  padding: 9px 0;
+  gap: 10px;
+}
+.rep-card .cv2-iss-head .name {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.rep-card .cv2-bar {
+  height: 6px;
+  /* base .cv2-bar track is a hardcoded warm tan, not tied to --rule-2 —
+     override so the empty track reads white-palette, not civic-cream. */
+  background: var(--rule-2);
+}
+.rep-card .cv2-iss-head .meta {
+  font-size: 10px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+.rep-card .cv2-iss-head .pct {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.rep-card .cv2-iss-head .pct small {
+  font-size: 9px;
+}
+.rep-card .cv2-iss-head .cv2-ws-badge {
+  font-size: 8.5px;
+  padding: 2px 6px;
+  font-family: var(--mono);
+}
+.rep-card .cv2-iss-head .cv2-ws-conf {
+  font-size: 8.5px;
+  padding: 1px 4px;
+}
+
+/* ---- funding — box it like canvas's .cd-money, mini segmented bar always
+   visible ahead of the collapsed FunderBars detail ---- */
+.rep-card .cv2-disclose {
+  margin: 12px 18px 0;
+  border-radius: 10px;
+  border: 1px solid var(--rule-2);
+  background: var(--paper);
+  overflow: hidden;
+}
+.rep-card .cv2-disclose-eyebrow {
+  font-size: 9.5px;
+}
+.rep-card .cv2-mini-fundbar {
+  display: inline-flex;
+  align-items: center;
+  height: 8px;
+  width: 84px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+  margin-right: 8px;
+  vertical-align: -1px;
+  flex-shrink: 0;
+}
+.rep-card .cv2-mini-fundbar i {
+  display: block;
+  height: 100%;
+}
+.rep-card .cv2-mini-fundbar i.small {
+  background: var(--rc-keep);
+}
+.rep-card .cv2-mini-fundbar i.large {
+  background: var(--gold);
+}
+.rep-card .cv2-mini-fundbar i.pac {
+  background: var(--vote-red);
+}
+
+/* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic
+   so it reads canvas's keep-green instead (see --rc-keep above); "time to
+   replace" already rides --vote-red via the existing .pick.replace
+   override, so it inherits the new flag-red automatically. ---- */
+.rep-card .cv2-actions .pick:not(.replace) {
+  background: var(--rc-keep);
+  border: 1.5px solid var(--rc-keep);
+}
+.rep-card .cv2-actions .pick:not(.replace):hover {
+  background: var(--rc-keep-2);
+  border-color: var(--rc-keep-2);
+}
+.rep-card .cv2-actions .pick.picked {
+  border-color: var(--rc-keep);
+}
+.rep-card .cv2-actions .pick.picked .ck {
+  border-color: var(--rc-keep);
+  background: var(--rc-keep);
+}
+
+/* ====================================================
+   § DELEGATION OVERVIEW
+   PORT of design-handoff/keystone-canvas/src/delegation.css (its own "§8 ·
+   DELEGATION OVERVIEW → DRILL-DOWN" section) plus the .cd-* unified
+   candidate-card rules SeatCard reuses, from
+   design-handoff/keystone-canvas/src/candidates.css. Following the
+   RAISED-VS-MEDIAN / .cmp precedent above: design tokens (--brand/--keep/
+   --replace family) are mapped onto the shipped warm palette, scoped to
+   .delegation (already on DelegationWorkspace.tsx's root), reusing the
+   EXACT oklch values the .cmp scope in public/candidates.css already
+   chose — so keep/replace reads the same color on the compare and
+   delegation screens. --brand-2 is added alongside the tokens the plan
+   called out because .cd-seatlab .seat-t (a requested selector) needs it;
+   same value .cmp already carries.
+   The .cd- / .dg- prefixed rules themselves aren't re-scoped under
+   .delegation — they're already namespaced by their own prefix, same convention as
+   .cmp-* above. .bar-good/.bar-mid/.bar-bad (bare, generic names) ARE
+   scoped, same as .cmp .tone-good/.tone-mid/.tone-bad above.
+   NOT ported: .cd-delta/.cd-pair/.cd-stage/.cd-explain/.cd-pick-tag
+   (separate task) and .rh-dots (no matching rail-header-dots element
+   exists in this repo).
+   Two source selectors don't map to real classes here and are retargeted:
+     - ".res-rail .rseat.click" -> ".ws-ballot .b-row", the real seat-strip
+       rail row in DelegationWorkspace.tsx (already clickable).
+     - ".vbtn.keep.is-on" / ".vbtn.replace.is-on" -> ".pick.picked" /
+       ".pick.replace.picked-replace", RepCard.tsx's real verdict buttons
+       (already fully styled globally via .cv2-actions); scoped under
+       .dg-deep so this only adds emphasis inside the overview's deep
+       view. The source's `.ck::before { content: "⇄" }` accent is
+       dropped — RepCard already renders a "✕" glyph via JSX for the
+       replace state, so the pseudo-element would double the icon.
+   Loaded via redesign2.css's existing <link> in src/app/layout.tsx.
+   ==================================================== */
+
+.delegation {
+  /* --brand/--brand-2/--brand-soft point at the app-wide --bf-brand/
+     --bf-brand-2 tokens (.bf-app above), not --civic: this scope only
+     ever renders inside App2, always under #root.bf-app, so --bf-brand
+     is already in scope. --civic was the pre-.bf-app-foundation choice
+     (same "remap --civic locally" pattern candidates.css's HeadToHead
+     uses) but .bf-app's own comment is explicit that --civic is LEFT
+     UNTOUCHED app-wide — it doubles as the "keep" green elsewhere — so
+     reading it here resolved to the global green civic default, not
+     navy: brand accents (dg-kicker, the roll-call provenance badge,
+     cd-avatar, dg-print.ready) rendered civic-green instead of the
+     canvas's navy. Same fix as .pe-screen's (PolisEntry, PR #237).
+     --keep/--replace below are unaffected — already independent of
+     --civic, so the "worth keeping" chip/button and vote-fraction bars
+     stay green, matching canvas. */
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.45 0.11 159);
+  --keep-soft: oklch(0.94 0.04 159);
+  --replace: var(--vote-red);
+  --replace-soft: oklch(0.94 0.05 28);
+}
+
+/* ---------- unified seat card (SeatCard) — ported from candidates.css ---------- */
+.cd-card {
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-2);
+  box-shadow: var(--shadow-soft);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.cd-card.is-pick {
+  border-color: var(--keep);
+  box-shadow:
+    0 0 0 2px var(--keep-soft),
+    var(--shadow-soft);
+}
+.cd-seatlab {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--ink-3);
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--rule-2);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.cd-seatlab .seat-t {
+  color: var(--brand-2);
+}
+.cd-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px 12px;
+}
+.cd-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  border: 1px solid var(--rule-2);
+}
+.cd-card.blind .cd-avatar {
+  background: var(--tag-bg);
+  color: var(--ink-3);
+}
+.cd-who {
+  flex: 1;
+  min-width: 0;
+}
+.cd-name {
+  font-family: var(--serif);
+  font-size: 16.5px;
+  font-weight: 600;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  line-height: 1.15;
+}
+.cd-role {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+.cd-prov-row {
+  padding: 0 16px 12px;
+}
+/* provenance badge (roll-call vs researched) — also not ported by the
+   earlier CSS commit. Mirrors .cmp .prov exactly (candidates.css), the same
+   badge HeadToHead.tsx's ProvBadge already renders under .cmp; SeatCard's
+   DgProv needs it under .delegation instead. */
+.delegation .prov {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 8px 3px 7px;
+  border-radius: 5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+.delegation .prov::before {
+  font-size: 9px;
+}
+.delegation .prov.rollcall {
+  background: var(--brand);
+  color: var(--paper-2);
+  border: 1.5px solid var(--brand);
+}
+.delegation .prov.rollcall::before {
+  content: "\25C6"; /* filled diamond */
+}
+.delegation .prov.researched {
+  background: var(--paper-2);
+  color: var(--brand-2);
+  border: 1.5px dashed var(--brand);
+}
+.delegation .prov.researched::before {
+  content: "\25C7"; /* hollow diamond */
+}
+.cd-align {
+  margin: 0 16px;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.cd-align-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+.cd-align-top .lab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.cd-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 27px;
+  line-height: 1;
+}
+/* alignment tone helpers for .cd-pct — NOT ported by the earlier CSS commit
+   (only the .bar-* track-fill tones were carried over); added here so
+   SeatCard's big percentage number actually colors by tone, same values as
+   the analogous .cmp .tone-good/.tone-mid/.tone-bad/.tone-na. */
+.delegation .tone-good {
+  color: var(--keep);
+}
+.delegation .tone-mid {
+  color: var(--gold);
+}
+.delegation .tone-bad {
+  color: var(--replace);
+}
+.delegation .tone-na {
+  color: var(--ink-3);
+}
+.cd-issues {
+  margin-top: 10px;
+  display: grid;
+  gap: 7px;
+}
+.cd-irow {
+  display: grid;
+  grid-template-columns: 1fr 70px 30px;
+  gap: 10px;
+  align-items: center;
+}
+.cd-irow .ik {
+  font-size: 12px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cd-track {
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.cd-track i {
+  display: block;
+  height: 100%;
+}
+.cd-irow .iv {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink-2);
+}
+.delegation .bar-good {
+  background: var(--keep);
+}
+.delegation .bar-mid {
+  background: var(--gold);
+}
+.delegation .bar-bad {
+  background: var(--replace);
+}
+/* not in the source (only good/mid/bad exist there) — added so SeatCard's
+   n/a issue tracks have a neutral fill, same idea as the .cmp .tone-na
+   precedent in public/candidates.css */
+.delegation .bar-na {
+  background: var(--ink-3);
+}
+.cd-money {
+  margin: 12px 16px 0;
+  padding: 11px 14px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.cd-money-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.cd-money-top .lab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.cd-bars {
+  flex: 1;
+  display: flex;
+  height: 8px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+}
+.cd-bars i.small {
+  background: var(--keep);
+}
+.cd-bars i.large {
+  background: var(--gold);
+}
+.cd-bars i.pac {
+  background: var(--replace);
+}
+.cd-money-top .tot {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cd-money-note {
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+.cd-money-note b {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.cd-foot {
+  margin-top: auto;
+  padding: 13px 16px 15px;
+}
+.cd-select {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--brand);
+  color: var(--paper-2);
+  border: 1.5px solid var(--brand);
+  box-shadow: var(--shadow-soft);
+}
+.cd-select.ghost {
+  background: var(--paper);
+  color: var(--brand);
+}
+.cd-card.is-pick .cd-select {
+  background: var(--keep);
+  border-color: var(--keep);
+}
+
+/* ---------- overview shell (DelegationOverview) — ported from delegation.css ---------- */
+.dg {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.dg .flagbar {
+  flex: 0 0 auto;
+}
+
+/* ---- overview header + progress ---- */
+.dg-ov-head {
+  padding: 20px 30px 8px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.dg-ov-intro {
+  min-width: 0;
+}
+.dg-kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--brand);
+}
+.dg-ov-head h2 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  letter-spacing: -0.015em;
+  margin: 5px 0 0;
+  color: var(--ink);
+}
+.dg-ov-head .sub {
+  font-size: 13px;
+  color: var(--ink-3);
+  margin: 5px 0 0;
+  max-width: 560px;
+  line-height: 1.5;
+}
+.dg-prog {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+}
+.dg-prog .meter {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  align-items: flex-end;
+}
+.dg-prog .mlab {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.dg-prog .dots {
+  display: flex;
+  gap: 5px;
+}
+.dg-prog .dots i {
+  width: 26px;
+  height: 6px;
+  border-radius: 999px;
+  background: var(--rule);
+  display: block;
+}
+.dg-prog .dots i.done {
+  background: var(--keep);
+}
+.dg-print {
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 11px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  border: 1.5px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-3);
+  cursor: not-allowed;
+  white-space: nowrap;
+}
+.dg-print.ready {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--paper-2);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---- the seat grid ---- */
+.dg-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 18px;
+  padding: 16px 30px 10px;
+  align-items: start;
+}
+
+/* collapse the 3-col overview grid to 1 col under the mobile breakpoint —
+   NOT present in the source (delegation.css ships no media query at all).
+   Matches this file's existing ~560px breakpoint (see "stacked / compact
+   form" above); this repo runs a real Pixel-5-width (~393px)
+   chromium-mobile Playwright project, so a cramped 3-col grid there is a
+   real usability bug, not a nice-to-have. */
+@media (max-width: 560px) {
+  .dg-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* verdict-status pill in the seat label row */
+.dg-status {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.dg-status.todo {
+  background: var(--tag-bg);
+  color: var(--ink-3);
+}
+.dg-status.keep {
+  background: var(--keep-soft);
+  color: var(--keep);
+}
+.dg-status.replace {
+  background: var(--replace-soft);
+  color: var(--replace);
+}
+
+/* the card is now a button into the deep view */
+.cd-card.dg-open {
+  cursor: pointer;
+  transition:
+    box-shadow 0.13s ease,
+    transform 0.13s ease;
+}
+.cd-card.dg-open:hover {
+  box-shadow:
+    0 0 0 2px var(--brand-soft),
+    var(--shadow-card);
+  transform: translateY(-2px);
+}
+.cd-card.dg-open:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
+.cd-card.verdict-replace {
+  border-color: var(--replace);
+  box-shadow:
+    0 0 0 2px var(--replace-soft),
+    var(--shadow-soft);
+}
+.cd-card.verdict-replace .cd-select {
+  color: var(--replace);
+}
+/* decided (keep) card: green-filled CTA needs white text for contrast */
+.cd-card.is-pick .cd-select {
+  color: var(--paper-2);
+}
+
+/* ---- excluded (non-2026) seat row ---- */
+.dg-excluded {
+  margin: 8px 30px 0;
+  padding: 12px 16px;
+  border: 1px dashed var(--rule);
+  border-radius: 12px;
+  background: var(--tag-bg);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  opacity: 0.85;
+}
+.dg-excluded .ri {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--rule);
+  color: var(--ink-3);
+}
+.dg-excluded .ex-meta {
+  font-size: 13px;
+  color: var(--ink-2);
+}
+.dg-excluded .ex-meta b {
+  font-family: var(--serif);
+  font-weight: 600;
+  color: var(--ink);
+}
+.dg-excluded .ex-tag {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--ink-3);
+}
+
+/* ---- deep-view affordances layered on the reused rail/verdict chrome ---- */
+.dg-deep .rc-back {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 14px 7px 11px;
+  border-radius: 999px;
+  border: 1px solid var(--brand);
+  background: var(--brand-soft);
+  color: var(--brand);
+  font-weight: 600;
+  transition:
+    background 0.12s ease,
+    color 0.12s ease;
+}
+.dg-deep .rc-back:hover {
+  background: var(--brand);
+  color: var(--paper-2);
+}
+/* wraps the "← All seats" control above .tier-intro — NOT in the source
+   (the design's version sits in a standalone .res-context strip this repo
+   doesn't have); .rep-center-head is desktop-hidden (mobile-only back
+   bar), so the back-to-overview control needs its own always-visible row. */
+.dg-back-row {
+  margin: 0 0 14px;
+}
+
+/* retargeted from the source's ".res-rail .rseat.click" — the real
+   seat-strip rail row in this repo is DelegationWorkspace.tsx's .b-row
+   (already clickable; already tints .pick text on hover). Extend it with
+   the source's brand-tinted hover instead of inventing a new selector. */
+.delegation .ws-ballot .b-row:hover {
+  border-color: var(--brand);
+  background: var(--brand-soft);
+}
+
+/* retargeted from the source's ".vbtn.keep.is-on" / ".vbtn.replace.is-on"
+   — the real verdict buttons in this repo are RepCard.tsx's .pick.picked /
+   .pick.replace.picked-replace (already fully styled everywhere via
+   .cv2-actions). Scoped under .dg-deep so this only adds emphasis inside
+   the overview's deep view. */
+.dg-deep .pick.picked {
+  box-shadow:
+    0 0 0 3px var(--keep-soft),
+    var(--shadow-soft);
+}
+.dg-deep .pick.replace.picked-replace {
+  background: var(--replace);
+  color: var(--paper-2);
 }

@@ -17,7 +17,7 @@ const App = BALLOT_ENABLED
 
 export default function Home() {
   return (
-    <div id="root">
+    <div id="root" className={BALLOT_ENABLED ? undefined : "bf-app"}>
       <App />
     </div>
   );

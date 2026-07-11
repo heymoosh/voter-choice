@@ -109,11 +109,10 @@ describe("upsertStockTransactionRows", () => {
     const rows = Array.from({ length: 450 }, (_, i) => makeRow(`row-${i}`));
     const count = await upsertStockTransactionRows(db, rows);
     expect(count).toBe(450);
-    // 450 rows at 200/chunk → 3 chunks (200, 200, 50).
-    expect(valuesFn).toHaveBeenCalledTimes(3);
-    expect(valuesFn.mock.calls[0][0]).toHaveLength(200);
-    expect(valuesFn.mock.calls[1][0]).toHaveLength(200);
-    expect(valuesFn.mock.calls[2][0]).toHaveLength(50);
+    // 450 rows at 50/chunk → 9 chunks of 50 each.
+    expect(valuesFn).toHaveBeenCalledTimes(9);
+    expect(valuesFn.mock.calls[0][0]).toHaveLength(50);
+    expect(valuesFn.mock.calls[8][0]).toHaveLength(50);
   });
 
   it("GOAL_CONDITION: a single out-of-range row does not abort the whole batch — only that row is skipped, every good row still upserts", async () => {

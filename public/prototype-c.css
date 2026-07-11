@@ -991,7 +991,7 @@
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.sp-eyebrow {
+.sp-kicker {
   font-family: var(--mono);
   font-size: 11px;
   text-transform: uppercase;
@@ -999,7 +999,7 @@
   color: var(--civic);
   margin-bottom: 10px;
 }
-.sp-title {
+.sp-mast h1 {
   font-family: var(--serif);
   font-weight: 600;
   font-size: 48px;
@@ -1016,7 +1016,7 @@
   color: var(--ink-3);
   margin-bottom: 24px;
 }
-.sp-dek {
+.sp-mast .dek {
   font-family: var(--serif);
   font-size: 17px;
   line-height: 1.5;
@@ -1024,13 +1024,13 @@
   margin: -18px 0 32px;
   max-width: 640px;
 }
-.sp-article {
+.sp-prose {
   font-family: var(--serif);
   font-size: 17px;
   line-height: 1.65;
   color: var(--ink);
 }
-.sp-article h2 {
+.sp-prose h2 {
   font-family: var(--serif);
   font-weight: 600;
   font-size: 24px;
@@ -1038,22 +1038,22 @@
   letter-spacing: -0.015em;
   color: var(--ink);
 }
-.sp-article p {
+.sp-prose p {
   margin: 0 0 16px;
 }
-.sp-article ul {
+.sp-prose ul {
   margin: 0 0 16px;
   padding-left: 22px;
 }
-.sp-article li {
+.sp-prose li {
   margin-bottom: 8px;
 }
-.sp-article a {
+.sp-prose a {
   color: var(--civic);
   text-decoration: underline;
   text-underline-offset: 3px;
 }
-.sp-article code {
+.sp-prose code {
   font-family: var(--mono);
   font-size: 14px;
   background: var(--tag-bg);
@@ -1061,10 +1061,10 @@
   border-radius: 4px;
 }
 @media (max-width: 700px) {
-  .sp-title {
+  .sp-mast h1 {
     font-size: 36px;
   }
-  .sp-article {
+  .sp-prose {
     font-size: 15.5px;
   }
   .gf-card,
@@ -2798,40 +2798,40 @@ Bumps
 .sp-wrap.sp-tipjar .sp-back {
   color: var(--tj-brand);
 }
-.sp-wrap.sp-tipjar .sp-eyebrow {
+.sp-wrap.sp-tipjar .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--tj-replace);
 }
-.sp-wrap.sp-tipjar .sp-eyebrow::before {
+.sp-wrap.sp-tipjar .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--tj-replace);
 }
-.sp-wrap.sp-tipjar .sp-title {
+.sp-wrap.sp-tipjar .sp-mast h1 {
   font-family: var(--tj-serif);
   color: var(--tj-ink);
 }
-.sp-wrap.sp-tipjar .sp-dek {
+.sp-wrap.sp-tipjar .dek {
   font-family: var(--tj-serif);
   color: var(--tj-ink-2);
   border-bottom: 2px solid var(--tj-ink);
   padding-bottom: 24px;
 }
-.sp-wrap.sp-tipjar .sp-article {
+.sp-wrap.sp-tipjar .sp-prose {
   font-family: var(--tj-serif);
   color: var(--tj-ink-2);
 }
-.sp-wrap.sp-tipjar .sp-article h2 {
+.sp-wrap.sp-tipjar .sp-prose h2 {
   font-family: var(--tj-serif);
   color: var(--tj-ink);
 }
-.sp-wrap.sp-tipjar .sp-article li::marker {
+.sp-wrap.sp-tipjar .sp-prose li::marker {
   color: var(--tj-brand);
 }
-.sp-wrap.sp-tipjar .sp-article b {
+.sp-wrap.sp-tipjar .sp-prose b {
   color: var(--tj-ink);
 }
 .sp-wrap.sp-tipjar .tip-list--amounts {
@@ -2889,49 +2889,49 @@ Bumps
 .sp-wrap.sp-about .sp-back {
   color: var(--ab-brand);
 }
-.sp-wrap.sp-about .sp-eyebrow {
+.sp-wrap.sp-about .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--ab-replace);
 }
-.sp-wrap.sp-about .sp-eyebrow::before {
+.sp-wrap.sp-about .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--ab-replace);
 }
-.sp-wrap.sp-about .sp-title {
+.sp-wrap.sp-about .sp-mast h1 {
   font-family: var(--ab-serif);
   color: var(--ab-ink);
 }
-.sp-wrap.sp-about .sp-dek {
+.sp-wrap.sp-about .dek {
   font-family: var(--ab-serif);
   font-size: 19px;
   color: var(--ab-ink-2);
   border-bottom: 2px solid var(--ab-ink);
   padding-bottom: 24px;
 }
-.sp-wrap.sp-about .sp-article {
+.sp-wrap.sp-about .sp-prose {
   font-family: var(--ab-serif);
   color: var(--ab-ink-2);
 }
-.sp-wrap.sp-about .sp-article h2 {
+.sp-wrap.sp-about .sp-prose h2 {
   font-family: var(--ab-serif);
   color: var(--ab-ink);
 }
-.sp-wrap.sp-about .sp-article b {
+.sp-wrap.sp-about .sp-prose b {
   color: var(--ab-ink);
 }
-.sp-wrap.sp-about .sp-article ul {
+.sp-wrap.sp-about .sp-prose ul {
   list-style: none;
   padding-left: 0;
 }
-.sp-wrap.sp-about .sp-article li {
+.sp-wrap.sp-about .sp-prose li {
   padding-left: 26px;
   position: relative;
 }
-.sp-wrap.sp-about .sp-article li::before {
+.sp-wrap.sp-about .sp-prose li::before {
   content: "";
   position: absolute;
   left: 6px;
@@ -2942,10 +2942,10 @@ Bumps
   background: var(--ab-brand);
   transform: rotate(45deg);
 }
-.sp-wrap.sp-about .sp-article a {
+.sp-wrap.sp-about .sp-prose a {
   color: var(--ab-brand);
 }
-.sp-wrap.sp-about .sp-article code {
+.sp-wrap.sp-about .sp-prose code {
   background: var(--ab-tag-bg);
   color: var(--ab-ink);
 }
@@ -2973,40 +2973,40 @@ Bumps
 .sp-wrap.sp-methodology .sp-back {
   color: var(--mt-brand);
 }
-.sp-wrap.sp-methodology .sp-eyebrow {
+.sp-wrap.sp-methodology .sp-kicker {
   display: flex;
   align-items: center;
   gap: 12px;
   color: var(--mt-replace);
 }
-.sp-wrap.sp-methodology .sp-eyebrow::before {
+.sp-wrap.sp-methodology .sp-kicker::before {
   content: "";
   width: 26px;
   height: 2px;
   background: var(--mt-replace);
 }
-.sp-wrap.sp-methodology .sp-title {
+.sp-wrap.sp-methodology .sp-mast h1 {
   font-family: var(--mt-serif);
   color: var(--mt-ink);
 }
-.sp-wrap.sp-methodology .sp-dek {
+.sp-wrap.sp-methodology .dek {
   font-family: var(--mt-serif);
   color: var(--mt-ink-2);
   border-bottom: 2px solid var(--mt-ink);
   padding-bottom: 24px;
 }
-.sp-wrap.sp-methodology .sp-article {
+.sp-wrap.sp-methodology .sp-prose {
   font-family: var(--mt-serif);
   color: var(--mt-ink-2);
 }
-.sp-wrap.sp-methodology .sp-article h2 {
+.sp-wrap.sp-methodology .sp-prose h2 {
   font-family: var(--mt-serif);
   color: var(--mt-ink);
 }
-.sp-wrap.sp-methodology .sp-article b {
+.sp-wrap.sp-methodology .sp-prose b {
   color: var(--mt-ink);
 }
-.sp-wrap.sp-methodology .sp-article a {
+.sp-wrap.sp-methodology .sp-prose a {
   color: var(--mt-brand);
 }
 .sp-wrap.sp-methodology .sp-step {
@@ -3049,6 +3049,568 @@ Bumps
 }
 .sp-wrap.sp-methodology .sp-step a {
   color: var(--mt-brand);
+}
+
+/* ---------- Why Now — Bold Flag / Keystone parity (07-whynow) ----------
+   WhyNow never used the shared StaticPage shell — canvas's own WhyNow
+   (design-handoff/keystone-canvas/src/screens-whynow.jsx + whynow.css)
+   isn't part of the StaticPageVC family either, it's its own long-form
+   editorial layout. This is a literal class-token port of that layout's
+   content sections (wn-mast/wn-sec/wn-h2/wn-cols/wn-body/wn-stats/wn-stat/
+   wn-pull/wn-ballot/wn-steps/wn-step/wn-cta) — the canvas's page chrome
+   (flagbar/SCNav) is intentionally not replicated since App2.tsx's own
+   AppNav already renders equivalent chrome around every stage. Scoped to
+   .wn-wrap only — does not touch the shared civic palette or any other
+   page. */
+.wn-wrap {
+  --wn-paper: oklch(1 0 0);
+  --wn-paper-2: oklch(0.985 0.003 258);
+  --wn-ink: oklch(0.2 0.035 260);
+  --wn-ink-2: oklch(0.37 0.032 260);
+  --wn-ink-3: oklch(0.54 0.026 260);
+  --wn-brand: oklch(0.4 0.155 262);
+  --wn-brand-2: oklch(0.31 0.145 262);
+  --wn-gold: oklch(0.72 0.125 76);
+  --wn-replace: oklch(0.53 0.205 27);
+  --wn-rule: oklch(0.88 0.006 260);
+  --wn-rule-2: oklch(0.93 0.005 260);
+  --wn-shadow-soft:
+    0 1px 0 oklch(0.92 0.012 85), 0 12px 30px -22px oklch(0.2 0.03 255 / 0.18);
+  --wn-serif: "Newsreader", Georgia, serif;
+  --wn-sans: "IBM Plex Sans", system-ui, sans-serif;
+  --wn-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--wn-paper);
+  color: var(--wn-ink);
+  min-height: calc(100vh - 64px);
+}
+.wn-back {
+  display: block;
+  background: transparent;
+  border: 0;
+  color: var(--wn-brand);
+  font-size: 13.5px;
+  padding: 20px 90px 0;
+  cursor: pointer;
+}
+.wn-back:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.wn-mast {
+  padding: 40px 0 40px;
+  border-bottom: 2px solid var(--wn-ink);
+  margin: 0 90px;
+  text-align: center;
+}
+.wn-mast .ey {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-family: var(--wn-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--wn-replace);
+}
+.wn-mast h1 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 76px;
+  line-height: 0.96;
+  letter-spacing: -0.035em;
+  margin: 0;
+  color: var(--wn-ink);
+}
+.wn-mast h1 em {
+  font-style: italic;
+  color: var(--wn-brand);
+}
+.wn-mast .dek {
+  font-family: var(--wn-serif);
+  font-size: 21px;
+  line-height: 1.45;
+  color: var(--wn-ink-2);
+  margin: 18px auto 0;
+  max-width: 660px;
+  text-wrap: balance;
+}
+.wn-sec {
+  padding: 52px 90px;
+  border-bottom: 1px solid var(--wn-rule-2);
+}
+.wn-sec.alt {
+  background: var(--wn-paper-2);
+}
+.wn-sec.brand {
+  background: var(--wn-brand);
+  color: oklch(0.96 0.02 262);
+  border-bottom: none;
+}
+.wn-kicker {
+  font-family: var(--wn-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: var(--wn-replace);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.wn-kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--wn-replace);
+}
+.wn-sec.brand .wn-kicker {
+  color: var(--wn-gold);
+}
+.wn-sec.brand .wn-kicker::before {
+  background: var(--wn-gold);
+}
+.wn-h2 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 42px;
+  line-height: 1.06;
+  letter-spacing: -0.02em;
+  margin: 0 0 22px;
+  color: var(--wn-ink);
+  text-wrap: balance;
+  max-width: 880px;
+}
+.wn-sec.brand .wn-h2 {
+  color: oklch(0.99 0.01 262);
+  max-width: 940px;
+}
+.wn-h2 em {
+  font-style: italic;
+  color: var(--wn-brand);
+}
+.wn-sec.brand .wn-h2 em {
+  color: var(--wn-gold);
+  font-style: normal;
+}
+.wn-cols {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 48px;
+  align-items: start;
+}
+.wn-body {
+  font-size: 17.5px;
+  line-height: 1.62;
+  color: var(--wn-ink-2);
+  max-width: 620px;
+}
+.wn-body p {
+  margin: 0 0 16px;
+}
+.wn-body p:last-child {
+  margin-bottom: 0;
+}
+.wn-body b {
+  color: var(--wn-ink);
+  font-weight: 600;
+}
+.wn-body .lead-in {
+  font-variant: small-caps;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  color: var(--wn-ink);
+  font-size: 0.92em;
+}
+.wn-sec.brand .wn-body {
+  color: oklch(0.92 0.02 262);
+}
+.wn-sec.brand .wn-body b {
+  color: oklch(1 0 0);
+}
+.wn-stats {
+  display: grid;
+  gap: 18px;
+}
+.wn-stat {
+  border: 1px solid var(--wn-rule);
+  border-radius: 14px;
+  background: var(--wn-paper);
+  padding: 22px 24px;
+  box-shadow: var(--wn-shadow-soft);
+}
+.wn-stat.red {
+  border-color: oklch(0.8 0.1 27);
+}
+.wn-stat .v {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 60px;
+  line-height: 0.92;
+  letter-spacing: -0.03em;
+  color: var(--wn-brand);
+}
+.wn-stat.red .v {
+  color: var(--wn-replace);
+}
+.wn-stat .v small {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 4px;
+  color: var(--wn-ink-3);
+}
+.wn-stat .l {
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--wn-ink-2);
+  margin-top: 12px;
+}
+.wn-stat .cite {
+  font-family: var(--wn-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wn-ink-3);
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--wn-rule-2);
+}
+.wn-pull {
+  font-family: var(--wn-serif);
+  font-weight: 500;
+  font-size: 34px;
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  color: var(--wn-ink);
+  max-width: 900px;
+  margin: 0;
+  text-wrap: balance;
+}
+.wn-pull em {
+  font-style: italic;
+  color: var(--wn-brand);
+}
+.wn-pull .src {
+  display: block;
+  font-family: var(--wn-mono);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--wn-ink-3);
+  margin-top: 20px;
+}
+.wn-ballot {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  margin-top: 36px;
+  border: 1px solid oklch(1 0 0 / 0.16);
+  border-radius: 14px;
+  overflow: hidden;
+}
+.wn-ballot .cell {
+  padding: 26px 24px;
+}
+.wn-ballot .cell + .cell {
+  border-left: 1px solid oklch(1 0 0 / 0.16);
+}
+.wn-ballot .v {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 52px;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: oklch(1 0 0);
+}
+.wn-ballot .v.gold {
+  color: var(--wn-gold);
+}
+.wn-ballot .l {
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: oklch(0.9 0.02 262);
+  margin-top: 10px;
+}
+.wn-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px;
+  margin-top: 8px;
+}
+.wn-step {
+  border: 1px solid var(--wn-rule);
+  border-radius: 14px;
+  background: var(--wn-paper);
+  padding: 26px 24px;
+  box-shadow: var(--wn-shadow-soft);
+  position: relative;
+  overflow: hidden;
+}
+.wn-step::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--wn-brand);
+}
+.wn-step:nth-child(2)::before {
+  background: var(--wn-gold);
+}
+.wn-step:nth-child(3)::before {
+  background: var(--wn-replace);
+}
+.wn-step .n {
+  font-family: var(--wn-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--wn-paper-2);
+  background: var(--wn-brand);
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 16px;
+}
+.wn-step:nth-child(2) .n {
+  background: var(--wn-gold);
+  color: var(--wn-ink);
+}
+.wn-step:nth-child(3) .n {
+  background: var(--wn-replace);
+}
+.wn-step h3 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 22px;
+  letter-spacing: -0.01em;
+  margin: 0 0 8px;
+  color: var(--wn-ink);
+}
+.wn-step p {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--wn-ink-3);
+  margin: 0;
+}
+.wn-step .tag {
+  font-family: var(--wn-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--wn-brand);
+  font-weight: 700;
+  margin-top: 14px;
+  display: inline-block;
+}
+.wn-cta {
+  padding: 60px 90px;
+  text-align: center;
+  background: var(--wn-paper-2);
+}
+.wn-cta h2 {
+  font-family: var(--wn-serif);
+  font-weight: 600;
+  font-size: 40px;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  color: var(--wn-ink);
+  text-wrap: balance;
+}
+.wn-cta p {
+  font-size: 16px;
+  color: var(--wn-ink-2);
+  margin: 0 auto 26px;
+  max-width: 540px;
+}
+.wn-cta .btn-primary {
+  background: var(--wn-brand);
+  color: var(--wn-paper-2);
+  border: none;
+  border-radius: 10px;
+  font-family: var(--wn-sans);
+  font-weight: 600;
+  font-size: 16px;
+  padding: 16px 26px;
+  min-height: 56px;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  box-shadow: var(--wn-shadow-soft);
+}
+.wn-cta .btn-primary:hover {
+  background: var(--wn-brand-2);
+}
+.wn-cta .sub {
+  font-family: var(--wn-mono);
+  font-size: 11px;
+  color: var(--wn-ink-3);
+  margin-top: 16px;
+  letter-spacing: 0.02em;
+}
+@media (max-width: 900px) {
+  .wn-back,
+  .wn-sec,
+  .wn-cta {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+  .wn-mast {
+    margin: 0 32px;
+  }
+  .wn-mast h1 {
+    font-size: 48px;
+  }
+  .wn-cols,
+  .wn-ballot,
+  .wn-steps {
+    grid-template-columns: 1fr;
+  }
+  .wn-ballot .cell + .cell {
+    border-left: none;
+    border-top: 1px solid oklch(1 0 0 / 0.16);
+  }
+}
+
+/* ---------- Privacy — Bold Flag / Keystone parity (08c-privacy) ----------
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"] + statics.css .sp-* rules.
+   Scoped to .sp-privacy only — does not touch the shared civic palette or
+   any other static page. */
+.sp-wrap.sp-privacy {
+  --pv-paper: oklch(1 0 0);
+  --pv-paper-2: oklch(0.985 0.003 258);
+  --pv-ink: oklch(0.2 0.035 260);
+  --pv-ink-2: oklch(0.37 0.032 260);
+  --pv-ink-3: oklch(0.54 0.026 260);
+  --pv-brand: oklch(0.4 0.155 262);
+  --pv-rule: oklch(0.88 0.006 260);
+  --pv-replace: oklch(0.53 0.205 27);
+  --pv-tag-bg: oklch(0.95 0.006 260);
+  --pv-serif: "Newsreader", Georgia, serif;
+  --pv-mono: "IBM Plex Mono", ui-monospace, monospace;
+  background: var(--pv-paper);
+}
+.sp-wrap.sp-privacy .sp-back {
+  color: var(--pv-brand);
+}
+.sp-wrap.sp-privacy .sp-kicker {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: var(--pv-replace);
+}
+.sp-wrap.sp-privacy .sp-kicker::before {
+  content: "";
+  width: 26px;
+  height: 2px;
+  background: var(--pv-replace);
+}
+.sp-wrap.sp-privacy .sp-mast h1 {
+  font-family: var(--pv-serif);
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .dek {
+  font-family: var(--pv-serif);
+  font-size: 19px;
+  color: var(--pv-ink-2);
+  border-bottom: 2px solid var(--pv-ink);
+  padding-bottom: 24px;
+}
+.sp-wrap.sp-privacy .sp-meta {
+  color: var(--pv-ink-3);
+}
+.sp-wrap.sp-privacy .sp-prose {
+  font-family: var(--pv-serif);
+  color: var(--pv-ink-2);
+}
+.sp-wrap.sp-privacy .sp-prose h2 {
+  font-family: var(--pv-serif);
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-prose b {
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-prose i {
+  color: var(--pv-ink);
+}
+.sp-wrap.sp-privacy .sp-prose a {
+  color: var(--pv-brand);
+}
+.sp-wrap.sp-privacy .sp-prose code {
+  background: var(--pv-tag-bg);
+  color: var(--pv-ink);
+}
+
+/* ---------- Edit-issues modal — Bold Flag / Keystone parity (09d-edit-issues) ----------
+   Locally-scoped white/navy/red palette, values lifted verbatim from canvas's own
+   design-handoff/design_handoff_voter_choice_redesign/screens.css
+   .screen[data-palette="white"] block ("PALETTE B — Bold Flag"), the palette behind
+   screens-intake.jsx's EditIssues (.amd-modal). EditIssuesModal.tsx keeps its own
+   amend- / be- prefixed class names (see parity-gate.ts's 09d-edit-issues waiver) but
+   they — and every shared IssueConversation/IssueRow class nested inside them
+   (.msg/.bubble/.themes-card/.theme-row/.co-input/etc, also used un-scoped by the
+   already-passing 09a/09b/09c intake scenarios) — all read the same global design
+   tokens. Re-declaring those tokens on .amend-modal cascades the Keystone palette
+   to every descendant without touching the shared civic-mood default those other
+   scenarios still rely on. Scoped to .amend-modal only. */
+.amend-modal {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --civic: oklch(0.4 0.155 262);
+  --civic-2: oklch(0.31 0.145 262);
+  --civic-soft: oklch(0.94 0.04 262);
+  --vote-red: oklch(0.53 0.205 27);
+  --tag-bg: oklch(0.95 0.006 260);
+  --serif: "Newsreader", Georgia, serif;
+  --mono: "IBM Plex Mono", ui-monospace, monospace;
+}
+/* Canvas's .iq-msg.user .iq-bubble is a soft navy-tinted bubble, not a solid-ink
+   one — .msg.user .bubble's shared rule (background: var(--ink)) is the right
+   call for the cold-open scenarios (09a/09b/09c) that already pass, so override
+   it locally instead of changing the shared rule. */
+.amend-modal .msg.user .bubble {
+  background: var(--civic-soft);
+  border: 1px solid oklch(0.84 0.05 262);
+  color: var(--civic-2);
+}
+/* .chip/.chips are otherwise unstyled outside the .ws-input sidebar context —
+   give the quick-reply chips a real pill treatment matching canvas's
+   .amd-modal .iq-opt buttons instead of bare unstyled <button>s. */
+.amend-modal .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.amend-modal .chip {
+  font-family: var(--sans);
+  font-size: 13px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.amend-modal .chip:hover:not(:disabled) {
+  border-color: var(--civic);
+  color: var(--ink);
+}
+.amend-modal .chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* ============ NoContestedView — upload-first redesign ============

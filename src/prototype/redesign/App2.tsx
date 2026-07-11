@@ -34,6 +34,8 @@ import { HeadToHead } from "./HeadToHead";
 import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
+import { PolisEntry } from "./PolisEntry";
+import { PolisStand } from "./PolisStand";
 import { IntakeView } from "./IntakeView";
 import { EditIssuesModal } from "./EditIssuesModal";
 import {
@@ -148,29 +150,67 @@ function StandingLocked({ onBack }) {
    keep/replace → scorecard). Not skippable/remembered: it's a single click on
    the happy path, and the edit-issues re-score path bypasses it entirely
    (analyze() is called directly there), so a returning reviewer never sees it
-   again within a session unless they re-run the cold open. */
+   again within a session unless they re-run the cold open.
+
+   Bold Flag / Keystone parity: markup + classes ported verbatim from
+   design-handoff/keystone-canvas/src/screens-orientation.jsx's
+   OrientationActivated per HANDOFF-EXACT-MATCH.md §1. AppNav (not canvas's
+   SCNav) still carries the app's real nav — the flag hairline + card
+   treatment are scoped to .ori-body in redesign2.css so the Bold Flag white
+   palette doesn't bleed into AppNav's shared civic styling. */
 function OrientationView({ onContinue }) {
   const { t } = useI18n();
   return (
-    <>
+    <div className="screen orientation ori">
       <AppNav />
-      <div className="coldopen orientation">
-        <div className="orient-lede">
-          <div className="kick">{t("orientation.kick")}</div>
-          <h2>{t("orientation.heading")}</h2>
-          <p dangerouslySetInnerHTML={{ __html: t("orientation.body") }} />
-        </div>
-        <div className="orient-foot">
-          <button
-            className="lock"
-            onClick={onContinue}
-            data-testid="orientation-continue"
-          >
-            {t("orientation.continueLabel")}
-          </button>
+      <div className="ori-body">
+        <div className="ori-card activated">
+          <div className="ori-ey">
+            <span className="kick">
+              <span className="star" aria-hidden="true">
+                ★
+              </span>{" "}
+              {t("orientation.kick")}
+            </span>
+          </div>
+          <h1>{t("orientation.heading")}</h1>
+          <p className="ori-lede">{t("orientation.lede")}</p>
+          <div className="ori-steps">
+            <div className="ori-step">
+              <span className="n">1</span>
+              <div>
+                <div className="st-t">{t("orientation.step1Title")}</div>
+                <div className="st-d">{t("orientation.step1Body")}</div>
+              </div>
+            </div>
+            <div className="ori-step">
+              <span className="n">2</span>
+              <div>
+                <div className="st-t">{t("orientation.step2Title")}</div>
+                <div className="st-d">{t("orientation.step2Body")}</div>
+              </div>
+            </div>
+            <div className="ori-step">
+              <span className="n">3</span>
+              <div>
+                <div className="st-t">{t("orientation.step3Title")}</div>
+                <div className="st-d">{t("orientation.step3Body")}</div>
+              </div>
+            </div>
+          </div>
+          <div className="ori-cta">
+            <button
+              className="btn-primary"
+              onClick={onContinue}
+              data-testid="orientation-continue"
+            >
+              {t("orientation.continueLabel")}
+            </button>
+            <span className="ori-meta">{t("orientation.meta")}</span>
+          </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
@@ -193,7 +233,9 @@ function App2Inner() {
       [
         "workspace",
         "print",
+        "polisEntry",
         "standing",
+        "polisstand",
         "coldopen",
         "orientation",
         "analyzing",
@@ -216,6 +258,16 @@ function App2Inner() {
   const [duelSeatId, setDuelSeatId] = useState(null);
   const [activeSeatId, setActiveSeatId] = useState(
     savedSession.activeSeatId || null,
+  );
+  // Delegation-overview navigation layer: true = 3-card scored overview,
+  // false = the (unchanged) deep single-seat view for activeSeatId. Lifted
+  // here (not local to DelegationWorkspace) because that component
+  // unmounts/remounts across sibling stages (duel, print, standing) — a
+  // returning duel/print flow must land back on the seat it left, not reset
+  // to the overview. Defaults to the overview on a fresh session; a resumed
+  // session restores wherever the user left off.
+  const [seatOverviewOpen, setSeatOverviewOpen] = useState(
+    savedSession.seatOverviewOpen ?? true,
   );
   const [revealed, setRevealed] = useState(
     () => new Set(savedSession.revealed || []),
@@ -286,10 +338,19 @@ function App2Inner() {
           picks,
           activeSeatId,
           revealed: [...revealed],
+          seatOverviewOpen,
         }),
       );
     } catch {}
-  }, [stage, address, verdicts, picks, activeSeatId, revealed]);
+  }, [
+    stage,
+    address,
+    verdicts,
+    picks,
+    activeSeatId,
+    revealed,
+    seatOverviewOpen,
+  ]);
 
   // Resume: re-run the pipeline silently for a returning session.
   useEffect(() => {
@@ -596,6 +657,20 @@ function App2Inner() {
     });
   }
 
+  // Delegation-overview navigation: opening a seat card leaves the overview
+  // for that seat's (unchanged) deep view; the "← All seats" control returns.
+  function openSeatFromOverview(seatId) {
+    setActiveSeatId(seatId);
+    setSeatOverviewOpen(false);
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "auto" });
+  }
+  function backToOverview() {
+    setSeatOverviewOpen(true);
+    if (typeof window !== "undefined")
+      window.scrollTo({ top: 0, behavior: "auto" });
+  }
+
   // Head-to-head duel: open from a seat's "Time to replace", record from its
   // Keep / Replace foot. Replace records the verdict AND the chosen successor.
   function openDuel(seatId) {
@@ -620,6 +695,14 @@ function App2Inner() {
       return n;
     });
 
+  // WIRING SEAM (for the PolisEntry reconciliation — see PolisStand's build
+  // report): this is the one hand-off point both the PolisEntry invite lane
+  // and PolisStand both need to intercept. Today it goes straight from the
+  // workspace's "all done" panel to PolisStand; PolisEntry's own stage
+  // belongs BEFORE this, i.e. the eventual chain is
+  // workspace -> polisentry -> polisstand -> standing. Reconciling the two
+  // lanes means PolisEntry's "continue" callback should call seeStanding()
+  // (or setStage("polisstand") directly) instead of setStage("standing").
   function seeStanding() {
     if (!submittedRef.current && delegation) {
       submittedRef.current = true;
@@ -628,7 +711,18 @@ function App2Inner() {
         issues,
       });
     }
-    setStage("standing");
+    setStage("polisstand");
+  }
+
+  // Optional Polis invite/preview — replaces the old one-line "where you
+  // stand among your neighbors" link, which used to jump straight to
+  // "standing". Now that link opens this dedicated screen instead, and the
+  // screen itself offers "See where I stand" (→ seeStanding) or "No thanks"
+  // (→ back to the workspace). Purely a stage change: it never touches
+  // verdicts, printing, or the counters submit — those are unaffected
+  // whether or not this screen is ever opened.
+  function openPolisEntry() {
+    setStage("polisEntry");
   }
 
   const districtsLine = delegation
@@ -662,6 +756,7 @@ function App2Inner() {
     setChatMessages({});
     setChatTimeouts({});
     prevChatSeatRef.current = null;
+    setSeatOverviewOpen(true);
     setStage("home");
   }
 
@@ -791,14 +886,63 @@ function App2Inner() {
         />
       );
     }
-    if (stage === "about") return <AboutPage onBack={() => setStage("home")} />;
+    // About/Methodology/Privacy/Tip share the StaticPage shell. The legacy
+    // app (VoterChoiceApp.tsx's own view-switch) already wraps these same
+    // 4 pages in <AppNav/><main id="main-content">; App2 was missing that
+    // wrapper entirely, leaving these routes with no top nav. AppNav's own
+    // flagbar (Bold Flag hairline, matches OrientationView's chrome and
+    // canvas's StaticPageVC — design-handoff/keystone-canvas/src/
+    // screens-statics.jsx) covers these routes automatically now.
+    if (stage === "about")
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <AboutPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
+    // WhyNowPage doesn't share the StaticPage shell (its own literal port of
+    // canvas's wn-* class vocabulary — see the 07-whynow STRUCTURAL_WAIVERS
+    // note in parity-gate.ts) but was missing AppNav entirely, same gap as
+    // the 4 pages above before that fix — canvas's SCNav (screens-orientation.jsx)
+    // is on every screen, this one just never got the same wrapper treatment.
     if (stage === "whynow")
-      return <WhyNowPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <WhyNowPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "methodology")
-      return <MethodologyPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <MethodologyPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "privacy")
-      return <PrivacyPage onBack={() => setStage("home")} />;
-    if (stage === "tip") return <TipJarPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <PrivacyPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
+    if (stage === "tip")
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <TipJarPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "print") {
       return (
         <ScorecardPrintView
@@ -812,6 +956,28 @@ function App2Inner() {
           districtsLine={districtsLine}
           onBack={() => setStage("workspace")}
         />
+      );
+    }
+    if (stage === "polisEntry") {
+      return (
+        <PolisEntry
+          seatsCount={seats.length}
+          onPrint={() => setStage("print")}
+          onSeeStanding={seeStanding}
+          onSkip={() => setStage("workspace")}
+        />
+      );
+    }
+    if (stage === "polisstand") {
+      return (
+        <>
+          <AppNav onBrandClick={() => setStage("workspace")} />
+          <PolisStand
+            stateCode={delegation?.stateCode ?? null}
+            onDone={() => setStage("standing")}
+            onSkip={() => setStage("workspace")}
+          />
+        </>
       );
     }
     if (stage === "standing") {
@@ -898,7 +1064,7 @@ function App2Inner() {
           onSelectSeat={setActiveSeatId}
           onPrint={() => setStage("print")}
           onContinueElsewhere={() => setShowHandoff(true)}
-          onSeeStanding={seeStanding}
+          onSeeStanding={openPolisEntry}
           chatMessages={chatMessages}
           chatTimeouts={chatTimeouts}
           budgetTier={budgetTier}
@@ -912,6 +1078,9 @@ function App2Inner() {
             setIssueDeltas(null);
           }}
           onDismissDeltas={() => setIssueDeltas(null)}
+          overviewOpen={seatOverviewOpen}
+          onOpenSeat={openSeatFromOverview}
+          onBackToOverview={backToOverview}
         />
         {showHandoff && (
           <HandoffModal

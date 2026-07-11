@@ -49,17 +49,17 @@
 </head>
 <body>
   <h1>Keystone review — Intake</h1>
-  <div class="sub">ref: <code>HEAD (aea5992a)</code> &middot; generated 2026-07-10T14:27:57.518Z</div>
+  <div class="sub">ref: <code>HEAD (fd8d4905)</code> &middot; generated 2026-07-11T16:03:23.843Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (aea5992a))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (fd8d4905))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">09a-intake-ask</div>
           <div class="label">Intake step 1 — the ask</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Fresh cold-open, before any message is sent.</div>
         </td>
@@ -71,7 +71,7 @@
         <td class="meta">
           <div class="id">09b-intake-propose</div>
           <div class="label">Intake step 2 — AI proposes + running issues card</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">After the first (extraction) turn — 2 starter issues + quick-reply chips.</div>
         </td>
@@ -83,9 +83,9 @@
         <td class="meta">
           <div class="id">09c-intake-locked</div>
           <div class="label">Intake step 3 — ready to lock</div>
-          <span class="badge unchanged">unchanged since base</span>
-          <span class="tag proxy">proxy</span>
-          <div class="note">IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues are set' banner, editable review card, Back/Continue — data-testid="issue-locked-confirm-btn") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, when that screen appears, stops there to shoot the real thing. Until #236 lands, that click completes the lock instantly with no interstitial to hold on (jumps straight to orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy instead: same UI one turn further (3 issues, after a refinement reply), right before clicking Lock.</div>
+          <span class="badge changed">changed since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">IntakeLocked.tsx (PR #236, merged) is canvas's distinct pre-lock confirmation screen — green 'Your issues are set' banner, the same editable review card as 09a/09b, and Back/Continue controls (data-testid="issue-locked-confirm-btn"). capture() clicks the conversation's 'Lock these in' and waits for that screen to actually appear — no silent fallback to a proxy state: before #236 merged, this scenario was 'automatable: proxy' and quietly rebuilt/re-shot the prior turn instead when the confirm screen didn't show up in time, which is exactly the false-pass class the STOP-SHIP Phase-4 audit flagged (capture 'succeeding' without ever reaching the screen it claims to verify). Now a missing screen throws and fails the gate outright instead of quietly substituting different content.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/09c-intake-locked.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/09c-intake-locked.png" alt="repo screenshot"></td>
@@ -95,7 +95,7 @@
         <td class="meta">
           <div class="id">09d-edit-issues</div>
           <div class="label">Intake step 4 — edit issues from workspace</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.</div>
         </td>
@@ -107,9 +107,9 @@
         <td class="meta">
           <div class="id">09e-edit-rescored</div>
           <div class="label">Intake step 5 — apply → re-scored with Revisit flags</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
-          <div class="note">Race-data mock swings the House score hard (83%→17%) once 'congressional accountability' enters the issue list, so Apply produces a real &gt;5pt REVISIT flag instead of the flat 'nothing moved' branch.</div>
+          <div class="note">Race-data mock swings the House score down (83%→17%) and the Senate score up (17%→83%) once 'congressional accountability' enters the issue list, so Apply produces two real &gt;5pt REVISIT flags — one each direction — instead of the flat 'nothing moved' branch.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/09e-edit-rescored.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/09e-edit-rescored.png" alt="repo screenshot"></td>

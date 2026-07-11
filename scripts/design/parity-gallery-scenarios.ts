@@ -14,12 +14,19 @@ import { type Page } from "@playwright/test";
 import {
   mockDelegation,
   mockDelegationWithChallengers,
+  mockSeatRaceData,
   mockResearch,
   mockPolis,
   mockCounters,
+  mockPolisRespond,
   goToStanding,
+  goToPolisStand,
   TX_SEATS,
 } from "../../e2e/helpers/redesign-mocks";
+import {
+  assembleClusterMap,
+  type ResponseVector,
+} from "../../src/lib/polis/pca";
 
 export type Automatable = "yes" | "proxy" | "no";
 
@@ -38,6 +45,20 @@ export interface Scenario {
   note: string;
   /** Absent when automatable === 'no' — nothing to run. */
   capture?: (page: Page) => Promise<void>;
+  /**
+   * CSS selector for a modal/overlay scenario's own visible card — when set,
+   * parity-gate.ts screenshots THIS element (Playwright locator.screenshot(),
+   * an exact CDP crop) instead of the full page. Modal-overlay refs are
+   * already auto-cropped to their content card on the CANVAS side
+   * (detectContentBBox in parity-gate.ts), so diffing an uncropped app
+   * screenshot — dimmed backdrop + real workspace bleeding through behind
+   * the scrim — against that cropped ref compares mostly backdrop, not the
+   * modal itself (the app-side half of the crop gap; see parity-gate.ts's
+   * "Why crop" file-header comment for the ref-side half, fixed by PR #261).
+   * Must select the modal's own card, NOT the full-screen scrim/overlay
+   * wrapper (which is viewport-sized and would defeat the crop).
+   */
+  visualCropSelector?: string;
 }
 
 const ADDRESS = "1100 Congress Ave, Austin, TX 78701";
@@ -235,10 +256,14 @@ async function mockSeatRaceDataMedian(page: Page): Promise<void> {
   });
 }
 
-/** Race-data mock whose House score SWINGS hard depending on whether the
- *  submitted issue list includes `congressional_accountability` — lets the
- *  edit-issues → re-score flow (09e) produce a real, visible REVISIT delta
- *  instead of the flat "nothing moved" branch. */
+/** Race-data mock whose House AND Senate scores SWING hard (opposite
+ *  directions) depending on whether the submitted issue list includes
+ *  `congressional_accountability` — lets the edit-issues → re-score flow
+ *  (09e) produce real, visible REVISIT deltas in BOTH directions instead of
+ *  the flat "nothing moved" branch: house-TX-37 drops (83%→17%), senate-TX-a
+ *  rises (17%→83%), so IssueDeltaBanner's ledger renders at least one ".ad-
+ *  row down"/".ad-arrow down" and one ".ad-row up"/".ad-arrow up" row for
+ *  real (not just theoretically supported by the dir-mapping logic). */
 async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
   await page.route("**/api/race-data", async (route) => {
     const body = route.request().postDataJSON() as {
@@ -314,6 +339,7 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
         },
       };
     } else if (body?.raceId === "senate-TX-a") {
+      const kept = hasAccountability ? 5 : 1;
       data = {
         racePatterns: {
           race: "senate-TX-a",
@@ -343,7 +369,7 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
                   issueLabel: "Lower insulin & drug prices",
                   resolvedStance: "opposed",
                   sourceType: "voting_record",
-                  kept: 1,
+                  kept,
                   total: 6,
                   contributingVotes: [],
                 },
@@ -391,16 +417,35 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
 }
 
 /** `divided` is the /api/polis/bridges response's "where it split" honest
- *  complement of `bridges` (same {statement, agreementPercent} shape) — see
- *  PR #240 (not yet merged to main as of this fix): src/prototype/redesign/
- *  polisAdapter.ts's mapStatementList() reads both keys off this same
- *  endpoint. Feeding it here is forward-compatible (harmless no-op today,
- *  since main's PolisClose.tsx doesn't consume a `divided` field yet) and
- *  starts working the moment #240 lands. */
+ *  complement of `bridges`. It carries the EXACT shape the real route emits and
+ *  the adapter reads — `{ statement, agreePercent, disagreePercent }` (see
+ *  BridgesResponseBody in src/app/api/polis/bridges/route.ts and ApiDivided in
+ *  src/prototype/redesign/polisAdapter.ts). PolisClose.tsx renders these as the
+ *  "Where it split" panel (agree-vs-disagree SplitBar + PT SPLIT figure).
+ *  Bridges keep their flat `agreementPercent` — the shape the adapter reads for
+ *  the common-ground rows. */
+/** Per-opinion-group breakdown for the convergence dots + chips. Party-free
+ *  (DECISION #116): clusterId 0/1/2 = Group A/B/C (same size-desc ids + colour
+ *  tokens the opinion map uses), NEVER D/R/I. Test fixture only. */
+type MockClusterAgreement = Array<{
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}>;
+
 async function mockBridges(
   page: Page,
-  bridges: Array<{ statement: string; agreementPercent: number }>,
-  divided: Array<{ statement: string; agreementPercent: number }> = [],
+  bridges: Array<{
+    statement: string;
+    agreementPercent: number;
+    clusterAgreement?: MockClusterAgreement;
+  }>,
+  divided: Array<{
+    statement: string;
+    agreePercent: number;
+    disagreePercent: number;
+    clusterAgreement?: MockClusterAgreement;
+  }> = [],
 ): Promise<void> {
   await page.route("**/api/polis/bridges?*", async (route) => {
     await route.fulfill({
@@ -413,6 +458,113 @@ async function mockBridges(
         status: bridges.length || divided.length ? "ok" : "no_bridges_yet",
         bridges,
         divided,
+      }),
+    });
+  });
+}
+
+/** Build a party-free 3-group breakdown (Group A/B/C) for a statement's
+ *  convergence dots + chips. Colours match the map (clusterId 0/1/2 →
+ *  --cluster-a/b/c). Test fixture only. */
+function groups(a: number, b: number, c: number): MockClusterAgreement {
+  return [
+    { clusterId: 0, label: "Group A", agreePct: a },
+    { clusterId: 1, label: "Group B", agreePct: b },
+    { clusterId: 2, label: "Group C", agreePct: c },
+  ];
+}
+
+/* ---------------------------------------------------------------------------
+ * Opinion-map CAPTURE FIXTURE (10c / 10d).
+ *
+ * The real /api/polis endpoint builds its `clusterMap` from stored
+ * `polis_response_vectors` (empty in a fresh capture env → single-cloud
+ * fallback). To exercise the real 3-cluster map on the parity gallery we feed
+ * the endpoint the SAME algorithm's output over three synthetic archetypal
+ * answer-patterns + noise — i.e. this fixture is genuine `assembleClusterMap`
+ * output, not hand-drawn dots. Party-free (DECISION #116): neutral Group
+ * A/B/C, positions + counts + neutral ids only.
+ * --------------------------------------------------------------------------- */
+const POLIS_MAP_STATEMENTS = ["s1", "s2", "s3", "s4", "s5", "s6"] as const;
+const POLIS_ARCHETYPES: Record<
+  "A" | "B" | "C",
+  Array<"agree" | "disagree" | "pass">
+> = {
+  A: ["agree", "agree", "disagree", "disagree", "pass", "pass"],
+  B: ["disagree", "disagree", "agree", "agree", "pass", "pass"],
+  C: ["disagree", "disagree", "disagree", "disagree", "agree", "agree"],
+};
+function makePolisRng(seed: number): () => number {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
+}
+function polisArchetypeRows(
+  kind: "A" | "B" | "C",
+  n: number,
+  rng: () => number,
+): ResponseVector[] {
+  const base = POLIS_ARCHETYPES[kind];
+  const rows: ResponseVector[] = [];
+  for (let i = 0; i < n; i++) {
+    const v: ResponseVector = {};
+    for (let j = 0; j < POLIS_MAP_STATEMENTS.length; j++) {
+      let ans = base[j];
+      if (rng() < 0.15) {
+        const alt = ["agree", "disagree", "pass"] as const;
+        ans = alt[Math.floor(rng() * 3)];
+      }
+      v[POLIS_MAP_STATEMENTS[j]] = ans;
+    }
+    rows.push(v);
+  }
+  return rows;
+}
+/** Deterministic 3-archetype fixture → real assembleClusterMap output. */
+const POLIS_CLUSTER_MAP = (() => {
+  const rng = makePolisRng(42);
+  const vectors = [
+    ...polisArchetypeRows("A", 26, rng),
+    ...polisArchetypeRows("B", 25, rng),
+    ...polisArchetypeRows("C", 17, rng),
+  ];
+  // A cross-pressured "You" so the marker lands centrally, between the camps.
+  const you: ResponseVector = {
+    s1: "agree",
+    s2: "disagree",
+    s3: "agree",
+    s4: "disagree",
+    s5: "agree",
+    s6: "pass",
+  };
+  return assembleClusterMap(vectors, you, 3);
+})();
+
+/**
+ * Override /api/polis with a payload carrying the real 3-cluster opinion map.
+ * Register AFTER mockPolis so this handler wins (Playwright matches the
+ * most-recently-added route first). sampleSize mirrors the canvas's
+ * illustrative "12,480 voters" copy; the map dots are the algorithm's output.
+ */
+async function mockPolisClusterMap(page: Page): Promise<void> {
+  await page.route("**/api/polis?*", async (route) => {
+    const url = new URL(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        scope:
+          url.searchParams.get("scope") === "national" ? "national" : "state",
+        sampleSize: 12480,
+        thresholdMet: true,
+        dots: [],
+        you: null,
+        clusterMap: POLIS_CLUSTER_MAP,
+        consensus: [],
+        overlap: { mostCommon: null, youShares: [] },
+        issueRegions: [],
       }),
     });
   });
@@ -465,7 +617,7 @@ async function gotoHomeClean(page: Page): Promise<void> {
 
 async function submitAddress(page: Page, address = ADDRESS): Promise<void> {
   await page
-    .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+    .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
     .fill(address);
   // Match on the visible label only (substring, arrow-agnostic) — some
   // branches render the trailing → as an aria-hidden span, which drops it
@@ -563,14 +715,14 @@ async function reachWorkspace(page: Page): Promise<void> {
   await sendFirstIssue(page);
   await lockIssues(page);
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
-  // PR #243 (not yet merged) makes DelegationOverview the default landing
-  // screen (App2.tsx's seatOverviewOpen defaults true) instead of landing
-  // directly on the single-seat rail — its cards carry a shared
-  // data-testid="seat-card" (src/prototype/redesign/DelegationOverview.tsx
-  // on that branch). Race both markers rather than a fixed pre-wait, so a
-  // branch without the overview pays no extra latency (.b-row just wins the
-  // race as before) and a branch with it clicks through the first card
-  // before falling through to the same rail wait every scenario expects.
+  // PR #243 (merged) makes DelegationOverview the default landing screen
+  // (App2.tsx's seatOverviewOpen defaults true) instead of landing directly
+  // on the single-seat rail — its cards carry a shared data-testid="seat-card"
+  // (src/prototype/redesign/DelegationOverview.tsx). Race both markers rather
+  // than a fixed pre-wait, so a branch without the overview pays no extra
+  // latency (.b-row just wins the race as before) and a branch with it
+  // clicks through the first card before falling through to the same rail
+  // wait every scenario expects.
   const seatCard = page.getByTestId("seat-card").first();
   const rail = page.locator(".b-row").first();
   await Promise.race([
@@ -622,9 +774,9 @@ export const SCENARIOS: Scenario[] = [
     files: ["src/prototype/redesign/App2.tsx", "public/redesign2.css"],
     automatable: "yes",
     note:
-      "Reachable directly (lock issues → orientation interstitial). Known confirmed gap " +
-      "per HANDOFF-EXACT-MATCH.md §1.1: today's OrientationView is a bare div, no flagbar/" +
-      "ori-card/3-step list — the screenshot documents that gap, it is not a tooling limitation.",
+      "Reachable directly (lock issues → orientation interstitial). Ported: OrientationView " +
+      "now renders the full flagbar/ori-card/3-step list structure (see STRUCTURAL_PROBES in " +
+      "parity-gate.ts, 18/18 design classes present, 0 missing) — this scenario verifies it.",
     async capture(page) {
       // mockDelegation + mockChatLocal aren't required locally (a dev
       // .env.local's real DATABASE_URL/API creds let the real /api/delegation
@@ -719,6 +871,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note: "Opens the AllVotesPanel overlay via the 'see full record' CTA.",
+    // ".av-panel" is the modal's own visible card (onClick stopPropagation) —
+    // NOT ".be-modal-overlay"/".avsheet-scrim", the full-viewport dimmed
+    // backdrop those wrap around it (confirmed by reading
+    // VoterChoiceApp.tsx:4421-4422 directly).
+    visualCropSelector: ".av-panel",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -732,6 +889,16 @@ export const SCENARIOS: Scenario[] = [
       await page
         .locator(".be-modal-overlay .av-panel")
         .waitFor({ timeout: 5000 });
+      // .be-modal-overlay's own `be-fadein` opacity keyframe (public/prototype.css)
+      // is a nominal 0.15s, but confirmed by inspecting getComputedStyle directly
+      // (elementFromPoint + a parent-chain walk) that the scrim's opacity can
+      // still read literally 0 several hundred ms after the .waitFor above
+      // resolves in a headless capture, then reads back to 1 by ~3s — a headless-
+      // Chromium animation-clock-catchup quirk (the timeline only advances once
+      // something forces a real paint), not a real user-facing delay. Without
+      // this, a screenshot taken right after the .waitFor lands mid-fade and the
+      // Results workspace behind the scrim visibly bleeds through the modal.
+      await page.waitForTimeout(1500);
     },
   },
   {
@@ -833,27 +1000,23 @@ export const SCENARIOS: Scenario[] = [
     refFile: "05c-candidates-overview.png",
     label:
       "Candidates — DelegationOverview (multi-seat scored cards before drill-down)",
-    files: ["src/prototype/redesign/DelegationWorkspace.tsx"],
-    automatable: "no",
+    files: [
+      "src/prototype/redesign/DelegationWorkspace.tsx",
+      "src/prototype/redesign/DelegationOverview.tsx",
+    ],
+    automatable: "yes",
     note:
-      "NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Today the " +
-      "app goes straight to the single-seat deep view (02a-results-main) with no scored " +
-      "multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not " +
-      "merged to main as of this report) — capture() below is a real, PR #243-verified " +
-      "sequence (data-testid=\"delegation-overview\"), ready to flip automatable to 'yes'/" +
-      "'proxy' once #243 merges. The canvas ref PNG that was previously missing now exists: " +
-      "the real design source turned out to live in a different, newer, untracked folder " +
-      "(design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/" +
-      "keystone-canvas/ which predates this screen) — screens-delegation.jsx's " +
-      "DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter " +
-      "Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured " +
-      "2026-07-08 by serving that folder locally and screenshotting the artboard's " +
-      '[data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same ' +
-      "fidelity as the viewer's own Download-PNG export, just driven headlessly. See " +
-      ".keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows. " +
-      "automatable stays 'no' for now — flips to 'yes'/'proxy' once PR #243 merges and the " +
-      "delegation-overview testid actually exists on main (same pattern as reachWorkspace()'s " +
-      "PR #243 comment above).",
+      'PR #243 merged (data-testid="delegation-overview") — capture() below drives the ' +
+      "actual repo screen (DelegationOverview.tsx), no longer a stand-in. The canvas ref PNG " +
+      "was captured from a different, newer, untracked folder (design-handoff/" +
+      "design_handoff_voter_choice_redesign/, not design-handoff/keystone-canvas/ which " +
+      "predates this screen) — screens-delegation.jsx's DelegationOverview, wired into that " +
+      "folder's own standalone canvas viewer ('Voter Choice - Keystone Design Session.html') " +
+      "as the 'dg-overview' artboard. Captured 2026-07-08 by serving that folder locally and " +
+      'screenshotting the artboard\'s [data-dc-slot="dg-overview"] .dc-card node at 3x ' +
+      "(deviceScaleFactor) — the same fidelity as the viewer's own Download-PNG export, just " +
+      "driven headlessly. See .keystone-canvas-refs/manifest.json's 05c-candidates-overview " +
+      "entry for what it shows.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -876,14 +1039,20 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/App2.tsx",
     ],
     automatable: "yes",
-    note: "Fresh home stage, no session.",
+    note:
+      "Fresh home stage, no session. The canvas ref depicts the address field filled and the " +
+      "submit CTA in its enabled/navy state (disabled={!addr.trim()} in VoterChoiceApp.tsx " +
+      "means an empty field renders the CTA gray) — filled, not clicked, since the artboard is " +
+      "still the hero itself, not the loading/results screen submitting would navigate to.",
     async capture(page) {
       await gotoHomeClean(page);
       // The app renders via a client-only next/dynamic bundle (SSR bails out
       // on purpose) — wait for real content, not just the network 'load' event.
-      await page
-        .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
-        .waitFor({ timeout: 15000 });
+      const addressInput = page.getByPlaceholder(
+        "1100 Congress Ave, Austin, TX 78701",
+      );
+      await addressInput.waitFor({ timeout: 15000 });
+      await addressInput.fill(ADDRESS);
     },
   },
   {
@@ -892,10 +1061,10 @@ export const SCENARIOS: Scenario[] = [
     label: "Why Now — editorial page",
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
-    note: "Nav → 'Why now?'.",
+    note: "Nav → 'Why now' (card 24's AppNav parity pass dropped the trailing '?' to match the canvas SCNav label).",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Why now?" }).click();
+      await page.getByRole("link", { name: "Why now", exact: true }).click();
     },
   },
   {
@@ -940,10 +1109,17 @@ export const SCENARIOS: Scenario[] = [
     label: "Statics — Privacy",
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
-    note: "Nav → 'Privacy'.",
+    note:
+      "Nav → 'Privacy'. exact:true guards against Playwright's default " +
+      "substring match: the Privacy page's own body text links out to " +
+      '"Anthropic\'s privacy policy", whose accessible name also contains ' +
+      '"Privacy" — non-exact getByRole would strict-mode-violate once ' +
+      "already on this page (e.g. a future e2e test re-querying after " +
+      "landing here), even though the initial click from the home page " +
+      "(where only the nav link exists) isn't ambiguous today.",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Privacy" }).click();
+      await page.getByRole("link", { name: "Privacy", exact: true }).click();
     },
   },
   {
@@ -1018,47 +1194,35 @@ export const SCENARIOS: Scenario[] = [
     refFile: "09c-intake-locked.png",
     label: "Intake step 3 — ready to lock",
     files: [
-      "src/prototype/redesign/IssueConversation.tsx",
-      "src/prototype/redesign/App2.tsx",
+      "src/prototype/redesign/IntakeLocked.tsx",
+      "src/prototype/redesign/IntakeView.tsx",
     ],
-    automatable: "proxy",
+    automatable: "yes",
     note:
-      "IntakeLocked.tsx (canvas's distinct pre-lock confirmation screen — green 'Your issues " +
-      "are set' banner, editable review card, Back/Continue — data-testid=\"issue-locked-" +
-      "confirm-btn\") isn't merged to main yet (PR #236). capture() clicks 'Lock these in' and, " +
-      "when that screen appears, stops there to shoot the real thing. Until #236 lands, that " +
-      "click completes the lock instantly with no interstitial to hold on (jumps straight to " +
-      "orientation) — the click can't be undone, so this rebuilds and stops at the prior proxy " +
-      "instead: same UI one turn further (3 issues, after a refinement reply), right before " +
-      "clicking Lock.",
+      "IntakeLocked.tsx (PR #236, merged) is canvas's distinct pre-lock confirmation screen — " +
+      "green 'Your issues are set' banner, the same editable review card as 09a/09b, and Back/" +
+      'Continue controls (data-testid="issue-locked-confirm-btn"). capture() clicks the ' +
+      "conversation's 'Lock these in' and waits for that screen to actually appear — no silent " +
+      "fallback to a proxy state: before #236 merged, this scenario was 'automatable: proxy' and " +
+      "quietly rebuilt/re-shot the prior turn instead when the confirm screen didn't show up in " +
+      "time, which is exactly the false-pass class the STOP-SHIP Phase-4 audit flagged (capture " +
+      "'succeeding' without ever reaching the screen it claims to verify). Now a missing screen " +
+      "throws and fails the gate outright instead of quietly substituting different content.",
     async capture(page) {
       // See 01-orientation-activated's capture() comment: reachColdOpen
       // needs a delegation mock, and sendFirstIssue/sendFollowUpIssue need a
       // chat mock, in any environment without real DB/API creds (CI).
       await mockDelegation(page);
       await mockChatLocal(page);
-      const reachPreLock = async () => {
-        // App2.tsx persists in-progress state to sessionStorage (not
-        // localStorage — see its SESSION_KEY), which gotoHomeClean() never
-        // clears; every other scenario only calls it once per fresh page so
-        // this never mattered, but a second call here (the redo below) would
-        // otherwise resume straight into the stale conversation instead of
-        // reaching a clean home page.
-        await page.evaluate(() => sessionStorage.clear()).catch(() => {});
-        await reachColdOpen(page);
-        await sendFirstIssue(page);
-        await sendFollowUpIssue(page);
-      };
-      await reachPreLock();
+      await reachColdOpen(page);
+      await sendFirstIssue(page);
+      await sendFollowUpIssue(page);
       await page.getByTestId("issue-primary").click();
-      const reachedIntakeLocked = await page
+      // No silent proxy fallback here on purpose — see the note above. If
+      // IntakeLocked ever regresses to unreachable, this must fail loudly.
+      await page
         .getByTestId("issue-locked-confirm-btn")
-        .waitFor({ state: "visible", timeout: 2000 })
-        .then(() => true)
-        .catch(() => false);
-      if (!reachedIntakeLocked) {
-        await reachPreLock();
-      }
+        .waitFor({ state: "visible", timeout: 15000 });
     },
   },
   {
@@ -1071,6 +1235,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note: "Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.",
+    // ".amend-card" is EditIssuesModal's own visible card (onClick
+    // stopPropagation) — NOT the outer `data-testid="edit-issues-modal"`
+    // node (".amend-modal"), which is the full-viewport dimmed backdrop
+    // (confirmed by reading EditIssuesModal.tsx directly).
+    visualCropSelector: ".amend-card",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataDeltaAware(page);
@@ -1094,9 +1263,10 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note:
-      "Race-data mock swings the House score hard (83%→17%) once 'congressional " +
-      "accountability' enters the issue list, so Apply produces a real >5pt REVISIT flag " +
-      "instead of the flat 'nothing moved' branch.",
+      "Race-data mock swings the House score down (83%→17%) and the Senate score up " +
+      "(17%→83%) once 'congressional accountability' enters the issue list, so Apply " +
+      "produces two real >5pt REVISIT flags — one each direction — instead of the flat " +
+      "'nothing moved' branch.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataDeltaAware(page);
@@ -1116,32 +1286,102 @@ export const SCENARIOS: Scenario[] = [
     refFile: "10a-polis-entry.png",
     label: "Polis — entry point",
     files: [
-      "src/prototype/redesign/DelegationWorkspace.tsx",
+      "src/prototype/redesign/PolisEntry.tsx",
       "src/prototype/redesign/App2.tsx",
+      "public/redesign2.css",
     ],
-    automatable: "no",
+    automatable: "yes",
     note:
-      "NOT AUTOMATABLE: PolisEntry.tsx (canvas's dedicated invite/preview screen — " +
-      "data-testid=\"polis-entry-see-standing\") isn't merged to main yet (PR #237); it " +
-      "replaces today's inline '.all-done … where you stand' link, which currently jumps " +
-      "straight to the standing report with no interstitial. A prior 'proxy' capture stopped " +
-      "at that unclicked link instead and pixel-diffed it against the real PolisEntry canvas " +
-      "ref — a screen it never actually reaches — which silently false-passed (STOP-SHIP " +
-      "2026-07-09 finding). Genuinely not gradable until #237 lands.",
+      "PolisEntry.tsx (canvas's dedicated invite/preview screen, " +
+      'data-testid="polis-entry-see-standing") landed via PR #237 — the workspace\'s ' +
+      "'.all-done … where you stand' completion link now opens this interstitial instead of " +
+      "jumping straight to the standing report (the false-pass this scenario used to document, " +
+      "STOP-SHIP 2026-07-09, is resolved: capture() reaches the real screen, not an unclicked " +
+      "proxy link). capture() verdicts every seat, follows that link, and stops at PolisEntry " +
+      "itself — one step short of goToStanding()'s final click into the real standing report. " +
+      "Also fixed here: PolisEntry.tsx's .pe-screen predates the app-wide Bold Flag foundation " +
+      "(PR #237 was built before it) and pointed its --brand/--brand-2 tokens at --civic, which " +
+      ".bf-app's own comment documents as deliberately LEFT untouched app-wide (it still doubles " +
+      "as the 'keep' green) — so PolisEntry's flagbar/buttons/invite-rail rendered civic-green " +
+      "instead of the canvas's navy. Repointed at --bf-brand/--bf-brand-2 (public/redesign2.css).",
+    async capture(page) {
+      await mockDelegation(page);
+      await mockSeatRaceData(page);
+      await mockResearch(page);
+      await mockPolis(page, true);
+      await mockCounters(page);
+      await reachWorkspace(page);
+      // Verdict every seat — PolisEntry only renders once the whole
+      // delegation has a verdict (App2.tsx's ".all-done" completion link).
+      // Duplicated from goToStanding (e2e/helpers/redesign-mocks.ts) rather
+      // than reusing it directly: goToStanding drives one step further,
+      // clicking through PolisEntry's own "See where I stand" CTA into the
+      // real standing report, but this scenario needs to stop and shoot
+      // PolisEntry itself.
+      const rows = page.locator(".b-row");
+      const count = await rows.count();
+      for (let i = 0; i < count; i++) {
+        await rows.nth(i).click();
+        const keep = page
+          .getByRole("button", { name: /Worth keeping/ })
+          .first();
+        await keep.waitFor({ timeout: 15000 });
+        await keep.click();
+        // Let the verdict commit (commitVerdict defers the auto-advance ~600ms).
+        await page.waitForTimeout(700);
+      }
+      // Re-open a seat so the center column (which holds .all-done) is on
+      // screen; on mobile the last verdict closed the overlay.
+      await rows.first().click();
+      const standingLink = page
+        .locator(".all-done")
+        .getByRole("button", { name: /where you stand/ });
+      await standingLink.waitFor({ timeout: 15000 });
+      await standingLink.click();
+      await page
+        .getByTestId("polis-entry-see-standing")
+        .waitFor({ timeout: 15000 });
+    },
   },
   {
     id: "10b-polis-contribute",
     refFile: "10b-polis-contribute.png",
     label: "Polis — contribute (blind voting)",
-    files: [],
-    automatable: "no",
+    files: [
+      "src/prototype/redesign/PolisStand.tsx",
+      "src/app/api/polis/respond/route.ts",
+      "src/lib/polis/statements.ts",
+    ],
+    automatable: "yes",
     note:
-      "NOT AUTOMATABLE: no such UI exists in the app to screenshot. Read src/prototype/redesign/" +
-      "PolisClose.tsx in full and grepped the repo for Agree/Disagree/Pass/PolisStand-style " +
-      "markup — the current Polis feature is a passive aggregate REPORT only (opinion-map + " +
-      "common-ground bridges), fed by server-side counters; there is no per-statement blind " +
-      "agree/disagree/pass voting surface anywhere in the codebase. This is a missing feature, " +
-      "not a missing test hook — capturing anything here would misrepresent the app.",
+      "PolisStand (card fb77d0bb) now exists — a literal port of the canvas's polis-stand " +
+      "artboard (.ps-* vocabulary; unlike PolisClose this screen carries no party data to " +
+      "begin with, so there's no party-free conflict forcing a re-expression). Drives to " +
+      "PolisStand and answers the SAME two statements the canvas ref itself answers (2nd " +
+      "agree, 3rd disagree, 1st left unvoted) for the tightest possible visual match — the " +
+      "whole point is blind per-statement voting, never a fully-agreed or fully-disagreed set.",
+    async capture(page) {
+      await mockDelegation(page);
+      await mockSeatRaceDataMedian(page);
+      await mockResearch(page);
+      await mockPolis(page, true);
+      await mockCounters(page);
+      await mockPolisRespond(page, "stored");
+      await reachWorkspace(page);
+      await goToPolisStand(page);
+      await page.locator(".polisstand2").waitFor({ timeout: 10000 });
+      const cards = page.locator(".ps-stmt");
+      await cards
+        .nth(1)
+        .getByRole("button", { name: "Agree", exact: true })
+        .click();
+      await page.locator(".ps-stmt.voted").first().waitFor({ timeout: 10000 });
+      await cards
+        .nth(2)
+        .getByRole("button", { name: "Disagree", exact: true })
+        .click();
+      await page.locator(".ps-stmt.voted").nth(1).waitFor({ timeout: 10000 });
+    },
   },
   {
     id: "10c-polis-report-consensus",
@@ -1155,10 +1395,10 @@ export const SCENARIOS: Scenario[] = [
     note:
       "Bridges mock returns several high-agreement statements → 'Common ground' panel renders " +
       "populated, plus one divided statement → 'Where it split' renders too (the realistic " +
-      "'mostly consensus, some friction' mix). Bridges/divided rendering is real content today; " +
-      "PolisClose.tsx doesn't consume the divided field yet (PR #240, not merged) so that " +
-      "second panel doesn't show on main until then — see STRUCTURAL_WAIVERS in parity-gate.ts " +
-      "for why the residual visual diff is expected either way (DECISION #116, party-free).",
+      "'mostly consensus, some friction' mix). Both panels render real content today via " +
+      "computeDivided (card e2455f56, superseded the held PR #240) — see STRUCTURAL_WAIVERS in " +
+      "parity-gate.ts for why the residual visual diff is expected either way (DECISION #116, " +
+      "party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -1166,34 +1406,44 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page, true);
       await mockBridges(
         page,
+        // Common ground: per-group dots CONVERGE (all three groups near the
+        // population headline) — that's what makes it a genuine bridge.
         [
           {
             statement: "Congress should cap prescription drug price increases.",
             agreementPercent: 86,
+            clusterAgreement: groups(88, 83, 87),
           },
           {
             statement: "Federal spending needs independent audits every year.",
             agreementPercent: 79,
+            clusterAgreement: groups(81, 76, 80),
           },
           {
             statement:
               "Members of Congress should not trade individual stocks.",
             agreementPercent: 71,
+            clusterAgreement: groups(73, 68, 72),
           },
           {
             statement:
               "Rent assistance should scale with local cost of living.",
             agreementPercent: 82,
+            clusterAgreement: groups(84, 79, 83),
           },
         ],
+        // The lone divided row: groups SPREAD apart.
         [
           {
             statement: "Congress should raise the federal minimum wage.",
-            agreementPercent: 52,
+            agreePercent: 52,
+            disagreePercent: 41,
+            clusterAgreement: groups(74, 31, 52),
           },
         ],
       );
       await mockCounters(page);
+      await mockPolisClusterMap(page);
       await reachWorkspace(page);
       await goToStanding(page);
       await page.locator(".polis").waitFor({ timeout: 10000 });
@@ -1207,16 +1457,14 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/PolisClose.tsx",
       "src/prototype/redesign/polisAdapter.ts",
     ],
-    automatable: "proxy",
+    automatable: "yes",
     note:
-      "PolisClose has no computed 'divided/split' branch yet (PR #240, not merged to main — " +
-      "only an early-days vs. normal lede, toggled purely by sampleSize<30, see LOW_N in " +
-      "PolisClose.tsx). Bridges mock now returns zero bridges + several real divided " +
-      "statements — on #240 this renders the true 'genuinely split' branch (no Common ground " +
-      "panel, 'Where it split' populated instead); on main today it exercises the existing " +
-      "bridges.length===0 fallback (the 'big stat panel' branch) since divided isn't read yet. " +
-      "Proxy until #240 lands. See STRUCTURAL_WAIVERS in parity-gate.ts for why the residual " +
-      "visual diff is expected either way (DECISION #116, party-free).",
+      "PolisClose renders the true 'genuinely split' branch live (no Common ground panel, " +
+      "'Where it split' populated instead) via computeDivided / DIVIDED_MIN_SHARE=30 (card " +
+      "e2455f56) — this superseded the held PR #240, which never merged. Bridges mock returns " +
+      "zero bridges + several real divided statements to exercise that branch. See " +
+      "STRUCTURAL_WAIVERS in parity-gate.ts for why the residual visual diff is expected either " +
+      "way (DECISION #116, party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -1225,23 +1473,32 @@ export const SCENARIOS: Scenario[] = [
       await mockBridges(
         page,
         [],
+        // Every row here is genuinely split: the per-group dots SPREAD far
+        // apart (one group high, another low) — that spread is the divide.
         [
           {
-            statement: "This cycle, almost nothing bridged every group.",
-            agreementPercent: 58,
+            statement: "Federal spending should be cut across the board.",
+            agreePercent: 58,
+            disagreePercent: 34,
+            clusterAgreement: groups(79, 28, 52),
           },
           {
             statement: "Congress should raise the federal minimum wage.",
-            agreementPercent: 44,
+            agreePercent: 43,
+            disagreePercent: 54,
+            clusterAgreement: groups(22, 71, 44),
           },
           {
             statement:
               "The federal government should fund more affordable housing.",
-            agreementPercent: 39,
+            agreePercent: 38,
+            disagreePercent: 57,
+            clusterAgreement: groups(18, 66, 40),
           },
         ],
       );
       await mockCounters(page);
+      await mockPolisClusterMap(page);
       await reachWorkspace(page);
       await goToStanding(page);
       await page.locator(".polis").waitFor({ timeout: 10000 });
@@ -1293,11 +1550,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx at all — " +
-      "confirmed by grep: it has zero usages outside MoneyGap.tsx/MoneyGap.test.tsx. The duel " +
-      "screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not " +
-      "the ratio + shared-scale component the canvas shows. Proxy: same HeadToHead screenshot " +
-      "as 05b, so the gap is visible rather than hidden.",
+      "The canvas's money-ratio + shared-scale component for this screen was deleted as " +
+      "dead code — confirmed by grep: no export with that shape exists anywhere in " +
+      "MoneyGap.tsx anymore. The duel screen's actual money treatment is a simpler " +
+      "PAC-percentage footnote (.cmp-fund), not that ratio/scale component. Proxy: same " +
+      "HeadToHead screenshot as 05b, so the gap is visible rather than hidden.",
     async capture(page) {
       await mockDelegationWithChallengers(page);
       await mockSeatRaceDataMedian(page);

@@ -28,14 +28,46 @@ import {
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { MedianChip, MoneyGapScale } from "./MoneyGap";
 
+/** Provenance badge — the design's unifier (roll-call vs researched).
+ *  Mirrors HeadToHead.tsx's ProvBadge / DelegationOverview.tsx's DgProv —
+ *  same small per-screen helper, duplicated locally per that convention. */
+function ProvBadge({ researched }) {
+  const { t } = useI18n();
+  return researched ? (
+    <span className="prov researched">{t("repCard.provResearched")}</span>
+  ) : (
+    <span className="prov rollcall">{t("repCard.provRollcall")}</span>
+  );
+}
+
+/** True when a seat's alignment is backed by researched public statements
+ * rather than a roll-call voting record — either an executive seat
+ * (seat.researched) or a Congress seat whose record hasn't posted yet
+ * (alignmentEntry.scores === null + unavailable, the same condition
+ * AlignmentScoreBanner branches on internally). */
+function isResearchedBasis(seat) {
+  return !!(
+    seat.researched ||
+    (seat.alignmentEntry?.scores === null && seat.alignmentEntry?.unavailable)
+  );
+}
+
 /** Party display metadata, keyed by the raw party name from the data source.
  * A function (not a module-level const) because the display name needs
  * `t()` — party labels are user-facing and must translate. */
 export function getPartyMeta2(t) {
   return {
-    Republican: { name: t("repCard.partyRepublican"), code: "R", pipClass: "rep" },
+    Republican: {
+      name: t("repCard.partyRepublican"),
+      code: "R",
+      pipClass: "rep",
+    },
     Democrat: { name: t("repCard.partyDemocrat"), code: "D", pipClass: "dem" },
-    Independent: { name: t("repCard.partyIndependent"), code: "I", pipClass: "ind" },
+    Independent: {
+      name: t("repCard.partyIndependent"),
+      code: "I",
+      pipClass: "ind",
+    },
   };
 }
 
@@ -581,6 +613,9 @@ function UnresolvedSeatCard({
           </span>
         )}
       </div>
+      <div className="cv2-prov-row">
+        <ProvBadge researched={isResearchedBasis(seat)} />
+      </div>
       <div className="cv2-issues">
         <div className="cv2-block-head">
           <div className="lab">{seat.blindLabel}</div>
@@ -696,6 +731,10 @@ export function RepCard({
         onHide={onHide}
       />
 
+      <div className="cv2-prov-row">
+        <ProvBadge researched={isResearchedBasis(seat)} />
+      </div>
+
       <AttendanceBand2
         attendance={seat.attendance}
         researched={seat.researched}
@@ -763,6 +802,26 @@ export function RepCard({
               {t("repCard.moneyTrail")}
             </span>
             <span className="cv2-disclose-summary">
+              {/* Segmented small/large/pac mini-bar — same real fundingMix
+                  data cv2-disclose-mix already renders below, just given a
+                  visual (canvas's cd-bars/MiniBars), always-visible ahead of
+                  the collapsed disclosure body. */}
+              {cand.fundingMix && (
+                <span className="cv2-mini-fundbar" aria-hidden="true">
+                  <i
+                    className="small"
+                    style={{ width: cand.fundingMix.small + "%" }}
+                  />
+                  <i
+                    className="large"
+                    style={{ width: cand.fundingMix.large + "%" }}
+                  />
+                  <i
+                    className="pac"
+                    style={{ width: cand.fundingMix.pac + "%" }}
+                  />
+                </span>
+              )}
               {typeof cand.totalRaised === "number" && (
                 <span className="cv2-disclose-stat">
                   <b>{formatDollars(cand.totalRaised)}</b>{" "}

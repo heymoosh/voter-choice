@@ -40,6 +40,8 @@ import {
   guardPolisRequest,
   cachedPolisJson,
 } from "../../../lib/server/polis/route-guard";
+import { fetchClusterMap } from "../../../lib/server/polis/clusterMap";
+import type { ClusterMap } from "../../../lib/polis/pca";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +68,14 @@ export interface PolisResponse {
   /** One dot per finished session (capped). Party-free: just positions. */
   dots: Array<{ x: number; y: number }>;
   you: { x: number; y: number } | null;
+  /**
+   * The real pol.is-style opinion map (Phase 8b): PCA-projected sessions
+   * clustered by answer similarity into neutral Group A/B/C fields. Present
+   * only when stored response vectors exist AND separate into groups; null →
+   * the FE draws the single-cloud `dots` above (honest low-data fallback).
+   * Party-free: positions + counts + neutral ids only.
+   */
+  clusterMap: ClusterMap | null;
   consensus: IssueStat[];
   overlap: {
     /** Most-shared priority across everyone in scope (or null when empty). */
@@ -317,10 +327,15 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         .filter(Boolean)
     : [];
 
-  const agg =
+  const [agg, clusterMap] = await Promise.all([
     scopeParam === "national"
-      ? await fetchNationalPolisAggregate()
-      : await fetchPolisAggregate(stateCode, county || null);
+      ? fetchNationalPolisAggregate()
+      : fetchPolisAggregate(stateCode, county || null),
+    // Cluster map draws from stored response vectors (a separate table from the
+    // session-overlap counters `agg` uses). State scope → that state's vectors;
+    // national → all. Null when vectors are absent/thin/unseparated.
+    fetchClusterMap(scopeParam === "national" ? null : stateCode),
+  ]);
 
   const totals = perIssueTotals(agg);
   const rand = seededRandom(agg.sampleSize * 31 + totals.size + 7);
@@ -331,6 +346,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     thresholdMet: agg.sampleSize >= THRESHOLD,
     dots: generateCloud(agg, totals, rand),
     you: projectYou(userConcerns),
+    clusterMap,
     consensus: computeConsensus(totals, agg.sampleSize),
     overlap: computeOverlap(totals, agg.sampleSize, userConcerns),
     issueRegions: computeRegions(totals, agg.sampleSize),
