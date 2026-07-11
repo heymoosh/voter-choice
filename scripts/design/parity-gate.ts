@@ -106,6 +106,7 @@ import path from "node:path";
 import { parseArgs } from "node:util";
 import { SCENARIOS, type Scenario } from "./parity-gallery-scenarios";
 import { getFreePort, startNextDev, type AppInstance } from "./dev-server";
+import { computeVerdict } from "./gate-verdict";
 
 const require = createRequire(import.meta.url);
 
@@ -283,16 +284,151 @@ interface MarkerProbe {
   scenarioId: string;
   markers: {
     /** CSS selector checked against the LIVE rendered app — the repo's own
-     *  real selectors/classes/testids, never a design-source class. */
-    selector: string;
-    /** What finding this selector present-or-absent proves; shown in the
-     *  report in place of a class name. */
+     *  real selectors/classes/testids, never a design-source class. Present
+     *  XOR `check` below: plain existence (`count() > 0`) when the marker is
+     *  a single element's presence; use `check` instead for anything that
+     *  needs geometry, computed style, or DOM order to express (a mere
+     *  selector match can't tell "two columns" from "one column with a
+     *  decoy class", which is exactly the false-signal STOP-SHIP 2026-07-10
+     *  found in the pre-hardening 05a/06 markers — see MARKER_LAYOUT_CHECKS
+     *  below for the reusable geometry/style helpers). */
+    selector?: string;
+    /** Custom pass/fail check against the LIVE page, for a layout/geometry/
+     *  computed-style/DOM-order assertion a selector count can't express.
+     *  Runs instead of a selector-count when set. */
+    check?: (page: Page) => Promise<boolean>;
+    /** What finding this marker present-or-absent (or true/false) proves;
+     *  shown in the report in place of a class name. */
     description: string;
   }[];
   note: string;
 }
 
 type Probe = ClassDiffProbe | MarkerProbe;
+
+// ---------------------------------------------------------------------------
+// Reusable layout/style/order checks for MarkerProbe's `check` field —
+// STOP-SHIP 2026-07-10 hardening. Existence-only markers (`selector`) can
+// pass on a decoy element that shares a class/testid without the actual
+// structural fact being true (e.g. "some element with 'preview' in its class
+// exists somewhere" isn't the same claim as "the page renders two columns").
+// These give a `check(page)` a concrete geometry/style/order fact to test
+// instead, so a marker can assert what the class-diff probes assert for
+// literal ports: not just "an element exists" but "the page is actually
+// shaped the way the design intends."
+// ---------------------------------------------------------------------------
+
+/** True iff at least two of `containerSelector`'s direct children are
+ *  visually laid out side-by-side: their horizontal (x) ranges don't
+ *  overlap, and their vertical (y) ranges overlap by a meaningful fraction
+ *  of the shorter one's height (ruling out two elements that just happen to
+ *  sit at different heights on a single-column page). Deliberately checks
+ *  DIRECT children only, not arbitrary descendants — matches how a real
+ *  two-column section is built (two sibling blocks under one row/grid
+ *  container), and avoids false-matching on incidental nested elements that
+ *  happen to not overlap. Robust to whatever the eventual second column's
+ *  own class name turns out to be (unlike a `[class*="preview"]`-style
+ *  guess) since it reads real layout, not a class token. */
+async function hasTwoColumnChildren(
+  page: Page,
+  containerSelector: string,
+): Promise<boolean> {
+  return page.evaluate((sel) => {
+    const container = document.querySelector(sel);
+    if (!container) return false;
+    const kids = Array.from(container.children)
+      .map((el) => el.getBoundingClientRect())
+      .filter((r) => r.width > 40 && r.height > 40);
+    for (let i = 0; i < kids.length; i++) {
+      for (let j = i + 1; j < kids.length; j++) {
+        const a = kids[i];
+        const b = kids[j];
+        const xOverlap = Math.min(a.right, b.right) - Math.max(a.left, b.left);
+        const yOverlap = Math.min(a.bottom, b.bottom) - Math.max(a.top, b.top);
+        const minHeight = Math.min(a.height, b.height);
+        if (xOverlap <= 0 && yOverlap > minHeight * 0.3) return true;
+      }
+    }
+    return false;
+  }, containerSelector);
+}
+
+/** True iff every selector in `selectors` matches exactly one element AND
+ *  those elements appear in the live DOM in the same order the array lists
+ *  them — a section-order check (e.g. "header, then badge, then content"),
+ *  catching a regression where a section moves, duplicates, or the whole
+ *  chain goes missing, not just whether any one piece individually exists. */
+async function elementsInDocumentOrder(
+  page: Page,
+  selectors: string[],
+): Promise<boolean> {
+  return page.evaluate((sels) => {
+    const els = sels.map((s) => document.querySelector(s));
+    if (els.some((e) => !e)) return false;
+    for (let i = 0; i < els.length - 1; i++) {
+      const rel = els[i]!.compareDocumentPosition(els[i + 1]!);
+
+      if (!(rel & Node.DOCUMENT_POSITION_FOLLOWING)) return false;
+    }
+    return true;
+  }, selectors);
+}
+
+/** True iff `selector`'s (first match's) computed `styleProp` equals
+ *  `expected` — a key-style-marker check (e.g. a badge's border-style
+ *  actually renders "dashed" vs "solid", not just that the badge exists). */
+async function hasComputedStyle(
+  page: Page,
+  selector: string,
+  styleProp: keyof CSSStyleDeclaration,
+  expected: string,
+): Promise<boolean> {
+  return page.evaluate(
+    ({ sel, prop, exp }) => {
+      const el = document.querySelector(sel);
+      if (!el) return false;
+      const value = getComputedStyle(el)[prop as unknown as number];
+      return String(value) === exp;
+    },
+    { sel: selector, prop: styleProp, exp: expected },
+  );
+}
+
+/** True iff `selector` (a <button>) is enabled AND its computed
+ *  background-color reads as "dark" (mean channel value below the 50%
+ *  point) — the generic form of "renders in its active/brand-colored state,
+ *  not the grayed-out disabled treatment." getComputedStyle's returned
+ *  color syntax depends on how the value was specified — this repo's
+ *  palette tokens are declared as oklch(L C H) (confirmed:
+ *  public/prototype.css's --hh-brand/--rule), and Chromium's computed-style
+ *  serialization preserves that oklch() form rather than converting to
+ *  rgb() (observed directly: "oklch(0.4 0.155 262)", not "rgb(...)") — so
+ *  both forms are parsed here rather than assuming one. */
+async function isEnabledDarkButton(
+  page: Page,
+  selector: string,
+): Promise<boolean> {
+  const btn = page.locator(selector);
+  // Count-check before any state/action query below: a Locator method like
+  // isDisabled() waits on Playwright's actionability polling (default
+  // timeout) when its target isn't in the DOM yet, which would hang this
+  // check for the full timeout instead of failing fast — this fails a
+  // missing element cleanly and immediately, matching every other marker
+  // check's "not found ⇒ false" contract (see runMarkerCheck).
+  if ((await btn.count()) === 0) return false;
+  if (await btn.isDisabled()) return false;
+  const bg = await btn.evaluate((el) => getComputedStyle(el).backgroundColor);
+  const oklchMatch = /^oklch\(\s*([\d.]+)/.exec(bg);
+  if (oklchMatch) return Number(oklchMatch[1]) < 0.5;
+  const rgbMatch = /rgba?\((\d+),\s*(\d+),\s*(\d+)/.exec(bg);
+  if (!rgbMatch) return false;
+  const [r, g, b] = [
+    Number(rgbMatch[1]),
+    Number(rgbMatch[2]),
+    Number(rgbMatch[3]),
+  ];
+  return (r + g + b) / 3 < 128;
+}
 
 /**
  * Curated, not exhaustive. Most of the 27 parity-gallery scenarios render
@@ -476,6 +612,23 @@ const STRUCTURAL_PROBES: Probe[] = [
   {
     kind: "marker",
     scenarioId: "05a-candidates-parity",
+    // Hardened 2026-07-11: the original 2 markers below (existence-only)
+    // both now PASS on today's app — RepCard.tsx gained a real ProvBadge
+    // since this probe was written (commit f1232bad, "add provenance badge
+    // to RepCard (05a-candidates-parity)"), so the note's old "zero '.prov'
+    // markup anywhere" claim is stale. That's genuinely good news for the
+    // app, but it left this probe with ZERO discriminating power today —
+    // exactly the false-signal pattern STOP-SHIP 2026-07-10 flagged
+    // (existence-only markers "can PASS while most of the page doesn't
+    // match"). Widened to actually verify the fixed badge is correct, not
+    // just present: the right VARIANT for a researched seat (not just any
+    // '.prov'), the right visible text, the canvas's own dashed-vs-solid
+    // border-style distinction (public/redesign2.css confirmed directly:
+    // .prov.researched has `border: 1.5px dashed`, .prov.rollcall has
+    // `border: 1.5px solid`), and correct document order (badge sits
+    // between the card header and the alignment content, matching
+    // RepCard.tsx's own render order) — a section-completeness check that
+    // would catch a badge rendered in the wrong slot even though it exists.
     markers: [
       {
         selector: '[data-testid="web-search-alignment-banner"]',
@@ -484,25 +637,91 @@ const STRUCTURAL_PROBES: Probe[] = [
           "closest analog to a non-roll-call card)",
       },
       {
-        selector: ".prov",
+        selector: ".rep-card .prov.researched",
         description:
-          "renders a distinct provenance badge (canvas's ProvBadge: 'Roll-call record' vs. " +
-          '\'Researched · cited\', className="prov rollcall"/"prov researched") — HeadToHead.tsx ' +
-          "already ports this exact badge (confirmed by reading it directly) but RepCard.tsx's " +
-          "single-card view (the one this scenario captures) has zero '.prov' markup anywhere",
+          "renders the RESEARCHED variant of the provenance badge specifically (not just any " +
+          "'.prov' element — a rollcall-variant badge on a researched seat would be a real bug " +
+          "a bare '.prov' existence check couldn't catch)",
+      },
+      {
+        check: async (page) => {
+          // Count-check first: .innerText() on a 0-match locator waits out
+          // Playwright's actionability timeout instead of failing fast (see
+          // isEnabledDarkButton's identical guard above).
+          const badge = page.locator(".rep-card .prov.researched");
+          if ((await badge.count()) === 0) return false;
+          // .innerText() reflects the badge's own `text-transform: uppercase`
+          // (public/redesign2.css's ".rep-card .prov" rule) — compared
+          // case-insensitively against the translation string's own casing
+          // (t('repCard.provResearched') = "Researched · cited") rather than
+          // hand-uppercasing an expected literal, so this doesn't silently
+          // stop meaning anything if that CSS rule is ever dropped.
+          const txt = await badge.innerText();
+          return txt.toLowerCase().includes("researched");
+        },
+        description:
+          "the researched-variant badge's own visible text reads 'Researched · cited' " +
+          "(t('repCard.provResearched') in VoterChoiceApp.tsx) — not an empty or placeholder " +
+          "badge shell",
+      },
+      {
+        check: (page) =>
+          hasComputedStyle(
+            page,
+            ".rep-card .prov.researched",
+            "borderTopStyle",
+            "dashed",
+          ),
+        description:
+          "the researched badge renders with a DASHED border, the canvas's own style " +
+          "distinction from the solid-border rollcall variant (public/redesign2.css: " +
+          "'.rep-card .prov.researched { border: 1.5px dashed ... }' vs. " +
+          "'.rep-card .prov.rollcall { border: 1.5px solid ... }')",
+      },
+      {
+        check: (page) =>
+          elementsInDocumentOrder(page, [
+            ".rep-card .seat-strip",
+            ".rep-card .cv2-prov-row",
+            '[data-testid="web-search-alignment-banner"]',
+          ]),
+        description:
+          "the card's seat header, provenance badge, and alignment content render in that " +
+          "document order (RepCard.tsx's own render sequence) — catches the badge landing in " +
+          "the wrong slot, a duplicate, or a section going missing, not just any one piece's " +
+          "bare existence",
       },
     ],
     note:
       "RepCard.tsx (cv2-* prefix) shares zero class-token overlap with screens-candidates.jsx's " +
       "CandidateParity (cd-* prefix) — same non-literal-port situation as 02c-results-" +
-      "votes-drilldown. The confirmed, checkable gap is the missing provenance badge: the " +
-      "canvas's whole point for this artboard is 'one card, every seat' unified by a roll-call-" +
-      "vs-researched badge (ProvBadge); the repo's single-card view has no equivalent element " +
-      "at all, only a plain italic note for researched candidates.",
+      "votes-drilldown, so a class-diff probe can't apply here. UPDATED 2026-07-11: the " +
+      "provenance-badge gap this probe originally existed to catch is now fixed (commit " +
+      "f1232bad) — RepCard.tsx renders ProvBadge with the canvas's own '.prov researched'/" +
+      "'.prov rollcall' classes and dashed/solid border distinction. The 5 markers above verify " +
+      "that fix is CORRECT (right variant, right text, right style, right position), not just " +
+      "present, so a future regression that re-breaks any one of those facts still fails here.",
   },
   {
     kind: "marker",
     scenarioId: "06-homehero",
+    // Hardened 2026-07-11: the original 3rd marker below
+    // (`[class*="preview"], [class*="vh-stack"]`) was a guess at a future
+    // class name. It happened to also still pass today — commits 9219dda5/
+    // 269e7173 ("add the missing product-preview right column to homepage
+    // hero") already landed the second column as `.hp-preview`/`.hp-stack`
+    // (confirmed by reading VoterChoiceApp.tsx directly), which matches
+    // that guessed selector — but a class-substring match only proves "an
+    // element with a matching class string exists somewhere," not the
+    // actual claim ("is this really a two-column layout"), so it would
+    // equally have passed on a decoy element with an unrelated 'preview'
+    // class anywhere on the page. Replaced with hasTwoColumnChildren, a
+    // geometry check against .hp-hero's real rendered layout — robust to
+    // whatever class name the preview column happens to use, since it
+    // reads bounding boxes, not class tokens. Also adds a genuine
+    // style-level marker: the submit CTA renders in its enabled/navy state
+    // (not the gray disabled treatment) once the address is filled, the
+    // specific regression commit d183aa1d fixed for this scenario.
     markers: [
       {
         selector: ".hp-hero",
@@ -514,20 +733,32 @@ const STRUCTURAL_PROBES: Probe[] = [
           "renders the address-entry card (canvas's vh-addr equivalent)",
       },
       {
-        selector: '[class*="preview"], [class*="vh-stack"]',
+        check: (page) => hasTwoColumnChildren(page, ".hp-hero"),
         description:
-          "renders a second-column live preview panel ('What you'll get' scorecard stack) " +
-          "alongside the address form — canvas's HomeHero is a two-column .vh-left/.vh-preview " +
-          'layout; the repo\'s hero is explicitly single-column (className="hp-hero hp-hero-solo", ' +
-          "confirmed by reading HomeView directly — no preview/stack markup exists anywhere)",
+          "renders a genuine two-column layout inside .hp-hero (two sibling blocks laid out " +
+          "side-by-side by real geometry, not just an element with a name that mentions " +
+          "'preview') — canvas's HomeHero is a two-column .vh-left/.vh-preview layout; the " +
+          "repo's .hp-hero now renders its content wrapper alongside a sibling .hp-preview " +
+          "column (commits 9219dda5/269e7173)",
+      },
+      {
+        check: (page) => isEnabledDarkButton(page, ".addr-card .go"),
+        description:
+          "the address-submit CTA renders in its enabled/navy state (not the gray disabled " +
+          "treatment) once the address field is filled — the specific regression fixed by " +
+          "commit d183aa1d ('06-homehero scenario captures filled/enabled CTA state')",
       },
     ],
     note:
       "HomeView (VoterChoiceApp.tsx) uses its own hp-hero/addr-*/eyebrow/lede vocabulary — " +
       "confirmed by a full class-token diff against screens-home.jsx's HomeHero (vh-* prefix): " +
-      "zero overlap. The confirmed, checkable gap is structural, not just naming: the repo's " +
-      "own 'hp-hero-solo' class name self-documents that the canvas's second-column live " +
-      "scorecard preview was dropped, not merely renamed.",
+      "zero overlap, so a class-diff probe can't apply here. UPDATED 2026-07-11: the " +
+      "single-column gap this probe originally existed to catch is now fixed (commits " +
+      "9219dda5/269e7173) — .hp-hero renders a real second .hp-preview column. The " +
+      "hasTwoColumnChildren + isEnabledDarkButton markers above verify that fix (and the " +
+      "separate CTA-state fix, d183aa1d) geometrically/by computed style rather than by class " +
+      "presence, so a future regression that collapses the layout or re-disables the CTA still " +
+      "fails here even if the classes stay.",
   },
   {
     kind: "marker",
@@ -999,8 +1230,9 @@ interface StructuralResult {
 }
 
 /** (a2) marker check — see MarkerProbe's doc comment for what this measures
- *  and why. Each marker is graded independently by presence/absence in the
- *  live DOM; the probe passes only when every marker is present. */
+ *  and why. Each marker is graded independently — either plain selector
+ *  presence, or a custom `check(page)` for layout/style/order assertions —
+ *  and the probe passes only when every marker passes. */
 async function runMarkerCheck(
   probe: MarkerProbe,
   page: Page,
@@ -1008,8 +1240,10 @@ async function runMarkerCheck(
   const found: string[] = [];
   const missing: string[] = [];
   for (const marker of probe.markers) {
-    const count = await page.locator(marker.selector).count();
-    (count > 0 ? found : missing).push(marker.description);
+    const pass = marker.check
+      ? await marker.check(page)
+      : (await page.locator(marker.selector!).count()) > 0;
+    (pass ? found : missing).push(marker.description);
   }
   return {
     ran: true,
@@ -1572,19 +1806,10 @@ interface GateResult {
   visual: VisualResult;
 }
 
-function overallPass(r: GateResult): boolean | null {
-  if (r.captureError) return false;
-  const structuralOk = !r.structural.ran || r.structural.pass === true;
-  const contentOk = !r.content.ran || r.content.pass === true;
-  const visualOk = !r.visual.ran || r.visual.pass === true;
-  const anyRan = r.structural.ran || r.content.ran || r.visual.ran;
-  if (!anyRan) return null; // nothing to gate on for this scenario
-  return structuralOk && contentOk && visualOk;
-}
-
 function printReport(results: GateResult[], threshold: number): boolean {
   let anyFail = false;
   let anyRan = false;
+  let anyBlocked = false;
   console.log(`\n${"=".repeat(72)}`);
   console.log("Keystone parity gate report");
   console.log(
@@ -1592,7 +1817,8 @@ function printReport(results: GateResult[], threshold: number): boolean {
   );
   console.log("=".repeat(72));
   for (const r of results) {
-    const pass = overallPass(r);
+    const verdict = computeVerdict(r);
+    const pass = verdict.pass;
     if (pass === null) {
       console.log(
         `\n${r.scenario.id} — SKIPPED (no structural probe, no ref PNG)`,
@@ -1606,6 +1832,32 @@ function printReport(results: GateResult[], threshold: number): boolean {
     if (r.captureError) {
       console.log(`  capture failed: ${r.captureError}`);
       continue;
+    }
+    if (verdict.blockedReason) {
+      anyBlocked = true;
+      console.log(`  BLOCKED: ${verdict.blockedReason}`);
+    } else {
+      // Evidence line — what actually backed this verdict, so a PASS isn't
+      // just a bare word: "structural + visual" (a literal-class/marker
+      // probe genuinely checked something), "content + visual" (a copy
+      // assertion did), or "visual only (documented waiver)" (no probe
+      // applies here, per an explicit, reviewed STRUCTURAL_WAIVERS entry —
+      // see gate-verdict.ts's computeVerdict for what makes a visual-only
+      // PASS allowed at all).
+      const hasWaiver =
+        !r.structural.ran &&
+        (r.structural.skipReason ?? "").startsWith("WAIVED:");
+      const evidenceLabel =
+        verdict.evidence.length > 0
+          ? verdict.evidence.join(" + ")
+          : "visual only";
+      const weakSuffix =
+        verdict.evidence.length === 1 &&
+        verdict.evidence[0] === "visual" &&
+        hasWaiver
+          ? " (documented waiver — see structural note below)"
+          : "";
+      console.log(`  evidence: ${evidenceLabel}${weakSuffix}`);
     }
     if (r.structural.ran) {
       const s = r.structural;
@@ -1658,12 +1910,17 @@ function printReport(results: GateResult[], threshold: number): boolean {
     }
   }
   console.log(`\n${"=".repeat(72)}`);
-  const ranResults = results.filter((r) => overallPass(r) !== null);
-  const passCount = ranResults.filter((r) => overallPass(r) === true).length;
+  const ranResults = results.filter((r) => computeVerdict(r).pass !== null);
+  const passCount = ranResults.filter(
+    (r) => computeVerdict(r).pass === true,
+  ).length;
   console.log(
     `${passCount}/${ranResults.length} gated scenarios passed` +
       (results.length > ranResults.length
         ? ` (${results.length - ranResults.length} skipped — no probe/ref)`
+        : "") +
+      (anyBlocked
+        ? " — includes scenario(s) BLOCKED by the visual-evidence-only rule, see above"
         : ""),
   );
   console.log("=".repeat(72));
@@ -1727,7 +1984,21 @@ async function main(): Promise<void> {
         try {
           await scenario.capture(page);
           const screenshotPath = path.join(args.out, `${scenario.id}.png`);
-          await page.screenshot({ path: screenshotPath, fullPage: true });
+          if (scenario.visualCropSelector) {
+            // Modal-overlay scenario — screenshot the modal's own card
+            // (an exact CDP element crop), not the full page. See
+            // Scenario.visualCropSelector's doc comment for why: the ref
+            // is already cropped to its content card on the canvas side,
+            // so diffing that against an uncropped app screenshot (dimmed
+            // backdrop + real page bleeding through) compares mostly
+            // backdrop regardless of modal fidelity.
+            await page
+              .locator(scenario.visualCropSelector)
+              .first()
+              .screenshot({ path: screenshotPath });
+          } else {
+            await page.screenshot({ path: screenshotPath, fullPage: true });
+          }
 
           const structural = await runStructuralCheck(scenario, page);
           const content = await runContentCheck(
