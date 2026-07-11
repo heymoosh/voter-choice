@@ -262,13 +262,12 @@ test.describe("standing stage (polis)", () => {
     // The "see where you stand" teaser was removed ([P1]); reach standing via
     // the completion link that appears once the whole delegation is verdicted.
     await goToStanding(page);
-    await expect(page.locator(".polis h2")).toContainText(
-      "less divided than you think",
-    );
+    // Keystone "Where you stand" report masthead.
+    await expect(page.locator(".pr-mast h1")).toContainText("stand");
     // Party-free cloud — scatter renders, no cluster/party labels.
     await expect(page.locator(".scatter")).toHaveCount(1);
-    // Bridges are sentinel-only in v1 → panel hidden.
-    await expect(page.locator(".bridges")).toHaveCount(0);
+    // Bridges are sentinel-only in this mock → common-ground list hidden.
+    await expect(page.locator(".pr-list")).toHaveCount(0);
   });
 
   test("sparse sample shows early-days framing, cloud still renders", async ({
@@ -283,7 +282,7 @@ test.describe("standing stage (polis)", () => {
 
     await goToStanding(page);
     // Low sampleSize (<30) → honest "early days" framing, no participation gate.
-    await expect(page.locator(".polis-lede")).toContainText("Early days");
+    await expect(page.locator(".pr-mast")).toContainText("Early days");
     // Scatter still renders — locked only when sampleSize=0.
     await expect(page.locator(".scatter")).toHaveCount(1);
   });

@@ -20,6 +20,10 @@ import {
   goToStanding,
   TX_SEATS,
 } from "../../e2e/helpers/redesign-mocks";
+import {
+  assembleClusterMap,
+  type ResponseVector,
+} from "../../src/lib/polis/pca";
 
 export type Automatable = "yes" | "proxy" | "no";
 
@@ -391,16 +395,35 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
 }
 
 /** `divided` is the /api/polis/bridges response's "where it split" honest
- *  complement of `bridges` (same {statement, agreementPercent} shape) — see
- *  PR #240 (not yet merged to main as of this fix): src/prototype/redesign/
- *  polisAdapter.ts's mapStatementList() reads both keys off this same
- *  endpoint. Feeding it here is forward-compatible (harmless no-op today,
- *  since main's PolisClose.tsx doesn't consume a `divided` field yet) and
- *  starts working the moment #240 lands. */
+ *  complement of `bridges`. It carries the EXACT shape the real route emits and
+ *  the adapter reads — `{ statement, agreePercent, disagreePercent }` (see
+ *  BridgesResponseBody in src/app/api/polis/bridges/route.ts and ApiDivided in
+ *  src/prototype/redesign/polisAdapter.ts). PolisClose.tsx renders these as the
+ *  "Where it split" panel (agree-vs-disagree SplitBar + PT SPLIT figure).
+ *  Bridges keep their flat `agreementPercent` — the shape the adapter reads for
+ *  the common-ground rows. */
+/** Per-opinion-group breakdown for the convergence dots + chips. Party-free
+ *  (DECISION #116): clusterId 0/1/2 = Group A/B/C (same size-desc ids + colour
+ *  tokens the opinion map uses), NEVER D/R/I. Test fixture only. */
+type MockClusterAgreement = Array<{
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}>;
+
 async function mockBridges(
   page: Page,
-  bridges: Array<{ statement: string; agreementPercent: number }>,
-  divided: Array<{ statement: string; agreementPercent: number }> = [],
+  bridges: Array<{
+    statement: string;
+    agreementPercent: number;
+    clusterAgreement?: MockClusterAgreement;
+  }>,
+  divided: Array<{
+    statement: string;
+    agreePercent: number;
+    disagreePercent: number;
+    clusterAgreement?: MockClusterAgreement;
+  }> = [],
 ): Promise<void> {
   await page.route("**/api/polis/bridges?*", async (route) => {
     await route.fulfill({
@@ -413,6 +436,113 @@ async function mockBridges(
         status: bridges.length || divided.length ? "ok" : "no_bridges_yet",
         bridges,
         divided,
+      }),
+    });
+  });
+}
+
+/** Build a party-free 3-group breakdown (Group A/B/C) for a statement's
+ *  convergence dots + chips. Colours match the map (clusterId 0/1/2 →
+ *  --cluster-a/b/c). Test fixture only. */
+function groups(a: number, b: number, c: number): MockClusterAgreement {
+  return [
+    { clusterId: 0, label: "Group A", agreePct: a },
+    { clusterId: 1, label: "Group B", agreePct: b },
+    { clusterId: 2, label: "Group C", agreePct: c },
+  ];
+}
+
+/* ---------------------------------------------------------------------------
+ * Opinion-map CAPTURE FIXTURE (10c / 10d).
+ *
+ * The real /api/polis endpoint builds its `clusterMap` from stored
+ * `polis_response_vectors` (empty in a fresh capture env → single-cloud
+ * fallback). To exercise the real 3-cluster map on the parity gallery we feed
+ * the endpoint the SAME algorithm's output over three synthetic archetypal
+ * answer-patterns + noise — i.e. this fixture is genuine `assembleClusterMap`
+ * output, not hand-drawn dots. Party-free (DECISION #116): neutral Group
+ * A/B/C, positions + counts + neutral ids only.
+ * --------------------------------------------------------------------------- */
+const POLIS_MAP_STATEMENTS = ["s1", "s2", "s3", "s4", "s5", "s6"] as const;
+const POLIS_ARCHETYPES: Record<
+  "A" | "B" | "C",
+  Array<"agree" | "disagree" | "pass">
+> = {
+  A: ["agree", "agree", "disagree", "disagree", "pass", "pass"],
+  B: ["disagree", "disagree", "agree", "agree", "pass", "pass"],
+  C: ["disagree", "disagree", "disagree", "disagree", "agree", "agree"],
+};
+function makePolisRng(seed: number): () => number {
+  let s = seed >>> 0 || 1;
+  return () => {
+    s = (s * 1664525 + 1013904223) >>> 0;
+    return s / 0xffffffff;
+  };
+}
+function polisArchetypeRows(
+  kind: "A" | "B" | "C",
+  n: number,
+  rng: () => number,
+): ResponseVector[] {
+  const base = POLIS_ARCHETYPES[kind];
+  const rows: ResponseVector[] = [];
+  for (let i = 0; i < n; i++) {
+    const v: ResponseVector = {};
+    for (let j = 0; j < POLIS_MAP_STATEMENTS.length; j++) {
+      let ans = base[j];
+      if (rng() < 0.15) {
+        const alt = ["agree", "disagree", "pass"] as const;
+        ans = alt[Math.floor(rng() * 3)];
+      }
+      v[POLIS_MAP_STATEMENTS[j]] = ans;
+    }
+    rows.push(v);
+  }
+  return rows;
+}
+/** Deterministic 3-archetype fixture → real assembleClusterMap output. */
+const POLIS_CLUSTER_MAP = (() => {
+  const rng = makePolisRng(42);
+  const vectors = [
+    ...polisArchetypeRows("A", 26, rng),
+    ...polisArchetypeRows("B", 25, rng),
+    ...polisArchetypeRows("C", 17, rng),
+  ];
+  // A cross-pressured "You" so the marker lands centrally, between the camps.
+  const you: ResponseVector = {
+    s1: "agree",
+    s2: "disagree",
+    s3: "agree",
+    s4: "disagree",
+    s5: "agree",
+    s6: "pass",
+  };
+  return assembleClusterMap(vectors, you, 3);
+})();
+
+/**
+ * Override /api/polis with a payload carrying the real 3-cluster opinion map.
+ * Register AFTER mockPolis so this handler wins (Playwright matches the
+ * most-recently-added route first). sampleSize mirrors the canvas's
+ * illustrative "12,480 voters" copy; the map dots are the algorithm's output.
+ */
+async function mockPolisClusterMap(page: Page): Promise<void> {
+  await page.route("**/api/polis?*", async (route) => {
+    const url = new URL(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({
+        scope:
+          url.searchParams.get("scope") === "national" ? "national" : "state",
+        sampleSize: 12480,
+        thresholdMet: true,
+        dots: [],
+        you: null,
+        clusterMap: POLIS_CLUSTER_MAP,
+        consensus: [],
+        overlap: { mostCommon: null, youShares: [] },
+        issueRegions: [],
       }),
     });
   });
@@ -1182,34 +1312,44 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page, true);
       await mockBridges(
         page,
+        // Common ground: per-group dots CONVERGE (all three groups near the
+        // population headline) — that's what makes it a genuine bridge.
         [
           {
             statement: "Congress should cap prescription drug price increases.",
             agreementPercent: 86,
+            clusterAgreement: groups(88, 83, 87),
           },
           {
             statement: "Federal spending needs independent audits every year.",
             agreementPercent: 79,
+            clusterAgreement: groups(81, 76, 80),
           },
           {
             statement:
               "Members of Congress should not trade individual stocks.",
             agreementPercent: 71,
+            clusterAgreement: groups(73, 68, 72),
           },
           {
             statement:
               "Rent assistance should scale with local cost of living.",
             agreementPercent: 82,
+            clusterAgreement: groups(84, 79, 83),
           },
         ],
+        // The lone divided row: groups SPREAD apart.
         [
           {
             statement: "Congress should raise the federal minimum wage.",
-            agreementPercent: 52,
+            agreePercent: 52,
+            disagreePercent: 41,
+            clusterAgreement: groups(74, 31, 52),
           },
         ],
       );
       await mockCounters(page);
+      await mockPolisClusterMap(page);
       await reachWorkspace(page);
       await goToStanding(page);
       await page.locator(".polis").waitFor({ timeout: 10000 });
@@ -1241,23 +1381,32 @@ export const SCENARIOS: Scenario[] = [
       await mockBridges(
         page,
         [],
+        // Every row here is genuinely split: the per-group dots SPREAD far
+        // apart (one group high, another low) — that spread is the divide.
         [
           {
-            statement: "This cycle, almost nothing bridged every group.",
-            agreementPercent: 58,
+            statement: "Federal spending should be cut across the board.",
+            agreePercent: 58,
+            disagreePercent: 34,
+            clusterAgreement: groups(79, 28, 52),
           },
           {
             statement: "Congress should raise the federal minimum wage.",
-            agreementPercent: 44,
+            agreePercent: 43,
+            disagreePercent: 54,
+            clusterAgreement: groups(22, 71, 44),
           },
           {
             statement:
               "The federal government should fund more affordable housing.",
-            agreementPercent: 39,
+            agreePercent: 38,
+            disagreePercent: 57,
+            clusterAgreement: groups(18, 66, 40),
           },
         ],
       );
       await mockCounters(page);
+      await mockPolisClusterMap(page);
       await reachWorkspace(page);
       await goToStanding(page);
       await page.locator(".polis").waitFor({ timeout: 10000 });
