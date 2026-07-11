@@ -1103,6 +1103,12 @@
   --brand-2: var(--bf-brand-2);
   --keep: oklch(0.44 0.115 159);
   --replace: var(--vote-red);
+  /* Cluster hues for the decorative map teaser — same party-free values as
+     .standing2's real map (DECISION #116); duplicated because .standing2's
+     tokens don't reach this surface. */
+  --cluster-a: oklch(0.52 0.16 264);
+  --cluster-b: oklch(0.58 0.11 195);
+  --cluster-c: oklch(0.55 0.16 320);
 }
 .pe-screen .ps {
   min-height: 100vh;
@@ -1330,15 +1336,6 @@
   opacity: 0.12;
   filter: blur(2px);
 }
-.pm-blob.d {
-  background: var(--brand);
-}
-.pm-blob.r {
-  background: var(--replace);
-}
-.pm-blob.i {
-  background: var(--gold);
-}
 .pm-dot {
   position: absolute;
   width: 9px;
@@ -1347,15 +1344,6 @@
   transform: translate(-50%, -50%);
   opacity: 0.62;
   box-shadow: 0 1px 2px oklch(0.2 0.03 255 / 0.25);
-}
-.pm-dot.d {
-  background: var(--brand);
-}
-.pm-dot.r {
-  background: var(--replace);
-}
-.pm-dot.i {
-  background: var(--gold);
 }
 .pm-you {
   position: absolute;

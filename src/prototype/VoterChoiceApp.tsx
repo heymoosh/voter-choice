@@ -1365,7 +1365,7 @@ const { useState, useEffect, useRef } = React;
 
 /* ============ AppNav ============
    Maps to: src/components/Navigation.tsx (header strip).
-   Pass C: wires Settings cog + LanguageToggle and reads navigation
+   Pass C: wires Settings cog + LanguageSelect and reads navigation
    handlers from NavContext (provided at App root).
 
    Repo equivalent: same composition pattern — LanguageToggle slots
@@ -1432,7 +1432,7 @@ function AppNav({ onBrandClick }) {
             it's called out as its own non-design-coupled track in DECISIONS.md
             — and it's the only entry point into SettingsPanel, so it stays. */}
         <a className="nav-tip" onClick={() => navigate('tip')} role="link" tabIndex={0} onKeyDown={(e) => { if (e.key === 'Enter') navigate('tip'); }}>{t('nav.tipJar')}</a>
-        {typeof LanguageToggle === 'function' && <LanguageToggle />}
+        {typeof LanguageSelect === 'function' && <LanguageSelect />}
         <button
           className="nav-cog"
           onClick={openSettings}
@@ -3348,27 +3348,60 @@ function ErrorBanner({ tone = 'warn', title, body, primary, secondary, onClose }
   );
 }
 
-/* ============ LanguageToggle ============
+/* ============ LanguageSelect ============
    Maps to: src/components/LanguageToggle.tsx (variant="inline")
-   Wires the .app-nav .lang button to i18n state. */
-function LanguageToggle() {
+   A selector ("EN ▾"), not a hardcoded EN·ES toggle — the menu must scale
+   to any major US language (decision #9; canvas SCNav models the same
+   control). Wires the .app-nav .lang button to i18n state. */
+const NAV_LANGS = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+];
+function LanguageSelect() {
   const { lang, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
+  const wrapRef = React.useRef(null);
+  React.useEffect(() => {
+    if (!open) return;
+    function onDocDown(e) {
+      if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false);
+    }
+    document.addEventListener('pointerdown', onDocDown);
+    return () => document.removeEventListener('pointerdown', onDocDown);
+  }, [open]);
   return (
-    <button
-      className="lang"
-      data-testid="language-toggle"
-      onClick={() => setLang(lang === 'en' ? 'es' : 'en')}
-      aria-label={lang === 'en' ? 'Switch to Spanish' : 'Cambiar a inglés'}
-      title={lang === 'en' ? 'Cambiar a español' : 'Switch to English'}
-    >
-      <span className={"lang-pip " + (lang === 'en' ? 'on' : 'off')}>EN</span>
-      <span className="lang-sep" aria-hidden="true">·</span>
-      <span className={"lang-pip " + (lang === 'es' ? 'on' : 'off')}>ES</span>
-    </button>
+    <div className="lang-wrap" ref={wrapRef}>
+      <button
+        className="lang"
+        data-testid="language-select"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label="Change language"
+        title="Change language"
+        onClick={() => setOpen((o) => !o)}
+      >
+        <span className="lang-pip on">{lang.toUpperCase()}</span>
+        <span className="lang-caret" aria-hidden="true">▾</span>
+      </button>
+      {open && (
+        <ul className="lang-menu" role="listbox" aria-label="Language">
+          {NAV_LANGS.map((l) => (
+            <li key={l.code} role="option" aria-selected={l.code === lang}>
+              <button
+                className={"lang-opt" + (l.code === lang ? ' on' : '')}
+                onClick={() => { setLang(l.code); setOpen(false); }}
+              >
+                {l.label}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
-/* ============ AppNav (overridden — adds Settings + LanguageToggle) ============
+/* ============ AppNav (overridden — adds Settings + LanguageSelect) ============
    The base AppNav lives in prototype-components.jsx. This override
    wraps it to add the Settings cog and wire the language toggle.
    In the repo, this overlay lives on Navigation.tsx as additional
@@ -3390,7 +3423,7 @@ function AppNavWithChrome({ onBrandClick, onOpenSettings, current, onNavigate })
         <a href="mailto:muxin.li.pro@gmail.com">{t('nav.support')}</a>
       </div>
       <div className="nav-right">
-        <LanguageToggle />
+        <LanguageSelect />
         <a className="nav-tip" onClick={() => onNavigate && onNavigate('tip')} role="link" tabIndex={0}>{t('nav.tipJar')}</a>
         <button className="nav-cog" onClick={onOpenSettings} aria-label={t('nav.settings')} title={t('nav.settings')}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -3599,7 +3632,7 @@ Object.assign(window, {
   ResumeNudge,
   HowItWorksWalkthrough,
   ErrorBanner,
-  LanguageToggle,
+  LanguageSelect,
   AppNavWithChrome,
   downloadIcsForElection,
 });
@@ -5385,7 +5418,10 @@ const { useState: useStateV, useEffect: useEffectV, useRef: useRefV } = React;
 
 /* ============ HomeView ============
    Maps to: src/app/page.tsx + src/components/AddressInput.tsx
-   Pass C adds: ResumeNudge, HowItWorksWalkthrough, DeadlineMeter strip. */
+   Pass C adds: ResumeNudge, DeadlineMeter strip. (HowItWorksWalkthrough was
+   dropped from this view — the hero's own "Unsure? How it works · your
+   data ▾" disclosure covers that content now; the canvas home has no
+   walkthrough section.) */
 function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, onResumeSession, onStartOver, onNavigate, totalRaces = RACES.length }) {
   // Always start the address field empty. We DON'T prefill savedAddress
   // because the user might have typed an exploratory / invalid string
@@ -5557,7 +5593,6 @@ function HomeView({ savedAddress, savedSession, onSubmit, onResumeFromProfile, o
         </div>
       </section>
 
-      <HowItWorksWalkthrough />
       </main>
 
       <AppFooter />

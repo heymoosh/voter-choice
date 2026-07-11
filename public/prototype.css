@@ -136,6 +136,51 @@ textarea {
   background: transparent;
   cursor: pointer;
 }
+/* Language selector ("EN ▾") — decision #9: a selector, not an EN·ES
+   toggle, so the menu can scale to any major US language. Caret sizing
+   matches the canvas SCNav (.sc-lang .lang-caret). */
+.app-nav .lang-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.app-nav .lang .lang-caret {
+  margin-left: 4px;
+  font-size: 9px;
+  color: var(--ink-3);
+}
+.app-nav .lang-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  min-width: 140px;
+  z-index: 60;
+}
+.app-nav .lang-opt {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--sans);
+  font-size: 13px;
+  padding: 7px 10px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.app-nav .lang-opt:hover {
+  background: var(--paper-2);
+}
+.app-nav .lang-opt.on {
+  font-weight: 600;
+}
 /* Bold Flag / Keystone: canvas's nav sits on the same white/navy/red ground
    as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the App2
    redesign via the .bf-app ancestor (set in src/app/page.tsx, see
@@ -3423,7 +3468,7 @@ body[data-treatment="inkwell"] .cv2-iss-row.open {
     align-items: center;
     min-height: 40px;
   }
-  .app-nav .lang {
+  .app-nav .lang-wrap {
     display: none;
   }
 
