@@ -5232,6 +5232,7 @@ function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
         </div>
         <article className="sp-prose">{children}</article>
       </div>
+      <AppFooter />
     </div>
   );
 }
