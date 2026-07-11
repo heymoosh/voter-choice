@@ -262,13 +262,13 @@ function App2Inner() {
   // Delegation-overview navigation layer: true = 3-card scored overview,
   // false = the (unchanged) deep single-seat view for activeSeatId. Lifted
   // here (not local to DelegationWorkspace) because that component
-  // unmounts/remounts across sibling stages (duel, print, standing) — a
-  // returning duel/print flow must land back on the seat it left, not reset
-  // to the overview. Defaults to the overview on a fresh session; a resumed
-  // session restores wherever the user left off.
-  const [seatOverviewOpen, setSeatOverviewOpen] = useState(
-    savedSession.seatOverviewOpen ?? true,
-  );
+  // unmounts/remounts across sibling stages (duel, print, standing) — an
+  // in-session duel/print/standing round trip must land back on the seat it
+  // left, and this in-memory state (untouched by those stage changes)
+  // handles that. Always starts true: per product decision, the overview is
+  // the workspace's entry point every time — a fresh session AND a
+  // resumed/reloaded one both land there, never deep on a seat.
+  const [seatOverviewOpen, setSeatOverviewOpen] = useState(true);
   const [revealed, setRevealed] = useState(
     () => new Set(savedSession.revealed || []),
   );
@@ -338,19 +338,10 @@ function App2Inner() {
           picks,
           activeSeatId,
           revealed: [...revealed],
-          seatOverviewOpen,
         }),
       );
     } catch {}
-  }, [
-    stage,
-    address,
-    verdicts,
-    picks,
-    activeSeatId,
-    revealed,
-    seatOverviewOpen,
-  ]);
+  }, [stage, address, verdicts, picks, activeSeatId, revealed]);
 
   // Resume: re-run the pipeline silently for a returning session.
   useEffect(() => {

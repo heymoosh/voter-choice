@@ -1511,16 +1511,23 @@ export const SCENARIOS: Scenario[] = [
     files: [
       "src/prototype/redesign/MoneyGap.tsx",
       "src/prototype/redesign/peerComparison.ts",
+      "src/prototype/redesign/RepCard.tsx",
     ],
-    automatable: "no",
+    automatable: "yes",
     note:
-      "NOT AUTOMATABLE: the canvas's 'whole field' (3+ candidates on one scale) is not wired — " +
-      "confirmed by reading RepCard.tsx: it calls <MoneyGapScale subject=... peer=...> WITHOUT " +
-      "a `field` prop, so only the single subject row ever renders in the card. A prior 'proxy' " +
-      "capture reused 02b's single-subject funding-expanded panel and pixel-diffed it against " +
-      "the real whole-field canvas ref — a structurally different screen — which silently " +
-      "false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until the field prop " +
-      "is wired.",
+      "The `field` prop is now wired at the RepCard call site (product ruling 2026-07-11, " +
+      "reversing the earlier 'won't build' disposition) — house-TX-37's funded 2026 " +
+      "challengers (Elena Reyes, Sam Whitfield) render as extra rows on the incumbent's own " +
+      "scale, alongside the subject.",
+    async capture(page) {
+      await mockDelegationWithChallengers(page);
+      await mockSeatRaceDataMedian(page);
+      await mockResearch(page);
+      await mockPolis(page);
+      await mockCounters(page);
+      await reachWorkspace(page);
+      await setMoneyDisclosure(page, true);
+    },
   },
   {
     id: "11b-scalestates",
