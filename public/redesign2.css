@@ -1596,3 +1596,222 @@
   color: var(--ori-ink-3);
   letter-spacing: 0.02em;
 }
+
+/* ====================================================
+   RepCard — Bold Flag / Keystone pass [Δ] (05a-candidates-parity, round 2)
+   ----------------------------------------------------
+   Ports the canvas's "one card, every seat" system (design-handoff/
+   keystone-canvas/src/candidates.css .cd-card / .cd-align / .cd-money) onto
+   RepCard's existing cv2-* markup. Locally-scoped white/navy/red palette,
+   same pattern as the .sp-wrap.sp-tipjar / .sp-wrap.sp-about / .sp-wrap.
+   sp-methodology fixes (PRs #252/#253/#254) — remaps the existing --civic/
+   --paper/--ink tokens under .rep-card only, no global mood/palette system
+   touched, no other page affected. New --rc-keep-* tokens because canvas's
+   "worth keeping" green is a distinct hue from its brand navy, but the
+   shipped --civic today serves both roles (roll-call badge AND the keep
+   verdict button) — decoupling them is what actually lets the provenance
+   badge read navy and the keep button read green, matching canvas.
+   ==================================================== */
+.rep-card {
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --civic: oklch(0.4 0.155 262); /* canvas --brand: bold navy-royal */
+  --civic-2: oklch(0.31 0.145 262);
+  --civic-soft: oklch(0.94 0.04 262);
+  --vote-red: oklch(0.53 0.205 27); /* canvas --replace: flag red */
+  --gold: oklch(0.72 0.125 76);
+  --tag-bg: oklch(0.95 0.006 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  /* keep-green — canvas --keep, decoupled from --civic (brand navy above) */
+  --rc-keep: oklch(0.44 0.115 159);
+  --rc-keep-2: oklch(0.36 0.11 159);
+  --rc-keep-soft: oklch(0.93 0.045 159);
+}
+
+/* ---- seat kicker — flatten the office pill into canvas's single flowing
+   mono kicker line ("U.S. HOUSE · TX-21   UP NOV 2026") ---- */
+.rep-card .seat-office {
+  background: none;
+  padding: 0;
+  border-radius: 0;
+  color: var(--ink-3);
+}
+.rep-card .seat-office::after {
+  content: "\00B7";
+  margin-left: 10px;
+  color: var(--rule);
+}
+
+/* ---- blind-mode header — squared navy avatar + filled reveal CTA, same
+   proportions as canvas's cd-avatar/cd-select without breaking the
+   blind-first product behavior (identity stays hidden pre-reveal) ---- */
+.rep-card .cv2-head.blind {
+  background: var(--paper);
+}
+.rep-card .cv2-photo.blind {
+  border-radius: 11px;
+  background: var(--civic-soft);
+  border: 1px dashed var(--civic);
+}
+.rep-card .cv2-photo.blind::after {
+  color: var(--civic-2);
+  font-size: 20px;
+}
+.rep-card .cv2-name.blind {
+  font-size: 18px;
+  color: var(--ink);
+}
+.rep-card .cv2-sub.blind .cv2-tag {
+  background: var(--tag-bg);
+  border-color: var(--rule);
+  color: var(--ink-3);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+}
+.rep-card .cv2-reveal {
+  background: var(--civic);
+  border-color: var(--civic);
+  color: var(--paper-2);
+}
+.rep-card .cv2-reveal:hover {
+  background: var(--civic-2);
+  border-color: var(--civic-2);
+}
+/* .lab and .reveal-ic set their own color in prototype.css (dark ink /
+   --civic respectively) rather than inheriting the button's — both need an
+   explicit override or they go invisible against the new navy-filled button. */
+.rep-card .cv2-reveal .lab,
+.rep-card .cv2-reveal .reveal-ic {
+  color: var(--paper-2);
+}
+
+/* ---- alignment block — box it like canvas's .cd-align card-within-card,
+   enlarge the aggregate % (when present) to a real headline number, and
+   compact the per-issue rows toward canvas's thin-track-bar + % reading ---- */
+.rep-card .cv2-issues {
+  margin: 14px 18px 0;
+  padding: 12px 16px;
+  border-radius: 10px;
+  border: 1px solid var(--rule-2);
+  background: var(--paper);
+}
+.rep-card .cv2-block-head .lab {
+  font-size: 10px;
+  letter-spacing: 0.09em;
+}
+.rep-card .cv2-block-head .overall {
+  font-family: var(--serif);
+}
+.rep-card .cv2-block-head .overall b {
+  font-size: 27px;
+  font-weight: 600;
+  color: var(--civic-2);
+}
+.rep-card .cv2-iss-row.open {
+  margin: 0 -16px;
+  padding: 0 16px;
+}
+.rep-card .cv2-iss-head {
+  padding: 9px 0;
+  gap: 10px;
+}
+.rep-card .cv2-iss-head .name {
+  font-size: 12.5px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+.rep-card .cv2-bar {
+  height: 6px;
+  /* base .cv2-bar track is a hardcoded warm tan, not tied to --rule-2 —
+     override so the empty track reads white-palette, not civic-cream. */
+  background: var(--rule-2);
+}
+.rep-card .cv2-iss-head .meta {
+  font-size: 10px;
+  margin-top: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 280px;
+}
+.rep-card .cv2-iss-head .pct {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+.rep-card .cv2-iss-head .pct small {
+  font-size: 9px;
+}
+.rep-card .cv2-iss-head .cv2-ws-badge {
+  font-size: 8.5px;
+  padding: 2px 6px;
+  font-family: var(--mono);
+}
+.rep-card .cv2-iss-head .cv2-ws-conf {
+  font-size: 8.5px;
+  padding: 1px 4px;
+}
+
+/* ---- funding — box it like canvas's .cd-money, mini segmented bar always
+   visible ahead of the collapsed FunderBars detail ---- */
+.rep-card .cv2-disclose {
+  margin: 12px 18px 0;
+  border-radius: 10px;
+  border: 1px solid var(--rule-2);
+  background: var(--paper);
+  overflow: hidden;
+}
+.rep-card .cv2-disclose-eyebrow {
+  font-size: 9.5px;
+}
+.rep-card .cv2-mini-fundbar {
+  display: inline-flex;
+  align-items: center;
+  height: 8px;
+  width: 84px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+  margin-right: 8px;
+  vertical-align: -1px;
+  flex-shrink: 0;
+}
+.rep-card .cv2-mini-fundbar i {
+  display: block;
+  height: 100%;
+}
+.rep-card .cv2-mini-fundbar i.small {
+  background: var(--rc-keep);
+}
+.rep-card .cv2-mini-fundbar i.large {
+  background: var(--gold);
+}
+.rep-card .cv2-mini-fundbar i.pac {
+  background: var(--vote-red);
+}
+
+/* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic
+   so it reads canvas's keep-green instead (see --rc-keep above); "time to
+   replace" already rides --vote-red via the existing .pick.replace
+   override, so it inherits the new flag-red automatically. ---- */
+.rep-card .cv2-actions .pick:not(.replace) {
+  background: var(--rc-keep);
+  border: 1.5px solid var(--rc-keep);
+}
+.rep-card .cv2-actions .pick:not(.replace):hover {
+  background: var(--rc-keep-2);
+  border-color: var(--rc-keep-2);
+}
+.rep-card .cv2-actions .pick.picked {
+  border-color: var(--rc-keep);
+}
+.rep-card .cv2-actions .pick.picked .ck {
+  border-color: var(--rc-keep);
+  background: var(--rc-keep);
+}

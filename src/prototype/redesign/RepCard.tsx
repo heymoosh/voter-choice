@@ -57,9 +57,17 @@ function isResearchedBasis(seat) {
  * `t()` — party labels are user-facing and must translate. */
 export function getPartyMeta2(t) {
   return {
-    Republican: { name: t("repCard.partyRepublican"), code: "R", pipClass: "rep" },
+    Republican: {
+      name: t("repCard.partyRepublican"),
+      code: "R",
+      pipClass: "rep",
+    },
     Democrat: { name: t("repCard.partyDemocrat"), code: "D", pipClass: "dem" },
-    Independent: { name: t("repCard.partyIndependent"), code: "I", pipClass: "ind" },
+    Independent: {
+      name: t("repCard.partyIndependent"),
+      code: "I",
+      pipClass: "ind",
+    },
   };
 }
 
@@ -794,6 +802,26 @@ export function RepCard({
               {t("repCard.moneyTrail")}
             </span>
             <span className="cv2-disclose-summary">
+              {/* Segmented small/large/pac mini-bar — same real fundingMix
+                  data cv2-disclose-mix already renders below, just given a
+                  visual (canvas's cd-bars/MiniBars), always-visible ahead of
+                  the collapsed disclosure body. */}
+              {cand.fundingMix && (
+                <span className="cv2-mini-fundbar" aria-hidden="true">
+                  <i
+                    className="small"
+                    style={{ width: cand.fundingMix.small + "%" }}
+                  />
+                  <i
+                    className="large"
+                    style={{ width: cand.fundingMix.large + "%" }}
+                  />
+                  <i
+                    className="pac"
+                    style={{ width: cand.fundingMix.pac + "%" }}
+                  />
+                </span>
+              )}
               {typeof cand.totalRaised === "number" && (
                 <span className="cv2-disclose-stat">
                   <b>{formatDollars(cand.totalRaised)}</b>{" "}
