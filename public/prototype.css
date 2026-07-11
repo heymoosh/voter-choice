@@ -180,6 +180,18 @@ textarea {
 .bf-app .app-nav .links a:hover {
   color: var(--ink);
 }
+/* AppNav now always renders a leading .flagbar (tricolor strip, canvas's
+   IqShell/SCNav shell convention) so every caller gets it for free instead
+   of each screen re-rendering its own copy. AppNav is shared with the
+   legacy ballot app though (App() in VoterChoiceApp.tsx also calls it), so
+   the strip is hidden by default and only shown under .bf-app -- same
+   scoping rule as every other override in this block. */
+.app-nav .flagbar {
+  display: none;
+}
+.bf-app .app-nav .flagbar {
+  display: flex;
+}
 
 /* ============ HOMEPAGE ============ */
 .hp-hero {

@@ -119,11 +119,6 @@ export function PolisEntry({ seatsCount, onPrint, onSeeStanding, onSkip }) {
   return (
     <div className="pe-screen" data-palette="white">
       <div className="ps">
-        <div className="flagbar">
-          <i></i>
-          <i></i>
-          <i></i>
-        </div>
         <AppNav onBrandClick={onSkip} />
         <div className="ps-body">
           <div className="ps-inner">

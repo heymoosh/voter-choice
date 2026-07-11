@@ -161,11 +161,6 @@ function OrientationView({ onContinue }) {
   const { t } = useI18n();
   return (
     <div className="screen orientation ori">
-      <div className="flagbar">
-        <i></i>
-        <i></i>
-        <i></i>
-      </div>
       <AppNav />
       <div className="ori-body">
         <div className="ori-card activated">
@@ -884,34 +879,36 @@ function App2Inner() {
     // About/Methodology/Privacy/Tip share the StaticPage shell. The legacy
     // app (VoterChoiceApp.tsx's own view-switch) already wraps these same
     // 4 pages in <AppNav/><main id="main-content">; App2 was missing that
-    // wrapper entirely, leaving these routes with no top nav. flagbar is
-    // the Bold Flag hairline (matches OrientationView's own chrome, and
+    // wrapper entirely, leaving these routes with no top nav. AppNav's own
+    // flagbar (Bold Flag hairline, matches OrientationView's chrome and
     // canvas's StaticPageVC — design-handoff/keystone-canvas/src/
-    // screens-statics.jsx), added only here since App2 is bf-app-only.
+    // screens-statics.jsx) covers these routes automatically now.
     if (stage === "about")
       return (
         <>
-          <div className="flagbar">
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
           <AppNav />
           <main id="main-content">
             <AboutPage onBack={() => setStage("home")} />
           </main>
         </>
       );
+    // WhyNowPage doesn't share the StaticPage shell (its own literal port of
+    // canvas's wn-* class vocabulary — see the 07-whynow STRUCTURAL_WAIVERS
+    // note in parity-gate.ts) but was missing AppNav entirely, same gap as
+    // the 4 pages above before that fix — canvas's SCNav (screens-orientation.jsx)
+    // is on every screen, this one just never got the same wrapper treatment.
     if (stage === "whynow")
-      return <WhyNowPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <AppNav />
+          <main id="main-content">
+            <WhyNowPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "methodology")
       return (
         <>
-          <div className="flagbar">
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
           <AppNav />
           <main id="main-content">
             <MethodologyPage onBack={() => setStage("home")} />
@@ -921,11 +918,6 @@ function App2Inner() {
     if (stage === "privacy")
       return (
         <>
-          <div className="flagbar">
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
           <AppNav />
           <main id="main-content">
             <PrivacyPage onBack={() => setStage("home")} />
@@ -935,11 +927,6 @@ function App2Inner() {
     if (stage === "tip")
       return (
         <>
-          <div className="flagbar">
-            <i></i>
-            <i></i>
-            <i></i>
-          </div>
           <AppNav />
           <main id="main-content">
             <TipJarPage onBack={() => setStage("home")} />
