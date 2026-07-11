@@ -3613,6 +3613,65 @@ Bumps
   cursor: not-allowed;
 }
 
+/* ---------- Intake main flow (09a/09b/09c) — visual-parity pass ----------
+   The .amend-modal chip/AI-bubble treatment above was only ever scoped to
+   the edit-issues modal; the main ask/propose/locked flow (redesign/IntakeView,
+   IssueConversation, IntakeLocked — all rendered inside .coldopen, only under
+   the Keystone/.bf-app experience) never got the same pass. Canvas's
+   screens-intake.jsx renders AI turns as bare serif text (.iq-bubble has no
+   border/background) and gives quick-reply chips a real pill (.iq-opt), not
+   bare <button>s. Scoped to `.bf-app .coldopen` so the legacy ballot-mode
+   ColdOpenView (VoterChoiceApp.tsx, same shared classnames, gated off .bf-app)
+   is untouched. */
+.bf-app .coldopen .msg.ai .bubble,
+.amend-modal .msg.ai .bubble {
+  background: none;
+  border: none;
+  padding: 0;
+}
+.bf-app .coldopen .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.bf-app .coldopen .chip {
+  font-family: var(--sans);
+  font-size: 13px;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  color: var(--ink-2);
+  padding: 9px 14px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.bf-app .coldopen .chip:hover:not(:disabled) {
+  border-color: var(--brand);
+  color: var(--ink);
+}
+.bf-app .coldopen .chip:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+/* Canvas's .iq-ctx context line is plain-case mono with no leading dot
+   marker — .co-context's shared rule adds both (uppercase + a colored
+   ::before dot) for the civic-mood default. Scoped undo for Keystone. */
+.bf-app .coldopen .co-context {
+  text-transform: none;
+}
+.bf-app .coldopen .co-context::before {
+  content: none;
+}
+/* Canvas's .iq-card has a uniform 1px border, no colored top accent —
+   .themes-card's shared rule adds a 3px brand-colored top border. */
+.bf-app .themes-card {
+  border-top-width: 1px;
+}
+/* Canvas's .iq-privacy hint is sentence-case, not shouty caps. */
+.bf-app .coldopen .co-input .hint,
+.amend-modal .co-input .hint {
+  text-transform: none;
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
