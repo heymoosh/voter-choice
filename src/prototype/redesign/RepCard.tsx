@@ -689,10 +689,17 @@ export function RepCard({
     code: "?",
     pipClass: "ind",
   };
+  // Muxin's ruling (2026-07-11): "This seat's incumbent" replaces
+  // seat.blindLabel ("Your U.S. Representative") for THIS card's blind
+  // display only — "makes it clearer who is in the seat vs who is
+  // challenging." Scoped to RepCard's own rendering; seat.blindLabel
+  // itself (consumed by the scorecard print view, chat, delegation
+  // overview, head-to-head duel) is untouched.
+  const blindDisplayLabel = t("repCard.blindSeatIncumbent");
   const anonCtx = {
     blindMode: blind,
     realLastName: cand.name?.split(" ").pop(),
-    alias: seat.blindLabel,
+    alias: blindDisplayLabel,
   };
   // Whole-field money-gap scale rows — every other FEC filer for this seat
   // with a real filed total, highest first. Honest-data: a challenger with
@@ -743,9 +750,10 @@ export function RepCard({
         party={party}
         blindMode={blind}
         isRevealed={blindMode && isRevealed}
-        alias={seat.blindLabel}
+        alias={blindDisplayLabel}
         onReveal={onReveal}
         onHide={onHide}
+        variant="canvas"
       />
 
       <div className="cv2-prov-row">
@@ -854,7 +862,7 @@ export function RepCard({
             typeof cand.totalRaised === "number" && (
               <MoneyGapScale
                 subject={{
-                  name: blind ? seat.blindLabel : cand.name,
+                  name: blind ? blindDisplayLabel : cand.name,
                   raised: cand.totalRaised,
                   pip: party.pipClass,
                 }}

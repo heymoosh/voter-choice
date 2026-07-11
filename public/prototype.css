@@ -2786,6 +2786,18 @@ body[data-treatment="inkwell"] .proto-banner {
   font-size: 18px;
   font-weight: 600;
 }
+/* Research-provenance caveat ("Based on public statements — not a voting
+   record") shown alongside the block-head label when AlignmentScoreBanner
+   falls back to web_search scores or the no-citable-statements honest
+   fallback. Not scoped to .rep-card: the legacy ballot CandidateCard hits
+   the same code path (it doesn't pass rowVariant, so this can render there
+   too whenever a candidate's alignmentEntry has no voting record). */
+.cv2-research-caveat {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-style: italic;
+  margin-top: 2px;
+}
 
 /* ─── Issues block ─── */
 .cv2-issues {
