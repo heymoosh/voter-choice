@@ -488,6 +488,27 @@
   margin-top: 3px;
   white-space: nowrap;
 }
+/* "Not on your ballot this year" context row (canvas .dec.notup) — a seat
+   excluded from the scored decisions above, shown de-emphasized with a dash
+   in place of a checkbox/verdict icon and a neutral (not keep/replace) pill. */
+.print-wrap .br.notup {
+  opacity: 0.62;
+}
+.print-wrap .br.notup .bx {
+  border-color: var(--rule);
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.print-wrap .br.notup .bx::before {
+  content: "\2014";
+}
+.print-wrap .verdict-print.notup {
+  color: var(--ink-3);
+  background: var(--tag-bg);
+  border-color: var(--rule);
+}
 /* logistics info grid — canvas's bordered/rounded card (sheet-meta), was a
    bare underlined grid here */
 .print-wrap .voter-meta.voter-meta-logistics {

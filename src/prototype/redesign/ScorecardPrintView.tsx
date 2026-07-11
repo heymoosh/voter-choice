@@ -45,6 +45,13 @@ export function ScorecardPrintView({
   const scorecardSeats = seats.filter(
     (s) => s.nextElection?.onBallot2026 !== false,
   );
+  // The excluded seats themselves, shown as an unscored context section
+  // below the decisions (canvas: design-handoff/.../screens-scorecard.jsx
+  // "Not on your ballot this year" / .dec.notup) — reference only, no
+  // keep/replace verdict and no score readout.
+  const notOnBallot = seats.filter(
+    (s) => s.nextElection?.onBallot2026 === false,
+  );
   const sections = {};
   scorecardSeats.forEach((s) => {
     if (!verdicts[s.id]) return;
@@ -219,6 +226,35 @@ export function ScorecardPrintView({
                                 s.nextElection.label.slice(1),
                             })
                           : t("scorecardPrint.reviewBeforeYouVote")}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {notOnBallot.length > 0 && (
+              <div className="ballot-group">
+                <div className="gtitle">
+                  {t("scorecardPrint.notOnBallotHeading")}
+                </div>
+                {notOnBallot.map((s) => (
+                  <div className="br notup" key={s.id}>
+                    <div className="bx"></div>
+                    <div>
+                      <div className="race-name">
+                        {s.office} · {s.districtLabel}
+                      </div>
+                      <div className="pick-name">
+                        {s.candidate?.name ?? s.blindLabel}{" "}
+                        <span className="verdict-print notup">
+                          {s.eligibility?.nextLabel ??
+                            t("scorecardPrint.notOnBallotLabel")}
+                        </span>
+                      </div>
+                      <div className="my-note">
+                        {s.nextElection ? s.nextElection.label + " · " : ""}
+                        {t("scorecardPrint.notOnBallotNote")}
                       </div>
                     </div>
                   </div>

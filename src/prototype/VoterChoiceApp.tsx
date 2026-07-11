@@ -645,6 +645,9 @@ const TRANSLATIONS = {
       aligned: '{pct}% aligned ({kept}/{total} votes)',
       votesMatchedYou: 'votes matched you',
       incumbentMatch: 'incumbent match',
+      notOnBallotHeading: 'Not on your ballot this year',
+      notOnBallotLabel: 'Not on your 2026 ballot',
+      notOnBallotNote: 'Shown for context · no decision needed this election',
     },
     whyNowPage: {
       kicker: 'The case · America’s 250th election',
@@ -1157,6 +1160,9 @@ const TRANSLATIONS = {
       aligned: '{pct}% alineado ({kept}/{total} votos)',
       votesMatchedYou: 'votos coincidieron contigo',
       incumbentMatch: 'coincidencia del titular',
+      notOnBallotHeading: 'No está en tu boleta este año',
+      notOnBallotLabel: 'No está en tu boleta de 2026',
+      notOnBallotNote: 'Se muestra como contexto · no requiere decisión esta elección',
     },
     whyNowPage: {
       kicker: 'El caso · La elección número 250 de EE. UU.',
