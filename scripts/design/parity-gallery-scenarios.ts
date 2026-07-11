@@ -43,6 +43,20 @@ export interface Scenario {
   note: string;
   /** Absent when automatable === 'no' — nothing to run. */
   capture?: (page: Page) => Promise<void>;
+  /**
+   * CSS selector for a modal/overlay scenario's own visible card — when set,
+   * parity-gate.ts screenshots THIS element (Playwright locator.screenshot(),
+   * an exact CDP crop) instead of the full page. Modal-overlay refs are
+   * already auto-cropped to their content card on the CANVAS side
+   * (detectContentBBox in parity-gate.ts), so diffing an uncropped app
+   * screenshot — dimmed backdrop + real workspace bleeding through behind
+   * the scrim — against that cropped ref compares mostly backdrop, not the
+   * modal itself (the app-side half of the crop gap; see parity-gate.ts's
+   * "Why crop" file-header comment for the ref-side half, fixed by PR #261).
+   * Must select the modal's own card, NOT the full-screen scrim/overlay
+   * wrapper (which is viewport-sized and would defeat the crop).
+   */
+  visualCropSelector?: string;
 }
 
 const ADDRESS = "1100 Congress Ave, Austin, TX 78701";
@@ -855,6 +869,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note: "Opens the AllVotesPanel overlay via the 'see full record' CTA.",
+    // ".av-panel" is the modal's own visible card (onClick stopPropagation) —
+    // NOT ".be-modal-overlay"/".avsheet-scrim", the full-viewport dimmed
+    // backdrop those wrap around it (confirmed by reading
+    // VoterChoiceApp.tsx:4421-4422 directly).
+    visualCropSelector: ".av-panel",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -1218,6 +1237,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note: "Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.",
+    // ".amend-card" is EditIssuesModal's own visible card (onClick
+    // stopPropagation) — NOT the outer `data-testid="edit-issues-modal"`
+    // node (".amend-modal"), which is the full-viewport dimmed backdrop
+    // (confirmed by reading EditIssuesModal.tsx directly).
+    visualCropSelector: ".amend-card",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataDeltaAware(page);
