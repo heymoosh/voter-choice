@@ -774,44 +774,51 @@ export function RepCard({
 
       <EligibilityNote2 e={seat.eligibility} />
 
-      {/* Money trail — canvas's .money-line: a static glance (total +
-          mix teaser, no click affordance, no bar duplicate — that's the
-          shared .card-evidence "Funders & influence" button below) that
+      {/* Money trail — canvas's .money-line: a static glance (mono FUNDING
+          label + proportional small/large/PAC bar + total $, canvas's
+          compact .money-top one-liner — screens-results.jsx:271-280) that
           expands into the same FunderBars panel canvas's FunderPanel
-          shows (screens-results.jsx:258-281). */}
+          shows (screens-results.jsx:258-281). MedianChip rides as a second
+          line (dashed-rule separated, like canvas's .money-detail) so the
+          real median-comparison feature isn't lost in the compacting. */}
       <div className={"cv2-disclose " + (moneyOpen ? "open" : "")}>
-        <div className="cv2-disclose-lab cv2-money-glance">
-          <span className="cv2-disclose-eyebrow">
-            {t("repCard.fundingInfluence")}
-          </span>
-          <span className="cv2-disclose-title">{t("repCard.moneyTrail")}</span>
-          <span className="cv2-disclose-summary">
-            {typeof cand.totalRaised === "number" && (
-              <span className="cv2-disclose-stat">
-                <b>{formatDollars(cand.totalRaised)}</b>{" "}
-                {t("repCard.raisedWord")}
-              </span>
-            )}
-            {/* Collapsed glance — "Raised vs. the median". Renders the dollar
-                amount only (no fabricated baseline) when peerComparison is
-                null. */}
-            {typeof cand.totalRaised === "number" &&
-              cand.peerComparison != null && (
+        <div className="cv2-disclose-lab cv2-money-glance rc-money-glance">
+          <span className="rc-money-lab">{t("repCard.fundingInfluence")}</span>
+          {cand.fundingMix && (
+            <span
+              className="rc-money-bars"
+              role="img"
+              aria-label="Funding by source type"
+            >
+              <i
+                className="small"
+                style={{ width: cand.fundingMix.small + "%" }}
+              />
+              <i
+                className="large"
+                style={{ width: cand.fundingMix.large + "%" }}
+              />
+              <i className="pac" style={{ width: cand.fundingMix.pac + "%" }} />
+            </span>
+          )}
+          {typeof cand.totalRaised === "number" && (
+            <span className="rc-money-tot">
+              {formatDollars(cand.totalRaised)}
+            </span>
+          )}
+          {/* Collapsed glance — "Raised vs. the median". Renders the dollar
+              amount only (no fabricated baseline) when peerComparison is
+              null; here it's gated to skip entirely rather than duplicate
+              the total $ already shown above. */}
+          {typeof cand.totalRaised === "number" &&
+            cand.peerComparison != null && (
+              <span className="rc-money-median">
                 <MedianChip
                   raised={cand.totalRaised}
                   peer={cand.peerComparison}
                 />
-              )}
-            {cand.fundingMix && (
-              <span className="cv2-disclose-mix">
-                {t("repCard.smallDonorsMix", {
-                  small: cand.fundingMix.small,
-                  large: cand.fundingMix.large,
-                  pac: cand.fundingMix.pac,
-                })}
               </span>
             )}
-          </span>
         </div>
         <div
           id={`mt2-${cand.id}`}
@@ -839,6 +846,7 @@ export function RepCard({
             donorSource={cand.donorSource}
             fundingMix={cand.fundingMix}
             userIssues={userIssues}
+            variant="canvas"
           />
         </div>
       </div>

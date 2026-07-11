@@ -2887,9 +2887,7 @@
   padding: 1px 4px;
 }
 
-/* ---- funding — box it like canvas's .cd-money. The teaser is text-only
-   (no mini bar — canvas's FunderPanel has just the one bar, and it only
-   shows expanded; a collapsed-state duplicate bar was removed here). ---- */
+/* ---- funding — box it like canvas's .cd-money. ---- */
 .rep-card .cv2-disclose {
   margin: 12px 18px 0;
   border-radius: 10px;
@@ -2913,6 +2911,118 @@
 }
 .cv2-disclose.open .cv2-money-glance {
   border-bottom: 1px dashed var(--rule-2);
+}
+
+/* ---- funding glance row — canvas's compact .money-top shape (mono
+   FUNDING label + proportional small/large/PAC bar + total $, screens.css:
+   253-259) instead of the taller eyebrow/title/mix-text stack. MedianChip
+   rides as a second line, width:100% forces it to wrap under the row-1
+   content within this flex-wrap row (matching canvas's dashed-rule
+   .money-detail separator, screens.css:406-408) — the flex-direction
+   override is needed because the unscoped .cv2-disclose-lab base rule
+   (prototype-c.css) sets flex-direction: column, which this row layout
+   must win. ---- */
+.rep-card .rc-money-glance {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rep-card .rc-money-lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rep-card .rc-money-bars {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+}
+.rep-card .rc-money-bars i.small {
+  background: var(--rc-keep);
+}
+.rep-card .rc-money-bars i.large {
+  background: var(--gold);
+}
+.rep-card .rc-money-bars i.pac {
+  background: var(--vote-red);
+}
+.rep-card .rc-money-tot {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.rep-card .rc-money-median {
+  width: 100%;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--rule-2);
+}
+
+/* ---- industry breakdown (canvas rowVariant) — one progress-bar-per-row
+   (screens-results.jsx's .fp-ind/.fi-track, screens.css:460-469) instead of
+   the legacy combined stacked bar + swatch-dot list. Rendered only when
+   FunderBars gets variant="canvas" (RepCard); scoped under .rep-card so the
+   ballot CandidateCard's .cv2-industry-bar/.cv2-industry-list markup and
+   styling are untouched. ---- */
+.rep-card .cv2-industry-rows {
+  display: grid;
+  gap: 7px;
+}
+.rep-card .cv2-industry-row {
+  display: grid;
+  grid-template-columns: 138px 1fr 56px 36px;
+  gap: 10px;
+  align-items: center;
+}
+.rep-card .cv2-industry-row .cir-name {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rep-card .cv2-industry-row .cir-name small {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-3);
+  white-space: normal;
+}
+.rep-card .cv2-industry-row .cir-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.rep-card .cv2-industry-row .cir-track i {
+  display: block;
+  height: 100%;
+  background: var(--civic);
+  border-radius: 999px;
+}
+.rep-card .cv2-industry-row .cir-amt {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  text-align: right;
+}
+.rep-card .cv2-industry-row .cir-pct {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
 }
 
 /* ---- card evidence row — canvas's shared "See all votes → · Funders &

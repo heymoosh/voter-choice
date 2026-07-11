@@ -2502,8 +2502,12 @@ function ContributingVoteCard({ vote, anonCtx }) {
      donorDataSource:   "voting_record" | "web_search" | undefined
      donorSource:       SourceRef | undefined
      donorUnavailable:  { reason } | undefined
-     fundingMix [Δ]:  { small, large, pac, total, cycle } | undefined */
-function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals }) {
+     fundingMix [Δ]:  { small, large, pac, total, cycle } | undefined
+     variant:  'legacy' (default, ballot CandidateCard — original stacked
+               bar + swatch-dot list, byte-identical) | 'canvas' (RepCard —
+               canvas's per-row progress-bar industry shape, screens-
+               results.jsx:119-131) */
+function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals, variant = 'legacy' }) {
   const { t } = useI18n();
   if (!donorCoalition && donorUnavailable) {
     return (
@@ -2780,35 +2784,62 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
               {t('funderBars.industryBreakdown')}
               <small className="cv2-sub-lab">{t('funderBars.industryBreakdownSub')}</small>
             </div>
-            <div className="cv2-industry-bar" aria-hidden="true">
-              {industries.map((d, i) => (
-                <span key={i} style={{ flex: `${d.percent} 1 0`, background: industrySwatch(d.label) }} />
-              ))}
-              {showOther && (
-                <span className="other-seg" style={{ flex: `${otherPct} 1 0` }} />
-              )}
-            </div>
-            <div className="cv2-industry-list">
-              {industries.slice(0, 4).map((d, i) => (
-                <div className="row" key={i}>
-                  <span className="sw" style={{ background: industrySwatch(d.label) }} />
-                  <span className="name">{d.label}</span>
-                  <span className="pct">{d.percent}%</span>
-                  <span className="amt">{formatDollars(d.amount)}</span>
+            {variant === 'canvas' ? (
+              /* [Δ] canvas-parity — per-row progress bars (screens-results.jsx
+                 .fp-ind/.fi-track), width normalized to the largest shown row,
+                 instead of the legacy combined stacked bar + swatch-dot list
+                 below. Scoped to RepCard via the variant prop; the legacy
+                 branch stays byte-identical for the ballot CandidateCard. */
+              <div className="cv2-industry-rows">
+                {(() => {
+                  const shown = [
+                    ...industries.slice(0, 4).map((d) => ({ key: d.label, name: d.label, percent: d.percent, amount: d.amount })),
+                    ...(showOther ? [{ key: 'other', name: t('funderBars.outsideNamedSectors'), note: t('funderBars.outsideNamedSectorsNote'), percent: otherPct, amount: otherAmt, isOther: true }] : []),
+                  ];
+                  const maxPct = Math.max(...shown.map((r) => r.percent || 0), 1);
+                  return shown.map((r) => (
+                    <div className={"cv2-industry-row" + (r.isOther ? " other" : "")} key={r.key}>
+                      <span className="cir-name">{r.name}{r.note && <small>{r.note}</small>}</span>
+                      <span className="cir-track"><i style={{ width: ((r.percent || 0) / maxPct) * 100 + '%' }} /></span>
+                      <span className="cir-amt">{r.amount !== null && r.amount !== undefined ? formatDollars(r.amount) : '—'}</span>
+                      <span className="cir-pct">{r.percent}%</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            ) : (
+              <>
+                <div className="cv2-industry-bar" aria-hidden="true">
+                  {industries.map((d, i) => (
+                    <span key={i} style={{ flex: `${d.percent} 1 0`, background: industrySwatch(d.label) }} />
+                  ))}
+                  {showOther && (
+                    <span className="other-seg" style={{ flex: `${otherPct} 1 0` }} />
+                  )}
                 </div>
-              ))}
-              {showOther && (
-                <div className="row other" key="other">
-                  <span className="sw other-sw" />
-                  <span className="name">
-                    {t('funderBars.outsideNamedSectors')}
-                    <small>{t('funderBars.outsideNamedSectorsNote')}</small>
-                  </span>
-                  <span className="pct">{otherPct}%</span>
-                  <span className="amt">{otherAmt !== null ? formatDollars(otherAmt) : '—'}</span>
+                <div className="cv2-industry-list">
+                  {industries.slice(0, 4).map((d, i) => (
+                    <div className="row" key={i}>
+                      <span className="sw" style={{ background: industrySwatch(d.label) }} />
+                      <span className="name">{d.label}</span>
+                      <span className="pct">{d.percent}%</span>
+                      <span className="amt">{formatDollars(d.amount)}</span>
+                    </div>
+                  ))}
+                  {showOther && (
+                    <div className="row other" key="other">
+                      <span className="sw other-sw" />
+                      <span className="name">
+                        {t('funderBars.outsideNamedSectors')}
+                        <small>{t('funderBars.outsideNamedSectorsNote')}</small>
+                      </span>
+                      <span className="pct">{otherPct}%</span>
+                      <span className="amt">{otherAmt !== null ? formatDollars(otherAmt) : '—'}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         );
       })()}
