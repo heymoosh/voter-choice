@@ -58,15 +58,18 @@ function pmDots(cx, cy, n, spread, seed) {
   }
   return out;
 }
+/* Neutral cluster classes (c0/c1/c2, redesign2.css .pm.cluster rules) — the
+   preview must stay party-free like the real map (DECISION #116), never the
+   canvas's red/blue/tan party coding. */
 const PM_GROUPS = [
-  { id: "a", cx: 30, cy: 42, n: 26, spread: 17, cls: "r" },
-  { id: "b", cx: 70, cy: 38, n: 25, spread: 17, cls: "d" },
-  { id: "c", cx: 50, cy: 72, n: 17, spread: 15, cls: "i" },
+  { id: "a", cx: 30, cy: 42, n: 26, spread: 17, cls: "c0" },
+  { id: "b", cx: 70, cy: 38, n: 25, spread: 17, cls: "c1" },
+  { id: "c", cx: 50, cy: 72, n: 17, spread: 15, cls: "c2" },
 ];
 function PolisMapPreview() {
   return (
     <div className="pm-wrap compact" aria-hidden="true">
-      <div className="pm">
+      <div className="pm cluster">
         {PM_GROUPS.map((g) => (
           <div
             key={g.id}

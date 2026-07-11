@@ -110,6 +110,14 @@
 .pr-maphead h2, .pr-bridgehead h2 { font-family: var(--serif); font-size: 28px; font-weight: 600; letter-spacing: -0.02em; margin: 6px 0 0; color: var(--ink); }
 .pr-bridgehead { margin-top: 34px; padding-top: 28px; border-top: 1px solid var(--rule-2); }
 
+/* Party-free cluster hues (DECISION #116) — the opinion map groups voters
+   by answer similarity, never by party, so it uses its own neutral tokens
+   instead of --brand/--replace/--gold. */
+:root {
+  --cluster-a: oklch(0.52 0.16 264);
+  --cluster-b: oklch(0.58 0.11 195);
+  --cluster-c: oklch(0.55 0.16 320);
+}
 .pm-wrap { width: 100%; }
 .pm {
   position: relative; height: 400px; border: 1px solid var(--rule); border-radius: 16px;
@@ -121,9 +129,9 @@
 }
 .pm-wrap.compact .pm { height: 220px; }
 .pm-blob { position: absolute; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.12; filter: blur(2px); }
-.pm-blob.d { background: var(--brand); } .pm-blob.r { background: var(--replace); } .pm-blob.i { background: var(--gold); }
+.pm-blob.c0 { background: var(--cluster-a); } .pm-blob.c1 { background: var(--cluster-b); } .pm-blob.c2 { background: var(--cluster-c); }
 .pm-dot { position: absolute; width: 9px; height: 9px; border-radius: 50%; transform: translate(-50%, -50%); opacity: 0.62; box-shadow: 0 1px 2px oklch(0.2 0.03 255 / 0.25); }
-.pm-dot.d { background: var(--brand); } .pm-dot.r { background: var(--replace); } .pm-dot.i { background: var(--gold); }
+.pm-dot.c0 { background: var(--cluster-a); } .pm-dot.c1 { background: var(--cluster-b); } .pm-dot.c2 { background: var(--cluster-c); }
 .pm-glab { position: absolute; transform: translate(-50%, -100%); font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: var(--ink-2); background: oklch(1 0 0 / 0.78); padding: 2px 7px; border-radius: 999px; white-space: nowrap; }
 .pm-you { position: absolute; width: 18px; height: 18px; border-radius: 50%; transform: translate(-50%, -50%); background: var(--ink); border: 3px solid var(--paper-2); box-shadow: 0 0 0 3px var(--ink), 0 3px 8px oklch(0.2 0.03 255 / 0.4); z-index: 3; }
 .pm-you-lab { position: absolute; transform: translate(14px, -50%); font-family: var(--mono); font-size: 11px; font-weight: 700; color: var(--ink); background: var(--paper-2); border: 1px solid var(--ink); padding: 2px 8px; border-radius: 999px; z-index: 3; white-space: nowrap; }
@@ -131,7 +139,7 @@
 .pm-key { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 10px; }
 .pm-key span { font-family: var(--mono); font-size: 10.5px; color: var(--ink-2); display: inline-flex; align-items: center; gap: 6px; }
 .pm-key i { width: 9px; height: 9px; border-radius: 50%; display: inline-block; }
-.pm-key i.d { background: var(--brand); } .pm-key i.r { background: var(--replace); } .pm-key i.i { background: var(--gold); }
+.pm-key i.c0 { background: var(--cluster-a); } .pm-key i.c1 { background: var(--cluster-b); } .pm-key i.c2 { background: var(--cluster-c); }
 .pm-key .you i { background: var(--ink); }
 .pm-cap p { font-family: var(--serif); font-size: 16px; line-height: 1.55; color: var(--ink-2); margin: 0; max-width: 640px; }
 .pm-cap p b { color: var(--ink); font-weight: 600; }
