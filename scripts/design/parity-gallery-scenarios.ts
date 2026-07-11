@@ -956,10 +956,17 @@ export const SCENARIOS: Scenario[] = [
     label: "Statics — Privacy",
     files: ["src/prototype/VoterChoiceApp.tsx"],
     automatable: "yes",
-    note: "Nav → 'Privacy'.",
+    note:
+      "Nav → 'Privacy'. exact:true guards against Playwright's default " +
+      "substring match: the Privacy page's own body text links out to " +
+      '"Anthropic\'s privacy policy", whose accessible name also contains ' +
+      '"Privacy" — non-exact getByRole would strict-mode-violate once ' +
+      "already on this page (e.g. a future e2e test re-querying after " +
+      "landing here), even though the initial click from the home page " +
+      "(where only the nav link exists) isn't ambiguous today.",
     async capture(page) {
       await gotoHomeClean(page);
-      await page.getByRole("link", { name: "Privacy" }).click();
+      await page.getByRole("link", { name: "Privacy", exact: true }).click();
     },
   },
   {
@@ -1309,11 +1316,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "proxy",
     note:
-      "MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx at all — " +
-      "confirmed by grep: it has zero usages outside MoneyGap.tsx/MoneyGap.test.tsx. The duel " +
-      "screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not " +
-      "the ratio + shared-scale component the canvas shows. Proxy: same HeadToHead screenshot " +
-      "as 05b, so the gap is visible rather than hidden.",
+      "The canvas's money-ratio + shared-scale component for this screen was deleted as " +
+      "dead code — confirmed by grep: no export with that shape exists anywhere in " +
+      "MoneyGap.tsx anymore. The duel screen's actual money treatment is a simpler " +
+      "PAC-percentage footnote (.cmp-fund), not that ratio/scale component. Proxy: same " +
+      "HeadToHead screenshot as 05b, so the gap is visible rather than hidden.",
     async capture(page) {
       await mockDelegationWithChallengers(page);
       await mockSeatRaceDataMedian(page);
