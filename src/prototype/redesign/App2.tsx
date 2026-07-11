@@ -34,6 +34,7 @@ import { HeadToHead } from "./HeadToHead";
 import { HandoffModal } from "./HandoffModal";
 import { ScorecardPrintView } from "./ScorecardPrintView";
 import { PolisClose } from "./PolisClose";
+import { PolisStand } from "./PolisStand";
 import { IntakeView } from "./IntakeView";
 import { EditIssuesModal } from "./EditIssuesModal";
 import {
@@ -237,6 +238,7 @@ function App2Inner() {
         "workspace",
         "print",
         "standing",
+        "polisstand",
         "coldopen",
         "orientation",
         "analyzing",
@@ -663,6 +665,14 @@ function App2Inner() {
       return n;
     });
 
+  // WIRING SEAM (for the PolisEntry reconciliation — see PolisStand's build
+  // report): this is the one hand-off point both the PolisEntry invite lane
+  // and PolisStand both need to intercept. Today it goes straight from the
+  // workspace's "all done" panel to PolisStand; PolisEntry's own stage
+  // belongs BEFORE this, i.e. the eventual chain is
+  // workspace -> polisentry -> polisstand -> standing. Reconciling the two
+  // lanes means PolisEntry's "continue" callback should call seeStanding()
+  // (or setStage("polisstand") directly) instead of setStage("standing").
   function seeStanding() {
     if (!submittedRef.current && delegation) {
       submittedRef.current = true;
@@ -671,7 +681,7 @@ function App2Inner() {
         issues,
       });
     }
-    setStage("standing");
+    setStage("polisstand");
   }
 
   const districtsLine = delegation
@@ -912,6 +922,18 @@ function App2Inner() {
           districtsLine={districtsLine}
           onBack={() => setStage("workspace")}
         />
+      );
+    }
+    if (stage === "polisstand") {
+      return (
+        <>
+          <AppNav onBrandClick={() => setStage("workspace")} />
+          <PolisStand
+            stateCode={delegation?.stateCode ?? null}
+            onDone={() => setStage("standing")}
+            onSkip={() => setStage("workspace")}
+          />
+        </>
       );
     }
     if (stage === "standing") {
