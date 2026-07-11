@@ -25,6 +25,14 @@
   --vote-red: oklch(0.54 0.16 28);
   --gold: oklch(0.76 0.1 75);
   --tag-bg: oklch(0.92 0.012 85);
+  /* NOTE: the Keystone "Bold Flag" accent tokens (--brand / --keep /
+     --replace …) that the Polis "Where you stand" report needs are defined in
+     public/redesign2.css, scoped to .standing2 — NOT here. Custom properties
+     declared in globals.css but referenced only from the separate redesign2.css
+     stylesheet get pruned as "unused" by the globals CSS minifier (Lightning
+     CSS), so a :root definition here silently evaluates to empty at runtime.
+     redesign2.css is served verbatim from public/ (no minify pass), so the
+     surface-scoped definitions there survive. */
   --shadow-card:
     0 1px 0 oklch(0.86 0.012 85), 0 30px 60px -30px oklch(0.18 0.018 240 / 0.18);
   --shadow-soft:

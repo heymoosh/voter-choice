@@ -10,6 +10,9 @@ import {
   computeBridges,
   isBridgeStatement,
   BRIDGE_THRESHOLD,
+  computeDivided,
+  isDividedStatement,
+  DIVIDED_MIN_SHARE,
 } from "./aggregates";
 
 /* ── computeOverlapBars ──────────────────────────────────────── */
@@ -212,6 +215,80 @@ describe("computeBridges", () => {
         const ckeys = Object.keys(c).sort();
         expect(ckeys).toEqual(["agreementPercent", "name"]);
       }
+    }
+  });
+});
+
+/* ── isDividedStatement (parameterized 30% min-share) ────────── */
+
+describe("isDividedStatement", () => {
+  it("DIVIDED_MIN_SHARE constant is 30", () => {
+    expect(DIVIDED_MIN_SHARE).toBe(30);
+  });
+
+  it("60/35 → divided (both sides clear the min share)", () => {
+    expect(isDividedStatement(60, 35)).toBe(true);
+  });
+
+  it("90/5 → not divided (a runaway majority, not a split)", () => {
+    expect(isDividedStatement(90, 5)).toBe(false);
+  });
+
+  it("50/10 → not divided (disagree side too thin)", () => {
+    expect(isDividedStatement(50, 10)).toBe(false);
+  });
+
+  it("30/30 → divided (inclusive equality)", () => {
+    expect(isDividedStatement(30, 30)).toBe(true);
+  });
+
+  it("29/60 → not divided (29 below the 30 min share)", () => {
+    expect(isDividedStatement(29, 60)).toBe(false);
+  });
+});
+
+/* ── computeDivided ──────────────────────────────────────────── */
+
+describe("computeDivided", () => {
+  it("returns statements with a genuine population-wide split", () => {
+    const statements = [
+      {
+        statement: "Congress should term-limit itself.",
+        agreePercent: 55,
+        disagreePercent: 38,
+      },
+      {
+        statement: "Members of Congress should not trade individual stocks.",
+        agreePercent: 91,
+        disagreePercent: 4,
+      },
+    ];
+
+    const divided = computeDivided(statements);
+    expect(divided).toHaveLength(1);
+    expect(divided[0].statement).toMatch(/term-limit/);
+  });
+
+  it("returns an empty array when no statement clears the min share on both sides", () => {
+    const statements = [
+      { statement: "X", agreePercent: 90, disagreePercent: 8 },
+      { statement: "Y", agreePercent: 20, disagreePercent: 15 },
+    ];
+    expect(computeDivided(statements)).toEqual([]);
+  });
+
+  it("returns an empty array when statements array is empty", () => {
+    expect(computeDivided([])).toEqual([]);
+  });
+
+  it("output records have only allowlisted keys (no identity / session)", () => {
+    const statements = [
+      { statement: "X", agreePercent: 40, disagreePercent: 45 },
+    ];
+    const divided = computeDivided(statements);
+    for (const d of divided) {
+      const keys = Object.keys(d).sort();
+      expect(keys).toEqual(["agreePercent", "disagreePercent", "statement"]);
     }
   });
 });

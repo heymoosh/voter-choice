@@ -660,20 +660,22 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
   "10c-polis-report-consensus":
     "PolisClose.tsx uses its own polis-*/overlap-*/bridge*/scatter* vocabulary — confirmed by a " +
     "full class-token diff against screens-polis.jsx's PolisReport (pr-* prefix): zero overlap. " +
-    "The mock now feeds real bridges + divided data (parity-gallery-scenarios.ts), but " +
-    "PolisClose.tsx doesn't render a divided/'where it split' section at all until PR #240 " +
-    "merges (not yet merged as of this waiver). Once it does, the remaining VISUAL diff against " +
-    "the canvas ref is EXPECTED, not a bug: the canvas's divided panel groups by D/R/I party " +
-    "cluster, while this repo deliberately stays population-level with no party breakdown, " +
-    "ever — the approved party-free pivot (DECISION #116, voter-choice-backlog.md 'KEEP the " +
-    "existing party-free product decision (#116)'). This waiver documents that expected gap; " +
-    "it does not silence the visual check, which still runs and gates this scenario same as " +
-    "any other.",
+    "The mock feeds real bridges + divided data (parity-gallery-scenarios.ts), and PolisClose.tsx " +
+    "renders both the 'Common ground' and 'Where it split' sections live (computeDivided / " +
+    "DIVIDED_MIN_SHARE=30, card e2455f56) — this superseded the held PR #240, which never " +
+    "merged. The remaining VISUAL diff against the canvas ref is EXPECTED, not a bug: the " +
+    "canvas's divided panel groups by D/R/I party cluster, while this repo deliberately stays " +
+    "population-level with no party breakdown, ever — the approved party-free pivot (DECISION " +
+    "#116, voter-choice-backlog.md 'KEEP the existing party-free product decision (#116)'). " +
+    "This waiver documents that expected gap; it does not silence the visual check, which still " +
+    "runs and gates this scenario same as any other.",
   "10d-polis-report-divided":
     "Same PolisClose.tsx vocabulary gap as 10c-polis-report-consensus — see that waiver's " +
-    "note. Same divided-data + party-free-diff reasoning (DECISION #116) — also still a " +
-    "documented proxy itself until PR #240 merges: PolisClose has no computed divided/split " +
-    "branch on main today (see this scenario's own note in parity-gallery-scenarios.ts).",
+    "note. Same divided-data + party-free-diff reasoning (DECISION #116). PolisClose.tsx " +
+    "renders the true genuinely-split branch live today (no Common ground panel, 'Where it " +
+    "split' populated instead) via computeDivided (card e2455f56) — this is not a proxy for a " +
+    "still-held PR (superseded #240; see this scenario's own note in " +
+    "parity-gallery-scenarios.ts).",
   "11c-moneygaph2h":
     "MoneyGapH2H was removed as dead code (#239, 2026-07-08) — the duel screen's money " +
     "treatment is the '.cmp-fund' PAC-percentage footnote instead, which the 05b-headtohead " +
