@@ -195,7 +195,8 @@ test.describe("edit issues from the workspace", () => {
     // rail that previously carried the desktop Edit control).
     await page.getByTestId("edit-issues-scorecard").click();
     const modal = page.getByTestId("edit-issues-modal");
-    await expect(modal).toContainText("verdicts you've already made are kept");
+    // Canvas-verbatim lede (screens-intake.jsx EditIssues, ported in 93801957).
+    await expect(modal).toContainText("Your verdicts are kept");
     // Seeded with the locked issues.
     await expect(modal.locator(".theme-row")).toHaveCount(2);
 
