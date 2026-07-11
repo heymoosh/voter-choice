@@ -53,10 +53,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await expect(page.locator(".elig")).toContainText("2026");
     await expect(page.locator(".card-sources")).toContainText("GovTrack");
 
-    // Money trail summary carries the donor total (core thesis).
-    await expect(page.locator(".cv2-disclose-summary")).toContainText(
-      "$5M raised",
-    );
+    // Money glance carries the donor total (core thesis). The glance is
+    // now canvas's compact one-liner (.rc-money-glance) — no more
+    // .cv2-disclose-summary wrapper in this shape.
+    await expect(page.locator(".rc-money-glance")).toContainText("$5M");
     await expect(page.locator(".tweaks2")).toHaveCount(0);
 
     // Single right panel ([P1]): the left rail was removed, so the scorecard
