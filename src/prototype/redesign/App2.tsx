@@ -834,14 +834,71 @@ function App2Inner() {
         />
       );
     }
-    if (stage === "about") return <AboutPage onBack={() => setStage("home")} />;
+    // About/Methodology/Privacy/Tip share the StaticPage shell. The legacy
+    // app (VoterChoiceApp.tsx's own view-switch) already wraps these same
+    // 4 pages in <AppNav/><main id="main-content">; App2 was missing that
+    // wrapper entirely, leaving these routes with no top nav. flagbar is
+    // the Bold Flag hairline (matches OrientationView's own chrome, and
+    // canvas's StaticPageVC — design-handoff/keystone-canvas/src/
+    // screens-statics.jsx), added only here since App2 is bf-app-only.
+    if (stage === "about")
+      return (
+        <>
+          <div className="flagbar">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <AppNav />
+          <main id="main-content">
+            <AboutPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "whynow")
       return <WhyNowPage onBack={() => setStage("home")} />;
     if (stage === "methodology")
-      return <MethodologyPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <div className="flagbar">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <AppNav />
+          <main id="main-content">
+            <MethodologyPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "privacy")
-      return <PrivacyPage onBack={() => setStage("home")} />;
-    if (stage === "tip") return <TipJarPage onBack={() => setStage("home")} />;
+      return (
+        <>
+          <div className="flagbar">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <AppNav />
+          <main id="main-content">
+            <PrivacyPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
+    if (stage === "tip")
+      return (
+        <>
+          <div className="flagbar">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <AppNav />
+          <main id="main-content">
+            <TipJarPage onBack={() => setStage("home")} />
+          </main>
+        </>
+      );
     if (stage === "print") {
       return (
         <ScorecardPrintView

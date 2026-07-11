@@ -5047,9 +5047,16 @@ function StaticPage({ title, eyebrow, children, onBack, className, dek }) {
     <div className={`sp-wrap${className ? ' ' + className : ''}`}>
       <div className="sp-inner">
         <button className="sp-back" onClick={onBack}>← Back</button>
-        <div className="sp-eyebrow">{eyebrow}</div>
-        <h1 className="sp-title">{title}</h1>
-        {dek && <p className="sp-dek">{dek}</p>}
+        {/* sp-mast groups kicker+h1+dek as one masthead unit, matching
+            screens-statics.jsx's StaticPageVC nesting (design-handoff/
+            keystone-canvas/src/screens-statics.jsx) — a pure structural
+            wrapper, no new styling: the per-page Bold Flag skins already
+            style sp-eyebrow/sp-title/sp-dek via descendant selectors. */}
+        <div className="sp-mast">
+          <div className="sp-eyebrow">{eyebrow}</div>
+          <h1 className="sp-title">{title}</h1>
+          {dek && <p className="sp-dek">{dek}</p>}
+        </div>
         <article className="sp-article">{children}</article>
       </div>
     </div>
