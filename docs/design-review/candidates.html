@@ -49,17 +49,17 @@
 </head>
 <body>
   <h1>Keystone review — Candidates</h1>
-  <div class="sub">ref: <code>HEAD (aea5992a)</code> &middot; generated 2026-07-10T14:27:57.518Z</div>
+  <div class="sub">ref: <code>HEAD (fd8d4905)</code> &middot; generated 2026-07-11T16:03:23.843Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (aea5992a))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (fd8d4905))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">05a-candidates-parity</div>
           <div class="label">Candidates — CandidateParity (unified card)</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Captures the junior-senator seat, which has no DB voting record and renders via the research/web_search path (the closest current analog to the canvas's dashed 'RESEARCHED · CITED' provenance treatment). Repo-wide grep found no ROLL-CALL/CITED provenance-badge markup at all — HANDOFF §5 flags the badge distinction as unverified; this screenshot is honest evidence either way, not a forced match.</div>
         </td>
@@ -83,12 +83,12 @@
         <td class="meta">
           <div class="id">05c-candidates-overview</div>
           <div class="label">Candidates — DelegationOverview (multi-seat scored cards before drill-down)</div>
-          
-          <span class="tag no">not automatable</span>
-          <div class="note">NOT BUILT on this branch — no repo screenshot possible, not a tooling gap. Today the app goes straight to the single-seat deep view (02a-results-main) with no scored multi-seat overview screen first. Backlog card 5192287a; being built on PR #243 (not merged to main as of this report) — capture() below is a real, PR #243-verified sequence (data-testid="delegation-overview"), ready to flip automatable to 'yes'/'proxy' once #243 merges. The canvas ref PNG that was previously missing now exists: the real design source turned out to live in a different, newer, untracked folder (design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/keystone-canvas/ which predates this screen) — screens-delegation.jsx's DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured 2026-07-08 by serving that folder locally and screenshotting the artboard's [data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same fidelity as the viewer's own Download-PNG export, just driven headlessly. See .keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows. automatable stays 'no' for now — flips to 'yes'/'proxy' once PR #243 merges and the delegation-overview testid actually exists on main (same pattern as reachWorkspace()'s PR #243 comment above).</div>
+          <span class="badge changed">changed since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">PR #243 merged (data-testid="delegation-overview") — capture() below drives the actual repo screen (DelegationOverview.tsx), no longer a stand-in. The canvas ref PNG was captured from a different, newer, untracked folder (design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/keystone-canvas/ which predates this screen) — screens-delegation.jsx's DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured 2026-07-08 by serving that folder locally and screenshotting the artboard's [data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same fidelity as the viewer's own Download-PNG export, just driven headlessly. See .keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/05c-candidates-overview.png" alt="reference artboard"></td>
-        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
+        <td class="shot"><img src="screenshots/repo/05c-candidates-overview.png" alt="repo screenshot"></td>
       </tr></tbody>
   </table>
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>

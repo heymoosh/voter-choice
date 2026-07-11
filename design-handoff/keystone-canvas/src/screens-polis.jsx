@@ -36,10 +36,12 @@ function pmDots(cx, cy, n, spread, seed) {
   }
   return out;
 }
+/* Party-free cluster classes (c0/c1/c2) — DECISION #116: the opinion map
+   groups voters by answer similarity, never by party. */
 const PM_GROUPS = [
-  { id: "a", label: "Group A", note: "lower taxes, secure border", pct: 38, cx: 30, cy: 42, n: 26, spread: 17, cls: "r" },
-  { id: "b", label: "Group B", note: "lower drug costs, climate", pct: 37, cx: 70, cy: 38, n: 25, spread: 17, cls: "d" },
-  { id: "c", label: "Group C", note: "anti-corruption first", pct: 25, cx: 50, cy: 72, n: 17, spread: 15, cls: "i" },
+  { id: "a", label: "Group A", note: "lower taxes, secure border", pct: 38, cx: 30, cy: 42, n: 26, spread: 17, cls: "c0" },
+  { id: "b", label: "Group B", note: "lower drug costs, climate", pct: 37, cx: 70, cy: 38, n: 25, spread: 17, cls: "c1" },
+  { id: "c", label: "Group C", note: "anti-corruption first", pct: 25, cx: 50, cy: 72, n: 17, spread: 15, cls: "c2" },
 ];
 function PolisMap({ compact }) {
   return (
@@ -56,9 +58,9 @@ function PolisMap({ compact }) {
       {!compact && (
         <div className="pm-cap">
           <div className="pm-key">
-            <span><i className="r"></i>Group A · 38%</span>
-            <span><i className="d"></i>Group B · 37%</span>
-            <span><i className="i"></i>Group C · 25%</span>
+            <span><i className="c0"></i>Group A · 38%</span>
+            <span><i className="c1"></i>Group B · 37%</span>
+            <span><i className="c2"></i>Group C · 25%</span>
             <span className="you"><i></i>You</span>
           </div>
           <p>Each dot is a voter; people who answered alike sit together. We land in different camps — and yet the statements below cleared <b>all three</b>.</p>

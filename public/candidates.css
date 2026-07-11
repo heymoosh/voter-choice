@@ -12,13 +12,25 @@
    system with no new global palette. Keep = green (alignment), Replace = red
    (alignment) — never money.
    Loaded via a <link> in src/app/layout.tsx, exactly like redesign2.css.
-   ==================================================== */
 
+   Bold Flag / Keystone chrome pass: --brand/--brand-2/--brand-soft used to
+   point at --civic (green, the original "MoneyGap precedent" written before
+   the .bf-app foundation existed), which .bf-app deliberately leaves
+   untouched app-wide — it doubles as the "keep" green elsewhere — so this
+   screen's back-link hover, tab-switch selected state, and challenger-column
+   highlight all rendered civic-green instead of the canvas's navy. Repointed
+   at --bf-brand/--bf-brand-2 (same fix, same reasoning, as redesign2.css's
+   .pe-screen for PolisEntry): HeadToHead.tsx only ever renders inside App2,
+   which is always under #root.bf-app, so --bf-brand is already in scope.
+   --brand-soft's hue is fixed to match (was hue 170, the old civic-teal
+   hue; now hue 262, the same navy tint --bf-brand-soft/--civic-soft use
+   elsewhere). --keep/--replace are unaffected — already independent fixed
+   colors, not --civic-derived. */
 .cmp {
   /* design tokens mapped onto the shipped warm palette */
-  --brand: var(--civic);
-  --brand-2: var(--civic-2);
-  --brand-soft: oklch(0.95 0.03 170);
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
+  --brand-soft: oklch(0.94 0.04 262);
   --keep: oklch(0.45 0.11 159);
   --keep-soft: oklch(0.94 0.04 159);
   --replace: var(--vote-red);

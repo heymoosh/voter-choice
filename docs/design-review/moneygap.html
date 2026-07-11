@@ -49,11 +49,11 @@
 </head>
 <body>
   <h1>Keystone review — Money-gap</h1>
-  <div class="sub">ref: <code>HEAD (aea5992a)</code> &middot; generated 2026-07-10T14:27:57.518Z</div>
+  <div class="sub">ref: <code>HEAD (fd8d4905)</code> &middot; generated 2026-07-11T16:03:23.843Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (aea5992a))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (fd8d4905))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
@@ -85,7 +85,7 @@
           <div class="label">Money-gap — in the head-to-head</div>
           <span class="badge unchanged">unchanged since base</span>
           <span class="tag proxy">proxy</span>
-          <div class="note">MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx at all — confirmed by grep: it has zero usages outside MoneyGap.tsx/MoneyGap.test.tsx. The duel screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not the ratio + shared-scale component the canvas shows. Proxy: same HeadToHead screenshot as 05b, so the gap is visible rather than hidden.</div>
+          <div class="note">The canvas's money-ratio + shared-scale component for this screen was deleted as dead code — confirmed by grep: no export with that shape exists anywhere in MoneyGap.tsx anymore. The duel screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not that ratio/scale component. Proxy: same HeadToHead screenshot as 05b, so the gap is visible rather than hidden.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11c-moneygaph2h.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/11c-moneygaph2h.png" alt="repo screenshot"></td>

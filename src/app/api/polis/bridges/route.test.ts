@@ -2,13 +2,17 @@
  * Tests for GET /api/polis/bridges
  *
  * PR 10 — national-default. Supports `?scope=national` (default) and
- * `?scope=county&stateCode=X&county=Y`. v1 still returns the
- * `no_bridges_yet` sentinel once the count meets per-reading min,
- * because per-session statement persistence isn't shipped.
+ * `?scope=county&stateCode=X&county=Y`.
+ *
+ * `fetchPopulationAggregate` (the polis_response_vectors query) is mocked
+ * throughout — these session-overlap-seeded tests never populate response
+ * vectors, so it defaults to null (DB-not-configured-equivalent) and the
+ * route falls back to the honest `no_bridges_yet` sentinel exactly as
+ * before. The "real bridges/divided" describe block below overrides the
+ * mock to prove the wiring itself.
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
-import { GET } from "./route";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import { NextRequest } from "next/server";
 import {
   _resetMemoryForTesting,
@@ -16,6 +20,18 @@ import {
 } from "../../../../lib/server/counters";
 
 const BRIDGES_PER_READING_MIN = 50;
+
+vi.mock("../../../../lib/server/polis/populationAggregate", async () => {
+  const actual = await vi.importActual<
+    typeof import("../../../../lib/server/polis/populationAggregate")
+  >("../../../../lib/server/polis/populationAggregate");
+  return { ...actual, fetchPopulationAggregate: vi.fn() };
+});
+
+import { GET } from "./route";
+import { fetchPopulationAggregate } from "../../../../lib/server/polis/populationAggregate";
+
+const mockedFetchPopulationAggregate = vi.mocked(fetchPopulationAggregate);
 
 function makeRequest(params: Record<string, string>): NextRequest {
   const url = new URL("http://localhost/api/polis/bridges");
@@ -45,6 +61,8 @@ async function seedSessions(opts: {
 describe("GET /api/polis/bridges — national (default)", () => {
   beforeEach(() => {
     _resetMemoryForTesting();
+    mockedFetchPopulationAggregate.mockReset();
+    mockedFetchPopulationAggregate.mockResolvedValue(null);
   });
 
   it("no params → scope=national, returns nationwide aggregation", async () => {
@@ -108,6 +126,7 @@ describe("GET /api/polis/bridges — national (default)", () => {
       "count",
       "status",
       "bridges",
+      "divided",
     ]);
     for (const key of Object.keys(json)) {
       expect(allowed.has(key)).toBe(true);
@@ -118,6 +137,8 @@ describe("GET /api/polis/bridges — national (default)", () => {
 describe("GET /api/polis/bridges — county scope", () => {
   beforeEach(() => {
     _resetMemoryForTesting();
+    mockedFetchPopulationAggregate.mockReset();
+    mockedFetchPopulationAggregate.mockResolvedValue(null);
   });
 
   it("scope=county requires stateCode (returns 400 if missing)", async () => {
@@ -203,9 +224,87 @@ describe("GET /api/polis/bridges — county scope", () => {
       "count",
       "status",
       "bridges",
+      "divided",
     ]);
     for (const key of Object.keys(json)) {
       expect(allowed.has(key)).toBe(true);
     }
+  });
+});
+
+describe("GET /api/polis/bridges — national real bridges/divided (population data)", () => {
+  beforeEach(async () => {
+    _resetMemoryForTesting();
+    mockedFetchPopulationAggregate.mockReset();
+    await seedSessions({
+      stateCode: "TX",
+      county: "Travis",
+      primary: "DEM",
+      n: BRIDGES_PER_READING_MIN, // clears the session-overlap gate
+      idPrefix: "real-bridges",
+    });
+  });
+
+  it("returns the real bridge list once population data clears POPULATION_MIN_ROWS", async () => {
+    mockedFetchPopulationAggregate.mockResolvedValue({
+      count: 60,
+      bridges: [
+        {
+          statement: "stock_trading_ban",
+          clusters: [{ name: "population", agreementPercent: 93 }],
+        },
+      ],
+      divided: [],
+    });
+
+    const res = await GET(makeRequest({ scope: "national" }));
+    const json = await res.json();
+    expect(json.status).toBeUndefined();
+    expect(json.bridges).toEqual([
+      {
+        statement: "stock_trading_ban",
+        clusters: [{ name: "population", agreementPercent: 93 }],
+      },
+    ]);
+  });
+
+  it("returns real divided statements alongside an empty bridge list", async () => {
+    mockedFetchPopulationAggregate.mockResolvedValue({
+      count: 60,
+      bridges: [],
+      divided: [
+        { statement: "term_limits", agreePercent: 50, disagreePercent: 45 },
+      ],
+    });
+
+    const res = await GET(makeRequest({ scope: "national" }));
+    const json = await res.json();
+    expect(json.status).toBe("no_bridges_yet");
+    expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([
+      { statement: "term_limits", agreePercent: 50, disagreePercent: 45 },
+    ]);
+  });
+
+  it("falls back to the honest sentinel when population rows are below POPULATION_MIN_ROWS, even if what little data exists all agrees", async () => {
+    // Overlap (session) count clears the gate, but the underlying
+    // response-vector table has too few rows to trust — must not read as
+    // a confident bridge just because 3/3 happened to agree.
+    mockedFetchPopulationAggregate.mockResolvedValue({
+      count: 3,
+      bridges: [
+        {
+          statement: "stock_trading_ban",
+          clusters: [{ name: "population", agreementPercent: 100 }],
+        },
+      ],
+      divided: [],
+    });
+
+    const res = await GET(makeRequest({ scope: "national" }));
+    const json = await res.json();
+    expect(json.status).toBe("no_bridges_yet");
+    expect(json.bridges).toEqual([]);
+    expect(json.divided).toEqual([]);
   });
 });

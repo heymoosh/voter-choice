@@ -290,6 +290,20 @@ export function parseSourceDate(raw: string | null | undefined): string | null {
   return `${m[3]}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
+/** True when a transaction's dates are impossible and it should be dropped as
+ *  malformed: a transaction dated in the future, or disclosed before it
+ *  occurred. Both are source typos (spot-check 2026-07-10: 17 rows, ~0.12%).
+ *  Args are ISO "YYYY-MM-DD" strings (lexicographic compare == chronological). */
+export function hasImplausibleDates(
+  transactionDate: string,
+  disclosureDate: string | null,
+): boolean {
+  const today = new Date().toISOString().slice(0, 10);
+  if (transactionDate > today) return true;
+  if (disclosureDate && disclosureDate < transactionDate) return true;
+  return false;
+}
+
 /**
  * Strips embedded HTML tags (the Senate grouped dataset wraps some tickers
  * in `<a href=...>` and some bond descriptions in `<div class="text-muted">`
@@ -446,6 +460,7 @@ export function parseHouseRow(
   const assetDescription = stripHtml(row.asset_description);
   const filingUrl = (row.source_url ?? "").trim();
   const transactionDate = parseSourceDate(row.transaction_date);
+  const disclosureDate = parseSourceDate(row.disclosure_date);
   const district = parseHouseDistrict(row.district);
   const amount = parseAmountRange(row.amount);
 
@@ -456,7 +471,8 @@ export function parseHouseRow(
     !isAllowedFilingHost(filingUrl) ||
     !transactionDate ||
     !district ||
-    !amount
+    !amount ||
+    hasImplausibleDates(transactionDate, disclosureDate)
   ) {
     return null;
   }
@@ -477,7 +493,7 @@ export function parseHouseRow(
     amountHigh: amount.high,
     amountRangeLabel: amount.label,
     transactionDate,
-    disclosureDate: parseSourceDate(row.disclosure_date),
+    disclosureDate,
     owner: stripHtml(row.owner),
     filingUrl,
     rawMetadata: {
@@ -520,7 +536,8 @@ export function parseSenateFilingGroup(
       !amount ||
       !filingUrl ||
       !isValidFilingUrl(filingUrl) ||
-      !isAllowedFilingHost(filingUrl)
+      !isAllowedFilingHost(filingUrl) ||
+      hasImplausibleDates(transactionDate, disclosureDate)
     ) {
       continue;
     }
@@ -939,8 +956,15 @@ async function loadFederalCandidateRows(
  *  that slips past the pre-insert bounds checks above from aborting the
  *  ENTIRE batch — Postgres fails the whole multi-row INSERT as one
  *  statement, so a bad row anywhere in a giant single batch would otherwise
- *  drop every good row alongside it. */
-const UPSERT_CHUNK_SIZE = 200;
+ *  drop every good row alongside it.
+ *
+ *  Sized down from 200 → 50 after the first live run (2026-07-10): at 200,
+ *  chunks carrying large `raw_metadata` JSON blobs pushed the Neon HTTP
+ *  request over its body-size limit and returned HTTP 413, forcing ~12 chunks
+ *  (~2.4k rows) down the slow per-row retry path (no data lost, but slow and
+ *  noisy). 50 keeps every request comfortably under the limit; the per-row
+ *  fallback below still backstops any single genuinely-oversized row. */
+const UPSERT_CHUNK_SIZE = 50;
 
 async function upsertRowChunk(
   db: DbClient,

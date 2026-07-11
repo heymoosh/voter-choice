@@ -22,6 +22,71 @@ export interface IssueStat {
   percent: number;
 }
 
+/**
+ * How ONE opinion group broke down on a statement — DISPLAY enrichment for the
+ * convergence dots + colored group chips. Party-free (DECISION #116): `label`
+ * is the neutral "Group A/B/C" the opinion map assigns by size; `clusterId` is
+ * the same 0-based display id the map's dots use (0 = Group A), so a chip lands
+ * on the same colour token as the map's group.
+ */
+export interface ClusterAgreementRecord {
+  clusterId: number;
+  label: string;
+  agreePct: number;
+}
+
+/** A population-level agreement statement — the party-free "common ground" row. */
+export interface Bridge {
+  stmt: string;
+  pct: number;
+  /** Per-opinion-group breakdown (convergence dots + chips). Absent when the
+   *  population was too thin/unseparated to cluster — chips are then omitted. */
+  clusterAgreement?: ClusterAgreementRecord[];
+}
+
+/**
+ * A statement the population genuinely split on. `agreePct` / `disagreePct` are
+ * whole-population shares (no party breakdown). `clusterAgreement` adds the
+ * per-opinion-group breakdown — here the groups SPREAD apart.
+ */
+export interface Divided {
+  stmt: string;
+  agreePct: number;
+  disagreePct: number;
+  /** Per-opinion-group breakdown (convergence dots + chips). Absent when the
+   *  population was too thin/unseparated to cluster — chips are then omitted. */
+  clusterAgreement?: ClusterAgreementRecord[];
+}
+
+/** One session's dot on the opinion map: display position + opinion-group id. */
+export interface ClusterDot {
+  x: number;
+  y: number;
+  cluster: number;
+}
+
+/** A soft opinion-group field. Neutral label ("Group A") — never a party. */
+export interface ClusterGroup {
+  id: number;
+  label: string;
+  sharePercent: number;
+  cx: number;
+  cy: number;
+  spread: number;
+}
+
+/**
+ * The real pol.is-style opinion map: PCA-projected sessions clustered by answer
+ * similarity. Party-free (DECISION #116): positions + counts + neutral ids
+ * only. Present only when the API found enough separated groups; otherwise the
+ * scope carries `clusterMap: null` and the FE draws the single-cloud fallback.
+ */
+export interface ClusterMap {
+  dots: ClusterDot[];
+  clusters: ClusterGroup[];
+  you: { x: number; y: number; cluster: number } | null;
+}
+
 export interface PolisScopeVM {
   id: string;
   label: string;
@@ -30,12 +95,16 @@ export interface PolisScopeVM {
   scopePhrase: string;
   dots: Array<{ x: number; y: number }>;
   you: [number, number] | null;
+  /** Real cluster map when available; null → single-cloud fallback. */
+  clusterMap: ClusterMap | null;
   overlap: {
     mostCommon: IssueStat | null;
     youShares: IssueStat[];
   };
   issueRegions: Array<{ label: string; x: number; y: number; percent: number }>;
-  bridges: Array<{ stmt: string; pct: number }>;
+  bridges: Bridge[];
+  /** Statements the population split on (honest "where it split" panel). */
+  divided: Divided[];
   /** True only when the scope has zero finished sessions (nothing to draw). */
   locked: boolean;
 }
@@ -45,6 +114,7 @@ interface ApiPolisResponse {
   sampleSize: number;
   dots: Array<{ x: number; y: number }>;
   you: { x: number; y: number } | null;
+  clusterMap?: ClusterMap | null;
   consensus?: IssueStat[];
   overlap?: {
     mostCommon: IssueStat | null;
@@ -72,23 +142,71 @@ async function fetchPolisScope(
   }
 }
 
+interface ApiClusterAgreement {
+  clusterId?: number;
+  label?: string;
+  agreePct?: number;
+}
+
 interface ApiBridge {
   statement?: string;
   stmt?: string;
   agreementPercent?: number;
   clusters?: Array<{ agreementPercent?: number }>;
+  clusterAgreement?: ApiClusterAgreement[];
 }
 
+interface ApiDivided {
+  statement?: string;
+  stmt?: string;
+  agreePercent?: number;
+  disagreePercent?: number;
+  clusterAgreement?: ApiClusterAgreement[];
+}
+
+/**
+ * Keep only well-formed, party-free per-group records. Drops anything missing a
+ * numeric clusterId/agreePct or a label, so malformed data never renders a
+ * bogus chip. Returns undefined when there's nothing usable → chips omitted.
+ */
+function readClusterAgreement(
+  raw: ApiClusterAgreement[] | undefined,
+): ClusterAgreementRecord[] | undefined {
+  if (!Array.isArray(raw)) return undefined;
+  const records = raw
+    .filter(
+      (c): c is Required<ApiClusterAgreement> =>
+        typeof c?.clusterId === "number" &&
+        typeof c?.label === "string" &&
+        typeof c?.agreePct === "number",
+    )
+    .map((c) => ({
+      clusterId: c.clusterId,
+      label: c.label,
+      agreePct: Math.round(c.agreePct),
+    }));
+  return records.length > 0 ? records : undefined;
+}
+
+/**
+ * Read the party-free bridges + divided arrays the route returns. Bridges are
+ * statements a supermajority of the whole population agreed on; divided are the
+ * ones the population genuinely split on (agree vs. disagree shares, no party
+ * or cluster breakdown — DECISION #116). Both come from the same endpoint.
+ */
 async function fetchBridges(
   stateCode: string,
-): Promise<Array<{ stmt: string; pct: number }>> {
+): Promise<{ bridges: Bridge[]; divided: Divided[] }> {
   try {
     const qs = new URLSearchParams({ stateCode }).toString();
     const res = await fetch(`/api/polis/bridges?${qs}`);
-    if (!res.ok) return [];
+    if (!res.ok) return { bridges: [], divided: [] };
     const body = await res.json();
-    const list: ApiBridge[] = Array.isArray(body?.bridges) ? body.bridges : [];
-    return list
+
+    const bridgeList: ApiBridge[] = Array.isArray(body?.bridges)
+      ? body.bridges
+      : [];
+    const bridges: Bridge[] = bridgeList
       .map((b) => {
         const stmt = b.statement ?? b.stmt ?? "";
         const pcts = (b.clusters ?? [])
@@ -100,11 +218,44 @@ async function fetchBridges(
             : pcts.length > 0
               ? Math.min(...pcts)
               : null;
-        return stmt && pct !== null ? { stmt, pct: Math.round(pct) } : null;
+        if (!stmt || pct === null) return null;
+        const clusterAgreement = readClusterAgreement(b.clusterAgreement);
+        return {
+          stmt,
+          pct: Math.round(pct),
+          ...(clusterAgreement ? { clusterAgreement } : {}),
+        };
       })
-      .filter((b): b is { stmt: string; pct: number } => b !== null);
+      .filter((b): b is Bridge => b !== null);
+
+    const dividedList: ApiDivided[] = Array.isArray(body?.divided)
+      ? body.divided
+      : [];
+    const divided: Divided[] = dividedList
+      .map((d) => {
+        const stmt = d.statement ?? d.stmt ?? "";
+        const agreePct = d.agreePercent;
+        const disagreePct = d.disagreePercent;
+        if (
+          !stmt ||
+          typeof agreePct !== "number" ||
+          typeof disagreePct !== "number"
+        ) {
+          return null;
+        }
+        const clusterAgreement = readClusterAgreement(d.clusterAgreement);
+        return {
+          stmt,
+          agreePct: Math.round(agreePct),
+          disagreePct: Math.round(disagreePct),
+          ...(clusterAgreement ? { clusterAgreement } : {}),
+        };
+      })
+      .filter((d): d is Divided => d !== null);
+
+    return { bridges, divided };
   } catch {
-    return [];
+    return { bridges: [], divided: [] };
   }
 }
 
@@ -114,7 +265,7 @@ function toScopeVM(
   label: string,
   dotPhrase: string,
   scopePhrase: string,
-  bridges: Array<{ stmt: string; pct: number }>,
+  findings: { bridges: Bridge[]; divided: Divided[] },
 ): PolisScopeVM | null {
   if (!api) return null;
   const locked = api.sampleSize === 0;
@@ -126,6 +277,7 @@ function toScopeVM(
     scopePhrase,
     dots: api.dots ?? [],
     you: api.you ? [api.you.x, api.you.y] : null,
+    clusterMap: locked ? null : (api.clusterMap ?? null),
     overlap: api.overlap ?? { mostCommon: null, youShares: [] },
     issueRegions: (api.issueRegions ?? []).map((r) => ({
       label: r.issueLabel,
@@ -133,7 +285,8 @@ function toScopeVM(
       y: r.y,
       percent: r.percent,
     })),
-    bridges: locked ? [] : bridges,
+    bridges: locked ? [] : findings.bridges,
+    divided: locked ? [] : findings.divided,
     locked,
   };
 }
@@ -153,12 +306,13 @@ export async function loadPolisScopes(input: {
     ? { userConcerns: concerns }
     : {};
 
-  const [stateRes, nationalRes, bridges] = await Promise.all([
+  const [stateRes, nationalRes, findings] = await Promise.all([
     fetchPolisScope({ stateCode: input.stateCode, ...base }),
     fetchPolisScope({ scope: "national", ...base }),
     fetchBridges(input.stateCode),
   ]);
 
+  const empty = { bridges: [], divided: [] };
   const scopes: Array<PolisScopeVM | null> = [
     toScopeVM(
       stateRes,
@@ -166,7 +320,7 @@ export async function loadPolisScopes(input: {
       input.stateName,
       `of your fellow ${input.stateName} voters`,
       `across ${input.stateName}`,
-      bridges,
+      findings,
     ),
     toScopeVM(
       nationalRes,
@@ -174,8 +328,8 @@ export async function loadPolisScopes(input: {
       "National",
       "person, anywhere in the country,",
       "across the country",
-      // Bridges are state-scoped today; the national zoom hides the panel.
-      [],
+      // Bridges/divided are state-scoped today; the national zoom hides them.
+      empty,
     ),
   ];
 
