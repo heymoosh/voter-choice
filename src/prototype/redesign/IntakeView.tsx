@@ -3,11 +3,19 @@
 /* Conversational issue intake at the cold-open stage — replaces the one-shot
    ColdOpenView in the redesign (the legacy app keeps its own). The shell,
    context line, and opening copy match the shipped cold open; the loop inside
-   is the shared IssueConversation (extract → converse → lock). */
+   is the shared IssueConversation (extract → converse → lock).
 
-import React from "react";
+   The conversation's "Lock these in" click doesn't finalize directly — it
+   gates into IntakeLocked, a distinct pre-lock confirm screen (card "Intake
+   locked state: is IntakeLocked meant to ship as its own screen?" —
+   decision: yes, ship it as its own step). onLock only fires from that
+   screen's own confirm control; its back control returns here without
+   losing the conversation. */
+
+import React, { useState } from "react";
 import { AppNav, useI18n } from "../VoterChoiceApp";
 import { IssueConversation, useIssueConversation } from "./IssueConversation";
+import { IntakeLocked } from "./IntakeLocked";
 
 export function IntakeView({
   address,
@@ -17,6 +25,7 @@ export function IntakeView({
   onBudgetBlock,
 }) {
   const { t } = useI18n();
+  const [confirmingLock, setConfirmingLock] = useState(false);
   const convo = useIssueConversation({
     seedIssues: savedIssues && savedIssues.length ? savedIssues : null,
     onBudgetBlock,
@@ -49,12 +58,22 @@ export function IntakeView({
           </div>
         </div>
 
-        <IssueConversation
-          convo={convo}
-          primaryLabel={t("intake.primaryBtn")}
-          onPrimary={onLock}
-          placeholder={t("intake.placeholderFirst")}
-        />
+        {confirmingLock ? (
+          <IntakeLocked
+            issues={convo.issues}
+            setIssues={convo.setIssues}
+            log={convo.log}
+            onConfirm={onLock}
+            onBack={() => setConfirmingLock(false)}
+          />
+        ) : (
+          <IssueConversation
+            convo={convo}
+            primaryLabel={t("intake.primaryBtn")}
+            onPrimary={() => setConfirmingLock(true)}
+            placeholder={t("intake.placeholderFirst")}
+          />
+        )}
       </div>
     </>
   );

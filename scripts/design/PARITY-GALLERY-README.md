@@ -93,10 +93,11 @@ interaction sequence, reusing `e2e/helpers/redesign-mocks.ts`'s network seams:
 `02c-results-votes-drilldown`, `02d-results-allvotes-sheet`, `04-scorecard`,
 `05a-candidates-parity`, `05b-headtohead`, `06-homehero`, `07-whynow`,
 `08a-about`, `08b-howitworks`, `08c-privacy`, `08d-tipjar`, `08e-loading`,
-`09a-intake-ask`, `09b-intake-propose`, `09d-edit-issues`, `09e-edit-rescored`,
-`10c-polis-report-consensus`. (`09c-intake-locked` is a documented proxy —
-see below — bringing the strict "yes" count to 20; see the per-row notes for
-the exact line.)
+`09a-intake-ask`, `09b-intake-propose`, `09c-intake-locked`, `09d-edit-issues`,
+`09e-edit-rescored`, `10c-polis-report-consensus`. (`09c-intake-locked` moved
+here once PR #236 merged `IntakeLocked.tsx` as its own reachable screen — it
+was a documented proxy before that; see this file's git history for the old
+proxy note.)
 
 **Documented proxy (6)** — a real, reachable app state is captured, but it
 isn't pixel-equivalent to the canvas's specific sub-state, because the
@@ -106,9 +107,6 @@ tooling gaps — confirmed by reading the actual component source, not assumed:
 - `03-color-bold-flag` — the canvas artboard is a trimmed palette-demo card
   with no app equivalent; proxy = the results workspace screenshot, where the
   Bold Flag tokens are actually applied live.
-- `09c-intake-locked` — the canvas's distinct pre-lock confirmation state
-  (green "issues are set" banner, drag-to-rerank) isn't built; proxy = the
-  same running-issues UI one turn further along, right before Lock.
 - `10a-polis-entry` — the dedicated entry/invite screen with a preview
   scatter was removed per `e2e/redesign-core.spec.ts`'s own comment ("the see
   where you stand teaser was removed [P1]"); proxy = the completed workspace
@@ -132,9 +130,8 @@ tooling gaps — confirmed by reading the actual component source, not assumed:
   treatment is a simpler PAC-percentage footnote. Proxy = the same
   `05b-headtohead` screenshot, so the gap is visible instead of hidden.
 
-(That's 7 items listed because `09c` and `11a`/`11b` above are proxies too —
-28 total = 20 clean "yes" + 7 proxy + 1 "no"; the summary line the tool itself
-prints after each run is the authoritative count.)
+(28 total = 21 clean "yes" + 6 proxy + 1 "no"; the summary line the tool
+itself prints after each run is the authoritative count.)
 
 **Not automatable (1)**:
 

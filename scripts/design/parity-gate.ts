@@ -455,6 +455,22 @@ const STRUCTURAL_PROBES: Probe[] = [
   },
   {
     kind: "class-diff",
+    scenarioId: "09c-intake-locked",
+    domSelector: ".iq-locked",
+    designFile: "design-handoff/keystone-canvas/src/screens-intake.jsx",
+    componentName: "IntakeLocked",
+    note:
+      "IntakeLocked.tsx's own docstring: 'classes (.iq-locked/.tick/.lt/.ls) and copy ported " +
+      "verbatim from the canvas's intake.css' — a confirmed literal port of the green 'your " +
+      "issues are set' banner, the same documented precedent as MoneyGap.tsx/HeadToHead.tsx. " +
+      "Replaces the STOP-SHIP Phase-4-flagged waiver that used to sit here (STRUCTURAL_WAIVERS " +
+      "previously claimed 09c 'renders the same IssueConversation.tsx component as 09a' — true " +
+      "only while #236 was unmerged and this scenario fell back to a pre-lock proxy; now that " +
+      "IntakeLocked.tsx is its own screen, that reasoning no longer holds and a real probe " +
+      "belongs here instead.",
+  },
+  {
+    kind: "class-diff",
     scenarioId: "09e-edit-rescored",
     domSelector: ".ad-list",
     designFile: "design-handoff/keystone-canvas/src/screens-intake.jsx",
@@ -677,8 +693,6 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "IqComposer family (iq-* prefix): zero exact-token overlap (semantically similar names " +
     "like 'chip'/'iq-chip' don't count as a literal-class match, only identical tokens do).",
   "09b-intake-propose":
-    "Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.",
-  "09c-intake-locked":
     "Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.",
   "09d-edit-issues":
     "EditIssuesModal.tsx renamed the canvas's amd-* prefix (screens-intake.jsx's EditIssues) to " +
@@ -1330,6 +1344,40 @@ const CONTENT_PROBES: ContentProbe[] = [
       "canvas's own hardcoded 'Both seats decided.' — is deliberately NOT asserted here, per " +
       "PolisEntry.tsx's own docstring: wired from real seat data instead, matching the seat-" +
       "count-from-real-data convention used elsewhere).",
+  },
+  {
+    scenarioId: "09c-intake-locked",
+    assertions: [
+      {
+        text: "Perfect. Here's your final list. Re-rank or rename anything;",
+        description:
+          "the AI's closing line before the review card — screens-intake.jsx's IntakeLocked " +
+          '<IqMsg who="ai"> text, split before the second sentence',
+      },
+      {
+        text: "otherwise you're ready to meet your delegation.",
+        description: "the AI's closing line (second half)",
+      },
+      {
+        text: "Your issues are set.",
+        description:
+          "the .iq-locked banner title — also checked structurally by the 09c-intake-locked " +
+          "class-diff probe above; kept here too since a structural pass only proves the .lt " +
+          "element exists, not that it holds this exact text",
+      },
+      {
+        text: "These travel with every record we show you.",
+        description: "the .iq-locked banner subtitle (.ls)",
+      },
+    ],
+    note:
+      "Added alongside removing 09c's stale STRUCTURAL_WAIVERS entry (see the class-diff probe " +
+      "above) once PR #236 merged IntakeLocked.tsx as its own screen. The structural probe " +
+      "confirms the .iq-locked/.tick/.lt/.ls classes exist; this content probe is the honest-" +
+      "signal companion Muxin has flagged as missing before (STOP-SHIP 2026-07-09, 08b/08a/08c " +
+      "entries above): it fails if the right classes render with the WRONG or drifted copy " +
+      "inside them, which neither the class-diff nor the coarse downscaled visual check can " +
+      "catch.",
   },
 ];
 
