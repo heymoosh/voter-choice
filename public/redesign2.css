@@ -377,6 +377,34 @@
 .delegation .ws-ballot .b-head h3 {
   font-size: 24px;
 }
+/* the rail-head progress dots (canvas rail-head's .rh-dots, screens.css) —
+   filed above (§ DELEGATION OVERVIEW comment) as "no matching rail-header-
+   dots element exists in this repo"; .b-head is that element, so this adds
+   the dots onto it rather than leaving the gap. One dot per seat passed to
+   ScorecardPane (the pane's existing doneCount/seats.length convention,
+   unchanged), not just up-for-election seats — same rows the b-list below
+   already renders, so the dot count always matches the row count. */
+.ws-ballot .b-head .rh-dots {
+  display: flex;
+  gap: 5px;
+}
+.ws-ballot .b-head .rh-dots i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--rule);
+}
+.ws-ballot .b-head .rh-dots i.done {
+  background: var(--keep);
+}
+.ws-ballot .b-head .rh-dots i.active {
+  background: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.ws-ballot .b-head .sub {
+  display: block;
+  margin-top: 6px;
+}
 .delegation .standing-cta h4 {
   font-size: 22px;
 }
@@ -743,6 +771,21 @@
   font-weight: 600;
   letter-spacing: -0.015em;
   margin: 0 0 4px;
+}
+/* the single seat-tier jurisdiction badge (canvas res-tier's .lvl —
+   screens-results.jsx/screens-delegation.jsx) — the one tag DECISIONS.md
+   keeps after dropping the noisier per-issue Fed/Both/State tags. */
+.lvl-tag {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  padding: 2px 7px;
+  border-radius: 999px;
+  background: var(--brand-soft);
+  color: var(--brand-2);
+  margin-left: 8px;
+  vertical-align: 2px;
 }
 .ti-copy p {
   font-size: 14px;

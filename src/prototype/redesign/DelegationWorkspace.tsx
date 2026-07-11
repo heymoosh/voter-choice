@@ -25,11 +25,18 @@ import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { DelegationOverview } from "./DelegationOverview";
 import { issuesForLevel } from "./delegationData";
 
-function tierIntro(section, { stateName, t }) {
+function tierIntro(section, { t }) {
   const tr = t || ((k) => k);
+  // lvl backs the single jurisdiction badge on the seat-tier header (canvas
+  // screens-results.jsx/screens-delegation.jsx res-tier's ".lvl" pill —
+  // DECISIONS.md's "Remove Fed/Both/State tags" note: the redesign drops
+  // the noisy per-issue tags; "only a single jurisdiction tag remains on
+  // the seat tier header"). The canvas pill is single-tone regardless of
+  // level, so .lvl-tag (below) doesn't vary style by jurisdiction either —
+  // only the label text changes.
   const TIERS = {
     "Washington — Federal": {
-      place: "WASHINGTON",
+      lvl: tr("scorecard.levelFederal"),
       title: tr("scorecard.tierFedTitle"),
       what: () => (
         <span
@@ -38,12 +45,12 @@ function tierIntro(section, { stateName, t }) {
       ),
     },
     "State legislature — State": {
-      place: (stateName || "STATE").toUpperCase(),
+      lvl: tr("scorecard.levelState"),
       title: tr("scorecard.tierStatTitle"),
       what: () => <>{tr("scorecard.tierStatWhat")}</>,
     },
     "Statewide — Executive": {
-      place: "STATEWIDE",
+      lvl: tr("scorecard.levelExecutive"),
       title: tr("scorecard.tierExecTitle"),
       what: () => (
         <span
@@ -99,11 +106,29 @@ export function ScorecardPane({
     <>
       <div className="b-head">
         <div className="row">
-          <h3>{t("scorecard.heading")}</h3>
-          <span className="sub">
-            {doneCount}/{seats.length} · {t("scorecard.draft")}
+          {/* "Your delegation" reuses the overview's own kicker copy
+              (DelegationOverview.tsx) — canvas's rail-head title, this
+              rail's actual identity being "who you're reviewing," not the
+              printable artifact you get at the end. */}
+          <h3>{t("delegationOverview.kicker")}</h3>
+          <span className="rh-dots">
+            {seats.map((s) => (
+              <i
+                className={
+                  s.id === activeSeatId
+                    ? "active"
+                    : verdicts[s.id]
+                      ? "done"
+                      : ""
+                }
+                key={s.id}
+              />
+            ))}
           </span>
         </div>
+        <span className="sub">
+          {doneCount}/{seats.length} {t("scorecard.decided")}
+        </span>
         <address>
           {address || "—"}
           {precinct ? ` · ${t("scorecard.precinct")} ${precinct}` : ""}
@@ -233,7 +258,6 @@ export function ScorecardPane({
 /* ---- Workspace ---- */
 export function DelegationWorkspace({
   address,
-  stateName,
   seats,
   userIssues,
   pollingInfo,
@@ -307,7 +331,14 @@ export function DelegationWorkspace({
   const doneCount = Object.keys(verdicts).filter((id) =>
     seats.some((s) => s.id === id),
   ).length;
-  const intro = tierIntro(activeSeat.section, { stateName, t });
+  const intro = tierIntro(activeSeat.section, { t });
+  // "SEAT N OF M" progress eyebrow (canvas res-tier's .tp — screens-delegation.jsx
+  // SeatDeepView / screens-results.jsx ResultsScreen). Counted among up-for-
+  // election-2026 seats only, matching DelegationOverview's own upSeats filter
+  // — this view never shows a not-up-2026 seat as "active", so a seat missing
+  // from upSeats here would be a data bug, not a real state to render around.
+  const upSeats = seats.filter((s) => s.nextElection?.onBallot2026 !== false);
+  const activeSeatOfIdx = upSeats.findIndex((s) => s.id === activeSeat.id) + 1;
 
   function selectAndOpen(seatId) {
     onSelectSeat(seatId);
@@ -371,9 +402,19 @@ export function DelegationWorkspace({
             </div>
           )}
           <div className="tier-intro">
-            <span className="ti-place">{intro.place}</span>
+            {activeSeatOfIdx > 0 && (
+              <span className="ti-place">
+                {t("scorecard.seatOfTotal", {
+                  n: activeSeatOfIdx,
+                  total: upSeats.length,
+                })}
+              </span>
+            )}
             <div className="ti-copy">
-              <h2>{intro.title}</h2>
+              <h2>
+                {intro.title}
+                <span className="lvl-tag">{intro.lvl}</span>
+              </h2>
               <p>{intro.what()}</p>
             </div>
           </div>
