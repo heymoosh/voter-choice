@@ -17,10 +17,6 @@ import {
 import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
 import { isCanonicalIssueId } from "../../../lib/canonicalIssues";
-import {
-  collectPolisVector,
-  buildVectorInput,
-} from "../../../lib/polis/collectVector";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -191,29 +187,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       concernEvents: body.concernEvents ?? [],
     });
 
-    // De-identified Polis response-vector collection (best-effort, isolated
-    // from the counter result — collectPolisVector never throws). Checked
-    // here in addition to collectVector.ts's own internal hard gate so the
-    // wiring itself is visibly and independently flag-controlled.
-    //
-    // sessionToken is a fresh random UUID, deliberately distinct from
-    // body.sessionId (the Redis dedupe key) — see CollectVectorInput's
-    // privacy contract in collectVector.ts.
-    //
-    // STOPGAP MAPPING: the real per-statement agree/disagree/pass UI hasn't
-    // shipped yet (see docs/operations/launch-flip-list.md). Until it does,
-    // each already-validated confirmedConcern is treated as an affirmative
-    // "agree" response keyed by canonicalIssue — the closest per-session
-    // signal this route has today. Replace with real per-statement answers
-    // once that UI exists.
-    if (process.env.POLIS_VECTOR_COLLECTION_ENABLED === "true") {
-      const rawAnswers = Object.fromEntries(
-        (body.confirmedConcerns ?? []).map((c) => [c.canonicalIssue, "agree"]),
-      );
-      await collectPolisVector(
-        buildVectorInput(crypto.randomUUID(), body.stateCode, rawAnswers),
-      );
-    }
+    // De-identified Polis response-vector collection used to live here as a
+    // STOPGAP: confirmedConcerns treated as synthetic "agree" answers, since
+    // the real per-statement agree/disagree/pass UI hadn't shipped. That UI
+    // now exists (PolisStand, card fb77d0bb) and writes real per-statement
+    // answers directly via POST /api/polis/respond — see that route for the
+    // collectPolisVector wiring. Nothing to do here anymore.
   }
 
   return NextResponse.json(result, { status: 200 });

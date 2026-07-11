@@ -30,6 +30,7 @@ import {
   getChatSessionId,
   type AlignmentScore,
 } from "../realData";
+import { computeOverallAlignmentPct, getScoreForIssue } from "../data";
 import { derivePeerComparison, type PeerComparison } from "./peerComparison";
 
 // ---------------------------------------------------------------------------
@@ -404,6 +405,49 @@ export async function loadAllSeatCardData(
     }),
   );
   return out;
+}
+
+// ---------------------------------------------------------------------------
+// Delegation-overview per-seat alignment (3-card SeatCard summary) — shares
+// the same math/lookup as the deep-view AlignmentScoreBanner / AlignmentIssueRow
+// (src/prototype/VoterChoiceApp.tsx) so a seat's score reads identically on
+// both the overview card and inside its deep single-seat view.
+// ---------------------------------------------------------------------------
+
+/** Overall average alignment % for a seat's card — same average-of-per-issue-
+ *  percentages formula as AlignmentScoreBanner, scoped to the issues that
+ *  apply at this seat's level (federal vs. state). */
+export function seatOverviewAlignmentPct(
+  seat: Pick<DelegationSeatVM, "alignmentEntry" | "level">,
+  userIssues: UserIssue[],
+): number | null {
+  return computeOverallAlignmentPct(
+    seat.alignmentEntry,
+    issuesForLevel(userIssues, seat.level),
+  );
+}
+
+export interface SeatIssueAlignmentRow {
+  label: string;
+  pct: number | null;
+  fraction: string | null;
+}
+
+/** Per-issue alignment rows for a seat's overview card bars — same lookup
+ *  (getScoreForIssue) and same pct math as AlignmentIssueRow. */
+export function seatIssueAlignmentRows(
+  seat: Pick<DelegationSeatVM, "alignmentEntry" | "level">,
+  userIssues: UserIssue[],
+): SeatIssueAlignmentRow[] {
+  return issuesForLevel(userIssues, seat.level).map((issue) => {
+    const score = getScoreForIssue(seat.alignmentEntry, issue.canonicalIssue);
+    const hasRecord = !!(score && score.total > 0);
+    return {
+      label: issue.interpretation,
+      pct: hasRecord ? Math.round((score.kept / score.total) * 100) : null,
+      fraction: hasRecord ? `${score.kept}/${score.total}` : null,
+    };
+  });
 }
 
 // ---------------------------------------------------------------------------

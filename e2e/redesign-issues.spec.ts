@@ -38,7 +38,7 @@ async function goToIntakeReview(page: Page) {
   await page.evaluate(() => localStorage.clear());
   await page.goto("/");
   await page
-    .getByPlaceholder("1600 Pennsylvania Ave NW, Washington DC 20500")
+    .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
     .fill("1100 Congress Ave, Austin, TX 78701");
   await page.getByRole("button", { name: "Pull my representatives →" }).click();
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
@@ -77,10 +77,19 @@ test.describe("conversational issue intake", () => {
       page.getByTestId("issue-themes-card").locator(".theme-row"),
     ).toHaveCount(3);
 
-    // Lock → guided orientation interstitial → workspace, with all three
-    // issues on the rail.
+    // Lock → IntakeLocked pre-lock confirm screen → guided orientation
+    // interstitial → workspace, with all three issues on the rail.
     await page.getByTestId("issue-primary").click();
+    await page
+      .getByTestId("issue-locked-confirm-btn")
+      .click({ timeout: 15000 });
     await page.getByTestId("orientation-continue").click({ timeout: 15000 });
+    // Workspace now lands on the delegation overview (one card per seat)
+    // first; click into the first seat to reach its deep view.
+    await page
+      .locator('[data-testid="seat-card"]')
+      .first()
+      .click({ timeout: 15000 });
     await page.locator(".b-row").first().waitFor({ timeout: 20000 });
     await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
   });
@@ -186,7 +195,8 @@ test.describe("edit issues from the workspace", () => {
     // rail that previously carried the desktop Edit control).
     await page.getByTestId("edit-issues-scorecard").click();
     const modal = page.getByTestId("edit-issues-modal");
-    await expect(modal).toContainText("verdicts you've already made are kept");
+    // Canvas-verbatim lede (screens-intake.jsx EditIssues, ported in 93801957).
+    await expect(modal).toContainText("Your verdicts are kept");
     // Seeded with the locked issues.
     await expect(modal.locator(".theme-row")).toHaveCount(2);
 

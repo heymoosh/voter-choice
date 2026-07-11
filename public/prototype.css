@@ -136,6 +136,62 @@ textarea {
   background: transparent;
   cursor: pointer;
 }
+/* Bold Flag / Keystone: canvas's nav sits on the same white/navy/red ground
+   as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the App2
+   redesign via the .bf-app ancestor (set in src/app/page.tsx, see
+   redesign2.css) rather than the nav's own data-current attribute -- now
+   that Bold Flag white is the app-wide default for App2 (redesign2.css
+   .bf-app), the nav should read consistently on every route, not just
+   home. The legacy ballot app has no .bf-app ancestor, so it still gets
+   the base civic-styled nav below unchanged (src/app/civic-default.test.tsx
+   is unaffected -- it only pins layout.tsx's own body attributes). */
+.bf-app .app-nav .brand .mark {
+  position: relative;
+  overflow: hidden;
+  background: var(--bf-brand);
+}
+.bf-app .app-nav .brand .mark::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 6px;
+  background: var(--vote-red);
+}
+.bf-app .app-nav .nav-tip {
+  /* Canvas's SCNav (design-handoff/.../screens.css .sc-nav-links .tip) is a
+     grey-rule outline with navy text -- NOT a red outline; verified against
+     both the source CSS and a close re-read of the ref screenshot. */
+  border-color: var(--rule);
+  color: var(--bf-brand);
+}
+.bf-app .app-nav .nav-tip:hover {
+  background: var(--bf-brand);
+  color: var(--paper);
+  border-color: var(--bf-brand);
+}
+/* the global `a { color: var(--civic) }` rule (teal) otherwise wins over
+   .app-nav .links' inherited ink-2, since a declared color on the element
+   itself beats an inherited one regardless of ancestor specificity. */
+.bf-app .app-nav .links a {
+  color: var(--ink-2);
+}
+.bf-app .app-nav .links a:hover {
+  color: var(--ink);
+}
+/* AppNav now always renders a leading .flagbar (tricolor strip, canvas's
+   IqShell/SCNav shell convention) so every caller gets it for free instead
+   of each screen re-rendering its own copy. AppNav is shared with the
+   legacy ballot app though (App() in VoterChoiceApp.tsx also calls it), so
+   the strip is hidden by default and only shown under .bf-app -- same
+   scoping rule as every other override in this block. */
+.app-nav .flagbar {
+  display: none;
+}
+.bf-app .app-nav .flagbar {
+  display: flex;
+}
 
 /* ============ HOMEPAGE ============ */
 .hp-hero {
@@ -146,11 +202,24 @@ textarea {
   align-items: center;
   max-width: 1280px;
   margin: 0 auto;
-}
-/* Single-column hero (no stat-stack sibling): keep the content from stretching
-   the full 1280px and leaving an empty right half. */
-.hp-hero.hp-hero-solo {
-  grid-template-columns: minmax(0, 760px);
+  /* Bold Flag / Keystone: canvas's HomeHero renders on data-palette="white"
+     (design-handoff/design_handoff_voter_choice_redesign/screens.css) --
+     scope that white/navy/red palette to the hero only; the rest of the
+     app stays on its civic/cream default (pinned by
+     src/app/civic-default.test.tsx). --hh-brand is a NEW token, not a
+     --civic override: --civic doubles as the hp-preview's "keep" green,
+     so overriding it here would turn that green navy too. */
+  --hh-brand: oklch(0.4 0.155 262);
+  --hh-brand-2: oklch(0.31 0.145 262);
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --tag-bg: oklch(0.95 0.006 260);
+  background: var(--paper);
 }
 .eyebrow {
   display: inline-flex;
@@ -163,21 +232,29 @@ textarea {
   color: var(--civic);
   margin-bottom: 22px;
 }
+.hp-hero .eyebrow {
+  color: var(--hh-brand);
+}
 .eyebrow .star {
   color: var(--vote-red);
 }
 .hp-hero h1 {
+  /* Bold Flag / Keystone: canvas's .vh-h1 (home.css) is 40px/1.08, not a
+     display-scale 76px -- the oversized size wrapped this headline to ~6
+     lines and pushed the address card below the fold. */
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 76px;
-  line-height: 0.96;
-  letter-spacing: -0.025em;
-  margin: 0 0 22px;
+  font-size: 40px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 18px;
+  color: var(--ink);
   text-wrap: balance;
+  max-width: 600px;
 }
 .hp-hero h1 em {
   font-style: italic;
-  color: var(--civic);
+  color: var(--hh-brand);
 }
 .hp-hero p.lede {
   font-family: var(--serif);
@@ -188,76 +265,101 @@ textarea {
   max-width: 520px;
   text-wrap: pretty;
 }
+.hp-hero p.lede b {
+  color: var(--ink);
+  font-weight: 600;
+}
 .addr-card {
   background: var(--paper-2);
   border: 1px solid var(--rule);
-  border-radius: 10px;
-  padding: 18px 18px 16px;
-  box-shadow: var(--shadow-soft);
+  border-radius: 14px;
+  padding: 18px 20px 16px;
+  box-shadow: var(--shadow-card);
   max-width: 560px;
 }
-.addr-card label {
+.addr-lab {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  text-transform: uppercase;
-  letter-spacing: 0.14em;
+  gap: 12px;
+  margin-bottom: 9px;
+}
+.addr-lab-l {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.addr-why {
+  width: 17px;
+  height: 17px;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid var(--rule);
+  background: var(--paper);
   color: var(--ink-3);
-  margin-bottom: 10px;
+  font-size: 10px;
+  font-weight: 700;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+.addr-priv {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  color: var(--civic);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+.addr-priv::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
 }
 .addr-card .row {
   display: flex;
-  gap: 8px;
+  gap: 9px;
 }
 .addr-card input {
   flex: 1;
+  min-width: 0;
   border: 1px solid var(--rule);
   background: var(--paper);
-  padding: 14px 16px;
-  font-size: 15px;
+  padding: 13px 14px;
+  font-size: 14px;
   color: var(--ink);
-  border-radius: 8px;
+  border-radius: 10px;
   outline: none;
 }
 .addr-card input:focus {
-  border-color: var(--civic);
+  border-color: var(--hh-brand);
 }
 .addr-card .go {
-  background: var(--civic);
+  background: var(--hh-brand);
   color: var(--paper-2);
   border: 0;
-  border-radius: 8px;
-  padding: 0 24px;
-  font-weight: 600;
-  font-size: 14.5px;
+  border-radius: 10px;
+  padding: 0 20px;
+  min-height: 48px;
+  font-weight: 700;
+  font-size: 14px;
   cursor: pointer;
   white-space: nowrap;
+}
+.addr-card .go:hover:not(:disabled) {
+  background: var(--hh-brand-2);
 }
 .addr-card .go:disabled {
   background: var(--rule);
   color: var(--ink-3);
   cursor: not-allowed;
-}
-.addr-card .hint {
-  margin-top: 12px;
-  font-size: 12.5px;
-  color: var(--ink-3);
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-}
-.addr-card .hint span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-.addr-card .hint .dot {
-  width: 5px;
-  height: 5px;
-  border-radius: 50%;
-  background: var(--civic);
 }
 .addr-card .resume {
   margin-top: 10px;
@@ -269,63 +371,347 @@ textarea {
   text-decoration: underline;
   text-underline-offset: 2px;
 }
-.addr-steps {
-  max-width: 560px;
-  margin-top: 16px;
+.addr-disclose {
+  margin-top: 13px;
+  padding-top: 13px;
+  border-top: 1px dashed var(--rule-2);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 }
-.addr-steps-lead {
-  font-size: 13.5px;
-  color: var(--ink-2);
-  margin: 0 0 14px;
-}
-.addr-steps-link {
-  color: var(--civic);
-  font-weight: 500;
-  text-decoration: underline;
-  text-underline-offset: 2px;
+.addr-disclose-link {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--hh-brand);
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   cursor: pointer;
 }
-.addr-steps-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+.addr-chips {
   display: flex;
-  flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-left: auto;
 }
-.addr-steps-list li {
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
-}
-.addr-step-num {
-  flex: 0 0 auto;
-  font-family: var(--mono);
-  font-size: 12px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--civic);
-  line-height: 1.5;
-}
-.addr-step-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-.addr-step-ttl {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--ink);
-}
-.addr-step-desc {
-  font-size: 13px;
-  color: var(--ink-3);
-  line-height: 1.5;
-}
-.addr-label-left {
+.addr-chip {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.addr-chip-n {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  width: 16px;
+  height: 16px;
+  border-radius: 5px;
+  background: var(--tag-bg);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+}
+.addr-chip-arw {
+  color: var(--rule);
+}
+.addr-trust {
+  display: flex;
+  gap: 16px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  max-width: 560px;
+}
+.addr-trust span {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.addr-trust span::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--civic);
+}
+/* ---- hp-preview: right column, "what you'll get" product preview ---- */
+.hp-preview {
+  position: relative;
+  min-width: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.hp-preview-cap {
+  position: absolute;
+  top: 4px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.hp-stack {
+  position: relative;
+  width: 380px;
+  height: 420px;
+}
+.hp-sheet {
+  position: absolute;
+  right: -6px;
+  top: 36px;
+  width: 270px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 10px;
+  box-shadow: var(--shadow-card);
+  transform: rotate(3deg);
+  overflow: hidden;
+}
+.hp-sheet-pad {
+  padding: 16px 18px 18px;
+}
+.hp-sheet-pad h5 {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ink);
+}
+.hp-sheet-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.hp-sheet-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-top: 1px solid var(--rule-2);
+  margin-top: 10px;
+}
+.hp-sheet-badge {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  display: grid;
+  place-items: center;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.hp-sheet-badge.keep {
+  background: var(--civic);
+  color: var(--paper-2);
+}
+.hp-sheet-badge.replace {
+  background: var(--paper-2);
+  border: 2px solid var(--vote-red);
+  color: var(--vote-red);
+  font-weight: 700;
+}
+.hp-sheet-tx {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.hp-sheet-o {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hp-sheet-n {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.hp-sheet-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 16px;
+}
+.hp-sheet-pct.tone-good {
+  color: var(--civic);
+}
+.hp-sheet-pct.tone-bad {
+  color: var(--vote-red);
+}
+.hp-rcard {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 290px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 13px;
+  box-shadow: var(--shadow-card);
+  transform: rotate(-2deg);
+  overflow: hidden;
+}
+.hp-rcard-strip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--rule-2);
+}
+.hp-rcard-tag {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--tag-bg);
+  color: var(--ink-2);
+  padding: 2px 7px;
+  border-radius: 4px;
+}
+.hp-rcard-up {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--vote-red);
+}
+.hp-rcard-head {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 14px 14px 10px;
+}
+.hp-rcard-av {
+  width: 38px;
+  height: 38px;
+  border-radius: 9px;
+  background: var(--tag-bg);
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink-3);
+  flex-shrink: 0;
+}
+.hp-rcard-name {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.1;
+}
+.hp-rcard-sub {
+  font-size: 10.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.hp-rcard-align {
+  margin: 0 14px;
+  padding: 12px 13px;
+  border-radius: 10px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+}
+.hp-rcard-atop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.hp-rcard-lab {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.hp-rcard-pct {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 24px;
+  color: var(--vote-red);
+  line-height: 1;
+}
+.hp-rcard-bars {
+  margin-top: 10px;
+  display: grid;
+  gap: 7px;
+}
+.hp-rcard-bar {
+  display: grid;
+  grid-template-columns: 1fr 64px;
+  gap: 9px;
+  align-items: center;
+}
+.hp-rcard-bar-k {
+  font-size: 10.5px;
+  color: var(--ink-2);
+}
+.hp-rcard-bar-t {
+  height: 5px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+  display: block;
+}
+.hp-rcard-bar-t i {
+  display: block;
+  height: 100%;
+}
+.hp-rcard-bar-t i.bar-good {
+  background: var(--civic);
+}
+.hp-rcard-bar-t i.bar-bad {
+  background: var(--vote-red);
+}
+.hp-rcard-verd {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  padding: 13px 14px 15px;
+}
+.hp-rcard-vb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px;
+  border-radius: 9px;
+  font-size: 11.5px;
+  font-weight: 600;
+  border: 1.5px solid;
+}
+.hp-rcard-vb.keep {
+  background: var(--civic);
+  border-color: var(--civic);
+  color: var(--paper-2);
+}
+.hp-rcard-vb.replace {
+  background: var(--paper);
+  border-color: var(--vote-red);
+  color: var(--vote-red);
 }
 .stat-stack {
   display: flex;
@@ -1944,6 +2330,14 @@ body[data-mood="civic"] .hp-hero h1 em {
   color: var(--ink);
   background: linear-gradient(transparent 62%, var(--civic-soft) 62%);
   padding: 0 2px;
+}
+/* Bold Flag / Keystone: canvas's italic emphasis is plain navy, no
+   highlighter-mark background -- override the civic-mood default (which
+   otherwise wins on specificity) inside the hero only. */
+body[data-mood="civic"] .hp-hero h1 em {
+  color: var(--hh-brand);
+  background: none;
+  padding: 0;
 }
 
 body[data-mood="manifesto"] {
@@ -4285,6 +4679,320 @@ body[data-treatment="inkwell"] .cv2-iss-row.open {
   gap: 10px;
   padding-top: 8px;
   border-top: 1px solid var(--rule-2);
+}
+
+/* ── All Votes sheet — Bold Flag / Keystone parity (02d-results-allvotes-sheet) ──
+   Locally-scoped white-palette tokens matching design-handoff/keystone-canvas
+   src/screens.css .screen[data-palette="white"], restructuring the panel into
+   the canvas AllVotesSheet's grouped-by-issue / one-row-expanded shape. Every
+   rule below is scoped under .avsheet (or the compound .be-modal-overlay.avsheet-scrim
+   / .av-panel.avsheet), so it overrides the legacy flat-list rules above by
+   specificity without touching them — other modals (Budget, Resume, Compare)
+   that still use the bare .be-modal-overlay/.av-panel/.be-eyebrow/.be-x classes
+   are unaffected. */
+.be-modal-overlay.avsheet-scrim {
+  background: oklch(0.2 0.035 260 / 0.55);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 34px;
+}
+.av-panel.avsheet {
+  --av-paper: oklch(1 0 0);
+  --av-paper-2: oklch(0.985 0.003 258);
+  --av-ink: oklch(0.2 0.035 260);
+  --av-ink-2: oklch(0.37 0.032 260);
+  --av-ink-3: oklch(0.54 0.026 260);
+  --av-brand: oklch(0.4 0.155 262);
+  --av-brand-2: oklch(0.31 0.145 262);
+  --av-brand-soft: oklch(0.94 0.04 262);
+  --av-keep: oklch(0.44 0.115 159);
+  --av-keep-soft: oklch(0.93 0.045 159);
+  --av-replace: oklch(0.53 0.205 27);
+  --av-replace-soft: oklch(0.94 0.05 27);
+  --av-rule: oklch(0.88 0.006 260);
+  --av-rule-2: oklch(0.93 0.005 260);
+  --av-tag-bg: oklch(0.95 0.006 260);
+  --av-serif: "Newsreader", Georgia, serif;
+  --av-mono: "IBM Plex Mono", ui-monospace, monospace;
+  width: 100%;
+  max-width: 600px;
+  max-height: 100%;
+  padding: 0;
+  background: var(--av-paper);
+  border-color: var(--av-rule);
+  border-radius: 16px;
+  box-shadow: 0 40px 90px -40px oklch(0.2 0.03 255 / 0.7);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.avsheet .av-head {
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+  margin: 0;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--av-rule-2);
+}
+.avsheet .av-eyebrow {
+  font-family: var(--av-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--av-brand);
+  font-weight: 700;
+}
+.avsheet .av-head h3 {
+  font-family: var(--av-serif);
+  font-size: 19px;
+  font-weight: 600;
+  color: var(--av-ink);
+  margin: 5px 0 0;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+.avsheet .av-close {
+  width: 32px;
+  height: 32px;
+  border-radius: 9px;
+  border: 1px solid var(--av-rule);
+  background: var(--av-paper);
+  color: var(--av-ink-2);
+  font-size: 13px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.avsheet .av-filters {
+  align-items: center;
+  gap: 7px;
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--av-rule-2);
+  background: var(--av-paper);
+}
+.avsheet .avf,
+.avsheet .av-filter {
+  font-family: inherit;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--av-ink-2);
+  background: var(--av-paper-2);
+  border: 1px solid var(--av-rule-2);
+  border-radius: 999px;
+  padding: 4px 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.avsheet .avf.active,
+.avsheet .av-filter.active {
+  background: var(--av-brand);
+  color: var(--av-paper-2);
+  border-color: var(--av-brand);
+  font-weight: 600;
+}
+.avsheet .avf-sep {
+  width: 1px;
+  height: 18px;
+  background: var(--av-rule);
+  margin: 0 2px;
+}
+.avsheet .av-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px 22px 14px;
+}
+.avsheet .av-group {
+  margin-top: 14px;
+}
+.avsheet .av-glab {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 0 8px;
+  border-bottom: 1px solid var(--av-rule-2);
+  margin-bottom: 4px;
+}
+.avsheet .avg-name {
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--av-ink);
+}
+.avsheet .avg-frac {
+  font-family: var(--av-mono);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 999px;
+}
+.avsheet .avg-frac.good {
+  background: var(--av-keep-soft);
+  color: var(--av-keep);
+}
+.avsheet .avg-frac.bad {
+  background: var(--av-replace-soft);
+  color: var(--av-replace);
+}
+.avsheet .av-row {
+  display: grid;
+  grid-template-columns: 18px 1fr auto auto 12px;
+  gap: 11px;
+  align-items: center;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--av-rule-2);
+  cursor: pointer;
+}
+.avsheet .av-row:last-child {
+  border-bottom: none;
+}
+.avsheet .av-row.open {
+  background: var(--av-brand-soft);
+  margin: 0 -22px;
+  padding: 10px 22px;
+  border-bottom: none;
+}
+.avsheet .av-row .avr-chev {
+  font-size: 8px;
+  color: var(--av-ink-3);
+  text-align: center;
+}
+.avsheet .av-row.open .avr-chev {
+  color: var(--av-brand);
+}
+.avsheet .avr-flag {
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  display: grid;
+  place-items: center;
+  font-size: 10px;
+  font-weight: 700;
+}
+.avsheet .avr-flag.with {
+  background: var(--av-keep-soft);
+  color: var(--av-keep);
+}
+.avsheet .avr-flag.against {
+  background: var(--av-replace-soft);
+  color: var(--av-replace);
+}
+.avsheet .avr-bill {
+  font-size: 12.5px;
+  color: var(--av-ink-2);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.avsheet .avr-bill b {
+  color: var(--av-ink);
+  font-weight: 600;
+}
+.avsheet .avr-cast {
+  font-family: var(--av-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 7px;
+  border-radius: 5px;
+  white-space: nowrap;
+}
+.avsheet .avr-cast.yea,
+.avsheet .avr-cast.with {
+  background: var(--av-brand-soft);
+  color: var(--av-brand-2);
+}
+.avsheet .avr-cast.nay,
+.avsheet .avr-cast.against {
+  background: var(--av-tag-bg);
+  color: var(--av-ink-2);
+}
+.avsheet .avr-date {
+  font-family: var(--av-mono);
+  font-size: 10px;
+  color: var(--av-ink-3);
+  white-space: nowrap;
+}
+.avsheet .av-detail {
+  background: var(--av-brand-soft);
+  margin: 0 -22px 4px;
+  padding: 0 22px 14px;
+  display: grid;
+  gap: 11px;
+}
+.avsheet .avd-what {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--av-ink);
+}
+.avsheet .avd-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.avsheet .avd-pair,
+.avsheet .av-vote-tag {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  background: var(--av-paper-2);
+  border: 1px solid var(--av-rule-2);
+  border-radius: 8px;
+  padding: 7px 11px;
+}
+.avsheet .avd-pair .k {
+  font-family: var(--av-mono);
+  font-size: 8.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--av-ink-3);
+  font-weight: 700;
+}
+.avsheet .avd-pair .val {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--av-ink);
+}
+.avsheet .avd-pair .val.with {
+  color: var(--av-keep);
+}
+.avsheet .avd-pair .val.against {
+  color: var(--av-replace);
+}
+.avsheet .avd-link {
+  font-family: var(--av-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: var(--av-brand);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.avsheet .av-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 22px;
+  border-top: 1px solid var(--av-rule-2);
+  background: var(--av-paper);
+  font-family: var(--av-mono);
+  font-size: 10px;
+  color: var(--av-ink-3);
+}
+.avsheet .av-src {
+  letter-spacing: 0.02em;
+}
+.avsheet .av-src a {
+  color: inherit;
+}
+@media (max-width: 767px) {
+  .av-panel.avsheet {
+    max-width: 100%;
+  }
 }
 
 /* Inkwell treatment tweaks for modals */

@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { TRANSLATIONS } from "./VoterChoiceApp";
 
 /* Recursively collects every leaf key path in a TRANSLATIONS[lang] object,
-   e.g. "repCard.attendanceShowsUp" or "whyNowPage.snippets.0.label". Used
+   e.g. "repCard.attendanceShowsUp" or "whyNowPage.stats.0.label". Used
    to assert en/es stay in lockstep — every surface that calls
    t("some.key") must have a real string on both sides, or the surface
    silently falls back to (broken) English. */
@@ -69,18 +69,33 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["delegationError", "dbErrorTitle"],
     ["intake", "updatedFallback"],
     ["intake", "notedFallback"],
-    ["whyNowPage", "eyebrow"],
+    ["whyNowPage", "kicker"],
     ["whyNowPage", "title"],
-    ["whyNowPage", "intro"],
-    ["whyNowPage", "largerCaseHeading"],
-    ["whyNowPage", "largerCase1"],
-    ["whyNowPage", "largerCase2"],
-    ["whyNowPage", "largerCase3"],
-    ["whyNowPage", "whatToDoHeading"],
-    ["whyNowPage", "whatToDo"],
+    ["whyNowPage", "dek"],
+    ["whyNowPage", "problemKicker"],
+    ["whyNowPage", "problemHeading"],
+    ["whyNowPage", "momentKicker"],
+    ["whyNowPage", "momentHeading"],
+    ["whyNowPage", "momentBody"],
+    ["whyNowPage", "hardKicker"],
+    ["whyNowPage", "pullQuote"],
+    ["whyNowPage", "pullSource"],
+    ["whyNowPage", "howKicker"],
+    ["whyNowPage", "howHeading"],
+    ["whyNowPage", "ctaHeading"],
+    ["whyNowPage", "ctaBody"],
+    ["whyNowPage", "ctaButton"],
+    ["whyNowPage", "ctaSub"],
     ["orientation", "kick"],
     ["orientation", "heading"],
-    ["orientation", "body"],
+    ["orientation", "lede"],
+    ["orientation", "step1Title"],
+    ["orientation", "step1Body"],
+    ["orientation", "step2Title"],
+    ["orientation", "step2Body"],
+    ["orientation", "step3Title"],
+    ["orientation", "step3Body"],
+    ["orientation", "meta"],
     ["orientation", "continueLabel"],
   ];
 
@@ -109,12 +124,12 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     expect(TRANSLATIONS.es.delegationError.noRepTitle).toContain("{territory}");
   });
 
-  it("has 3 whyNowPage fact snippets (value/unit/label/cite) in en and es", () => {
+  it("has 2 whyNowPage problem stats (value/unit/label/cite) in en and es", () => {
     for (const lang of ["en", "es"] as const) {
-      const snippets = (TRANSLATIONS[lang] as any).whyNowPage.snippets;
-      expect(Array.isArray(snippets)).toBe(true);
-      expect(snippets).toHaveLength(3);
-      for (const s of snippets) {
+      const stats = (TRANSLATIONS[lang] as any).whyNowPage.stats;
+      expect(Array.isArray(stats)).toBe(true);
+      expect(stats).toHaveLength(2);
+      for (const s of stats) {
         expect(typeof s.value).toBe("string");
         expect(s.value.length).toBeGreaterThan(0);
         expect(typeof s.unit).toBe("string");
@@ -127,14 +142,45 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     }
   });
 
-  it("keeps the orientation.body <b> markup usable via dangerouslySetInnerHTML", () => {
-    // OrientationView renders orientation.body via dangerouslySetInnerHTML
-    // (matching the tierFedWhat/tierExecWhat pattern) so the embedded
-    // "replace or keep" emphasis survives translation.
-    expect(TRANSLATIONS.en.orientation.body).toContain(
-      "<b>replace or keep</b>",
-    );
-    expect(TRANSLATIONS.es.orientation.body).toContain("<b>");
-    expect(TRANSLATIONS.es.orientation.body).toContain("</b>");
+  it("has 3 whyNowPage problem body paragraphs in en and es", () => {
+    for (const lang of ["en", "es"] as const) {
+      const problemBody = (TRANSLATIONS[lang] as any).whyNowPage.problemBody;
+      expect(Array.isArray(problemBody)).toBe(true);
+      expect(problemBody).toHaveLength(3);
+      for (const p of problemBody) {
+        expect(typeof p).toBe("string");
+        expect(p.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("has 3 whyNowPage ballot cells (value/label) in en and es", () => {
+    for (const lang of ["en", "es"] as const) {
+      const ballot = (TRANSLATIONS[lang] as any).whyNowPage.ballot;
+      expect(Array.isArray(ballot)).toBe(true);
+      expect(ballot).toHaveLength(3);
+      for (const cell of ballot) {
+        expect(typeof cell.value).toBe("string");
+        expect(cell.value.length).toBeGreaterThan(0);
+        expect(typeof cell.label).toBe("string");
+        expect(cell.label.length).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it("has 3 whyNowPage how-it-works steps (title/body/tag) in en and es", () => {
+    for (const lang of ["en", "es"] as const) {
+      const steps = (TRANSLATIONS[lang] as any).whyNowPage.steps;
+      expect(Array.isArray(steps)).toBe(true);
+      expect(steps).toHaveLength(3);
+      for (const s of steps) {
+        expect(typeof s.title).toBe("string");
+        expect(s.title.length).toBeGreaterThan(0);
+        expect(typeof s.body).toBe("string");
+        expect(s.body.length).toBeGreaterThan(0);
+        expect(typeof s.tag).toBe("string");
+        expect(s.tag.length).toBeGreaterThan(0);
+      }
+    }
   });
 });
