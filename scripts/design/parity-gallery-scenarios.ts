@@ -1301,10 +1301,10 @@ export const SCENARIOS: Scenario[] = [
     note:
       "Bridges mock returns several high-agreement statements → 'Common ground' panel renders " +
       "populated, plus one divided statement → 'Where it split' renders too (the realistic " +
-      "'mostly consensus, some friction' mix). Bridges/divided rendering is real content today; " +
-      "PolisClose.tsx doesn't consume the divided field yet (PR #240, not merged) so that " +
-      "second panel doesn't show on main until then — see STRUCTURAL_WAIVERS in parity-gate.ts " +
-      "for why the residual visual diff is expected either way (DECISION #116, party-free).",
+      "'mostly consensus, some friction' mix). Both panels render real content today via " +
+      "computeDivided (card e2455f56, superseded the held PR #240) — see STRUCTURAL_WAIVERS in " +
+      "parity-gate.ts for why the residual visual diff is expected either way (DECISION #116, " +
+      "party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -1363,16 +1363,14 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/PolisClose.tsx",
       "src/prototype/redesign/polisAdapter.ts",
     ],
-    automatable: "proxy",
+    automatable: "yes",
     note:
-      "PolisClose has no computed 'divided/split' branch yet (PR #240, not merged to main — " +
-      "only an early-days vs. normal lede, toggled purely by sampleSize<30, see LOW_N in " +
-      "PolisClose.tsx). Bridges mock now returns zero bridges + several real divided " +
-      "statements — on #240 this renders the true 'genuinely split' branch (no Common ground " +
-      "panel, 'Where it split' populated instead); on main today it exercises the existing " +
-      "bridges.length===0 fallback (the 'big stat panel' branch) since divided isn't read yet. " +
-      "Proxy until #240 lands. See STRUCTURAL_WAIVERS in parity-gate.ts for why the residual " +
-      "visual diff is expected either way (DECISION #116, party-free).",
+      "PolisClose renders the true 'genuinely split' branch live (no Common ground panel, " +
+      "'Where it split' populated instead) via computeDivided / DIVIDED_MIN_SHARE=30 (card " +
+      "e2455f56) — this superseded the held PR #240, which never merged. Bridges mock returns " +
+      "zero bridges + several real divided statements to exercise that branch. See " +
+      "STRUCTURAL_WAIVERS in parity-gate.ts for why the residual visual diff is expected either " +
+      "way (DECISION #116, party-free).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
