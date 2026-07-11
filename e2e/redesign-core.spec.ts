@@ -61,14 +61,21 @@ test.describe("delegation flow — address → assess → verdicts", () => {
 
     // Single right panel ([P1]): the left rail was removed, so the scorecard
     // pane is the only side panel and it renders the issues. The confusing
-    // Fed/Both/State jurisdiction tags were removed ([P0]) — assert they no
-    // longer appear, and that the dropped rail is truly gone.
+    // per-issue Fed/Both/State jurisdiction tags stay removed ([P0]) — the
+    // one jurisdiction tag DECISIONS.md keeps lives once, on the seat-tier
+    // header (canvas res-tier's .lvl), not per issue chip.
     await expect(page.locator(".ws-ballot")).toBeVisible();
     await expect(
       page.locator(".ws-ballot .b-issues-list li").first(),
     ).toBeVisible();
     await expect(page.locator(".ws-rail")).toHaveCount(0);
-    await expect(page.locator(".lvl-tag")).toHaveCount(0);
+    await expect(page.locator(".lvl-tag")).toHaveCount(1);
+    await expect(page.locator(".tier-intro .lvl-tag")).toHaveText("FEDERAL");
+
+    // Per-seat progress framing (canvas res-tier's "SEAT N OF M"): counted
+    // among the two 2026 seats (house-TX-37, senate-TX-a) — senate-TX-b is
+    // excluded (onBallot2026: false), matching DelegationOverview's own count.
+    await expect(page.locator(".ti-place")).toHaveText("SEAT 1 OF 2");
   });
 
   test("threads the delegation's resolved candidateId into /api/race-data", async ({
