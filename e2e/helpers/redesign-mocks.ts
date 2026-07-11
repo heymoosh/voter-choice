@@ -487,6 +487,27 @@ export async function mockCounters(page: Page): Promise<{ calls: Json[] }> {
   return { calls };
 }
 
+/** Mocks PolisStand's write path (card fb77d0bb). Returns outcome "stored"
+ *  by default so a capture shows the canvas-matching "Recorded — that's in"
+ *  confirmation copy rather than the honest-degrade copy (which is what a
+ *  real dev server with POLIS_VECTOR_COLLECTION_ENABLED unset would show —
+ *  covered separately by PolisStand.test.ts's recordedCopy tests). */
+export async function mockPolisRespond(
+  page: Page,
+  outcome: "stored" | "skipped" = "stored",
+): Promise<{ calls: Json[] }> {
+  const calls: Json[] = [];
+  await page.route("**/api/polis/respond", async (route) => {
+    calls.push(route.request().postDataJSON() as Json);
+    await route.fulfill({
+      status: 200,
+      contentType: "application/json",
+      body: JSON.stringify({ ok: true, outcome }),
+    });
+  });
+  return { calls };
+}
+
 /** Drive home → cold-open → workspace over the installed mocks. */
 export async function goToWorkspace(page: Page): Promise<void> {
   // Cold-open issue extraction now streams from /api/chat; mock it so Send
@@ -516,17 +537,23 @@ export async function goToWorkspace(page: Page): Promise<void> {
 }
 
 /**
- * Drive the workspace to the standing (polis) stage. With the [P1] declutter
- * the "see where you stand" teaser was removed; the only remaining entry to
- * standing is the `.all-done` completion link, which appears in the center
- * (rep) column once every seat has a verdict. Verdict each scorecard row in
- * turn (selecting the row first makes this deterministic across the
- * auto-advance and works on both desktop inline cards and the mobile center
- * overlay), then open a seat so the center column is visible and follow the
- * link. On mobile the center is a tap-to-open overlay that closes after each
- * verdict, so the final row click is what surfaces `.all-done`.
+ * Drive the workspace to PolisStand (card fb77d0bb) — the blind
+ * agree/disagree/pass step that now sits between the workspace and the
+ * standing (polis) report. With the [P1] declutter the "see where you
+ * stand" teaser was removed; the only remaining entry is the `.all-done`
+ * completion link, which appears in the center (rep) column once every
+ * seat has a verdict. Verdict each scorecard row in turn (selecting the
+ * row first makes this deterministic across the auto-advance and works on
+ * both desktop inline cards and the mobile center overlay), then open a
+ * seat so the center column is visible and follow the link. On mobile the
+ * center is a tap-to-open overlay that closes after each verdict, so the
+ * final row click is what surfaces `.all-done`.
+ *
+ * Shared by goToStanding (which continues on through PolisStand to the
+ * report) and the 10b-polis-contribute scenario (which stops here to
+ * exercise PolisStand itself).
  */
-export async function goToStanding(page: Page): Promise<void> {
+export async function goToPolisStand(page: Page): Promise<void> {
   const rows = page.locator(".b-row");
   const count = await rows.count();
   for (let i = 0; i < count; i++) {
@@ -545,4 +572,16 @@ export async function goToStanding(page: Page): Promise<void> {
     .getByRole("button", { name: /where you stand/ });
   await standingLink.waitFor({ timeout: 15000 });
   await standingLink.click();
+}
+
+/** Drive the workspace all the way to the standing (polis) report,
+ *  clicking through PolisStand's "Done" CTA so this helper's own contract
+ *  ("reach the standing stage") still holds for every existing caller. */
+export async function goToStanding(page: Page): Promise<void> {
+  await goToPolisStand(page);
+  const polisStandDone = page.getByRole("button", {
+    name: /Done — show me the results/,
+  });
+  await polisStandDone.waitFor({ timeout: 15000 });
+  await polisStandDone.click();
 }

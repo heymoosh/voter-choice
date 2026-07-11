@@ -17,7 +17,9 @@ import {
   mockResearch,
   mockPolis,
   mockCounters,
+  mockPolisRespond,
   goToStanding,
+  goToPolisStand,
   TX_SEATS,
 } from "../../e2e/helpers/redesign-mocks";
 import {
@@ -1286,15 +1288,41 @@ export const SCENARIOS: Scenario[] = [
     id: "10b-polis-contribute",
     refFile: "10b-polis-contribute.png",
     label: "Polis — contribute (blind voting)",
-    files: [],
-    automatable: "no",
+    files: [
+      "src/prototype/redesign/PolisStand.tsx",
+      "src/app/api/polis/respond/route.ts",
+      "src/lib/polis/statements.ts",
+    ],
+    automatable: "yes",
     note:
-      "NOT AUTOMATABLE: no such UI exists in the app to screenshot. Read src/prototype/redesign/" +
-      "PolisClose.tsx in full and grepped the repo for Agree/Disagree/Pass/PolisStand-style " +
-      "markup — the current Polis feature is a passive aggregate REPORT only (opinion-map + " +
-      "common-ground bridges), fed by server-side counters; there is no per-statement blind " +
-      "agree/disagree/pass voting surface anywhere in the codebase. This is a missing feature, " +
-      "not a missing test hook — capturing anything here would misrepresent the app.",
+      "PolisStand (card fb77d0bb) now exists — a literal port of the canvas's polis-stand " +
+      "artboard (.ps-* vocabulary; unlike PolisClose this screen carries no party data to " +
+      "begin with, so there's no party-free conflict forcing a re-expression). Drives to " +
+      "PolisStand and answers the SAME two statements the canvas ref itself answers (2nd " +
+      "agree, 3rd disagree, 1st left unvoted) for the tightest possible visual match — the " +
+      "whole point is blind per-statement voting, never a fully-agreed or fully-disagreed set.",
+    async capture(page) {
+      await mockDelegation(page);
+      await mockSeatRaceDataMedian(page);
+      await mockResearch(page);
+      await mockPolis(page, true);
+      await mockCounters(page);
+      await mockPolisRespond(page, "stored");
+      await reachWorkspace(page);
+      await goToPolisStand(page);
+      await page.locator(".polisstand2").waitFor({ timeout: 10000 });
+      const cards = page.locator(".ps-stmt");
+      await cards
+        .nth(1)
+        .getByRole("button", { name: "Agree", exact: true })
+        .click();
+      await page.locator(".ps-stmt.voted").first().waitFor({ timeout: 10000 });
+      await cards
+        .nth(2)
+        .getByRole("button", { name: "Disagree", exact: true })
+        .click();
+      await page.locator(".ps-stmt.voted").nth(1).waitFor({ timeout: 10000 });
+    },
   },
   {
     id: "10c-polis-report-consensus",
