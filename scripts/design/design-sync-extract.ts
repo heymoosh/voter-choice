@@ -70,6 +70,13 @@ interface ComponentTarget {
   /** Extra stylesheet basenames (from bundle assets/) beyond the four
    *  always-loaded prototype sheets — e.g. print.css for the scorecard. */
   extraCss?: string[];
+  /** Runs AFTER the base scenario's capture() resolves and BEFORE the
+   *  selector is located — for a card that needs one more interaction on
+   *  top of an existing scenario's reached state (e.g. clicking a reveal
+   *  toggle) rather than a whole new scenario. Keep these small; a state
+   *  worth diffing in the parity gallery too belongs in parity-gallery-
+   *  scenarios.ts as its own scenario instead. */
+  extraStep?: (page: Page) => Promise<void>;
   /** Known intent delta / caveat, shown in MAPPING.md — keep in sync with
    *  parity-gallery-scenarios.ts's own `note` for the same scenario where
    *  one exists; only set this when the CARD (not the whole scenario) needs
@@ -163,6 +170,25 @@ const TARGETS: ComponentTarget[] = [
     title: "RepCard — money disclosure expanded",
     scenarioId: "02b-results-funding-expanded",
     selector: ".rep-card",
+  },
+  {
+    id: "rep-card-revealed",
+    group: "Results",
+    title: "RepCard — identity revealed (blind mode lifted for this card)",
+    scenarioId: "02a-results-main",
+    selector: ".rep-card",
+    extraStep: async (page) => {
+      // CandidateCardHeader's blind-mode "Reveal who this is" affordance
+      // (VoterChoiceApp.tsx's .cv2-reveal button, no dedicated testid) — the
+      // third RepCard identity state alongside collapsed/expanded, flagged
+      // in MAPPING.md. Waits on the header itself losing `.blind` (not just
+      // a timeout) so the click has actually taken effect before capture.
+      await page.locator(".cv2-reveal").first().click();
+      await page
+        .locator(".cv2-head:not(.blind)")
+        .first()
+        .waitFor({ timeout: 5000 });
+    },
   },
   {
     id: "all-votes-panel",
@@ -376,6 +402,7 @@ async function extractOne(
   }
   try {
     await scenario.capture(page);
+    if (target.extraStep) await target.extraStep(page);
     await neutralizeScrollTraps(page);
     const locator = page.locator(target.selector).nth(target.nth ?? 0);
     await locator.waitFor({ state: "visible", timeout: 10_000 });
