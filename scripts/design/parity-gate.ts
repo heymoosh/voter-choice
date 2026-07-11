@@ -893,15 +893,93 @@ const STRUCTURAL_PROBES: Probe[] = [
       "structural facts (overview root, grid, per-seat cards, each card's scored-alignment " +
       "block) a class-diff would, verified against today's app: all 4 currently pass.",
   },
+  {
+    kind: "marker",
+    scenarioId: "11a-fieldmoneygap",
+    // Added when 11a-fieldmoneygap was flipped from automatable:"no" to a
+    // real capture (RepCard.tsx now passes MoneyGapScale a `field` built
+    // from seat.challengers). A class-diff probe against MoneyGap.tsx's own
+    // ".mgap"/".mgap-row" vocabulary would be a no-op here: those classes
+    // are already the confirmed verbatim port 02b-results-funding-expanded
+    // probes, and MoneyGap.tsx itself didn't change in this PR — only the
+    // RepCard.tsx call site did. A class-diff only diffs the SET of class
+    // tokens present, so it can't tell "one .mgap-row" from "three
+    // .mgap-row" — it would pass identically whether or not the field prop
+    // is wired, which is exactly the false-signal a marker probe exists to
+    // avoid (see MarkerProbe's doc comment above). These markers instead
+    // check the actual regression this PR fixes: multiple rows render, at
+    // least one is a real funded-challenger row with the artboard's tag
+    // copy, and it carries the same scale markup as the subject row (not a
+    // name-only decoration). Verified against pre-fix origin/main (the
+    // <MoneyGapScale subject=... peer=...> call with no `field` prop): the
+    // row-count marker genuinely fails there (exactly 1 .mgap-row, the
+    // subject) and flips to pass once the field prop is wired — the
+    // correctness bar MarkerProbe's doc comment requires.
+    markers: [
+      {
+        check: async (page) =>
+          (await page.locator(".mgap .mgap-row").count()) >= 2,
+        description:
+          "renders at least 2 rows on the money-gap scale — the subject plus 1+ funded " +
+          "challengers, not just the incumbent's own row (fails on pre-fix RepCard.tsx, which " +
+          "calls MoneyGapScale with no `field` prop at all)",
+      },
+      {
+        check: async (page) => {
+          const tags = page.locator(".mgap .mgap-row .mgap-tag");
+          const count = await tags.count();
+          for (let i = 0; i < count; i++) {
+            const txt = (await tags.nth(i).innerText()) || "";
+            // house-TX-37's mocked 2026 challengers (redesign-mocks.ts)
+            // include Elena Reyes, party "Democrat" — the specific party
+            // this scenario's fixture produces, not just any tag string.
+            if (txt.includes("Challenger") && txt.includes("Democrat"))
+              return true;
+          }
+          return false;
+        },
+        description:
+          "at least one field row carries the artboard's 'Challenger · Democrat' tag line " +
+          "(RepCard.tsx's moneyGapField mapping through t('repCard.challengerTag'), not a " +
+          "hardcoded or missing party label)",
+      },
+      {
+        check: async (page) => {
+          // A field row is any .mgap-row that ISN'T the subject (the
+          // subject is the only row MoneyGapScale marks with the "you"
+          // pill — see GapRow's `c.you && <span className="you">`).
+          const fieldRows = page.locator(".mgap .mgap-row:not(:has(.you))");
+          const count = await fieldRows.count();
+          if (count === 0) return false;
+          const row = fieldRows.first();
+          return (
+            (await row.locator(".mgap-track .mgap-bar").count()) > 0 &&
+            (await row.locator(".mgap-medline").count()) > 0
+          );
+        },
+        description:
+          "a field (non-subject) row renders the real GapRow scale markup — its own " +
+          ".mgap-track/.mgap-bar/.mgap-medline — the same shared-axis bar every row gets, not " +
+          "a name-only stub row",
+      },
+    ],
+    note:
+      "MoneyGap.tsx's MoneyGapScale/GapRow markup is the confirmed verbatim port 02b-results-" +
+      "funding-expanded already class-diffs — this probe targets the RepCard.tsx wiring gap " +
+      "that class-diff can't see (a class SET check, not a row-count check). See the scenario's " +
+      "own note in parity-gallery-scenarios.ts for the product ruling (2026-07-11) that " +
+      "reversed GAPS-RECONCILED-FOR-CODE.md §5's earlier 'won't build' disposition.",
+  },
 ];
 
 /**
- * Scenarios with NO structural probe, and why. Every one of the 25 gateable
- * scenarios (all of SCENARIOS except 11a-fieldmoneygap/11b-scalestates,
- * neither of which is automatable at all — see each one's own note in
- * parity-gallery-scenarios.ts; 10a-polis-entry moved into STRUCTURAL_PROBES
- * once PR #237 made it automatable, and 10b-polis-contribute followed once
- * PolisStand landed) now resolves to exactly one of STRUCTURAL_PROBES above
+ * Scenarios with NO structural probe, and why. Every one of the 26 gateable
+ * scenarios (all of SCENARIOS except 11b-scalestates, which is not
+ * automatable at all — see its own note in parity-gallery-scenarios.ts;
+ * 10a-polis-entry moved into STRUCTURAL_PROBES once PR #237 made it
+ * automatable, 10b-polis-contribute followed once PolisStand landed, and
+ * 11a-fieldmoneygap followed once RepCard.tsx's field prop was wired) now
+ * resolves to exactly one of STRUCTURAL_PROBES above
  * (class-diff or marker) or this map — silently skipping a scenario (the
  * pre-existing "24 of 27 uncovered, unexplained" state this file's own
  * header used to describe) is exactly the failure Phase 2 of

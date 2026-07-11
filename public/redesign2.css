@@ -31,6 +31,19 @@
      token (canvas's --brand-soft) for anything outside .rep-card that
      needs a light navy tint (e.g. the user chat bubble below). */
   --bf-brand-soft: oklch(0.94 0.04 262);
+  /* Inheritable navy alias (canvas's own token names) — a new redesign
+     surface that reads var(--brand)/var(--brand-2)/var(--brand-soft) now
+     gets Bold Flag navy for free without needing its own local remap
+     block. Existing per-scope remaps (.rep-card, .delegation, .pe-screen,
+     .cmp, .polisstand2, .standing2) stay authoritative where they
+     redefine --brand themselves; this only fills the gap for anything
+     that has no local remap at all. Safety-checked: every existing
+     var(--brand) read in redesign2.css/candidates.css already resolves
+     inside one of those local-remap scopes, so this alias changes nothing
+     that already renders — it only covers future/unscoped reads. */
+  --brand: var(--bf-brand);
+  --brand-2: var(--bf-brand-2);
+  --brand-soft: var(--bf-brand-soft);
   background: var(--paper);
   /* Short-content stages (e.g. the honest error states in App2.tsx) don't
      fill the viewport on their own — without this, body's own un-scoped
@@ -614,8 +627,8 @@
   }
   .delegation .ws-ballot .b-issues-btn {
     background: var(--paper);
-    border: 1px solid var(--civic-soft);
-    color: var(--civic);
+    border: 1px solid var(--brand-soft);
+    color: var(--brand);
     font-size: 13px;
     font-weight: 600;
     cursor: pointer;
@@ -625,9 +638,9 @@
     white-space: nowrap;
   }
   .delegation .ws-ballot .b-issues-btn:hover {
-    background: var(--civic);
+    background: var(--brand);
     color: var(--paper-2);
-    border-color: var(--civic);
+    border-color: var(--brand);
   }
   .delegation .ws-ballot .b-issues-list {
     list-style: none;
@@ -648,7 +661,7 @@
   .delegation .ws-ballot .b-issues-list li .n {
     font-family: var(--mono);
     font-size: 11px;
-    color: var(--civic);
+    color: var(--brand);
     font-weight: 600;
     flex: 0 0 auto;
   }
@@ -716,7 +729,11 @@
   font-size: 10.5px;
   letter-spacing: 0.16em;
   font-weight: 700;
-  color: var(--civic);
+  /* .ti-place has no other call site (confirmed by grep across src/) —
+     it only ever renders inside DelegationWorkspace's .delegation scope,
+     so the base rule can read --brand directly rather than needing a
+     .delegation .ti-place override. */
+  color: var(--brand);
   padding-top: 6px;
   white-space: nowrap;
 }
@@ -818,6 +835,99 @@
    navy brand color. */
 .bf-app .linklike {
   color: var(--bf-brand);
+}
+
+/* ---- .be-eyebrow (BudgetModal, EditIssuesModal, HandoffModal) — same
+   leak as .linklike above: the shared kicker-label rule reads --civic with
+   no remap covering these three modals, so it rendered legacy green
+   instead of navy everywhere inside .bf-app. ---- */
+.bf-app .be-eyebrow {
+  color: var(--bf-brand);
+}
+
+/* ---- palette-audit sweep (card: Bold Flag teal leaks) — three more
+   surfaces read --civic/--civic-2/--civic-soft with no local remap at
+   all, unlike .rep-card/.delegation/.pe-screen/.cmp/.polisstand2/
+   .standing2 (which redefine the tokens they need at their own root).
+   Individually-scoped overrides here, NOT a blanket local remap on
+   .coldopen/.amend-modal/.be-modal — IntakeLocked's .issue-locked-confirm
+   (rendered inside .coldopen) derives its "worth keeping" green banner
+   from --keep: var(--civic), so remapping --civic itself at a shared
+   ancestor would silently turn that confirmation banner navy too. Scoping
+   per-selector avoids that collision entirely. ---- */
+
+/* IntakeView → IssueConversation (shared by IntakeLocked's continued
+   convo and EditIssuesModal's re-run) — the "send" CTA and the small
+   context-line dot both read --civic. */
+.bf-app .co-input .send {
+  background: var(--brand);
+}
+.bf-app .co-context::before {
+  background: var(--brand);
+}
+
+/* IssueConversation's "your priorities" card (IssueReviewCard) — border
+   accent, rank numerals, inline-rename input, quote rail, and the
+   "Lock in priorities" CTA. */
+.bf-app .themes-card {
+  border-color: var(--brand-soft);
+  border-top-color: var(--brand);
+}
+.bf-app .theme-row .rank {
+  color: var(--brand);
+}
+.bf-app .theme-row .nm input.name-edit {
+  border-color: var(--brand);
+}
+.bf-app .theme-row .quote {
+  border-left-color: var(--brand-soft);
+}
+.bf-app .themes-card .th-foot .lock {
+  background: var(--brand);
+}
+.bf-app .themes-card .th-foot .lock:hover:not(:disabled) {
+  background: var(--brand-2);
+}
+
+/* EditIssuesModal's own "amend" chrome (its outer shell — the
+   IssueConversation it hosts is already covered above). */
+.bf-app .amend-eyebrow {
+  color: var(--brand);
+}
+.bf-app .amend-rank {
+  color: var(--brand);
+}
+.bf-app .amend-name:focus {
+  border-color: var(--brand);
+}
+.bf-app .amend-add-btn {
+  background: var(--brand);
+}
+.bf-app .amend-apply {
+  background: var(--brand);
+}
+
+/* ByokCard (BudgetModal + HandoffModal's inline API-key form). */
+.bf-app .be-byok-getkey {
+  color: var(--brand);
+}
+.bf-app .be-byok-getkey:hover {
+  color: var(--brand-2);
+}
+.bf-app .be-byok-input-wrap input {
+  border-color: var(--brand);
+}
+.bf-app .be-byok-input-wrap input:focus {
+  border-color: var(--brand-2);
+}
+.bf-app .be-byok-save {
+  background: var(--brand);
+}
+.bf-app .be-byok-save:hover {
+  background: var(--brand-2);
+}
+.bf-app .be-tipjar a {
+  color: var(--brand);
 }
 
 /* ============================================================
@@ -3531,6 +3641,21 @@
    the source's brand-tinted hover instead of inventing a new selector. */
 .delegation .ws-ballot .b-row:hover {
   border-color: var(--brand);
+  background: var(--brand-soft);
+}
+/* palette-audit sweep: the base .b-row:hover rule's own "tints .pick text
+   on hover" (prototype.css) reads --civic, which .delegation never
+   redefines — so the hover text, the "done" checkmark fill, and the
+   active-row highlight were still leaking legacy teal even after the
+   border/background fix above. */
+.delegation .ws-ballot .b-row:hover .pick {
+  color: var(--brand);
+}
+.delegation .ws-ballot .b-row.done .ck {
+  background: var(--brand);
+  border-color: var(--brand);
+}
+.delegation .ws-ballot .b-row.active {
   background: var(--brand-soft);
 }
 

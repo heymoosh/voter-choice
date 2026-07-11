@@ -698,6 +698,27 @@ export function RepCard({
     realLastName: cand.name?.split(" ").pop(),
     alias: seat.blindLabel,
   };
+  // Whole-field money-gap scale rows — every other FEC filer for this seat
+  // with a real filed total, highest first. Honest-data: a challenger with
+  // no total_receipts row is omitted, never fabricated as $0. Names are
+  // never blinded here — FEC filers are different people from the (possibly
+  // blinded) sitting member, same as ChallengersStrip/HeadToHead.
+  const moneyGapField = (seat.challengers || [])
+    .filter((c) => typeof c.totalReceipts === "number" && c.totalReceipts > 0)
+    .sort((a, b) => b.totalReceipts - a.totalReceipts)
+    .map((c) => {
+      const chParty = getPartyMeta2(t)[c.party] || {
+        name: c.party || t("repCard.partyUnknown"),
+        code: "?",
+        pipClass: "ind",
+      };
+      return {
+        name: c.name,
+        raised: c.totalReceipts,
+        pip: chParty.pipClass,
+        tag: t("repCard.challengerTag", { party: chParty.name }),
+      };
+    });
   const last = cand.name.split(" ").pop();
   const notUp2026 = seat.nextElection?.onBallot2026 === false;
 
@@ -834,6 +855,7 @@ export function RepCard({
                   raised: cand.totalRaised,
                   pip: party.pipClass,
                 }}
+                field={moneyGapField}
                 peer={cand.peerComparison}
               />
             )}
