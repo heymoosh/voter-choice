@@ -48,6 +48,16 @@ jobs:
       - name: Unit tests
         run: npm run test
 
+      # Duplication ratchet (scripts/quality/duplication-gate.ts): fails when
+      # a change introduces NEW copy-paste duplication (a file pair jscpd
+      # finds clones in that isn't in the committed baseline, or a baselined
+      # pair that grew). Pre-existing duplication is grandfathered in
+      # scripts/quality/duplication-baseline.json; intentional new duplication
+      # requires `npm run dup:baseline` + justifying the baseline diff in the
+      # PR. Takes ~5s, needs only node_modules — no build, browser, or DB.
+      - name: Component duplication gate
+        run: npm run dup:check
+
       - name: Build
         run: npm run build
 
