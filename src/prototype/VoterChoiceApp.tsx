@@ -2098,7 +2098,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
         <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
         {overallPct !== null && (
           <div className="overall">
-            <b>{overallPct}%</b>
+            <b className={rowVariant === 'canvas' ? (overallPct >= 65 ? 'good' : 'bad') : undefined}>{overallPct}%</b>
             {rowVariant === 'canvas' && overallFrac ? (
               <> · <span className="cv2-overall-frac">{overallFrac.kept}/{overallFrac.total} {t('repCard.keyVotesLabel')}</span></>
             ) : (
@@ -2289,12 +2289,17 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
   // stacked name/bar/prose + % badge shape below renders unchanged for the
   // ballot CandidateCard.
   if (rowVariant === 'canvas') {
+    // Canvas is a strict 2-tier good(green)/bad(red) semantic (screens.css
+    // .at-pct.good/.bad, .align-track i.good/.bad) — no third "mid" tier.
+    // Kept separate from the shared `tone` above, which the legacy branch
+    // below still uses unchanged.
+    const canvasTone = pct === null ? '' : pct >= 65 ? 'good' : 'bad';
     const fraction = score && score.total > 0 ? `${score.kept}/${score.total}` : null;
     return (
       <div className={"cv2-iss-row cv2-iss-row--canvas" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")} data-testid="voting-record-alignment-row">
         <button className="cv2-iss-head" onClick={hasVotes ? onToggle : undefined} aria-expanded={isOpen}>
           <span className="cv2-iss-name">{issue.interpretation}</span>
-          <div className="cv2-bar"><div className={"fill " + tone} style={{ width: (pct || 0) + '%' }} /></div>
+          <div className="cv2-bar"><div className={"fill " + canvasTone} style={{ width: (pct || 0) + '%' }} /></div>
           <span className="cv2-iss-frac">
             {fraction || <small>n/a</small>}
             {hasVotes && <span className="chev">{isOpen ? '▴' : '▾'}</span>}
@@ -2381,8 +2386,6 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
      candidate: RacePatternsCandidate (used to filter donorCoalition
                                        for issue-PAC callout) */
 function AlignmentDrilldown({ score, candidate, anonCtx }) {
-  const pct = score && score.total > 0 ? Math.round((score.kept / score.total) * 100) : 0;
-
   // [Δ] Find issue-PACs from this candidate's donorCoalition that
   // alignsWith this canonical issue.
   const issuePacs = (candidate.donorCoalition || []).filter(
@@ -2397,8 +2400,8 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
   return (
     <div className="cv2-drill">
       <div className="cv2-drill-head">
-        <span className="lab">Why {pct}%?</span>
-        <span className="meta">Tap a vote →</span>
+        <span className="lab"><b>{score.issueLabel}</b> · the {score.total} votes behind this score</span>
+        <span className="meta">{score.kept} matched · {score.total - score.kept} didn't</span>
       </div>
 
       <div className="cv2-votes">
