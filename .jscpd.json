@@ -2,12 +2,11 @@
   "threshold": 0,
   "reporters": ["json"],
   "output": ".jscpd-report",
-  "pattern": "src/**/*.{ts,tsx}",
+  "pattern": "{src,e2e/helpers,scripts/design}/**/*.{ts,tsx}",
   "ignore": [
     "node_modules",
     ".next",
     "coverage",
-    "e2e",
     "**/*.test.ts",
     "**/*.test.tsx",
     "**/*.spec.ts",

@@ -54,9 +54,11 @@ to a waiver when the ruling changes.
 ## Duplication Ratchet
 
 `npm run dup:check` (a step inside the `test` job in
-`.github/workflows/test.yml`) runs jscpd over `src/**` and fails the PR when
-a change introduces NEW copy-paste duplication: a file pair sharing clones
-that isn't in the committed baseline
+`.github/workflows/test.yml`) runs jscpd over `src/**`, `e2e/helpers/**`,
+and `scripts/design/**` (the test-harness dirs are included on purpose — a
+drifted duplicate of a capture journey broke the design gate on 2026-07-12)
+and fails the PR when a change introduces NEW copy-paste duplication: a
+file pair sharing clones that isn't in the committed baseline
 (`scripts/quality/duplication-baseline.json`), or a baselined pair that
 grew. Pre-existing duplication is grandfathered — the gate answers "did
 this change copy code?", not "is the codebase clone-free?".
@@ -66,6 +68,25 @@ this change copy code?", not "is the codebase clone-free?".
   `npm run dup:baseline`, commit the baseline diff, justify it in the PR.
 - When you REMOVE duplication, the gate passes and prints a nudge to run
   `npm run dup:baseline` so the ratchet tightens — do it in the same PR.
+
+## Component Inventory (minimization)
+
+Literal clones aren't the whole duplication problem: two independently
+written components can serve the same UI function and then drift out of
+sync. Two layers address that:
+
+- `npm run inventory:check` (required, in the `test` job): every component
+  file under `src/prototype/redesign/` must have an entry in
+  `scripts/quality/component-inventory.md` stating the UI function it
+  serves — and a NEW component's entry must say why an existing component
+  couldn't serve it. Stale entries (deleted files) fail too.
+- `.github/workflows/component-review.yml` (advisory, never required): when
+  a PR adds a component file, an AI review compares it against the
+  inventory and comments on likely functional overlap. Requires the
+  `ANTHROPIC_API_KEY` repo secret; skips silently without it.
+
+Before writing a new component, read the inventory. Extending an existing
+component with a prop/variant beats a new file that answers to nobody.
 
 ## Issue-Consistency Invariant
 

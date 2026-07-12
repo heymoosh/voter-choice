@@ -1,5 +1,21 @@
 {
   "pairs": {
+    "e2e/helpers/prototype-mocks.ts :: e2e/helpers/redesign-mocks.ts": {
+      "clones": 1,
+      "lines": 22
+    },
+    "e2e/helpers/redesign-mocks.ts :: e2e/helpers/redesign-mocks.ts": {
+      "clones": 1,
+      "lines": 11
+    },
+    "scripts/design/design-sync-extract.ts :: scripts/design/review-gallery.ts": {
+      "clones": 1,
+      "lines": 13
+    },
+    "scripts/design/parity-gallery.ts :: scripts/design/review-gallery.ts": {
+      "clones": 5,
+      "lines": 67
+    },
     "src/app/about/page.tsx :: src/app/methodology/page.tsx": {
       "clones": 1,
       "lines": 15

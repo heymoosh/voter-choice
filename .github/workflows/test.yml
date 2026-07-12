@@ -58,6 +58,15 @@ jobs:
       - name: Component duplication gate
         run: npm run dup:check
 
+      # Component-minimization gate (scripts/quality/component-inventory-gate.ts):
+      # a new component file under src/prototype/redesign/ fails CI until it
+      # has an inventory entry stating what UI function it serves and why an
+      # existing component couldn't. Complements dup:check (literal clones)
+      # with the same-function-different-code case; the advisory AI overlap
+      # review (component-review.yml) reads the same inventory.
+      - name: Component inventory gate
+        run: npm run inventory:check
+
       - name: Build
         run: npm run build
 
