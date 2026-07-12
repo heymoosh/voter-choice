@@ -2449,13 +2449,22 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
   );
 }
 
-/* ── single curated vote card (private to AlignmentDrilldown) ── */
+/* ── single curated vote card (private to AlignmentDrilldown) ──
+   [Δ Muxin round-3.1] Layout adopted from design-handoff's VoteCard
+   (screens-results.jsx:76-91): bill chip+title as the header, the
+   one-line "what this bill is about" narrative directly beneath it,
+   a green/red left rail + "✓ With you"/"✗ Against you" pill carrying
+   the alignment color, then the existing date/rationale/citation
+   trailer unchanged. Canvas's own YEA/NAY cast badge is NOT ported —
+   this data model has no roll-call cast field, only with/against
+   alignment (see ContributingVote in src/lib/server/alignment.ts). */
 function ContributingVoteCard({ vote, anonCtx }) {
-  const voteClass = vote.voteCast === 'with' ? 'yea' : vote.voteCast === 'against' ? 'nay' : 'other';
-  const voteLabel = vote.voteCast === 'with' ? 'WITH YOU' : vote.voteCast === 'against' ? 'AGAINST YOU' : '—';
+  const withYou = vote.voteCast === 'with';
+  const against = vote.voteCast === 'against';
+  const railClass = withYou ? 'vote-with' : against ? 'vote-against' : '';
   const narrative = anonymizeText(vote.narrative, anonCtx);
   return (
-    <div className="cv2-vote">
+    <div className={"cv2-vote " + railClass}>
       <div className="cv2-vote-head">
         <div className="bill">
           {(() => {
@@ -2465,10 +2474,14 @@ function ContributingVoteCard({ vote, anonCtx }) {
             return (<><span className="num">{billNum}</span><span className="ttl">{billTtl}</span></>);
           })()}
         </div>
-        <div className={"vote-badge " + voteClass}>{voteLabel}</div>
+        {(withYou || against) && (
+          <span className={"cv2-vote-align " + (withYou ? 'with' : 'against')}>
+            {withYou ? '✓ With you' : '✗ Against you'}
+          </span>
+        )}
       </div>
-      <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {narrative && <p className="cv2-vote-narr">{narrative}</p>}
+      <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {/* Member rationale — synthesized from their press releases via congress-press.
           Label as stated/inferred; never present as verified fact.
           Attribution: congress-press by Derek Willis
