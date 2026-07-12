@@ -1047,8 +1047,9 @@ const STRUCTURAL_PROBES: Probe[] = [
       "vocabulary shares zero overlap with screens-scorecard.jsx's sheet/dec/dec-badge tokens " +
       "(confirmed by a full class-token diff; see this file's STRUCTURAL_WAIVERS doc comment on " +
       "when to move a waived scenario here instead of leaving it waived). Verified against the " +
-      "pre-fix tree (this commit's parent): all 3 markers fail there (.pick-name computes 21px; " +
-      "the verdict-row pill computes 11px; the notup pill computes 21px — never 10px) and flip " +
+      "pre-fix tree (this commit's parent): all 3 markers fail there (.pick-name computes 24px, " +
+      "the src/styles/print.css legacy rule, not even the 21px shared-workspace fallback; the " +
+      "verdict-row pill computes 11px; the notup pill computes 21px — never 10px) and flip " +
       "to pass with this commit's redesign2.css changes — the correctness bar MarkerProbe's own " +
       "doc comment requires. Doesn't cover the .bx glyph centering fix in the same commit (a " +
       "geometry check against a ::after pseudo-element's own bounding box, not exposable through " +
