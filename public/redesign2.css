@@ -2984,14 +2984,44 @@
   text-overflow: ellipsis;
   max-width: 280px;
 }
-.rep-card .cv2-iss-head .pct {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0;
+/* Canvas .align-row shape (voting_record rows only — RepCard always passes
+   rowVariant="canvas"): one line, three cells — name | bar | fraction, no
+   per-row %. ResearchedPositionRow / WebSearchAlignmentRow keep the
+   .topic/.meta/.pct shape above (they render directional badges, not a
+   kept/total fraction), so those rules stay in place. */
+.rep-card .cv2-iss-row--canvas .cv2-iss-head {
+  grid-template-columns: 1fr 84px 44px;
+  gap: 10px;
 }
-.rep-card .cv2-iss-head .pct small {
+.rep-card .cv2-iss-row--canvas .cv2-iss-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rep-card .cv2-iss-row--canvas .cv2-iss-frac {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  white-space: nowrap;
+}
+.rep-card .cv2-iss-row--canvas .cv2-iss-frac .chev {
   font-size: 9px;
+  color: var(--civic);
+}
+.rep-card .cv2-block-head .overall .cv2-overall-frac {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
 }
 .rep-card .cv2-iss-head .cv2-ws-badge {
   font-size: 8.5px;
@@ -3003,8 +3033,9 @@
   padding: 1px 4px;
 }
 
-/* ---- funding — box it like canvas's .cd-money, mini segmented bar always
-   visible ahead of the collapsed FunderBars detail ---- */
+/* ---- funding — box it like canvas's .cd-money. The teaser is text-only
+   (no mini bar — canvas's FunderPanel has just the one bar, and it only
+   shows expanded; a collapsed-state duplicate bar was removed here). ---- */
 .rep-card .cv2-disclose {
   margin: 12px 18px 0;
   border-radius: 10px;
@@ -3015,30 +3046,41 @@
 .rep-card .cv2-disclose-eyebrow {
   font-size: 9.5px;
 }
-.rep-card .cv2-mini-fundbar {
-  display: inline-flex;
+/* The money glance is now display-only (the click affordance moved to
+   .card-evidence's "Funders & influence" button) — same padding the old
+   .cv2-disclose-toggle button used, no cursor/hover feedback. */
+.cv2-money-glance {
+  padding: 18px 24px;
+}
+@media (max-width: 600px) {
+  .cv2-money-glance {
+    padding: 16px 18px;
+  }
+}
+.cv2-disclose.open .cv2-money-glance {
+  border-bottom: 1px dashed var(--rule-2);
+}
+
+/* ---- card evidence row — canvas's shared "See all votes → · Funders &
+   influence ▾" row (screens-results.jsx:283-286): both evidence CTAs sit
+   together, directly above the verdict buttons. ---- */
+.card-evidence {
+  display: flex;
   align-items: center;
-  height: 8px;
-  width: 84px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid var(--rule-2);
-  margin-right: 8px;
-  vertical-align: -1px;
-  flex-shrink: 0;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 20px 16px;
 }
-.rep-card .cv2-mini-fundbar i {
-  display: block;
-  height: 100%;
-}
-.rep-card .cv2-mini-fundbar i.small {
-  background: var(--rc-keep);
-}
-.rep-card .cv2-mini-fundbar i.large {
-  background: var(--gold);
-}
-.rep-card .cv2-mini-fundbar i.pac {
-  background: var(--vote-red);
+@media (max-width: 600px) {
+  .card-evidence {
+    padding: 6px 18px 14px;
+  }
+  .card-evidence .cv2-see-all-inline,
+  .card-evidence .cv2-disclose-chev {
+    flex: 1 1 160px;
+    justify-content: center;
+  }
 }
 
 /* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic
