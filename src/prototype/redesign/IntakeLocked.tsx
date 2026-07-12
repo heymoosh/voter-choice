@@ -26,9 +26,17 @@
 import React from "react";
 import { useI18n } from "../VoterChoiceApp";
 import { IssueReviewCard } from "./IssueConversation";
+import { issuesForLevel } from "./delegationData";
 
 export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
   const { t } = useI18n();
+  // Same per-issue level IssueRow's pill reads (set at extraction time by
+  // themesToIssues) — issuesForLevel's "both" counts toward each bucket,
+  // matching how the workspace itself splits an issue's jurisdiction.
+  // Issues with no resolved level (custom, no canonicalIssue match) count
+  // toward neither — omitted, not guessed.
+  const fedCount = issuesForLevel(issues, "federal").length;
+  const stateCount = issuesForLevel(issues, "state").length;
 
   return (
     <div className="issue-locked-confirm" data-testid="issue-locked-confirm">
@@ -54,9 +62,23 @@ export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
           <div className="lt">{t("intake.lockedBannerTitle")}</div>
           <div className="ls">{t("intake.lockedBannerSub")}</div>
         </div>
+        {(fedCount > 0 || stateCount > 0) && (
+          <div className="jbreak">
+            {fedCount > 0 && (
+              <span className="iq-juris fed">
+                {t("intake.jbreakFederal", { n: fedCount })}
+              </span>
+            )}
+            {stateCount > 0 && (
+              <span className="iq-juris state">
+                {t("intake.jbreakState", { n: stateCount })}
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
-      <div className="co-input" style={{ marginTop: 14 }}>
+      <div className="co-input ready" style={{ marginTop: 14 }}>
         <div className="row">
           <button
             type="button"
@@ -68,20 +90,21 @@ export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
           </button>
           <button
             type="button"
-            className="send"
+            className="send lock-cta"
             onClick={() => onConfirm(issues)}
             disabled={issues.length === 0}
             data-testid="issue-locked-confirm-btn"
           >
-            {t("intake.primaryBtn")}
+            <span className="lock-label">{t("intake.primaryBtn")}</span>
+            <span className="lock-sub">{t("intake.primarySubLabel")}</span>
           </button>
         </div>
         {/* Canvas's IqComposer renders this privacy note on every intake
             step regardless of state (screens-intake.jsx); the port had
             dropped it on this screen when the back link took its slot in
             the row. */}
-        <div className="hint" style={{ marginTop: 8, textAlign: "center" }}>
-          {t("intake.inputHint")}
+        <div className="co-privacy">
+          <span className="dot">●</span> {t("intake.inputHint")}
         </div>
       </div>
     </div>

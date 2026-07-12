@@ -2685,7 +2685,10 @@
   border-radius: 13px;
   background: var(--keep-soft);
   border: 1px solid var(--keep);
-  margin: 16px 0 0;
+  /* Round-3.1 correction: this was 16px 0 0 — the live canvas source
+     (2026-07-11 edits) confirms 2px 0 14px, a much smaller top gap off
+     the issues card and 14px of breathing room before the footer below. */
+  margin: 2px 0 14px;
 }
 .iq-locked .tick {
   width: 28px;

@@ -3717,6 +3717,361 @@ Bumps
   max-width: 560px;
 }
 
+/* ---------- Intake Round 3 — jurisdiction pill (card 9143a622: "every
+   issue carries a JURISDICTION tag") ----------
+   Canvas's IqRow accepts a `juris` prop (screens-intake.jsx) but the local
+   snapshot never renders it — intake.css already ships the pill's styling
+   (.iq-juris/.fed/.state), just unwired. themesToIssues (IssueConversation.tsx)
+   now resolves each issue's level via the same canonical-issue→jurisdiction
+   lookup the workspace itself uses post-lock (getIssueLevel); IssueRow
+   renders the pill only once a level actually resolved — a custom issue
+   with no canonical match gets no pill rather than a guess (honest-data).
+   `.both` has no canvas precedent (the artboard only shows FEDERAL/STATE
+   examples); styled neutral with --tag-bg so it doesn't compete with the
+   two decisive fed/state colors, since "both" is in fact the most common
+   lean in ISSUE_JURISDICTION_LEAN. Scoped to .bf-app rather than narrowly
+   to .coldopen — IssueRow is shared by the live conversation (.coldopen),
+   the locked confirm screen (.issue-locked-confirm), and the edit-issues
+   modal (.amend-modal), all three of which need the pill styled. Legacy
+   AmendmentEditor's own IssueRow usage (VoterChoiceApp.tsx, gated off
+   .bf-app) never sets `issue.level`, so the pill JSX simply never renders
+   there regardless of this CSS. */
+.bf-app .iq-juris {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.bf-app .iq-juris.fed {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+}
+.bf-app .iq-juris.state {
+  background: oklch(0.93 0.05 78);
+  color: oklch(0.46 0.1 70);
+}
+.bf-app .iq-juris.both {
+  background: var(--tag-bg);
+  color: var(--ink-2);
+}
+
+/* ---------- Intake Round 3.1 correction — locked-state jurisdiction
+   breakdown renders as PILLS, not a text line ----------
+   The live canvas source (2026-07-11 edits, .keystone-canvas-refs postdate
+   this) settled `.jbreak` as two REUSED `.iq-juris fed`/`.iq-juris state`
+   pills — literally `<span className="iq-juris fed">2 Federal</span>` —
+   not a mono uppercase text line with a "·" separator, which is what this
+   section originally shipped (a reasonable guess before the live source
+   was available, now corrected). `.jbreak` itself is just the flex
+   container; all the visible styling comes from the SAME `.iq-juris`/
+   `.fed`/`.state` pill rules the rows above already use, so the "your
+   issues are set" banner echoes the exact pill look, not a re-invented
+   text treatment. Counts still come from issuesForLevel (delegationData.ts,
+   unchanged). */
+.bf-app .iq-locked .jbreak {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+/* ---------- Intake Round 3 — "Lock these in" prominence (card 4b7e5a66)
+   ----------
+   The lock CTA is the one true commit moment in the flow — IssueConversation's
+   "Lock these in" click transitions into the confirm screen, and IntakeLocked's
+   own confirm button is what actually fires onLock; both surface the same
+   primaryBtn copy — but wore ordinary footer/button weight. IntakeLocked's
+   confirm button in particular reused the bare `.send` class, identical to a
+   mid-conversation chat Send. `.ready` marks the footer as the flow's
+   capstone; `.lock-cta` gives the button sub-label room and a heavier brand
+   shadow. Both are opt-in via JSX: IssueConversation only adds them when
+   passed a primarySubLabel, which only IntakeView supplies — EditIssuesModal's
+   re-score "Apply" keeps ordinary weight, since review has already started
+   for that flow. IntakeLocked's confirm is always the real lock, so it
+   always gets the treatment. */
+.bf-app .th-foot.ready {
+  border-top: 2px solid var(--brand);
+  padding-top: 20px;
+}
+.bf-app .th-foot.ready .lock-cta {
+  width: 100%;
+  justify-content: center;
+}
+.bf-app .co-input.ready {
+  border-top: 2px solid var(--brand);
+  /* Literal port of the live canvas's `.iq-foot.ready` (padding-top: 17px;
+     padding-bottom: 19px;) — an asymmetric pair, not the flat 20px this
+     section originally shipped. Horizontal padding is unaffected (still
+     the base composer band's 14px/30px). */
+  padding-top: 17px;
+  padding-bottom: 19px;
+}
+/* Literal port of the live canvas's `.iq-foot.ready .iq-lock` +
+   `.iq-lock-sub`. Shared by BOTH ready-state lock buttons (IntakeLocked's
+   own confirm button — the direct canvas equivalent — and
+   IssueConversation's in-card "Lock these in" button, a repo-only
+   additive affordance canvas doesn't have but which intentionally reuses
+   the same capstone weight per the original Round-3 decision). */
+.bf-app .lock-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  min-height: 62px;
+  padding: 12px 20px;
+  box-shadow:
+    0 12px 26px -10px color-mix(in oklch, var(--brand) 50%, transparent),
+    var(--shadow-soft);
+}
+.bf-app .lock-cta .lock-label {
+  font-size: 16.5px;
+  letter-spacing: -0.005em;
+}
+.bf-app .lock-cta .lock-sub {
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: oklch(0.94 0.02 262);
+}
+
+/* ---------- Intake Round 3 — privacy line reposition ----------
+   Canvas's .iq-privacy is its own centered full-width line BELOW the whole
+   footer with a leading colored dot marker (intake.css); the port had it
+   inline beside the Send button instead (.co-input .row .hint). Content was
+   already right (intake.inputHint) — this only moves it. New class, not a
+   reuse of `.hint`, so the existing `.hint` mobile-reflow rules (still used
+   by the legacy composer) are untouched. Applied to both IssueConversation's
+   ordinary composer and IntakeLocked's confirm row, replacing the latter's
+   ad-hoc inline style with the same shared treatment. */
+.bf-app .co-privacy {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-top: 9px;
+  text-align: center;
+}
+/* Literal port of the live canvas's `.iq-privacy .dot { color: var(--keep) }`.
+   `--keep` is only defined locally inside `.issue-locked-confirm`
+   (redesign2.css, IntakeLocked's own scope) — that already covers the
+   `.ready` composer's dot, but `.co-privacy` ALSO renders inside
+   IssueConversation's ordinary composer (`.issue-convo`, no local
+   mapping), where an unmapped `--keep` would resolve to nothing. Defining
+   it once here, on the shared `.coldopen` ancestor of both contexts,
+   keeps the token name identical to canvas's (`var(--keep)`, not a
+   substituted `var(--civic)`) while resolving correctly everywhere the
+   dot renders — mapped onto `--civic`, the same "alignment keep green"
+   token the .bf-app root block already documents as deliberately left
+   unmapped for exactly this purpose. */
+.bf-app .coldopen {
+  --keep: var(--civic);
+}
+.bf-app .co-privacy .dot {
+  color: var(--keep);
+}
+
+/* ---------- Intake Round 3.1 — composer chrome parity ----------
+   Muxin's verdict on the Round-3 build: "I like the Design version of the
+   chat box and how it looks like its own separate grey section with a
+   white box. It just looks a lot nicer and neater and cleaner compared to
+   the chat version in our repo." Canvas's composer is TWO nested layers
+   (intake.css .iq-foot/.iq-composer): a full-width grey footer TRENCH
+   (top rule only, no boxed card) that reaches the .iq shell's full width
+   while the conversation stage above stays inset — holding a WHITE
+   rounded textarea sitting inline next to Send. Ours was one uniform grey
+   box (.co-input's own background + border + radius) with a transparent
+   textarea (no white/grey contrast at all) and the Send button on its own
+   row below instead of alongside.
+
+   Bleeds past .coldopen's own side padding (32px desktop / 18px at the
+   ≤640px breakpoint — prototype.css:921, prototype-c.css:1868) so the
+   band spans edge-to-edge of the content column the way canvas's footer
+   reaches its shell's full width. ONE known, deliberate structural gap
+   from a literal port: canvas's `.iq` shell has no width cap at all (the
+   footer trench spans the full browser viewport, with only `.iq-foot-inner`
+   capped at 760px/centered inside it) — `.coldopen` itself is already
+   `max-width: 760px; margin: 0 auto` (prototype.css:919), so this bleed
+   only reaches that 760px column's own edges, not the true viewport edge.
+   Restructuring `.coldopen` to be viewport-width (matching AppNav above
+   it) is a page-shell-level change touching every other .coldopen view,
+   out of scope for a composer-chrome fix — the PADDING values inside the
+   band (14px 30px) are still ported literally from `.iq-foot`'s own rule,
+   and the composer's own content is already inherently 760px-capped/
+   centered by .coldopen's existing max-width, satisfying the
+   `.iq-foot-inner` requirement without a separate wrapper. Scoped to
+   `.coldopen .co-input` only — IssueConversation's composer is ALSO reused
+   inside .amend-modal (the edit-issues modal), where canvas keeps the
+   plain, unbanded `.amd-composer` (screens-intake.jsx's EditIssues never
+   wraps it in .iq-foot) — so the modal composer is intentionally left
+   alone. */
+.bf-app .coldopen .co-input {
+  border: none;
+  border-top: 1px solid var(--rule-2);
+  border-radius: 0;
+  margin-left: -32px;
+  margin-right: -32px;
+  width: calc(100% + 64px);
+  padding: 14px 30px;
+}
+.bf-app .coldopen .co-composer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.bf-app .coldopen .co-composer textarea {
+  flex: 1;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 11px;
+  padding: 13px 15px;
+  min-height: 50px;
+  /* Literal 14px — the base .co-input textarea rule (prototype.css) sets
+     15px/line-height:1.55 for the legacy composer; both overridden here. */
+  font-size: 14px;
+  line-height: 1.4;
+  resize: none;
+}
+.bf-app .coldopen .co-composer .send {
+  min-height: 50px;
+  padding: 0 20px;
+  border-radius: 11px;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-soft);
+  /* Literal 14px — the base .co-input .send rule (prototype.css) sets
+     13.5px. */
+  font-size: 14px;
+}
+@media (max-width: 640px) {
+  .bf-app .coldopen .co-input {
+    margin-left: -18px;
+    margin-right: -18px;
+    width: calc(100% + 36px);
+    padding: 14px 18px;
+  }
+}
+
+/* ---------- Intake Round 3.1 — compact issue-row density ----------
+   Muxin's verdict: "The design version does a better job of showing, in a
+   very clean way, the list of issues. That layout is just so much smaller
+   and easier to read compared to our layout." Canvas's IqRow (intake.css
+   .iq-row, lines 36-47) is a small bordered/rounded chip: a neutral
+   15px rank, a bold-but-modest title, ONE tiny mono quote line, tight
+   11px/12px padding — versus our .theme-row's dashed-divider list with a
+   28px display-serif rank number and roomy, unbordered 14px/0 rows.
+
+   IssueRow is SHARED: the same component also renders inside the legacy
+   ballot-mode AmendmentEditor and ColdOpenView (VoterChoiceApp.tsx, gated
+   off .bf-app — untouched, never passes the variant). Rather than restyle
+   .theme-row globally, IssueRow takes an opt-in `rowVariant="canvas"` prop
+   (VoterChoiceApp.tsx) that adds a `.theme-row--canvas` modifier class.
+   IssueReviewCard (IssueConversation.tsx) is the ONE shared card behind
+   IntakeView's conversation, IntakeLocked, AND EditIssuesModal (all three
+   Keystone call sites), so setting the prop there covers all of them —
+   matching canvas, whose own EditIssues screen reuses the identical
+   compact IqRow.
+
+   Gated to the ≥1024px desktop range — the exact width this feedback was
+   given against — so the already-tuned mobile (≤640px) and tablet
+   (641–1023px, line ~4579) stacked touch layouts for this same grid are
+   completely unaffected. The quote font-size needs `!important` to beat
+   the unscoped a11y "Body text scale pass" bump above (line ~1994),
+   which stays in effect for every other .theme-row context (including
+   this one below 1024px) — this is a deliberate density trade only for
+   the desktop canvas-matched treatment, not a rollback of that pass.
+
+   Values below are ported literally from the live canvas's `.iq-row`
+   family (padding: 11px 12px; gap: 11; border-radius: 11px; `.iq-rank`
+   width:16px/text-align:center; `.iq-arrows`/`.iq-arrow` gap:1/16x13/8px
+   with a brand hover; `.iq-name` 14.5px/500, unset family → inherits the
+   app's sans default, NOT the serif/600 the base .theme-row .nm uses;
+   `.iq-name .you` mono/10px/ink-3/400, no border or italic). Two
+   deliberate, DOCUMENTED deviations from a literal 1:1 port, both to
+   avoid dropping real data (never silently suppress a voter's own
+   words): (1) canvas's IqRow takes a single `you` string; our IssueRow
+   can carry MULTIPLE quotes per issue (`quotes: [{label, text}]`), so
+   `.quotes`/`.quote` stays a list, each line re-styled to canvas's `.you`
+   typography rather than collapsing to one line. (2) the tiny
+   "example"/"and" `.lab` prefix distinguishing multiple quotes has no
+   canvas counterpart (canvas never shows more than one) — kept, sized
+   down to stay unobtrusive, rather than deleted outright. */
+@media (min-width: 1024px) {
+  .bf-app .theme-row--canvas {
+    grid-template-columns: 16px 16px 1fr auto;
+    gap: 11px;
+    align-items: center;
+    padding: 11px 12px;
+    margin-bottom: 7px;
+    border: 1px solid var(--rule-2);
+    border-radius: 11px;
+    background: var(--paper);
+  }
+  .bf-app .theme-row--canvas:last-of-type {
+    padding-bottom: 11px;
+    margin-bottom: 0;
+  }
+  .bf-app .theme-row--canvas .ord {
+    margin-top: 0;
+    gap: 1px;
+  }
+  .bf-app .theme-row--canvas .ord button {
+    width: 16px;
+    height: 13px;
+    font-size: 8px;
+  }
+  .bf-app .theme-row--canvas .ord button:hover:not(:disabled) {
+    color: var(--brand);
+  }
+  .bf-app .theme-row--canvas .rank {
+    font-size: 15px;
+    line-height: 1;
+    margin-top: 0;
+    text-align: center;
+  }
+  .bf-app .theme-row--canvas .nm {
+    font-family: var(--sans);
+    font-size: 14.5px;
+    font-weight: 500;
+    margin-bottom: 2px;
+    gap: 6px;
+  }
+  .bf-app .theme-row--canvas .nm .edit-pencil {
+    font-size: 8.5px;
+    padding: 1px 5px;
+  }
+  .bf-app .theme-row--canvas .quotes {
+    gap: 2px;
+  }
+  .bf-app .theme-row--canvas .quote {
+    font-family: var(--mono);
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+    color: var(--ink-3);
+    padding-left: 0;
+    border-left: none;
+  }
+  .bf-app .theme-row--canvas .quote em {
+    font-style: normal;
+  }
+  .bf-app .theme-row--canvas .quote .lab {
+    font-size: 8px;
+    margin-right: 4px;
+  }
+  .bf-app .theme-row--canvas .acts {
+    gap: 4px;
+  }
+  .bf-app .theme-row--canvas .acts button {
+    font-size: 8.5px;
+    padding: 1px 0;
+  }
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds

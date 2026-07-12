@@ -323,6 +323,7 @@ const TRANSLATIONS = {
       openerP2Rest:
         " Things you wish Congress would actually do something about. Frustrations, hopes, fights you've watched in your community. Type as much or as little as you want — and once I propose a list, keep talking to me until it matches what you value.",
       primaryBtn: 'Lock these in & meet your delegation →',
+      primarySubLabel: 'Your record review starts right after',
       thinkingExtract: 'Reading what you wrote — pulling out the issues I hear…',
       thinkingRefine: 'Thinking about that — adjusting your list…',
       issueHeading: 'Your issues — make them yours.',
@@ -349,6 +350,9 @@ const TRANSLATIONS = {
       lockedBannerTitle: 'Your issues are set.',
       lockedBannerSub: 'These travel with every record we show you.',
       lockedBack: '← Keep talking',
+      jurisBoth: 'FEDERAL + STATE',
+      jbreakFederal: '{n} Federal',
+      jbreakState: '{n} State',
     },
     scorecard: {
       decided: 'decided',
@@ -880,6 +884,7 @@ const TRANSLATIONS = {
       openerP2Rest:
         ' Las cosas que desearías que el Congreso hiciera algo al respecto. Frustraciones, esperanzas, peleas que has visto en tu comunidad. Escribe tanto o tan poco como quieras — y una vez que proponga una lista, sigue hablando conmigo hasta que refleje lo que valoras.',
       primaryBtn: 'Confirmar estos temas y conocer a tu delegación →',
+      primarySubLabel: 'Tu revisión de historiales empieza justo después',
       thinkingExtract: 'Leyendo lo que escribiste — identificando los temas que escucho…',
       thinkingRefine: 'Pensando en eso — ajustando tu lista…',
       issueHeading: 'Tus temas — hazlos tuyos.',
@@ -906,6 +911,9 @@ const TRANSLATIONS = {
       lockedBannerTitle: 'Tus temas están definidos.',
       lockedBannerSub: 'Estos te acompañan en cada historial que te mostramos.',
       lockedBack: '← Seguir hablando',
+      jurisBoth: 'FEDERAL + ESTATAL',
+      jbreakFederal: '{n} federal',
+      jbreakState: '{n} estatal',
     },
     scorecard: {
       decided: 'decididos',
@@ -1521,8 +1529,17 @@ function AppFooter({ compact }: { compact?: boolean }) {
    Maps to: src/components/ConcernInterpretation.tsx (one row
    of the interpretation list). The repo today is read-only —
    editing affordances are part of Phase 6 (mid-flow amend).
-   Reorder/rename/remove are design-delta in this prototype. */
-function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemove, onReorderTo }) {
+   Reorder/rename/remove are design-delta in this prototype.
+
+   `rowVariant="canvas"` is an opt-in compact-density modifier (card
+   "issues card density — match canvas's IqRow"): the legacy ballot-mode
+   call sites below never pass it, so their look is unchanged; only
+   IssueReviewCard (redesign/IssueConversation.tsx, the shared card behind
+   IntakeView/IntakeLocked/EditIssuesModal) sets it, and the compact CSS
+   itself is scoped `.bf-app .theme-row--canvas` + desktop-only so it never
+   fights the already-tuned mobile/tablet stacked layouts below. */
+function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemove, onReorderTo, rowVariant }) {
+  const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(issue.interpretation);
   const rowRef = React.useRef(null);
@@ -1586,7 +1603,7 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
   return (
     <div
       ref={rowRef}
-      className={"theme-row" + (dragging ? ' dragging' : '') + (dropIdx === index && !dragging ? ' drop-target' : '')}
+      className={"theme-row" + (rowVariant ? ` theme-row--${rowVariant}` : '') + (dragging ? ' dragging' : '') + (dropIdx === index && !dragging ? ' drop-target' : '')}
       onPointerDown={onHandleDown}
       onPointerMove={onHandleMove}
       onPointerUp={onHandleUp}
@@ -1624,6 +1641,11 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
           ) : (
             <>
               <span>{issue.interpretation}</span>
+              {issue.level && (
+                <span className={"iq-juris " + (issue.level === "federal" ? "fed" : issue.level === "state" ? "state" : "both")}>
+                  {issue.level === "federal" ? t("scorecard.levelFederal") : issue.level === "state" ? t("scorecard.levelState") : t("intake.jurisBoth")}
+                </span>
+              )}
               <button className="edit-pencil" onClick={() => setEditing(true)}>rename</button>
             </>
           )}
