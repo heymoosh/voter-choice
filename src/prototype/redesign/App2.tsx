@@ -52,6 +52,7 @@ import {
   getSeatResearch,
   submitSessionCounters,
   issuesForLevel,
+  issuesForSeatCard,
   seatAlignmentPct,
   computeSeatDeltas,
   resetSeatResearch,
@@ -1012,7 +1013,7 @@ function App2Inner() {
         <>
           <HeadToHead
             seat={duelSeat}
-            userIssues={issuesForLevel(issues, duelSeat.level)}
+            userIssues={issuesForSeatCard(issues, duelSeat)}
             stateCode={delegation?.stateCode || ""}
             verdict={verdicts[duelSeat.id] || null}
             pickId={picks[duelSeat.id] || null}
