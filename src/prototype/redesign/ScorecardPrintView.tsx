@@ -80,6 +80,18 @@ export function ScorecardPrintView({
     (e) => e.date >= todayIso,
   );
   const nextElection = upcoming[0] || (stateData?.elections || [])[0] || null;
+  // "General Election" / "Primary" / etc. — canvas's mast-sub reads "Voter
+  // Choice · General Election · Nov 3, 2026"; derive from the real election
+  // type instead of hardcoding "General" so a primary/runoff/special stays
+  // honest.
+  const electionTypeLabel = nextElection
+    ? {
+        general: t("scorecardPrint.electionGeneral"),
+        primary: t("scorecardPrint.electionPrimary"),
+        runoff: t("scorecardPrint.electionRunoff"),
+        special: t("scorecardPrint.electionSpecial"),
+      }[nextElection.type]
+    : null;
   const earlyVoting =
     stateData?.earlyVoting?.available && stateData.earlyVoting.startDate
       ? `${fmtShort(stateData.earlyVoting.startDate)} – ${
@@ -106,11 +118,21 @@ export function ScorecardPrintView({
         </div>
 
         <div className="print-sheet">
+          {/* canvas screens-scorecard.jsx .pflag — a flag-stripe accent on
+              the sheet itself (also used on the home hero's sheet preview,
+              never ported to the print route until now). */}
+          <div className="pflag" aria-hidden="true">
+            <span></span>
+            <span></span>
+          </div>
           <header className="ph-head">
             <div className="l">
               {t("scorecardPrint.myScorecard")}
-              {nextElection ? ` · ${fmtLong(nextElection.date)}` : ""}
-              <small>{t("scorecardPrint.brand")}</small>
+              <small>
+                {t("scorecardPrint.brand")}
+                {electionTypeLabel ? ` · ${electionTypeLabel}` : ""}
+                {nextElection ? ` · ${fmtLong(nextElection.date)}` : ""}
+              </small>
             </div>
             <div className="r">
               {pollingInfo?.precinct && (
@@ -329,7 +351,8 @@ export function ScorecardPrintView({
           <footer className="print-foot">
             <div className="l">
               <b>{t("scorecardPrint.builtWith")}</b>
-              {t("scorecardPrint.freeNonpartisan")}
+              {t("scorecardPrint.freeNonpartisan")} ·{" "}
+              {t("scorecardPrint.copyright")}
             </div>
           </footer>
           <div className="print-serial">

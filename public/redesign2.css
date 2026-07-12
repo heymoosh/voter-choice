@@ -436,6 +436,30 @@
   --scp-replace: oklch(0.53 0.205 27);
   --scp-replace-ink: oklch(0.47 0.18 27);
 }
+/* .pflag — the flag-stripe accent canvas puts on the sheet card itself
+   (screens-scorecard.jsx / screens-home.jsx .sheet .pflag), never ported to
+   the print route. Same --scp-brand/--scp-replace tokens as the rest of
+   this block, so it's the identical blue/red pair used for keep/replace. */
+.print-wrap .print-sheet {
+  position: relative;
+}
+.print-wrap .pflag {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  display: flex;
+}
+.print-wrap .pflag span {
+  flex: 1;
+}
+.print-wrap .pflag span:nth-child(1) {
+  background: var(--scp-brand);
+}
+.print-wrap .pflag span:nth-child(2) {
+  background: var(--scp-replace);
+}
 .print-wrap .ballot-group .gtitle {
   display: flex;
   align-items: center;
