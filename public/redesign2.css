@@ -879,13 +879,48 @@
    default and the [data-mobile-chat="open"] rule below shows it as an
    overlay. Without the @media guard, the more-specific .ws-chat.rep-center
    selector overrides the prototype's display:none and the card bleeds into
-   the scorecard-only view. */
+   the scorecard-only view.
+   overflow-y:auto here was the wide-screen scroll bug (part 1): it made
+   this pane its own height-capped internal scroll region instead of a
+   normal flowing block. Dropped in favor of the shell-level fix below,
+   which lets this pane size to its own content and scroll with the page. */
 @media (min-width: 768px) {
   .ws-chat.rep-center {
     display: block;
-    overflow-y: auto;
-    min-height: 0;
     padding: 22px 28px 60px;
+  }
+  /* Wide-screen scroll bug (part 2, the actual root cause): prototype-c.css's
+     "sticky-sidebar workspace" pattern (search .ws-shell above) clips the
+     WHOLE shell to height:100vh/overflow:hidden and gives .ws-wrap/.ws-chat
+     their own overflow:hidden too, on the assumption that .ws-chat .body
+     (a nested sub-div) is the one designated scroll region. The redesign's
+     DelegationWorkspace has no such .body wrapper — the card's content sits
+     directly in .ws-chat.rep-center — so that assumption doesn't hold here,
+     and the result was a page clipped to exactly one viewport tall with no
+     scrollbar: content past the fold was simply invisible, not scrollable.
+     Undo the clip for .delegation only (the legacy ballot workspace keeps
+     its intentional fixed-viewport behavior); let the shell flow as a
+     document instead. The rail goes sticky (not stretched) so it travels
+     with the page and only scrolls internally if its own content — the
+     seat list — outgrows the viewport. */
+  .ws-shell.delegation {
+    height: auto;
+    overflow: visible;
+  }
+  .ws-shell.delegation .ws-wrap {
+    flex: none;
+    overflow: visible;
+    align-items: start;
+    min-height: 0;
+  }
+  .ws-shell.delegation .ws-chat {
+    overflow: visible;
+  }
+  .ws-shell.delegation .ws-ballot {
+    position: sticky;
+    top: 0;
+    align-self: start;
+    max-height: 100vh;
   }
 }
 /* center-pane head: back control is mobile-only (shipped class hides it
@@ -911,13 +946,30 @@
   }
 }
 /* When the shipped mobile-overlay rule flips .ws-chat to display:flex,
-   keep the redesign center a scrolling document instead. */
+   keep the redesign center a scrolling document instead. (The shipped
+   .ws-wrap[data-mobile-chat="open"] .ws-chat rule's position:fixed/inset:0/
+   z-index:50 still applies here even though this rule doesn't repeat them —
+   CSS resolves conflicts property-by-property, and neither rule declares a
+   competing value for those three, so they carry over from the lower-
+   specificity rule untouched.)
+   The real mobile bug: the header (with the back button) is a normal
+   child of this scrolling section, not a separate fixed bar the way the
+   legacy .ws-chat .head/.body split has one — so it scrolls away with the
+   card content within a screen or two and the back control goes out of
+   reach. Pin it; its background already matches the parent's, so it reads
+   as one seamless bar rather than content peeking out from underneath. */
 @media (max-width: 767px) {
   .ws-wrap[data-mobile-chat="open"] .ws-chat.rep-center {
     display: block;
     overflow-y: auto;
     background: var(--paper);
     padding: 14px 16px 80px;
+  }
+  .ws-wrap[data-mobile-chat="open"] .ws-chat.rep-center .rep-center-head {
+    position: sticky;
+    top: 0;
+    background: var(--paper);
+    z-index: 5;
   }
 }
 .tier-intro {
@@ -4095,15 +4147,21 @@
   align-items: start;
 }
 
-/* collapse the 3-col overview grid to 1 col under the mobile breakpoint —
-   NOT present in the source (delegation.css ships no media query at all).
-   Matches this file's existing ~560px breakpoint (see "stacked / compact
-   form" above); this repo runs a real Pixel-5-width (~393px)
-   chromium-mobile Playwright project, so a cramped 3-col grid there is a
-   real usability bug, not a nice-to-have. */
-@media (max-width: 560px) {
+/* Tiered collapse — NOT present in the source (delegation.css ships no
+   media query at all). The original single ~560px breakpoint left the
+   3-col grid live at tablet/narrow-desktop widths, where seat cards render
+   crushed: mono seat labels wrap letter-by-letter, "Your U.S.
+   Representative" truncates, buttons stack awkwardly. Widened to three
+   tiers so a card always has enough width to render its content cleanly:
+   1 col up to 760px, 2 cols 761–1099px, 3 cols from 1100px. */
+@media (max-width: 760px) {
   .dg-grid {
     grid-template-columns: 1fr;
+  }
+}
+@media (min-width: 761px) and (max-width: 1099px) {
+  .dg-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 
