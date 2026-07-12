@@ -10,7 +10,7 @@
      - Election date comes from the next upcoming election, not [0]. */
 
 import React from "react";
-import { AppNav, useI18n } from "../VoterChoiceApp";
+import { AppNav, useI18n, escapeHtml } from "../VoterChoiceApp";
 
 function fmtLong(dateIso) {
   return new Date(dateIso + "T00:00:00").toLocaleDateString("en-US", {
@@ -86,21 +86,30 @@ export function ScorecardPrintView({
     mix.small != null &&
     mix.small >= (mix.large ?? 0) &&
     mix.small >= (mix.pac ?? 0);
+  // Canvas bolds the evidence numbers within the line (.dec-note b) — e.g.
+  // "Voted with you on <b>9 of 11</b> key votes". t()'s {vars} aren't
+  // HTML-escaped by design (see escapeHtml's doc comment in
+  // VoterChoiceApp.tsx), so callers embedding literal tags in the
+  // translation string must escape their own interpolated values before
+  // rendering the result via dangerouslySetInnerHTML — same contract
+  // RepCard.tsx's attendance line and HandoffModal already follow.
   const reasonLine = (s, v, score) => {
     const parts = [];
     if (v === "keep") {
       if (score)
         parts.push(
           t("scorecardPrint.decisionNoteVotes", {
-            kept: score.kept,
-            total: score.total,
+            kept: escapeHtml(score.kept),
+            total: escapeHtml(score.total),
           }),
         );
       if (smallDonorFunded(s.candidate?.fundingMix))
         parts.push(t("scorecardPrint.decisionNoteSmallDonor"));
     } else if (v === "replace" && score) {
       parts.push(
-        t("scorecardPrint.decisionNoteIncumbentMatch", { pct: score.pct }),
+        t("scorecardPrint.decisionNoteIncumbentMatch", {
+          pct: escapeHtml(score.pct),
+        }),
       );
     }
     return parts.join(" · ");
@@ -236,7 +245,12 @@ export function ScorecardPrintView({
                               ) : null;
                             })()}
                         </div>
-                        {note && <div className="my-note">{note}</div>}
+                        {note && (
+                          <div
+                            className="my-note"
+                            dangerouslySetInnerHTML={{ __html: note }}
+                          />
+                        )}
                       </div>
                       {score && (
                         <div
@@ -325,14 +339,12 @@ export function ScorecardPrintView({
               <div className="gtitle">
                 {t("scorecardPrint.judgedAgainstIssues")}
               </div>
-              {/* 2026-07-11 pill treatment (Design Round 3, canvas
-                  .sheet-issues .pill is the styling base but predates this
-                  layout): pill = short issue label + inline jurisdiction
-                  tag, quick-read. A printed sheet can't expand/collapse, so
-                  the voter's own words recede beneath each pill in smaller
-                  italic serif instead of hiding behind a toggle. Falls back
-                  to the interpretation line when an issue carries no
-                  quotes, so that content stays reachable either way. */}
+              {/* Live canvas screens-scorecard.jsx (2026-07-11 Design edit):
+                  .sheet-issues > .si-row > (.pill + .si-juris + .si-quote).
+                  Pill reads "N · {short label}"; the quote is optional per
+                  issue (canvas's own 3rd example has none) — omitted rather
+                  than backfilled with the interpretation line, since a
+                  missing quote isn't the same claim as a real one. */}
               <div className="sheet-issues">
                 {issues.map((iss, i) => {
                   const quote = iss.quotes?.[0]?.text;
@@ -341,14 +353,12 @@ export function ScorecardPrintView({
                       ? t("scorecardPrint.federalPlusState")
                       : iss.level;
                   return (
-                    <div className="sheet-issue" key={iss.canonicalIssue || i}>
+                    <div className="si-row" key={iss.canonicalIssue || i}>
                       <span className="pill">
-                        {iss.interpretation}
-                        <span className="lvl">{`(${levelTag})`}</span>
+                        {i + 1} · {iss.interpretation}
                       </span>
-                      <div className="quote-line">
-                        {quote ? `“${quote}”` : iss.interpretation}
-                      </div>
+                      <span className="si-juris">{levelTag}</span>
+                      {quote && <span className="si-quote">“{quote}”</span>}
                     </div>
                   );
                 })}

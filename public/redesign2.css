@@ -523,6 +523,20 @@
   font-size: 19px;
   line-height: 1.3;
 }
+/* Race label above the candidate name (canvas .dec-office: mono 9.5px,
+   letter-spacing 0.08em) — prototype.css's shared `.br .race-name` (used
+   by the legacy workspace ballot pane too) is 10.5px/0.12em. */
+.print-wrap .br .race-name {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+}
+/* "My Scorecard" masthead (canvas .sheet-mast h1: serif 34px) —
+   src/styles/print.css's `.print-sheet .ph-head .l` (3-class selector) is
+   22pt (~29px); 4 classes here to unambiguously outrank it, same pattern
+   as the .pick-name fix above. */
+.print-wrap .print-sheet .ph-head .l {
+  font-size: 34px;
+}
 .print-wrap .br .bx {
   width: 30px;
   height: 30px;
@@ -552,6 +566,10 @@
 .print-wrap .br.verdict-row.replace .bx {
   border-color: var(--scp-replace);
   background: #fff;
+  /* canvas .dec-badge.replace: border 2.5px (vs .dec-badge.keep's plain
+     2px, from the shared base .dec-badge rule) — the outline-vs-filled
+     grayscale-safety distinction gets a slightly heavier stroke too. */
+  border-width: 2.5px;
 }
 .print-wrap .br.verdict-row.replace .bx::after {
   position: static;
@@ -592,7 +610,8 @@
 .print-wrap .br-score-pct {
   font-family: var(--serif);
   font-weight: 600;
-  font-size: 24px;
+  /* canvas .dec-score .ds-pct: font-size 30px (was 24px here). */
+  font-size: 30px;
   line-height: 1;
 }
 .print-wrap .br-score.good .br-score-pct {
@@ -654,49 +673,54 @@
   background: #fff;
   padding: 12px 14px;
 }
-/* "Judged against your issues" pill treatment (Design Round 3, 2026-07-11).
-   Canvas's .sheet-issues .pill (screens.css) predates the jurisdiction tag
-   + receding quote and only styles a bare inline-block pill; extended here
-   for the two additions. Data is unchanged (interpretation/level/quotes) —
-   presentation only. A printed sheet can't expand/collapse, so "progressive
-   disclosure" is typographic: the pill (short label + inline jurisdiction
-   tag) reads first, the voter's own words recede beneath it in smaller
-   italic serif rather than sitting behind a toggle. */
+/* "Judged against your issues" — canvas screens-scorecard.jsx's live
+   .sheet-issues > .si-row > (.pill + .si-juris + .si-quote) markup
+   (2026-07-11 Design edit; supersedes the Round-3 .sheet-issue/.lvl/
+   .quote-line vocabulary this repo built from a prose description before
+   the live canvas source was available — renamed to match exactly). Pill
+   text is "N · {short label}"; the jurisdiction tag sits beside it, not
+   nested inside; the quote wraps to its own line (flex-basis: 100%) and
+   is OMITTED entirely when the issue carries no quote — no fallback text,
+   per honest-data (a printed sheet can't expand/collapse, so this is the
+   full progressive-disclosure story: pill reads first, the voter's own
+   words follow when there are any). */
 .print-wrap .sheet-issues {
   display: flex;
   flex-direction: column;
+  gap: 7px;
+  margin-top: 8px;
+}
+.print-wrap .sheet-issues .si-row {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
   gap: 8px;
-  margin-top: 6px;
 }
 .print-wrap .sheet-issues .pill {
-  display: inline-flex;
-  align-self: flex-start;
-  align-items: baseline;
-  gap: 6px;
+  display: inline-block;
   background: var(--tag-bg);
   border: 1px solid var(--rule);
   border-radius: 999px;
-  /* canvas screens.css .sheet-issues .pill: padding 2px 9px, font-size
-     11.5px — this Round-3 pill adds the .lvl tag + quote-line below (no
-     canvas equivalent for those), but the pill's own footprint still owes
-     canvas's literal dimensions, not an approximation. */
-  padding: 2px 9px;
-  font-size: 11.5px;
+  padding: 3px 11px;
+  font-size: 12px;
+  font-weight: 600;
   color: var(--ink-2);
 }
-.print-wrap .sheet-issues .pill .lvl {
+.print-wrap .sheet-issues .si-juris {
   font-family: var(--mono);
   font-size: 9px;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
+  align-self: center;
 }
-.print-wrap .sheet-issues .quote-line {
+.print-wrap .sheet-issues .si-quote {
+  flex-basis: 100%;
   font-family: var(--serif);
   font-style: italic;
   font-size: 12px;
   color: var(--ink-3);
-  margin-left: 4px;
+  margin-left: 2px;
 }
 
 /* ---- rail done-check centering (shipped tick is pinned low-left) ---- */
