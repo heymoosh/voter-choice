@@ -3806,7 +3806,6 @@ Bumps
 }
 .bf-app .co-input.ready {
   border-top: 2px solid var(--brand);
-  padding: 18px;
 }
 .bf-app .lock-cta {
   display: flex;
@@ -3847,6 +3846,152 @@ Bumps
 }
 .bf-app .co-privacy .dot {
   color: var(--brand);
+}
+
+/* ---------- Intake Round 3.1 — composer chrome parity ----------
+   Muxin's verdict on the Round-3 build: "I like the Design version of the
+   chat box and how it looks like its own separate grey section with a
+   white box. It just looks a lot nicer and neater and cleaner compared to
+   the chat version in our repo." Canvas's composer is TWO nested layers
+   (intake.css .iq-foot/.iq-composer): a full-width grey footer TRENCH
+   (top rule only, no boxed card) that reaches the .iq shell's full width
+   while the conversation stage above stays inset — holding a WHITE
+   rounded textarea sitting inline next to Send. Ours was one uniform grey
+   box (.co-input's own background + border + radius) with a transparent
+   textarea (no white/grey contrast at all) and the Send button on its own
+   row below instead of alongside.
+
+   Bleeds past .coldopen's own side padding (32px desktop / 18px at the
+   ≤640px breakpoint — prototype.css:921, prototype-c.css:1868) so the
+   band spans edge-to-edge of the content column the way canvas's footer
+   reaches its shell's full width. Scoped to `.coldopen .co-input` only —
+   IssueConversation's composer is ALSO reused inside .amend-modal (the
+   edit-issues modal), where canvas keeps the plain, unbanded
+   `.amd-composer` (screens-intake.jsx's EditIssues never wraps it in
+   .iq-foot) — so the modal composer is intentionally left alone. */
+.bf-app .coldopen .co-input {
+  border: none;
+  border-top: 1px solid var(--rule-2);
+  border-radius: 0;
+  margin-left: -32px;
+  margin-right: -32px;
+  width: calc(100% + 64px);
+  padding: 18px 32px;
+}
+.bf-app .coldopen .co-composer {
+  display: flex;
+  gap: 10px;
+  align-items: flex-end;
+}
+.bf-app .coldopen .co-composer textarea {
+  flex: 1;
+  min-width: 0;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 11px;
+  padding: 13px 15px;
+  min-height: 50px;
+}
+.bf-app .coldopen .co-composer .send {
+  min-height: 50px;
+  border-radius: 11px;
+  flex-shrink: 0;
+}
+@media (max-width: 640px) {
+  .bf-app .coldopen .co-input {
+    margin-left: -18px;
+    margin-right: -18px;
+    width: calc(100% + 36px);
+    padding: 16px 18px;
+  }
+}
+
+/* ---------- Intake Round 3.1 — compact issue-row density ----------
+   Muxin's verdict: "The design version does a better job of showing, in a
+   very clean way, the list of issues. That layout is just so much smaller
+   and easier to read compared to our layout." Canvas's IqRow (intake.css
+   .iq-row, lines 36-47) is a small bordered/rounded chip: a neutral
+   15px rank, a bold-but-modest title, ONE tiny mono quote line, tight
+   11px/12px padding — versus our .theme-row's dashed-divider list with a
+   28px display-serif rank number and roomy, unbordered 14px/0 rows.
+
+   IssueRow is SHARED: the same component also renders inside the legacy
+   ballot-mode AmendmentEditor and ColdOpenView (VoterChoiceApp.tsx, gated
+   off .bf-app — untouched, never passes the variant). Rather than restyle
+   .theme-row globally, IssueRow takes an opt-in `rowVariant="canvas"` prop
+   (VoterChoiceApp.tsx) that adds a `.theme-row--canvas` modifier class.
+   IssueReviewCard (IssueConversation.tsx) is the ONE shared card behind
+   IntakeView's conversation, IntakeLocked, AND EditIssuesModal (all three
+   Keystone call sites), so setting the prop there covers all of them —
+   matching canvas, whose own EditIssues screen reuses the identical
+   compact IqRow.
+
+   Gated to the ≥1024px desktop range — the exact width this feedback was
+   given against — so the already-tuned mobile (≤640px) and tablet
+   (641–1023px, line ~4579) stacked touch layouts for this same grid are
+   completely unaffected. The quote font-size needs `!important` to beat
+   the unscoped a11y "Body text scale pass" bump above (line ~1994),
+   which stays in effect for every other .theme-row context (including
+   this one below 1024px) — this is a deliberate density trade only for
+   the desktop canvas-matched treatment, not a rollback of that pass. */
+@media (min-width: 1024px) {
+  .bf-app .theme-row--canvas {
+    grid-template-columns: 16px 22px 1fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 9px 12px;
+    margin-bottom: 6px;
+    border: 1px solid var(--rule-2);
+    border-radius: 10px;
+    background: var(--paper);
+  }
+  .bf-app .theme-row--canvas:last-of-type {
+    padding-bottom: 9px;
+    margin-bottom: 0;
+  }
+  .bf-app .theme-row--canvas .ord {
+    margin-top: 0;
+    gap: 0;
+  }
+  .bf-app .theme-row--canvas .ord button {
+    width: 14px;
+    height: 11px;
+    font-size: 9px;
+  }
+  .bf-app .theme-row--canvas .rank {
+    font-size: 15px;
+    line-height: 1;
+    margin-top: 0;
+  }
+  .bf-app .theme-row--canvas .nm {
+    font-size: 14.5px;
+    margin-bottom: 3px;
+    gap: 6px;
+  }
+  .bf-app .theme-row--canvas .nm .edit-pencil {
+    font-size: 8.5px;
+    padding: 1px 5px;
+  }
+  .bf-app .theme-row--canvas .quotes {
+    gap: 2px;
+  }
+  .bf-app .theme-row--canvas .quote {
+    font-size: 11.5px !important;
+    line-height: 1.35 !important;
+    padding-left: 8px;
+    border-left-width: 1.5px;
+  }
+  .bf-app .theme-row--canvas .quote .lab {
+    font-size: 8px;
+    margin-right: 4px;
+  }
+  .bf-app .theme-row--canvas .acts {
+    gap: 4px;
+  }
+  .bf-app .theme-row--canvas .acts button {
+    font-size: 8.5px;
+    padding: 1px 0;
+  }
 }
 
 /* ============ NoContestedView — upload-first redesign ============
