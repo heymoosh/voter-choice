@@ -65,10 +65,14 @@ export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
         {(fedCount > 0 || stateCount > 0) && (
           <div className="jbreak">
             {fedCount > 0 && (
-              <span>{t("intake.jbreakFederal", { n: fedCount })}</span>
+              <span className="iq-juris fed">
+                {t("intake.jbreakFederal", { n: fedCount })}
+              </span>
             )}
             {stateCount > 0 && (
-              <span>{t("intake.jbreakState", { n: stateCount })}</span>
+              <span className="iq-juris state">
+                {t("intake.jbreakState", { n: stateCount })}
+              </span>
             )}
           </div>
         )}
