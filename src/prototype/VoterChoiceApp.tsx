@@ -1509,8 +1509,16 @@ function AppFooter({ compact }: { compact?: boolean }) {
    Maps to: src/components/ConcernInterpretation.tsx (one row
    of the interpretation list). The repo today is read-only —
    editing affordances are part of Phase 6 (mid-flow amend).
-   Reorder/rename/remove are design-delta in this prototype. */
-function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemove, onReorderTo }) {
+   Reorder/rename/remove are design-delta in this prototype.
+
+   `rowVariant="canvas"` is an opt-in compact-density modifier (card
+   "issues card density — match canvas's IqRow"): the legacy ballot-mode
+   call sites below never pass it, so their look is unchanged; only
+   IssueReviewCard (redesign/IssueConversation.tsx, the shared card behind
+   IntakeView/IntakeLocked/EditIssuesModal) sets it, and the compact CSS
+   itself is scoped `.bf-app .theme-row--canvas` + desktop-only so it never
+   fights the already-tuned mobile/tablet stacked layouts below. */
+function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemove, onReorderTo, rowVariant }) {
   const { t } = useI18n();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(issue.interpretation);
@@ -1575,7 +1583,7 @@ function IssueRow({ issue, index, total, onMoveUp, onMoveDown, onRename, onRemov
   return (
     <div
       ref={rowRef}
-      className={"theme-row" + (dragging ? ' dragging' : '') + (dropIdx === index && !dragging ? ' drop-target' : '')}
+      className={"theme-row" + (rowVariant ? ` theme-row--${rowVariant}` : '') + (dragging ? ' dragging' : '') + (dropIdx === index && !dragging ? ' drop-target' : '')}
       onPointerDown={onHandleDown}
       onPointerMove={onHandleMove}
       onPointerUp={onHandleUp}

@@ -296,6 +296,7 @@ export function IssueReviewCard({ issues, setIssues, footer = null }) {
           issue={iss}
           index={i}
           total={issues.length}
+          rowVariant="canvas"
           onMoveUp={() => moveIssue(i, -1)}
           onMoveDown={() => moveIssue(i, 1)}
           onReorderTo={reorderIssue}
@@ -394,15 +395,15 @@ export function IssueConversation({
             ))}
           </div>
         )}
-        <textarea
-          placeholder={
-            issues.length === 0 ? placeholder : t("intake.placeholderFollow")
-          }
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          data-testid="issue-convo-input"
-        />
-        <div className="row">
+        <div className="co-composer">
+          <textarea
+            placeholder={
+              issues.length === 0 ? placeholder : t("intake.placeholderFollow")
+            }
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            data-testid="issue-convo-input"
+          />
           <button
             className="send"
             onClick={() => send(draft)}
