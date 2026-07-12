@@ -512,6 +512,9 @@ const TRANSLATIONS = {
         '{small}% small donors · {large}% large donors · {pac}% PACs',
       hide: 'Hide',
       showDetails: 'Show details',
+      fundersAndInfluence: 'Funders & influence',
+      hideFunders: 'Hide funders',
+      keyVotesLabel: 'key votes',
       worthKeepingUndo: 'Worth keeping — undo',
       worthKeeping: 'Worth keeping',
       replacingWith: 'Replacing with {name} — change',
@@ -1058,6 +1061,9 @@ const TRANSLATIONS = {
         '{small}% pequeños donantes · {large}% grandes donantes · {pac}% PACs',
       hide: 'Ocultar',
       showDetails: 'Ver detalles',
+      fundersAndInfluence: 'Financiadores e influencia',
+      hideFunders: 'Ocultar financiadores',
+      keyVotesLabel: 'votos clave',
       worthKeepingUndo: 'Vale la pena mantener — deshacer',
       worthKeeping: 'Vale la pena mantener',
       replacingWith: 'Reemplazando con {name} — cambiar',
@@ -1956,8 +1962,14 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
    toggle are this prototype's design-delta.
 
    props:
-     candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue */
-function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research }) {
+     candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue
+     rowVariant: 'legacy' (default, CandidateCard/ballot flow — stacked
+       name+bar+prose row with a % badge) | 'canvas' (RepCard/results flow —
+       canvas's one-line .align-row shape: name | bar | fraction, no per-row
+       %; see AlignmentIssueRow below). Kept as an opt-in prop rather than a
+       global reshape so the legacy ballot card (still covered by
+       prototype-core.spec.ts) renders byte-identical. */
+function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research, rowVariant = 'legacy' }) {
   const { t } = useI18n();
   // ── Pillar 2: research_pending + web_search scores rendering ─────────────
   // Three cases for no-record candidates:
@@ -2024,6 +2036,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
               isOpen={expandedIssue === issue.canonicalIssue}
               onToggle={() => onToggleIssue(issue.canonicalIssue)}
               anonCtx={anonCtx}
+              rowVariant={rowVariant}
             />
           ))}
         </div>
@@ -2067,13 +2080,31 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
     return { issue: iss, score };
   });
   const overallPct = computeOverallAlignmentPct(alignmentEntry, userIssues);
+  // Pooled kept/total across scored issues — supplementary to overallPct
+  // (an average of per-issue %s, unchanged), purely for the canvas header's
+  // "58% · 7/12 key votes" fraction (screens-results.jsx:232). Doesn't
+  // redefine what the headline % means anywhere else in the app.
+  const scoredForFraction = rowVariant === 'canvas'
+    ? rowsData.filter(({ score }) => score && score.total > 0)
+    : [];
+  const overallFrac = scoredForFraction.length ? {
+    kept: scoredForFraction.reduce((n, { score }) => n + score.kept, 0),
+    total: scoredForFraction.reduce((n, { score }) => n + score.total, 0),
+  } : null;
 
   return (
     <div className="cv2-issues">
       <div className="cv2-block-head">
         <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
         {overallPct !== null && (
-          <div className="overall"><b>{overallPct}%</b> avg</div>
+          <div className="overall">
+            <b>{overallPct}%</b>
+            {rowVariant === 'canvas' && overallFrac ? (
+              <> · <span className="cv2-overall-frac">{overallFrac.kept}/{overallFrac.total} {t('repCard.keyVotesLabel')}</span></>
+            ) : (
+              <> avg</>
+            )}
+          </div>
         )}
       </div>
 
@@ -2086,6 +2117,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           isOpen={expandedIssue === issue.canonicalIssue}
           onToggle={() => onToggleIssue(issue.canonicalIssue)}
           anonCtx={anonCtx}
+          rowVariant={rowVariant}
         />
       ))}
     </div>
@@ -2239,7 +2271,7 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
 }
 
 /* ── single row of the banner (private to AlignmentScoreBanner) ── */
-function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx }) {
+function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx, rowVariant = 'legacy' }) {
   const { t } = useI18n();
   if (score && score.sourceType === 'web_search') {
     return (
@@ -2247,10 +2279,45 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx 
     );
   }
 
-  // ── voting_record branch (original) ──────────────────────────────────────
+  // ── voting_record branch ──────────────────────────────────────────────
   const pct = score && score.total > 0 ? Math.round((score.kept / score.total) * 100) : null;
   const tone = pct === null ? '' : pct >= 65 ? '' : pct >= 50 ? 'mid' : 'low';
   const hasVotes = !!(score?.contributingVotes?.length);
+
+  // canvas shape (RepCard only) — one line: name | bar | fraction, caret
+  // on expandable rows, no per-row % (screens.css:240-246). The legacy
+  // stacked name/bar/prose + % badge shape below renders unchanged for the
+  // ballot CandidateCard.
+  if (rowVariant === 'canvas') {
+    const fraction = score && score.total > 0 ? `${score.kept}/${score.total}` : null;
+    return (
+      <div className={"cv2-iss-row cv2-iss-row--canvas" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")} data-testid="voting-record-alignment-row">
+        <button className="cv2-iss-head" onClick={hasVotes ? onToggle : undefined} aria-expanded={isOpen}>
+          <span className="cv2-iss-name">{issue.interpretation}</span>
+          <div className="cv2-bar"><div className={"fill " + tone} style={{ width: (pct || 0) + '%' }} /></div>
+          <span className="cv2-iss-frac">
+            {fraction || <small>n/a</small>}
+            {hasVotes && <span className="chev">{isOpen ? '▴' : '▾'}</span>}
+          </span>
+        </button>
+
+        {score?.notice && (
+          <div className="cv2-iss-notice" role="note" style={{
+            fontSize: '11px',
+            color: 'var(--ink-3, #888)',
+            fontStyle: 'italic',
+            padding: '2px 10px 6px',
+          }}>
+            {score.notice}
+          </div>
+        )}
+
+        {isOpen && hasVotes && (
+          <AlignmentDrilldown score={score} candidate={candidate} anonCtx={anonCtx} />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={"cv2-iss-row" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")} data-testid="voting-record-alignment-row">

@@ -778,26 +778,14 @@ export function RepCard({
           }
           anonCtx={anonCtx}
           research={research}
+          rowVariant="canvas"
         />
       )}
 
       {/* Full voting record — the restored AllVotesPanel (every curated vote
-          across all issues, filterable, with roll-call links). Same primary
-          "evidence" CTA placement the design's CandidateCard used. */}
-      {!seat.researched && totalVotes > 0 && (
-        <div className="cv2-see-all-bridge">
-          <button
-            className="cv2-see-all-inline"
-            onClick={() => setAllVotesOpen(true)}
-            data-testid="see-full-record"
-          >
-            {t("repCard.seeFullRecord", {
-              n: totalVotes,
-              votes: t(totalVotes === 1 ? "repCard.vote" : "repCard.votes"),
-            })}
-          </button>
-        </div>
-      )}
+          across all issues, filterable, with roll-call links). Its trigger
+          now lives in the shared .card-evidence row below, next to
+          "Funders & influence" (screens-results.jsx:283-286). */}
       <AllVotesPanel
         open={allVotesOpen}
         candidate={cand}
@@ -807,83 +795,49 @@ export function RepCard({
         onClose={() => setAllVotesOpen(false)}
       />
 
-      {/* Money trail — same progressive-disclosure contract as CandidateCard. */}
+      <CanContextSection canContext={seat.canContext} />
+
+      <EligibilityNote2 e={seat.eligibility} />
+
+      {/* Money trail — canvas's .money-line: a static glance (total +
+          mix teaser, no click affordance, no bar duplicate — that's the
+          shared .card-evidence "Funders & influence" button below) that
+          expands into the same FunderBars panel canvas's FunderPanel
+          shows (screens-results.jsx:258-281). */}
       <div className={"cv2-disclose " + (moneyOpen ? "open" : "")}>
-        <button
-          className="cv2-disclose-toggle"
-          aria-expanded={moneyOpen}
-          aria-controls={`mt2-${cand.id}`}
-          onClick={() => setMoneyOpen((v) => !v)}
-        >
-          <span className="cv2-disclose-lab">
-            <span className="cv2-disclose-eyebrow">
-              {t("repCard.fundingInfluence")}
-            </span>
-            <span className="cv2-disclose-title">
-              {t("repCard.moneyTrail")}
-            </span>
-            <span className="cv2-disclose-summary">
-              {/* Segmented small/large/pac mini-bar — same real fundingMix
-                  data cv2-disclose-mix already renders below, just given a
-                  visual (canvas's cd-bars/MiniBars), always-visible ahead of
-                  the collapsed disclosure body. */}
-              {cand.fundingMix && (
-                <span className="cv2-mini-fundbar" aria-hidden="true">
-                  <i
-                    className="small"
-                    style={{ width: cand.fundingMix.small + "%" }}
-                  />
-                  <i
-                    className="large"
-                    style={{ width: cand.fundingMix.large + "%" }}
-                  />
-                  <i
-                    className="pac"
-                    style={{ width: cand.fundingMix.pac + "%" }}
-                  />
-                </span>
-              )}
-              {typeof cand.totalRaised === "number" && (
-                <span className="cv2-disclose-stat">
-                  <b>{formatDollars(cand.totalRaised)}</b>{" "}
-                  {t("repCard.raisedWord")}
-                </span>
-              )}
-              {/* Collapsed glance — "Raised vs. the median". Renders the dollar
-                  amount only (no fabricated baseline) when peerComparison is
-                  null. */}
-              {typeof cand.totalRaised === "number" &&
-                cand.peerComparison != null && (
-                  <MedianChip
-                    raised={cand.totalRaised}
-                    peer={cand.peerComparison}
-                  />
-                )}
-              {cand.fundingMix && (
-                <span className="cv2-disclose-mix">
-                  {t("repCard.smallDonorsMix", {
-                    small: cand.fundingMix.small,
-                    large: cand.fundingMix.large,
-                    pac: cand.fundingMix.pac,
-                  })}
-                </span>
-              )}
-            </span>
+        <div className="cv2-disclose-lab cv2-money-glance">
+          <span className="cv2-disclose-eyebrow">
+            {t("repCard.fundingInfluence")}
           </span>
-          <span className="cv2-disclose-chev" aria-hidden="true">
-            {moneyOpen ? (
-              <>
-                {t("repCard.hide")}{" "}
-                <span className="cv2-disclose-arrow">▴</span>
-              </>
-            ) : (
-              <>
-                {t("repCard.showDetails")}{" "}
-                <span className="cv2-disclose-arrow">▾</span>
-              </>
+          <span className="cv2-disclose-title">{t("repCard.moneyTrail")}</span>
+          <span className="cv2-disclose-summary">
+            {typeof cand.totalRaised === "number" && (
+              <span className="cv2-disclose-stat">
+                <b>{formatDollars(cand.totalRaised)}</b>{" "}
+                {t("repCard.raisedWord")}
+              </span>
+            )}
+            {/* Collapsed glance — "Raised vs. the median". Renders the dollar
+                amount only (no fabricated baseline) when peerComparison is
+                null. */}
+            {typeof cand.totalRaised === "number" &&
+              cand.peerComparison != null && (
+                <MedianChip
+                  raised={cand.totalRaised}
+                  peer={cand.peerComparison}
+                />
+              )}
+            {cand.fundingMix && (
+              <span className="cv2-disclose-mix">
+                {t("repCard.smallDonorsMix", {
+                  small: cand.fundingMix.small,
+                  large: cand.fundingMix.large,
+                  pac: cand.fundingMix.pac,
+                })}
+              </span>
             )}
           </span>
-        </button>
+        </div>
         <div
           id={`mt2-${cand.id}`}
           className="cv2-disclose-body"
@@ -915,9 +869,42 @@ export function RepCard({
         </div>
       </div>
 
-      <CanContextSection canContext={seat.canContext} />
-
-      <EligibilityNote2 e={seat.eligibility} />
+      {/* Card evidence — canvas's shared row: "See all votes →" and
+          "Funders & influence ▾" sit together, directly above the verdict
+          buttons (screens-results.jsx:283-286), one source of truth instead
+          of two disclosures scattered at different card depths. */}
+      <div className="card-evidence">
+        {!seat.researched && totalVotes > 0 && (
+          <button
+            className="cv2-see-all-inline"
+            onClick={() => setAllVotesOpen(true)}
+            data-testid="see-full-record"
+          >
+            {t("repCard.seeFullRecord", {
+              n: totalVotes,
+              votes: t(totalVotes === 1 ? "repCard.vote" : "repCard.votes"),
+            })}
+          </button>
+        )}
+        <button
+          className="cv2-disclose-chev"
+          aria-expanded={moneyOpen}
+          aria-controls={`mt2-${cand.id}`}
+          onClick={() => setMoneyOpen((v) => !v)}
+        >
+          {moneyOpen ? (
+            <>
+              {t("repCard.hideFunders")}{" "}
+              <span className="cv2-disclose-arrow">▴</span>
+            </>
+          ) : (
+            <>
+              {t("repCard.fundersAndInfluence")}{" "}
+              <span className="cv2-disclose-arrow">▾</span>
+            </>
+          )}
+        </button>
+      </div>
 
       {/* The old inline "candidates simply listed below the rep"
           (ChallengersStrip) is retired: choosing "Time to replace" now opens
