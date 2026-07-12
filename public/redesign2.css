@@ -3105,7 +3105,8 @@
   font-family: var(--serif);
 }
 .rep-card .cv2-block-head .overall b {
-  font-size: 27px;
+  /* canvas .at-pct: serif 30px (screens.css:248) — ported verbatim. */
+  font-size: 30px;
   font-weight: 600;
   color: var(--civic-2);
 }
@@ -3121,6 +3122,14 @@
 .rep-card .cv2-iss-row.open {
   margin: 0 -16px;
   padding: 0 16px;
+}
+/* canvas's .align-row.sel: a brand-soft highlight on the open row
+   (screens.css:503), scoped to the canvas rowVariant only — the legacy
+   ballot CandidateCard's open-row background stays the plain --paper
+   inset-rail treatment above. */
+.rep-card .cv2-iss-row--canvas.open {
+  background: var(--civic-soft);
+  border-radius: 8px;
 }
 .rep-card .cv2-iss-head {
   padding: 9px 0;
@@ -3161,11 +3170,14 @@
    .topic/.meta/.pct shape above (they render directional badges, not a
    kept/total fraction), so those rules stay in place. */
 .rep-card .cv2-iss-row--canvas .cv2-iss-head {
-  grid-template-columns: 1fr 84px 44px;
-  gap: 10px;
+  /* canvas .align-row grid: 1fr 96px 40px (screens.css:253) — ported
+     verbatim; was 84px/44px, a hand-approximation that drifted. */
+  grid-template-columns: 1fr 96px 40px;
+  gap: 12px;
 }
 .rep-card .cv2-iss-row--canvas .cv2-iss-name {
-  font-size: 12.5px;
+  /* canvas .ai: 13px (screens.css:254) — was 12.5px. */
+  font-size: 13px;
   font-weight: 600;
   color: var(--ink);
   min-width: 0;
@@ -3184,15 +3196,23 @@
   gap: 3px;
   white-space: nowrap;
 }
+/* canvas caret affordance (screens.css:504-505): open row = brand-colored
+   ▾, closed expandable rows = dim ▸. Direction + dim class are set in the
+   JSX (VoterChoiceApp.tsx's AlignmentIssueRow, canvas branch). */
 .rep-card .cv2-iss-row--canvas .cv2-iss-frac .chev {
-  font-size: 9px;
+  font-size: 8px;
   color: var(--civic);
+  margin-left: 1px;
+}
+.rep-card .cv2-iss-row--canvas .cv2-iss-frac .chev.dim {
+  color: var(--ink-3);
 }
 .rep-card .cv2-block-head .overall .cv2-overall-frac {
+  /* canvas .at-frac: mono 11px, ink-3 (screens.css:251) — was 12px/ink-2. */
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 600;
-  color: var(--ink-2);
+  color: var(--ink-3);
 }
 .rep-card .cv2-iss-head .cv2-ws-badge {
   font-size: 8.5px;
@@ -3202,6 +3222,33 @@
 .rep-card .cv2-iss-head .cv2-ws-conf {
   font-size: 8.5px;
   padding: 1px 4px;
+}
+
+/* ---- "See all votes" — canvas's .see-all/.see-all-btn (screens.css:
+   506-507), ported verbatim. Lives INSIDE the align-band (.cv2-issues),
+   the last row after the issue list — discovery with its data, not a
+   detached row (Round-4 ask). Canvas authored these classes but never
+   wired them into its own JSX (still uses the old card-evidence row);
+   wired here per the Round-4 direction. */
+.rep-card .cv2-see-all {
+  margin-top: 12px;
+  padding-top: 11px;
+  border-top: 1px dashed var(--rule-2);
+}
+.rep-card .cv2-see-all-btn {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--civic);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+.rep-card .cv2-see-all-btn:hover {
+  color: var(--civic-2);
 }
 
 /* ---- funding — box it like canvas's .cd-money. ---- */
@@ -3215,9 +3262,10 @@
 .rep-card .cv2-disclose-eyebrow {
   font-size: 9.5px;
 }
-/* The money glance is now display-only (the click affordance moved to
-   .card-evidence's "Funders & influence" button) — same padding the old
-   .cv2-disclose-toggle button used, no cursor/hover feedback. */
+/* The whole money glance is the disclosure trigger — canvas's clickable
+   .money-line + .money-disclose chevron affordance (screens.css:423,429),
+   not a separate button in a detached row below (Round-4 ask). Same
+   padding the old .cv2-disclose-toggle button used. */
 .cv2-money-glance {
   padding: 18px 24px;
 }
@@ -3232,19 +3280,26 @@
 
 /* ---- funding glance row — canvas's compact .money-top shape (mono
    FUNDING label + proportional small/large/PAC bar + total $, screens.css:
-   253-259) instead of the taller eyebrow/title/mix-text stack. MedianChip
-   rides as a second line, width:100% forces it to wrap under the row-1
-   content within this flex-wrap row (matching canvas's dashed-rule
-   .money-detail separator, screens.css:406-408) — the flex-direction
-   override is needed because the unscoped .cv2-disclose-lab base rule
-   (prototype-c.css) sets flex-direction: column, which this row layout
-   must win. ---- */
+   253-259) instead of the taller eyebrow/title/mix-text stack. The legend,
+   teaser, and median chip ride as further width:100% lines that wrap under
+   the row-1 content within this flex-wrap row (matching canvas's
+   dashed-rule .money-detail separator, screens.css:406-408). Rendered as a
+   real <button> now (was a plain div) — the flex-direction/button-reset
+   overrides are needed because the unscoped .cv2-disclose-lab base rule
+   (prototype-c.css) sets flex-direction: column and no button reset. ---- */
 .rep-card .rc-money-glance {
   display: flex;
   flex-direction: row;
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+  width: 100%;
+  background: none;
+  border: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
 }
 .rep-card .rc-money-lab {
   font-family: var(--mono);
@@ -3280,6 +3335,60 @@
   color: var(--ink);
   white-space: nowrap;
 }
+/* canvas's .money-disclose chevron affordance (screens.css:429) — the
+   explicit "FUNDERS & INFLUENCE ▾" text living inside the glance itself,
+   pinned to the end of row 1 via margin-left:auto (so it still reads at
+   the right edge even when .rc-money-bars is absent, e.g. no fundingMix). */
+.rep-card .rc-money-disclose {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--civic);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  white-space: nowrap;
+  margin-left: auto;
+}
+.rep-card .rc-money-disclose .chev {
+  transition: transform 0.15s;
+}
+/* Compact legend (dot + % + word) under the glance bars — Muxin's explicit
+   Round-4 extension BEYOND canvas: canvas's collapsed .money-line carries
+   no legend at all (screens.css comment "money-top bar + $ total +
+   .money-detail" — no fp-legend), so "what orange vs. red means" only
+   surfaced once the panel was expanded. Shrunk fp-legend pattern
+   (screens.css:460-467): swatch dot + bold % + one-word label. */
+.rep-card .rc-money-legend {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 11px;
+  color: var(--ink-2);
+}
+.rep-card .rc-money-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.rep-card .rc-money-legend i.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.rep-card .rc-money-legend i.dot.small {
+  background: var(--rc-keep);
+}
+.rep-card .rc-money-legend i.dot.large {
+  background: var(--gold);
+}
+.rep-card .rc-money-legend i.dot.pac {
+  background: var(--vote-red);
+}
 /* canvas's .money-detail/.md-who teaser sentence (screens.css:410-412) —
    same dashed-rule second-line treatment as .rc-money-median below, since
    both are "detail" rows stacked under the money-top glance row. */
@@ -3300,6 +3409,12 @@
   padding-top: 8px;
   margin-top: 2px;
   border-top: 1px dashed var(--rule-2);
+}
+/* The reworded median chip ("≈Nx the typical <office> campaign") runs
+   noticeably longer than the old bare "N× median" — let it wrap instead of
+   forcing a nowrap pill wide enough to overflow on mobile. */
+.rep-card .rc-money-median .median-chip {
+  white-space: normal;
 }
 
 /* ---- industry breakdown (canvas rowVariant) — one progress-bar-per-row
@@ -3357,26 +3472,123 @@
   text-align: right;
 }
 
-/* ---- card evidence row — canvas's shared "See all votes → · Funders &
-   influence ▾" row (screens-results.jsx:283-286): both evidence CTAs sit
-   together, directly above the verdict buttons. ---- */
-.card-evidence {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  flex-wrap: wrap;
-  padding: 6px 20px 16px;
+/* ---- PAC-term tooltip (canvas rowVariant) — the PAC definition moves off
+   an always-visible paragraph and onto a keyboard-focusable tooltip term in
+   the legend (screens.css .pac-term/.pac-tip, lines 468-474), ported
+   verbatim. Scoped under .rep-card so the legacy ballot CandidateCard's
+   always-visible .cv2-pac-gloss paragraph is untouched. ---- */
+.rep-card .pac-term {
+  position: relative;
+  color: var(--civic);
+  font-weight: 600;
+  border-bottom: 1px dotted var(--civic);
+  cursor: help;
+  outline: none;
 }
-@media (max-width: 600px) {
-  .card-evidence {
-    padding: 6px 18px 14px;
-  }
-  .card-evidence .cv2-see-all-inline,
-  .card-evidence .cv2-disclose-chev {
-    flex: 1 1 160px;
-    justify-content: center;
-  }
+.rep-card .pac-tip {
+  position: absolute;
+  left: -6px;
+  top: calc(100% + 9px);
+  width: 270px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 11.5px;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  padding: 10px 13px;
+  border-radius: 9px;
+  box-shadow: 0 16px 36px -18px oklch(0.2 0.03 255 / 0.3);
+  z-index: 30;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-3px);
+  transition:
+    opacity 0.12s,
+    transform 0.12s;
+  pointer-events: none;
+}
+.rep-card .pac-tip b {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--civic);
+  margin-right: 6px;
+}
+.rep-card .pac-term:hover .pac-tip,
+.rep-card .pac-term:focus .pac-tip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+/* ---- named-issue-PAC pills (canvas rowVariant) — screens.css .fp-pacs/
+   .fp-pac (lines 486-488), ported verbatim, replacing the legacy stacked
+   card (full legal name + advocates line + boxed conflict flag) with one
+   compact pill + one compact conflict line. Content is kept (Muxin: this
+   repo's named-PAC callout is more thorough than canvas's, which doesn't
+   have one), only the form shrinks. ---- */
+.rep-card .fp-pacs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.rep-card .fp-pac-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 100%;
+}
+.rep-card .fp-pac {
+  font-size: 12px;
+  color: var(--ink-2);
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  border-radius: 999px;
+  padding: 6px 12px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.rep-card .fp-pac .sw {
+  align-self: center;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.rep-card .fp-pac b {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--civic);
+}
+/* compact one-line conflict/alignment note under the pill (was a padded,
+   bordered box — .cv2-pac-flag in the legacy stacked card). */
+.rep-card .fp-pac-flag {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 11px;
+  padding: 0 4px;
+}
+.rep-card .fp-pac-flag .ic {
+  flex-shrink: 0;
+}
+.rep-card .fp-pac-flag.align {
+  color: var(--rc-keep);
+}
+.rep-card .fp-pac-flag.conflict {
+  color: var(--vote-red);
+}
+.rep-card .fp-pac-flag .msg b {
+  color: inherit;
+  font-weight: 700;
 }
 
 /* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic

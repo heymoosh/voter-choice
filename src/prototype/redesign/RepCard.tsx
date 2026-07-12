@@ -739,27 +739,6 @@ export function RepCard({
     realLastName: cand.name?.split(" ").pop(),
     alias: blindDisplayLabel,
   };
-  // Whole-field money-gap scale rows — every other FEC filer for this seat
-  // with a real filed total, highest first. Honest-data: a challenger with
-  // no total_receipts row is omitted, never fabricated as $0. Names are
-  // never blinded here — FEC filers are different people from the (possibly
-  // blinded) sitting member, same as ChallengersStrip/HeadToHead.
-  const moneyGapField = (seat.challengers || [])
-    .filter((c) => typeof c.totalReceipts === "number" && c.totalReceipts > 0)
-    .sort((a, b) => b.totalReceipts - a.totalReceipts)
-    .map((c) => {
-      const chParty = getPartyMeta2(t)[c.party] || {
-        name: c.party || t("repCard.partyUnknown"),
-        code: "?",
-        pipClass: "ind",
-      };
-      return {
-        name: c.name,
-        raised: c.totalReceipts,
-        pip: chParty.pipClass,
-        tag: t("repCard.challengerTag", { party: chParty.name }),
-      };
-    });
   const last = cand.name.split(" ").pop();
   const notUp2026 = seat.nextElection?.onBallot2026 === false;
 
@@ -821,13 +800,16 @@ export function RepCard({
           anonCtx={anonCtx}
           research={research}
           rowVariant="canvas"
+          totalVotes={totalVotes}
+          onSeeAllVotes={() => setAllVotesOpen(true)}
         />
       )}
 
       {/* Full voting record — the restored AllVotesPanel (every curated vote
           across all issues, filterable, with roll-call links). Its trigger
-          now lives in the shared .card-evidence row below, next to
-          "Funders & influence" (screens-results.jsx:283-286). */}
+          now lives INSIDE the align-band itself (canvas's .see-all/.see-all-btn,
+          wired via AlignmentScoreBanner) — discovery lives with its data,
+          not in a detached row (Round-4 ask, 2026-07-12). */}
       <AllVotesPanel
         open={allVotesOpen}
         candidate={cand}
@@ -841,19 +823,27 @@ export function RepCard({
 
       <EligibilityNote2 e={seat.eligibility} />
 
-      {/* Money trail — canvas's .money-line: a static glance (mono FUNDING
-          label + proportional small/large/PAC bar + total $, canvas's
-          compact .money-top one-liner — screens-results.jsx:271-280) that
-          expands into the same FunderBars panel canvas's FunderPanel
-          shows (screens-results.jsx:258-281). The MoneyTeaser sentence
-          restores canvas's .money-detail/.md-who line ("46% PAC-funded ·
-          top: …", screens-results.jsx:265-266/277-278), dropped when the
-          glance was compacted to one line. MedianChip rides alongside it
-          as a further second line (dashed-rule separated, like canvas's
-          .money-detail) so the real median-comparison feature isn't lost
-          in the compacting either. */}
+      {/* Money trail — canvas's .money-line, now the whole glance is the
+          disclosure trigger (canvas's .money-disclose chevron affordance,
+          screens.css:429) instead of a separate button in a detached row
+          below (Round-4 ask, 2026-07-12 — the old .card-evidence row is
+          dropped, see the PR body's deviations section). The compact
+          legend (dot+%+word) is a Round-4 deviation beyond canvas: canvas's
+          collapsed .money-line carries no legend at all, and reading "what
+          orange vs. red means" required opening the panel first. The
+          MoneyTeaser sentence restores canvas's .money-detail/.md-who line
+          ("46% PAC-funded · top: …", screens-results.jsx:265-266/277-278).
+          MedianChip rides alongside as a further line with worded context
+          ("≈Nx the typical <office> campaign", canvas's .fp-peer pattern)
+          instead of the old context-free "N× median". */}
       <div className={"cv2-disclose " + (moneyOpen ? "open" : "")}>
-        <div className="cv2-disclose-lab cv2-money-glance rc-money-glance">
+        <button
+          type="button"
+          className="cv2-disclose-lab cv2-money-glance rc-money-glance"
+          aria-expanded={moneyOpen}
+          aria-controls={`mt2-${cand.id}`}
+          onClick={() => setMoneyOpen((v) => !v)}
+        >
           <span className="rc-money-lab">{t("repCard.fundingInfluence")}</span>
           {cand.fundingMix && (
             <span
@@ -877,6 +867,34 @@ export function RepCard({
               {formatDollars(cand.totalRaised)}
             </span>
           )}
+          <span className="rc-money-disclose">
+            {moneyOpen ? (
+              <>
+                {t("repCard.hideFunders")} <span className="chev">▴</span>
+              </>
+            ) : (
+              <>
+                {t("repCard.fundersAndInfluence")}{" "}
+                <span className="chev">▾</span>
+              </>
+            )}
+          </span>
+          {cand.fundingMix && (
+            <span className="rc-money-legend">
+              <span>
+                <i className="dot small" />
+                {cand.fundingMix.small}% {t("repCard.moneyLegendSmall")}
+              </span>
+              <span>
+                <i className="dot large" />
+                {cand.fundingMix.large}% {t("repCard.moneyLegendLarge")}
+              </span>
+              <span>
+                <i className="dot pac" />
+                {cand.fundingMix.pac}% {t("repCard.moneyLegendPacs")}
+              </span>
+            </span>
+          )}
           <MoneyTeaser
             fundingMix={cand.fundingMix}
             donorCoalition={cand.donorCoalition}
@@ -894,16 +912,19 @@ export function RepCard({
                 />
               </span>
             )}
-        </div>
+        </button>
         <div
           id={`mt2-${cand.id}`}
           className="cv2-disclose-body"
           hidden={!moneyOpen}
         >
-          {/* "Raised vs. the median" — the full scale REPLACES the flat
-              "≈3× the median House campaign" string. Renders nothing when
-              peerComparison is null, so the dollar-only FunderBars below stays
-              the honest fallback. */}
+          {/* "Raised vs. the median" — subject vs. the median axis ONLY.
+              Whole-field challenger rows move to the head-to-head duel
+              ("Everyone running for this seat") — the incumbent's own card
+              is about the incumbent, not every FEC filer for the seat
+              (Round-4 ask, 2026-07-12). Renders nothing when peerComparison
+              is null, so the dollar-only FunderBars below stays the honest
+              fallback. */}
           {cand.peerComparison != null &&
             typeof cand.totalRaised === "number" && (
               <MoneyGapScale
@@ -912,7 +933,6 @@ export function RepCard({
                   raised: cand.totalRaised,
                   pip: party.pipClass,
                 }}
-                field={moneyGapField}
                 peer={cand.peerComparison}
               />
             )}
@@ -925,43 +945,6 @@ export function RepCard({
             variant="canvas"
           />
         </div>
-      </div>
-
-      {/* Card evidence — canvas's shared row: "See all votes →" and
-          "Funders & influence ▾" sit together, directly above the verdict
-          buttons (screens-results.jsx:283-286), one source of truth instead
-          of two disclosures scattered at different card depths. */}
-      <div className="card-evidence">
-        {!seat.researched && totalVotes > 0 && (
-          <button
-            className="cv2-see-all-inline"
-            onClick={() => setAllVotesOpen(true)}
-            data-testid="see-full-record"
-          >
-            {t("repCard.seeFullRecord", {
-              n: totalVotes,
-              votes: t(totalVotes === 1 ? "repCard.vote" : "repCard.votes"),
-            })}
-          </button>
-        )}
-        <button
-          className="cv2-disclose-chev"
-          aria-expanded={moneyOpen}
-          aria-controls={`mt2-${cand.id}`}
-          onClick={() => setMoneyOpen((v) => !v)}
-        >
-          {moneyOpen ? (
-            <>
-              {t("repCard.hideFunders")}{" "}
-              <span className="cv2-disclose-arrow">▴</span>
-            </>
-          ) : (
-            <>
-              {t("repCard.fundersAndInfluence")}{" "}
-              <span className="cv2-disclose-arrow">▾</span>
-            </>
-          )}
-        </button>
       </div>
 
       {/* The old inline "candidates simply listed below the rep"

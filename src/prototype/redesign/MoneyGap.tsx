@@ -23,6 +23,7 @@
  */
 
 import React from "react";
+import { useI18n } from "../VoterChoiceApp";
 import {
   type PeerComparison,
   peerBand,
@@ -48,11 +49,22 @@ export interface MedianChipProps {
 
 /**
  * The inline chip as it sits on a card money line.
- * - peer present  → multiple + a tiny bar with a median tick.
+ * - peer present  → worded context (canvas's .fp-peer pattern: "≈N× the
+ *   typical <office> campaign") + a tiny bar with a median tick. Context-free
+ *   bare multiples ("25.1× median") don't say what they're measured against —
+ *   Round-4 ask (Muxin 2026-07-12).
  * - peer null but raised present → dollar amount only (honest, no baseline).
  * - nothing       → the "no median yet" pill.
  */
 export function MedianChip({ raised, peer }: MedianChipProps) {
+  // useI18n's context default types t as a 1-arg passthrough (VoterChoiceApp.tsx
+  // is largely @ts-nocheck); the real I18nProvider implementation takes an
+  // optional vars object for {placeholder} interpolation — cast locally so
+  // this well-typed file can call it the way every RepCard.tsx caller already
+  // does, without loosening the shared context's exported type.
+  const { t } = useI18n() as {
+    t: (key: string, vars?: Record<string, unknown>) => string;
+  };
   if (peer === null) {
     if (typeof raised === "number" && raised > 0) {
       // Honest dollar-only glance — NO fabricated baseline / multiple / scale.
@@ -72,11 +84,21 @@ export function MedianChip({ raised, peer }: MedianChipProps) {
   // Bar fill maps the multiple onto a 0–3× visual range (clamped), with a tick
   // at the median (1× sits at 1/3 of the bar — matches the design's 33%).
   const fillPct = Math.min((m / 3) * 100, 100);
+  // Whole-number multiple for the worded sentence (brief: "round to whole
+  // ×") — below the median a whole-number round trips to "0×", which reads
+  // as no money at all, so that band keeps formatMultiple's finer precision
+  // ("0.29×") instead.
+  const wordedMultiple = m >= 1 ? Math.round(m) + "×" : formatMultiple(m);
   return (
     <span
       className={"median-chip " + b}
       title={
-        formatUsd(raised) + " · " + formatMultiple(m) + " the typical campaign"
+        formatUsd(raised) +
+        " · " +
+        wordedMultiple +
+        " the typical " +
+        peer.office +
+        " campaign"
       }
     >
       <span className="mc-bar">
@@ -84,7 +106,8 @@ export function MedianChip({ raised, peer }: MedianChipProps) {
         <span className="mc-tick" />
       </span>
       <span>
-        <b>{formatMultiple(m)}</b> median
+        ≈<b>{wordedMultiple}</b>{" "}
+        {t("repCard.medianChipContext", { office: peer.office })}
       </span>
     </span>
   );
