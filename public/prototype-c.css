@@ -2173,7 +2173,8 @@ Bumps
     order: 2;
     gap: 4px;
   }
-  .cv2-vote-head .vote-badge {
+  .cv2-vote-head .vote-badge,
+  .cv2-vote-head .cv2-vote-align {
     order: 1;
     align-self: flex-start;
     margin: 0 0 0 0;
@@ -3670,6 +3671,50 @@ Bumps
 .bf-app .coldopen .co-input .hint,
 .amend-modal .co-input .hint {
   text-transform: none;
+}
+
+/* Canvas's IntakeAsk hero (.iq-ask kicker + h1 + intro paragraph,
+   intake.css:99-103) — only shown pre-conversation (IntakeView.tsx gates
+   it on convo.log.length === 0). Follows the same kick/star kicker idiom
+   as OrientationView's .ori-ey (redesign2.css:2661), sized per canvas's
+   own .iq-ask spec rather than reusing .ori-card's 40px. */
+.bf-app .coldopen .ask-hero {
+  margin-bottom: 22px;
+}
+.bf-app .coldopen .ask-hero .kick {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  font-weight: 600;
+  color: var(--brand);
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+.bf-app .coldopen .ask-hero h1 {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 1.08;
+  letter-spacing: -0.02em;
+  margin: 0 0 12px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.bf-app .coldopen .ask-hero h1 em {
+  font-style: italic;
+  color: var(--brand);
+}
+.bf-app .coldopen .ask-hero p {
+  font-family: var(--serif);
+  font-size: 17px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+  max-width: 560px;
 }
 
 /* ============ NoContestedView — upload-first redesign ============

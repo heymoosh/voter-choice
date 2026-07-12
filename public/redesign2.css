@@ -3048,6 +3048,13 @@
   font-size: 9.5px;
   letter-spacing: 0.08em;
 }
+/* Canvas variant's blind-mode subtext — a plain sentence (screens.css
+   .rcard-who .sub, line 228), not the uppercase pill tag above. */
+.rep-card .cv2-sub-plain {
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 1px;
+}
 .rep-card .cv2-reveal {
   background: var(--civic);
   border-color: var(--civic);
@@ -3075,9 +3082,21 @@
   border: 1px solid var(--rule-2);
   background: var(--paper);
 }
-.rep-card .cv2-block-head .lab {
-  font-size: 10px;
-  letter-spacing: 0.09em;
+/* prototype-c.css's "Section label hierarchy pass" (~line 2259) promotes
+   .cv2-block-head .lab to a big serif title with !important, for the
+   FUNDING/PACs/INDUSTRY section headers — but its selector also matches the
+   ALIGNMENT block's "Aligns with your issues" label (.cv2-issues is a
+   .cv2-block-head container too). Canvas (.at-lab, screens.css:234) keeps
+   that label as a small mono-uppercase overline, so re-win the cascade here
+   with matching !important weight, scoped to .cv2-issues only — the funding
+   block keeps the big serif treatment untouched. */
+.rep-card .cv2-issues .cv2-block-head .lab {
+  font-family: var(--mono) !important;
+  font-size: 10px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.09em !important;
+  text-transform: uppercase !important;
+  color: var(--ink-3) !important;
 }
 .rep-card .cv2-block-head .overall {
   font-family: var(--serif);
@@ -3086,6 +3105,15 @@
   font-size: 27px;
   font-weight: 600;
   color: var(--civic-2);
+}
+/* Canvas 2-tier good(green)/bad(red) semantic for the aggregate % (screens.css
+   .at-pct.good/.bad) — more specific than the unscoped rule above, which
+   remains the fallback when rowVariant isn't 'canvas' (no class present). */
+.rep-card .cv2-block-head .overall b.good {
+  color: var(--rc-keep);
+}
+.rep-card .cv2-block-head .overall b.bad {
+  color: var(--vote-red);
 }
 .rep-card .cv2-iss-row.open {
   margin: 0 -16px;
@@ -3106,6 +3134,16 @@
      override so the empty track reads white-palette, not civic-cream. */
   background: var(--rule-2);
 }
+/* Canvas 2-tier good(green)/bad(red) bar semantic (screens.css
+   .align-track i.good/.bad), scoped to the canvas rowVariant only — the
+   legacy 3-tier blue/gold/red scheme (.cv2-bar .fill.mid/.low in
+   prototype.css) stays untouched for the ballot CandidateCard. */
+.rep-card .cv2-iss-row--canvas .cv2-bar .fill.good {
+  background: var(--rc-keep);
+}
+.rep-card .cv2-iss-row--canvas .cv2-bar .fill.bad {
+  background: var(--vote-red);
+}
 .rep-card .cv2-iss-head .meta {
   font-size: 10px;
   margin-top: 3px;
@@ -3114,14 +3152,44 @@
   text-overflow: ellipsis;
   max-width: 280px;
 }
-.rep-card .cv2-iss-head .pct {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0;
+/* Canvas .align-row shape (voting_record rows only — RepCard always passes
+   rowVariant="canvas"): one line, three cells — name | bar | fraction, no
+   per-row %. ResearchedPositionRow / WebSearchAlignmentRow keep the
+   .topic/.meta/.pct shape above (they render directional badges, not a
+   kept/total fraction), so those rules stay in place. */
+.rep-card .cv2-iss-row--canvas .cv2-iss-head {
+  grid-template-columns: 1fr 84px 44px;
+  gap: 10px;
 }
-.rep-card .cv2-iss-head .pct small {
+.rep-card .cv2-iss-row--canvas .cv2-iss-name {
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rep-card .cv2-iss-row--canvas .cv2-iss-frac {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  white-space: nowrap;
+}
+.rep-card .cv2-iss-row--canvas .cv2-iss-frac .chev {
   font-size: 9px;
+  color: var(--civic);
+}
+.rep-card .cv2-block-head .overall .cv2-overall-frac {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-2);
 }
 .rep-card .cv2-iss-head .cv2-ws-badge {
   font-size: 8.5px;
@@ -3133,8 +3201,7 @@
   padding: 1px 4px;
 }
 
-/* ---- funding — box it like canvas's .cd-money, mini segmented bar always
-   visible ahead of the collapsed FunderBars detail ---- */
+/* ---- funding — box it like canvas's .cd-money. ---- */
 .rep-card .cv2-disclose {
   margin: 12px 18px 0;
   border-radius: 10px;
@@ -3145,30 +3212,168 @@
 .rep-card .cv2-disclose-eyebrow {
   font-size: 9.5px;
 }
-.rep-card .cv2-mini-fundbar {
-  display: inline-flex;
+/* The money glance is now display-only (the click affordance moved to
+   .card-evidence's "Funders & influence" button) — same padding the old
+   .cv2-disclose-toggle button used, no cursor/hover feedback. */
+.cv2-money-glance {
+  padding: 18px 24px;
+}
+@media (max-width: 600px) {
+  .cv2-money-glance {
+    padding: 16px 18px;
+  }
+}
+.cv2-disclose.open .cv2-money-glance {
+  border-bottom: 1px dashed var(--rule-2);
+}
+
+/* ---- funding glance row — canvas's compact .money-top shape (mono
+   FUNDING label + proportional small/large/PAC bar + total $, screens.css:
+   253-259) instead of the taller eyebrow/title/mix-text stack. MedianChip
+   rides as a second line, width:100% forces it to wrap under the row-1
+   content within this flex-wrap row (matching canvas's dashed-rule
+   .money-detail separator, screens.css:406-408) — the flex-direction
+   override is needed because the unscoped .cv2-disclose-lab base rule
+   (prototype-c.css) sets flex-direction: column, which this row layout
+   must win. ---- */
+.rep-card .rc-money-glance {
+  display: flex;
+  flex-direction: row;
   align-items: center;
-  height: 8px;
-  width: 84px;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.rep-card .rc-money-lab {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+  white-space: nowrap;
+}
+.rep-card .rc-money-bars {
+  flex: 1;
+  min-width: 80px;
+  display: flex;
+  height: 9px;
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid var(--rule-2);
-  margin-right: 8px;
-  vertical-align: -1px;
-  flex-shrink: 0;
 }
-.rep-card .cv2-mini-fundbar i {
-  display: block;
-  height: 100%;
-}
-.rep-card .cv2-mini-fundbar i.small {
+.rep-card .rc-money-bars i.small {
   background: var(--rc-keep);
 }
-.rep-card .cv2-mini-fundbar i.large {
+.rep-card .rc-money-bars i.large {
   background: var(--gold);
 }
-.rep-card .cv2-mini-fundbar i.pac {
+.rep-card .rc-money-bars i.pac {
   background: var(--vote-red);
+}
+.rep-card .rc-money-tot {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+/* canvas's .money-detail/.md-who teaser sentence (screens.css:410-412) —
+   same dashed-rule second-line treatment as .rc-money-median below, since
+   both are "detail" rows stacked under the money-top glance row. */
+.rep-card .rc-money-teaser {
+  width: 100%;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--rule-2);
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.rep-card .rc-money-teaser b {
+  color: var(--ink-2);
+  font-weight: 600;
+}
+.rep-card .rc-money-median {
+  width: 100%;
+  padding-top: 8px;
+  margin-top: 2px;
+  border-top: 1px dashed var(--rule-2);
+}
+
+/* ---- industry breakdown (canvas rowVariant) — one progress-bar-per-row
+   (screens-results.jsx's .fp-ind/.fi-track, screens.css:460-469) instead of
+   the legacy combined stacked bar + swatch-dot list. Rendered only when
+   FunderBars gets variant="canvas" (RepCard); scoped under .rep-card so the
+   ballot CandidateCard's .cv2-industry-bar/.cv2-industry-list markup and
+   styling are untouched. ---- */
+.rep-card .cv2-industry-rows {
+  display: grid;
+  gap: 7px;
+}
+.rep-card .cv2-industry-row {
+  display: grid;
+  grid-template-columns: 138px 1fr 56px 36px;
+  gap: 10px;
+  align-items: center;
+}
+.rep-card .cv2-industry-row .cir-name {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.rep-card .cv2-industry-row .cir-name small {
+  display: block;
+  font-size: 10px;
+  color: var(--ink-3);
+  white-space: normal;
+}
+.rep-card .cv2-industry-row .cir-track {
+  height: 8px;
+  border-radius: 999px;
+  background: var(--rule-2);
+  overflow: hidden;
+}
+.rep-card .cv2-industry-row .cir-track i {
+  display: block;
+  height: 100%;
+  background: var(--civic);
+  border-radius: 999px;
+}
+.rep-card .cv2-industry-row .cir-amt {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-2);
+  text-align: right;
+}
+.rep-card .cv2-industry-row .cir-pct {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: right;
+}
+
+/* ---- card evidence row — canvas's shared "See all votes → · Funders &
+   influence ▾" row (screens-results.jsx:283-286): both evidence CTAs sit
+   together, directly above the verdict buttons. ---- */
+.card-evidence {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 6px 20px 16px;
+}
+@media (max-width: 600px) {
+  .card-evidence {
+    padding: 6px 18px 14px;
+  }
+  .card-evidence .cv2-see-all-inline,
+  .card-evidence .cv2-disclose-chev {
+    flex: 1 1 160px;
+    justify-content: center;
+  }
 }
 
 /* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic
