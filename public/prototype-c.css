@@ -3856,15 +3856,23 @@ Bumps
   margin-top: 9px;
   text-align: center;
 }
+/* Literal port of the live canvas's `.iq-privacy .dot { color: var(--keep) }`.
+   `--keep` is only defined locally inside `.issue-locked-confirm`
+   (redesign2.css, IntakeLocked's own scope) — that already covers the
+   `.ready` composer's dot, but `.co-privacy` ALSO renders inside
+   IssueConversation's ordinary composer (`.issue-convo`, no local
+   mapping), where an unmapped `--keep` would resolve to nothing. Defining
+   it once here, on the shared `.coldopen` ancestor of both contexts,
+   keeps the token name identical to canvas's (`var(--keep)`, not a
+   substituted `var(--civic)`) while resolving correctly everywhere the
+   dot renders — mapped onto `--civic`, the same "alignment keep green"
+   token the .bf-app root block already documents as deliberately left
+   unmapped for exactly this purpose. */
+.bf-app .coldopen {
+  --keep: var(--civic);
+}
 .bf-app .co-privacy .dot {
-  /* Round-3.1 correction: the live canvas's `.iq-privacy .dot` reads
-     `var(--keep)` (a keep-GREEN dot), not brand navy — this section
-     originally shipped brand before the live source confirmed the
-     mismatch. `--keep` isn't defined at this scope (only locally inside
-     `.issue-locked-confirm`), so this uses `--civic` directly — the same
-     "alignment keep green" token the .bf-app root block itself documents
-     as deliberately left unmapped for exactly this purpose. */
-  color: var(--civic);
+  color: var(--keep);
 }
 
 /* ---------- Intake Round 3.1 — composer chrome parity ----------
@@ -3883,10 +3891,19 @@ Bumps
    Bleeds past .coldopen's own side padding (32px desktop / 18px at the
    ≤640px breakpoint — prototype.css:921, prototype-c.css:1868) so the
    band spans edge-to-edge of the content column the way canvas's footer
-   reaches its shell's full width — a structural adaptation, since
-   .coldopen's own container is wider than canvas's .iq shell; the PADDING
-   values inside the band (14px 30px) are ported literally from
-   `.iq-foot`'s own rule regardless of that width difference. Scoped to
+   reaches its shell's full width. ONE known, deliberate structural gap
+   from a literal port: canvas's `.iq` shell has no width cap at all (the
+   footer trench spans the full browser viewport, with only `.iq-foot-inner`
+   capped at 760px/centered inside it) — `.coldopen` itself is already
+   `max-width: 760px; margin: 0 auto` (prototype.css:919), so this bleed
+   only reaches that 760px column's own edges, not the true viewport edge.
+   Restructuring `.coldopen` to be viewport-width (matching AppNav above
+   it) is a page-shell-level change touching every other .coldopen view,
+   out of scope for a composer-chrome fix — the PADDING values inside the
+   band (14px 30px) are still ported literally from `.iq-foot`'s own rule,
+   and the composer's own content is already inherently 760px-capped/
+   centered by .coldopen's existing max-width, satisfying the
+   `.iq-foot-inner` requirement without a separate wrapper. Scoped to
    `.coldopen .co-input` only — IssueConversation's composer is ALSO reused
    inside .amend-modal (the edit-issues modal), where canvas keeps the
    plain, unbanded `.amd-composer` (screens-intake.jsx's EditIssues never
@@ -3914,6 +3931,9 @@ Bumps
   border-radius: 11px;
   padding: 13px 15px;
   min-height: 50px;
+  /* Literal 14px — the base .co-input textarea rule (prototype.css) sets
+     15px/line-height:1.55 for the legacy composer; both overridden here. */
+  font-size: 14px;
   line-height: 1.4;
   resize: none;
 }
@@ -3923,6 +3943,9 @@ Bumps
   border-radius: 11px;
   flex-shrink: 0;
   box-shadow: var(--shadow-soft);
+  /* Literal 14px — the base .co-input .send rule (prototype.css) sets
+     13.5px. */
+  font-size: 14px;
 }
 @media (max-width: 640px) {
   .bf-app .coldopen .co-input {
