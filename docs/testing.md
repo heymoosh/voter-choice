@@ -20,6 +20,43 @@ Heavy checks live in CI:
 - **Legacy ballot e2e** — nightly anti-rot run for the parked experience
   (`.github/workflows/e2e-legacy-nightly.yml`).
 
+## Duplication Ratchet
+
+`npm run dup:check` (a step inside the `test` job in
+`.github/workflows/test.yml`) runs jscpd over `src/**` and fails the PR when
+a change introduces NEW copy-paste duplication: a file pair sharing clones
+that isn't in the committed baseline
+(`scripts/quality/duplication-baseline.json`), or a baselined pair that
+grew. Pre-existing duplication is grandfathered — the gate answers "did
+this change copy code?", not "is the codebase clone-free?".
+
+- Fix path: extract the shared component/util instead of copying.
+- Intentional duplication (rare — e.g. a deliberate mid-migration fork):
+  `npm run dup:baseline`, commit the baseline diff, justify it in the PR.
+- When you REMOVE duplication, the gate passes and prints a nudge to run
+  `npm run dup:baseline` so the ratchet tightens — do it in the same PR.
+
+## Issue-Consistency Invariant
+
+The user's locked issues are one data set that must read coherently on
+every surface that renders "your issues". Two layers gate it:
+
+- `src/prototype/redesign/voteGroups.test.ts` — unit: the voting-history
+  panel's groups (`voteGroupsForUserIssues`) and the seat cards' rows
+  (`seatIssueAlignmentRows`) derive the same set/order/labels from the same
+  inputs.
+- `e2e/redesign-issue-consistency.spec.ts` — rendered: full-list surfaces
+  (intake review, IntakeLocked, ballot rail) show every locked issue;
+  seat-scoped surfaces (overview card, deep card, all-votes panel) agree
+  with each other exactly, with jurisdiction level scoping as the only —
+  and consistent — difference. Voteless/unmapped issues render honest
+  empty states; they never silently vanish from one surface while showing
+  on another.
+
+If a new surface renders the user's issues, derive it from the same
+selectors (`issuesForLevel` → `seatIssueAlignmentRows` /
+`voteGroupsForUserIssues`) and add it to that spec.
+
 ## Red-Phase Helper
 
 The universal `/tdd` command uses this repo-local adapter when it is present.

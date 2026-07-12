@@ -814,6 +814,7 @@ export function RepCard({
         open={allVotesOpen}
         candidate={cand}
         alignmentEntry={seat.alignmentEntry}
+        userIssues={userIssues}
         blindMode={blind}
         alias={blindDisplayLabel}
         onClose={() => setAllVotesOpen(false)}

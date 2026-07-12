@@ -18,6 +18,7 @@ import {
   getLowConfidenceExtraction, setLowConfidenceExtraction,
   getRealStateResources,
 } from "./data";
+import { voteGroupsForUserIssues } from "./redesign/voteGroups";
 import {
   loadAllRaceData,
   fetchBallotFromAddress,
@@ -4800,23 +4801,34 @@ function CompareModal({ open, race, issues, blindMode, revealedCandidates, onRev
    parity gate's own capture step (which waits on ".be-modal-overlay .av-panel")
    keep working; visual styling comes from the new avsheet-scoped rules in
    public/prototype.css, which override the legacy flat-list rules by specificity. */
-function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onClose }) {
+function AllVotesPanel({ open, candidate, alignmentEntry, userIssues, blindMode, alias, onClose }) {
   const [filter, setFilter] = useStateS('all');
   const [expandedKey, setExpandedKey] = useStateS(null);
   if (!open || !candidate) return null;
 
   const anonCtx = { blindMode, realLastName: candidateDisplayLast(candidate?.name || ''), alias };
 
-  const groups = (alignmentEntry?.scores || [])
-    .filter(score => (score.contributingVotes || []).length > 0)
-    .map(score => ({
-      canonicalIssue: score.canonicalIssue,
-      issueLabel: score.issueLabel,
-      kept: score.kept,
-      total: score.total,
-      votes: score.contributingVotes.map((v, i) => ({ ...v, key: score.canonicalIssue + '-' + i })),
-    }));
+  // Issue-consistency invariant: when the caller supplies the user's (already
+  // level-scoped) issue list, the panel's groups ARE that list — same set,
+  // order, and labels as the card's alignment rows behind it — with the
+  // member's votes joined on. An issue with no matched votes renders an
+  // honest empty state below instead of vanishing (voteGroups.ts). Callers
+  // without a user list (the legacy ballot experience's modal) keep the old
+  // derivation: one group per scored issue that carries votes.
+  const groups = (userIssues && userIssues.length)
+    ? voteGroupsForUserIssues(userIssues, alignmentEntry?.scores)
+    : (alignmentEntry?.scores || [])
+      .filter(score => (score.contributingVotes || []).length > 0)
+      .map(score => ({
+        key: score.canonicalIssue,
+        canonicalIssue: score.canonicalIssue,
+        issueLabel: score.issueLabel,
+        kept: score.kept,
+        total: score.total,
+        votes: score.contributingVotes.map((v, i) => ({ ...v, key: score.canonicalIssue + '-' + i })),
+      }));
   const allVotes = groups.flatMap(g => g.votes);
+  const votedGroupCount = groups.filter(g => g.votes.length > 0).length;
   const withCount = allVotes.filter(v => v.voteCast === 'with').length;
   const againstCount = allVotes.length - withCount;
   const openKey = expandedKey !== null ? expandedKey : (allVotes[0] ? allVotes[0].key : null);
@@ -4825,11 +4837,14 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
     if (filter === 'all') return true;
     if (filter === 'with') return v.voteCast === 'with';
     if (filter === 'against') return v.voteCast === 'against';
-    return g.canonicalIssue === filter;
+    return g.key === filter;
   };
+  // Voteless groups stay visible under "All" and under their own issue chip
+  // (that's the honest "no votes matched yet" state); the with/against
+  // filters only ever list groups with matching votes, same as before.
   const filteredGroups = groups
-    .map(g => ({ ...g, votes: g.votes.filter(v => matchesFilter(v, g)) }))
-    .filter(g => g.votes.length > 0);
+    .map(g => ({ ...g, votes: g.votes.filter(v => matchesFilter(v, g)), hadNoVotes: g.votes.length === 0 }))
+    .filter(g => g.votes.length > 0 || (g.hadNoVotes && (filter === 'all' || filter === g.key)));
 
   const headerName = blindMode ? alias : candidate.name;
 
@@ -4839,7 +4854,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
         <header className="av-head">
           <div className="av-htext">
             <div className="be-eyebrow av-eyebrow">{headerName} · all curated votes</div>
-            <h3>{allVotes.length} votes across {groups.length} of your issues</h3>
+            <h3>{allVotes.length} votes across {votedGroupCount} of your issues</h3>
           </div>
           <button className="be-x av-close" onClick={onClose} aria-label="Close">✕</button>
         </header>
@@ -4856,7 +4871,7 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
           </button>
           {groups.length > 0 && <span className="avf-sep" />}
           {groups.map(g => (
-            <button key={g.canonicalIssue} className={"avf av-filter " + (filter === g.canonicalIssue ? 'active' : '')} onClick={() => setFilter(g.canonicalIssue)}>
+            <button key={g.key} className={"avf av-filter " + (filter === g.key ? 'active' : '')} onClick={() => setFilter(g.key)}>
               {g.issueLabel}
             </button>
           ))}
@@ -4872,13 +4887,20 @@ function AllVotesPanel({ open, candidate, alignmentEntry, blindMode, alias, onCl
             const fracKept = hasKeptTotal ? g.kept : groupWith;
             const fracTotal = hasKeptTotal ? g.total : g.votes.length;
             return (
-              <div className="av-group" key={g.canonicalIssue}>
+              <div className="av-group" key={g.key}>
                 <div className="av-glab">
                   <span className="avg-name">{g.issueLabel}</span>
-                  <span className={"avg-frac " + (fracTotal > 0 && fracKept / fracTotal >= 0.5 ? 'good' : 'bad')}>
-                    {fracKept}/{fracTotal} with you
-                  </span>
+                  {fracTotal > 0 && (
+                    <span className={"avg-frac " + (fracKept / fracTotal >= 0.5 ? 'good' : 'bad')}>
+                      {fracKept}/{fracTotal} with you
+                    </span>
+                  )}
                 </div>
+                {g.hadNoVotes && (
+                  <p className="av-none" style={{ padding: '10px 0 4px', color: 'var(--ink-3)', fontStyle: 'italic' }}>
+                    No roll-call votes matched to this issue yet.
+                  </p>
+                )}
                 {g.votes.map(v => {
                   const isRowOpen = openKey === v.key;
                   const hasNum = (v.billTitle || '').includes(' · ');
