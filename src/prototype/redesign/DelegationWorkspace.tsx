@@ -23,7 +23,7 @@ import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { DelegationOverview } from "./DelegationOverview";
-import { issuesForLevel } from "./delegationData";
+import { issuesForLevel, issuesForSeatCard } from "./delegationData";
 
 function tierIntro(section, { t }) {
   const tr = t || ((k) => k);
@@ -443,7 +443,7 @@ export function DelegationWorkspace({
           <RepCard
             key={activeSeat.id}
             seat={activeSeat}
-            userIssues={issuesForLevel(userIssues, activeSeat.level)}
+            userIssues={issuesForSeatCard(userIssues, activeSeat)}
             stateCode={stateData?.stateCode || ""}
             research={researchFor ? researchFor(activeSeat.id) : undefined}
             blindMode={blindMode}
