@@ -60,14 +60,34 @@ export function IntakeView({
           <span className="step">{step}</span>
         </div>
 
+        {/* Canvas's IntakeAsk hero (kicker + h1 + intro paragraph) only
+            appears before the conversation has started — screens-intake.jsx's
+            IntakePropose/IntakeLocked never render it. Gated on log.length
+            so it drops away the moment the first exchange lands, same as
+            canvas. The intro paragraph reuses the existing openerP1 copy
+            (moved out of the AI bubble below) instead of duplicating the
+            same framing sentence in both places. */}
+        {convo.log.length === 0 && (
+          <div className="ask-hero">
+            <span className="kick">
+              <span className="star" aria-hidden="true">
+                ★
+              </span>{" "}
+              {t("intake.askKicker")}
+            </span>
+            <h1>
+              {t("intake.askH1Lead")}
+              <em>{t("intake.askH1Em")}</em>
+            </h1>
+            <p>{t("intake.openerP1")}</p>
+          </div>
+        )}
+
         <div className="msg ai">
           <div className="who">{t("intake.aiWho")}</div>
           <div className="bubble">
-            <p>{t("intake.openerP1")}</p>
-            <p style={{ marginTop: "10px" }}>
-              <b>{t("intake.openerP2Bold")}</b>
-              {t("intake.openerP2Rest")}
-            </p>
+            <b>{t("intake.openerP2Bold")}</b>
+            {t("intake.openerP2Rest")}
           </div>
         </div>
 
