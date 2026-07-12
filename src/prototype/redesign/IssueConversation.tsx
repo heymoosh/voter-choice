@@ -31,10 +31,16 @@ import { parseThemeExtraction } from "../../lib/prompts/parse-theme-extraction";
 import { parseThemeRefinement } from "../../lib/prompts/parse-theme-refinement";
 import { sendChatTurn } from "./chatTransport";
 import { stripChatMd } from "./chatBlocks";
+import { getIssueLevel } from "../../lib/canonicalIssues";
 
 /* Map LLM themes → the issue shape the UI + scoring consume (port of the
    shipped themesToIssues; IssueRow renders interpretation + quotes,
-   toApiIssues reads canonicalIssue/interpretation/stance). */
+   toApiIssues reads canonicalIssue/interpretation/stance). `level` reuses
+   the same canonical-issue→jurisdiction lookup delegationData's
+   decorateIssues applies post-lock (getIssueLevel), so the pill IssueRow
+   shows during the conversation always agrees with the workspace's own
+   FED/STATE tags. Custom issues with no canonicalIssue get no level —
+   IssueRow renders no pill rather than guessing (honest-data). */
 function themesToIssues(themes, sourceText) {
   return themes.map((t, i) => ({
     sourceType: "freeText",
@@ -44,6 +50,7 @@ function themesToIssues(themes, sourceText) {
     canonicalIssue: t.canonicalIssue,
     stance: t.stance,
     confidence: "clear",
+    level: t.canonicalIssue ? getIssueLevel(t.canonicalIssue) : undefined,
     quotes: (t.quotes || []).map((text, qi) => ({
       label: qi === 0 ? "example" : "and",
       text,
@@ -313,6 +320,12 @@ export function IssueConversation({
   onPrimary,
   /** Composer placeholder for the first message. */
   placeholder,
+  /** One-line sub-label under the primary button ("Your record review
+   *  starts right after") — only set by IntakeView, the actual first-time
+   *  lock moment. Its presence also drives the `.ready` capstone treatment
+   *  on the footer; EditIssuesModal's re-score "Apply" leaves it unset so
+   *  that button keeps its ordinary weight (review already started). */
+  primarySubLabel,
 }) {
   const { t } = useI18n();
   const { issues, setIssues, log, busy, error, draft, setDraft, send } = convo;
@@ -350,14 +363,17 @@ export function IssueConversation({
         issues={issues}
         setIssues={setIssues}
         footer={
-          <div className="th-foot">
+          <div className={"th-foot" + (primarySubLabel ? " ready" : "")}>
             <button
-              className="lock"
+              className={"lock" + (primarySubLabel ? " lock-cta" : "")}
               onClick={() => onPrimary(issues)}
               disabled={issues.length === 0 || busy}
               data-testid="issue-primary"
             >
-              {primaryLabel}
+              <span className="lock-label">{primaryLabel}</span>
+              {primarySubLabel && (
+                <span className="lock-sub">{primarySubLabel}</span>
+              )}
             </button>
           </div>
         }
@@ -387,7 +403,6 @@ export function IssueConversation({
           data-testid="issue-convo-input"
         />
         <div className="row">
-          <span className="hint">{t("intake.inputHint")}</span>
           <button
             className="send"
             onClick={() => send(draft)}
@@ -396,6 +411,9 @@ export function IssueConversation({
           >
             {t("intake.sendBtn")}
           </button>
+        </div>
+        <div className="co-privacy">
+          <span className="dot">●</span> {t("intake.inputHint")}
         </div>
         {error && (
           <div
