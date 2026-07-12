@@ -2786,6 +2786,18 @@ body[data-treatment="inkwell"] .proto-banner {
   font-size: 18px;
   font-weight: 600;
 }
+/* Research-provenance caveat ("Based on public statements — not a voting
+   record") shown alongside the block-head label when AlignmentScoreBanner
+   falls back to web_search scores or the no-citable-statements honest
+   fallback. Not scoped to .rep-card: the legacy ballot CandidateCard hits
+   the same code path (it doesn't pass rowVariant, so this can render there
+   too whenever a candidate's alignmentEntry has no voting record). */
+.cv2-research-caveat {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-style: italic;
+  margin-top: 2px;
+}
 
 /* ─── Issues block ─── */
 .cv2-issues {
@@ -2997,6 +3009,17 @@ body[data-treatment="inkwell"] .proto-banner {
   border-radius: 10px;
   padding: 14px 16px 12px;
 }
+/* [Δ Muxin round-3.1] green/red left rail — screens-results.jsx's
+   .votecard/.votecard.against border-left treatment, ported onto the
+   repo's own cv2-vote card rather than renamed to canvas's class
+   (02c-results-votes-drilldown stays a functional-equivalence waiver,
+   not a literal class port — see parity-gate.ts STRUCTURAL_WAIVERS). */
+.cv2-vote.vote-with {
+  border-left: 3px solid var(--civic);
+}
+.cv2-vote.vote-against {
+  border-left: 3px solid var(--vote-red);
+}
 .cv2-vote-head {
   display: grid;
   grid-template-columns: 1fr auto;
@@ -3047,6 +3070,29 @@ body[data-treatment="inkwell"] .proto-banner {
 .cv2-vote-head .vote-badge.other {
   background: oklch(0.92 0.012 85);
   color: var(--ink-2);
+}
+/* [Δ Muxin round-3.1] ContributingVoteCard's own alignment pill —
+   canvas's .vc-align copy/shape ("✓ With you" / "✗ Against you",
+   mixed-case, not the all-caps YEA/NAY .vote-badge above), reusing
+   the same green/red pair as the .vote-badge.yea/.nay colors so both
+   badge styles stay visually consistent. */
+.cv2-vote-align {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.cv2-vote-align.with {
+  background: var(--civic-soft);
+  color: var(--civic-2);
+}
+.cv2-vote-align.against {
+  background: oklch(0.93 0.05 28);
+  color: oklch(0.4 0.12 28);
 }
 .cv2-vote-date {
   font-family: var(--mono);

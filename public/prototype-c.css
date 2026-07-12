@@ -2173,7 +2173,8 @@ Bumps
     order: 2;
     gap: 4px;
   }
-  .cv2-vote-head .vote-badge {
+  .cv2-vote-head .vote-badge,
+  .cv2-vote-head .cv2-vote-align {
     order: 1;
     align-self: flex-start;
     margin: 0 0 0 0;

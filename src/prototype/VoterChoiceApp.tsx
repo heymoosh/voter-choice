@@ -514,6 +514,8 @@ const TRANSLATIONS = {
       raisedWord: 'raised',
       smallDonorsMix:
         '{small}% small donors · {large}% large donors · {pac}% PACs',
+      moneyPacFunded: '<b>{pct}% PAC-funded</b>',
+      moneyTopIndustries: 'top: {industries}',
       hide: 'Hide',
       showDetails: 'Show details',
       fundersAndInfluence: 'Funders & influence',
@@ -529,10 +531,13 @@ const TRANSLATIONS = {
       positionUnclearLimited: 'Position unclear — limited public record',
       confidenceConf: '{level} conf.',
       alignsWithYourIssues: 'Aligns with your issues',
+      votedWithYou: 'Voted with you',
       provRollcall: 'Roll-call record',
       provResearched: 'Researched · cited',
       thinRecordOnIssue: 'Thin record on this issue',
       identityHiddenJudgeByRecord: 'Identity hidden · judge by record',
+      blindSeatIncumbent: "This seat's incumbent",
+      identityHiddenSentence: 'Name & party hidden — judge the record, not the person',
       revealWhoThisIs: 'Reveal who this is',
       reveal: 'Reveal',
       hideThisCandidateAgain: 'Hide this candidate again',
@@ -1067,6 +1072,8 @@ const TRANSLATIONS = {
       raisedWord: 'recaudado',
       smallDonorsMix:
         '{small}% pequeños donantes · {large}% grandes donantes · {pac}% PACs',
+      moneyPacFunded: '<b>{pct}% financiado por PACs</b>',
+      moneyTopIndustries: 'principales: {industries}',
       hide: 'Ocultar',
       showDetails: 'Ver detalles',
       fundersAndInfluence: 'Financiadores e influencia',
@@ -1082,10 +1089,13 @@ const TRANSLATIONS = {
       positionUnclearLimited: 'Postura poco clara — registro público limitado',
       confidenceConf: 'conf. {level}',
       alignsWithYourIssues: 'Se alinea con tus temas',
+      votedWithYou: 'Votó contigo',
       provRollcall: 'Historial de votación',
       provResearched: 'Investigado · citado',
       thinRecordOnIssue: 'Registro escaso en este tema',
       identityHiddenJudgeByRecord: 'Identidad oculta · juzga por el historial',
+      blindSeatIncumbent: 'El titular de este puesto',
+      identityHiddenSentence: 'Nombre y partido ocultos — juzga el historial, no a la persona',
       revealWhoThisIs: 'Revelar quién es',
       reveal: 'Revelar',
       hideThisCandidateAgain: 'Ocultar a este candidato de nuevo',
@@ -1895,7 +1905,7 @@ function computePeerLabel(totalRaised, peerTotals) {
 }
 
 /* ============ CandidateCardHeader ============ */
-function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, onReveal, onHide }) {
+function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, onReveal, onHide, variant = 'legacy' }) {
   const { t } = useI18n();
   const yearsMatch = (candidate.priorRole || '').match(/since (\d{4})/i);
   const years = yearsMatch ? new Date().getFullYear() - parseInt(yearsMatch[1], 10) : 0;
@@ -1915,7 +1925,11 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
         <div className="cv2-id">
           <div className="cv2-name blind">{alias || t('repCard.candidateFallback')}</div>
           <div className="cv2-sub blind">
-            <span className="cv2-tag">{t('repCard.identityHiddenJudgeByRecord')}</span>
+            {variant === 'canvas' ? (
+              <span className="cv2-sub-plain">{t('repCard.identityHiddenSentence')}</span>
+            ) : (
+              <span className="cv2-tag">{t('repCard.identityHiddenJudgeByRecord')}</span>
+            )}
           </div>
         </div>
         <button className="cv2-reveal" onClick={onReveal} title={t('repCard.revealWhoThisIs')}>
@@ -2045,7 +2059,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
         <div className="cv2-issues" data-testid="web-search-alignment-banner">
           <div className="cv2-block-head">
             <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
-            <div style={{ fontSize: '10px', color: 'var(--ink-3, #888)', fontStyle: 'italic' }}>
+            <div className="cv2-research-caveat">
               {t('repCard.basedOnPublicStatementsNotVoting')}
             </div>
           </div>
@@ -2070,6 +2084,9 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
       <div className="cv2-issues">
         <div className="cv2-block-head">
           <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
+          <div className="cv2-research-caveat">
+            {t('repCard.basedOnPublicStatementsNotVoting')}
+          </div>
         </div>
         <div className="cv2-norecord">
           {research &&
@@ -2117,10 +2134,14 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
   return (
     <div className="cv2-issues">
       <div className="cv2-block-head">
-        <div className="lab">{t('repCard.alignsWithYourIssues')}</div>
+        <div className="lab">
+          {rowVariant === 'canvas' && scoredForFraction.length > 0
+            ? t('repCard.votedWithYou')
+            : t('repCard.alignsWithYourIssues')}
+        </div>
         {overallPct !== null && (
           <div className="overall">
-            <b>{overallPct}%</b>
+            <b className={rowVariant === 'canvas' ? (overallPct >= 65 ? 'good' : 'bad') : undefined}>{overallPct}%</b>
             {rowVariant === 'canvas' && overallFrac ? (
               <> · <span className="cv2-overall-frac">{overallFrac.kept}/{overallFrac.total} {t('repCard.keyVotesLabel')}</span></>
             ) : (
@@ -2311,12 +2332,17 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
   // stacked name/bar/prose + % badge shape below renders unchanged for the
   // ballot CandidateCard.
   if (rowVariant === 'canvas') {
+    // Canvas is a strict 2-tier good(green)/bad(red) semantic (screens.css
+    // .at-pct.good/.bad, .align-track i.good/.bad) — no third "mid" tier.
+    // Kept separate from the shared `tone` above, which the legacy branch
+    // below still uses unchanged.
+    const canvasTone = pct === null ? '' : pct >= 65 ? 'good' : 'bad';
     const fraction = score && score.total > 0 ? `${score.kept}/${score.total}` : null;
     return (
       <div className={"cv2-iss-row cv2-iss-row--canvas" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")} data-testid="voting-record-alignment-row">
         <button className="cv2-iss-head" onClick={hasVotes ? onToggle : undefined} aria-expanded={isOpen}>
           <span className="cv2-iss-name">{issue.interpretation}</span>
-          <div className="cv2-bar"><div className={"fill " + tone} style={{ width: (pct || 0) + '%' }} /></div>
+          <div className="cv2-bar"><div className={"fill " + canvasTone} style={{ width: (pct || 0) + '%' }} /></div>
           <span className="cv2-iss-frac">
             {fraction || <small>n/a</small>}
             {hasVotes && <span className="chev">{isOpen ? '▴' : '▾'}</span>}
@@ -2403,8 +2429,6 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
      candidate: RacePatternsCandidate (used to filter donorCoalition
                                        for issue-PAC callout) */
 function AlignmentDrilldown({ score, candidate, anonCtx }) {
-  const pct = score && score.total > 0 ? Math.round((score.kept / score.total) * 100) : 0;
-
   // [Δ] Find issue-PACs from this candidate's donorCoalition that
   // alignsWith this canonical issue.
   const issuePacs = (candidate.donorCoalition || []).filter(
@@ -2419,8 +2443,8 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
   return (
     <div className="cv2-drill">
       <div className="cv2-drill-head">
-        <span className="lab">Why {pct}%?</span>
-        <span className="meta">Tap a vote →</span>
+        <span className="lab"><b>{score.issueLabel}</b> · the {score.total} votes behind this score</span>
+        <span className="meta">{score.kept} matched · {score.total - score.kept} didn't</span>
       </div>
 
       <div className="cv2-votes">
@@ -2447,13 +2471,22 @@ function AlignmentDrilldown({ score, candidate, anonCtx }) {
   );
 }
 
-/* ── single curated vote card (private to AlignmentDrilldown) ── */
+/* ── single curated vote card (private to AlignmentDrilldown) ──
+   [Δ Muxin round-3.1] Layout adopted from design-handoff's VoteCard
+   (screens-results.jsx:76-91): bill chip+title as the header, the
+   one-line "what this bill is about" narrative directly beneath it,
+   a green/red left rail + "✓ With you"/"✗ Against you" pill carrying
+   the alignment color, then the existing date/rationale/citation
+   trailer unchanged. Canvas's own YEA/NAY cast badge is NOT ported —
+   this data model has no roll-call cast field, only with/against
+   alignment (see ContributingVote in src/lib/server/alignment.ts). */
 function ContributingVoteCard({ vote, anonCtx }) {
-  const voteClass = vote.voteCast === 'with' ? 'yea' : vote.voteCast === 'against' ? 'nay' : 'other';
-  const voteLabel = vote.voteCast === 'with' ? 'WITH YOU' : vote.voteCast === 'against' ? 'AGAINST YOU' : '—';
+  const withYou = vote.voteCast === 'with';
+  const against = vote.voteCast === 'against';
+  const railClass = withYou ? 'vote-with' : against ? 'vote-against' : '';
   const narrative = anonymizeText(vote.narrative, anonCtx);
   return (
-    <div className="cv2-vote">
+    <div className={"cv2-vote " + railClass}>
       <div className="cv2-vote-head">
         <div className="bill">
           {(() => {
@@ -2463,10 +2496,14 @@ function ContributingVoteCard({ vote, anonCtx }) {
             return (<><span className="num">{billNum}</span><span className="ttl">{billTtl}</span></>);
           })()}
         </div>
-        <div className={"vote-badge " + voteClass}>{voteLabel}</div>
+        {(withYou || against) && (
+          <span className={"cv2-vote-align " + (withYou ? 'with' : 'against')}>
+            {withYou ? '✓ With you' : '✗ Against you'}
+          </span>
+        )}
       </div>
-      <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {narrative && <p className="cv2-vote-narr">{narrative}</p>}
+      <div className="cv2-vote-date">{formatDate(vote.date)}</div>
       {/* Member rationale — synthesized from their press releases via congress-press.
           Label as stated/inferred; never present as verified fact.
           Attribution: congress-press by Derek Willis
@@ -2545,8 +2582,12 @@ function ContributingVoteCard({ vote, anonCtx }) {
      donorDataSource:   "voting_record" | "web_search" | undefined
      donorSource:       SourceRef | undefined
      donorUnavailable:  { reason } | undefined
-     fundingMix [Δ]:  { small, large, pac, total, cycle } | undefined */
-function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals }) {
+     fundingMix [Δ]:  { small, large, pac, total, cycle } | undefined
+     variant:  'legacy' (default, ballot CandidateCard — original stacked
+               bar + swatch-dot list, byte-identical) | 'canvas' (RepCard —
+               canvas's per-row progress-bar industry shape, screens-
+               results.jsx:119-131) */
+function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals, variant = 'legacy' }) {
   const { t } = useI18n();
   if (!donorCoalition && donorUnavailable) {
     return (
@@ -2823,35 +2864,62 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
               {t('funderBars.industryBreakdown')}
               <small className="cv2-sub-lab">{t('funderBars.industryBreakdownSub')}</small>
             </div>
-            <div className="cv2-industry-bar" aria-hidden="true">
-              {industries.map((d, i) => (
-                <span key={i} style={{ flex: `${d.percent} 1 0`, background: industrySwatch(d.label) }} />
-              ))}
-              {showOther && (
-                <span className="other-seg" style={{ flex: `${otherPct} 1 0` }} />
-              )}
-            </div>
-            <div className="cv2-industry-list">
-              {industries.slice(0, 4).map((d, i) => (
-                <div className="row" key={i}>
-                  <span className="sw" style={{ background: industrySwatch(d.label) }} />
-                  <span className="name">{d.label}</span>
-                  <span className="pct">{d.percent}%</span>
-                  <span className="amt">{formatDollars(d.amount)}</span>
+            {variant === 'canvas' ? (
+              /* [Δ] canvas-parity — per-row progress bars (screens-results.jsx
+                 .fp-ind/.fi-track), width normalized to the largest shown row,
+                 instead of the legacy combined stacked bar + swatch-dot list
+                 below. Scoped to RepCard via the variant prop; the legacy
+                 branch stays byte-identical for the ballot CandidateCard. */
+              <div className="cv2-industry-rows">
+                {(() => {
+                  const shown = [
+                    ...industries.slice(0, 4).map((d) => ({ key: d.label, name: d.label, percent: d.percent, amount: d.amount })),
+                    ...(showOther ? [{ key: 'other', name: t('funderBars.outsideNamedSectors'), note: t('funderBars.outsideNamedSectorsNote'), percent: otherPct, amount: otherAmt, isOther: true }] : []),
+                  ];
+                  const maxPct = Math.max(...shown.map((r) => r.percent || 0), 1);
+                  return shown.map((r) => (
+                    <div className={"cv2-industry-row" + (r.isOther ? " other" : "")} key={r.key}>
+                      <span className="cir-name">{r.name}{r.note && <small>{r.note}</small>}</span>
+                      <span className="cir-track"><i style={{ width: ((r.percent || 0) / maxPct) * 100 + '%' }} /></span>
+                      <span className="cir-amt">{r.amount !== null && r.amount !== undefined ? formatDollars(r.amount) : '—'}</span>
+                      <span className="cir-pct">{r.percent}%</span>
+                    </div>
+                  ));
+                })()}
+              </div>
+            ) : (
+              <>
+                <div className="cv2-industry-bar" aria-hidden="true">
+                  {industries.map((d, i) => (
+                    <span key={i} style={{ flex: `${d.percent} 1 0`, background: industrySwatch(d.label) }} />
+                  ))}
+                  {showOther && (
+                    <span className="other-seg" style={{ flex: `${otherPct} 1 0` }} />
+                  )}
                 </div>
-              ))}
-              {showOther && (
-                <div className="row other" key="other">
-                  <span className="sw other-sw" />
-                  <span className="name">
-                    {t('funderBars.outsideNamedSectors')}
-                    <small>{t('funderBars.outsideNamedSectorsNote')}</small>
-                  </span>
-                  <span className="pct">{otherPct}%</span>
-                  <span className="amt">{otherAmt !== null ? formatDollars(otherAmt) : '—'}</span>
+                <div className="cv2-industry-list">
+                  {industries.slice(0, 4).map((d, i) => (
+                    <div className="row" key={i}>
+                      <span className="sw" style={{ background: industrySwatch(d.label) }} />
+                      <span className="name">{d.label}</span>
+                      <span className="pct">{d.percent}%</span>
+                      <span className="amt">{formatDollars(d.amount)}</span>
+                    </div>
+                  ))}
+                  {showOther && (
+                    <div className="row other" key="other">
+                      <span className="sw other-sw" />
+                      <span className="name">
+                        {t('funderBars.outsideNamedSectors')}
+                        <small>{t('funderBars.outsideNamedSectorsNote')}</small>
+                      </span>
+                      <span className="pct">{otherPct}%</span>
+                      <span className="amt">{otherAmt !== null ? formatDollars(otherAmt) : '—'}</span>
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              </>
+            )}
           </div>
         );
       })()}
