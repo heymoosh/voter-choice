@@ -3744,6 +3744,7 @@ Bumps
   padding: 3px 8px;
   border-radius: 999px;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 .bf-app .iq-juris.fed {
   background: var(--brand-soft);
@@ -3758,28 +3759,24 @@ Bumps
   color: var(--ink-2);
 }
 
-/* ---------- Intake Round 3 — locked-state jurisdiction breakdown ----------
-   Canvas's .iq-locked defines a `.jbreak` slot (intake.css) but never fills
-   it — the aggregated "N Federal · M State" summary lets the "your issues
-   are set" moment confirm what's actionable at each level. Counts come from
-   issuesForLevel (delegationData.ts), the exact federal/state split the
-   workspace tiers already use, so an issue leaning "both" counts toward
-   both buckets. The "· " separator is presentational (next-sibling
-   ::before) so it reads correctly whichever bucket(s) are present. */
+/* ---------- Intake Round 3.1 correction — locked-state jurisdiction
+   breakdown renders as PILLS, not a text line ----------
+   The live canvas source (2026-07-11 edits, .keystone-canvas-refs postdate
+   this) settled `.jbreak` as two REUSED `.iq-juris fed`/`.iq-juris state`
+   pills — literally `<span className="iq-juris fed">2 Federal</span>` —
+   not a mono uppercase text line with a "·" separator, which is what this
+   section originally shipped (a reasonable guess before the live source
+   was available, now corrected). `.jbreak` itself is just the flex
+   container; all the visible styling comes from the SAME `.iq-juris`/
+   `.fed`/`.state` pill rules the rows above already use, so the "your
+   issues are set" banner echoes the exact pill look, not a re-invented
+   text treatment. Counts still come from issuesForLevel (delegationData.ts,
+   unchanged). */
 .bf-app .iq-locked .jbreak {
   margin-left: auto;
   display: flex;
   gap: 6px;
-  font-family: var(--mono);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--ink-2);
   flex-shrink: 0;
-}
-.bf-app .iq-locked .jbreak span + span::before {
-  content: "· ";
 }
 
 /* ---------- Intake Round 3 — "Lock these in" prominence (card 4b7e5a66)
@@ -3806,26 +3803,41 @@ Bumps
 }
 .bf-app .co-input.ready {
   border-top: 2px solid var(--brand);
+  /* Literal port of the live canvas's `.iq-foot.ready` (padding-top: 17px;
+     padding-bottom: 19px;) — an asymmetric pair, not the flat 20px this
+     section originally shipped. Horizontal padding is unaffected (still
+     the base composer band's 14px/30px). */
+  padding-top: 17px;
+  padding-bottom: 19px;
 }
+/* Literal port of the live canvas's `.iq-foot.ready .iq-lock` +
+   `.iq-lock-sub`. Shared by BOTH ready-state lock buttons (IntakeLocked's
+   own confirm button — the direct canvas equivalent — and
+   IssueConversation's in-card "Lock these in" button, a repo-only
+   additive affordance canvas doesn't have but which intentionally reuses
+   the same capstone weight per the original Round-3 decision). */
 .bf-app .lock-cta {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  min-height: 58px;
-  padding: 12px 30px;
+  gap: 3px;
+  min-height: 62px;
+  padding: 12px 20px;
   box-shadow:
-    0 10px 24px -8px color-mix(in oklch, var(--brand) 45%, transparent),
+    0 12px 26px -10px color-mix(in oklch, var(--brand) 50%, transparent),
     var(--shadow-soft);
 }
 .bf-app .lock-cta .lock-label {
-  font-size: 15.5px;
+  font-size: 16.5px;
+  letter-spacing: -0.005em;
 }
 .bf-app .lock-cta .lock-sub {
-  font-family: var(--sans);
-  font-weight: 400;
-  font-size: 11px;
-  opacity: 0.85;
+  font-family: var(--mono);
+  font-weight: 500;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: oklch(0.94 0.02 262);
 }
 
 /* ---------- Intake Round 3 — privacy line reposition ----------
@@ -3845,7 +3857,14 @@ Bumps
   text-align: center;
 }
 .bf-app .co-privacy .dot {
-  color: var(--brand);
+  /* Round-3.1 correction: the live canvas's `.iq-privacy .dot` reads
+     `var(--keep)` (a keep-GREEN dot), not brand navy — this section
+     originally shipped brand before the live source confirmed the
+     mismatch. `--keep` isn't defined at this scope (only locally inside
+     `.issue-locked-confirm`), so this uses `--civic` directly — the same
+     "alignment keep green" token the .bf-app root block itself documents
+     as deliberately left unmapped for exactly this purpose. */
+  color: var(--civic);
 }
 
 /* ---------- Intake Round 3.1 — composer chrome parity ----------
@@ -3864,11 +3883,15 @@ Bumps
    Bleeds past .coldopen's own side padding (32px desktop / 18px at the
    ≤640px breakpoint — prototype.css:921, prototype-c.css:1868) so the
    band spans edge-to-edge of the content column the way canvas's footer
-   reaches its shell's full width. Scoped to `.coldopen .co-input` only —
-   IssueConversation's composer is ALSO reused inside .amend-modal (the
-   edit-issues modal), where canvas keeps the plain, unbanded
-   `.amd-composer` (screens-intake.jsx's EditIssues never wraps it in
-   .iq-foot) — so the modal composer is intentionally left alone. */
+   reaches its shell's full width — a structural adaptation, since
+   .coldopen's own container is wider than canvas's .iq shell; the PADDING
+   values inside the band (14px 30px) are ported literally from
+   `.iq-foot`'s own rule regardless of that width difference. Scoped to
+   `.coldopen .co-input` only — IssueConversation's composer is ALSO reused
+   inside .amend-modal (the edit-issues modal), where canvas keeps the
+   plain, unbanded `.amd-composer` (screens-intake.jsx's EditIssues never
+   wraps it in .iq-foot) — so the modal composer is intentionally left
+   alone. */
 .bf-app .coldopen .co-input {
   border: none;
   border-top: 1px solid var(--rule-2);
@@ -3876,7 +3899,7 @@ Bumps
   margin-left: -32px;
   margin-right: -32px;
   width: calc(100% + 64px);
-  padding: 18px 32px;
+  padding: 14px 30px;
 }
 .bf-app .coldopen .co-composer {
   display: flex;
@@ -3891,18 +3914,22 @@ Bumps
   border-radius: 11px;
   padding: 13px 15px;
   min-height: 50px;
+  line-height: 1.4;
+  resize: none;
 }
 .bf-app .coldopen .co-composer .send {
   min-height: 50px;
+  padding: 0 20px;
   border-radius: 11px;
   flex-shrink: 0;
+  box-shadow: var(--shadow-soft);
 }
 @media (max-width: 640px) {
   .bf-app .coldopen .co-input {
     margin-left: -18px;
     margin-right: -18px;
     width: calc(100% + 36px);
-    padding: 16px 18px;
+    padding: 14px 18px;
   }
 }
 
@@ -3933,39 +3960,61 @@ Bumps
    the unscoped a11y "Body text scale pass" bump above (line ~1994),
    which stays in effect for every other .theme-row context (including
    this one below 1024px) — this is a deliberate density trade only for
-   the desktop canvas-matched treatment, not a rollback of that pass. */
+   the desktop canvas-matched treatment, not a rollback of that pass.
+
+   Values below are ported literally from the live canvas's `.iq-row`
+   family (padding: 11px 12px; gap: 11; border-radius: 11px; `.iq-rank`
+   width:16px/text-align:center; `.iq-arrows`/`.iq-arrow` gap:1/16x13/8px
+   with a brand hover; `.iq-name` 14.5px/500, unset family → inherits the
+   app's sans default, NOT the serif/600 the base .theme-row .nm uses;
+   `.iq-name .you` mono/10px/ink-3/400, no border or italic). Two
+   deliberate, DOCUMENTED deviations from a literal 1:1 port, both to
+   avoid dropping real data (never silently suppress a voter's own
+   words): (1) canvas's IqRow takes a single `you` string; our IssueRow
+   can carry MULTIPLE quotes per issue (`quotes: [{label, text}]`), so
+   `.quotes`/`.quote` stays a list, each line re-styled to canvas's `.you`
+   typography rather than collapsing to one line. (2) the tiny
+   "example"/"and" `.lab` prefix distinguishing multiple quotes has no
+   canvas counterpart (canvas never shows more than one) — kept, sized
+   down to stay unobtrusive, rather than deleted outright. */
 @media (min-width: 1024px) {
   .bf-app .theme-row--canvas {
-    grid-template-columns: 16px 22px 1fr auto;
-    gap: 8px;
+    grid-template-columns: 16px 16px 1fr auto;
+    gap: 11px;
     align-items: center;
-    padding: 9px 12px;
-    margin-bottom: 6px;
+    padding: 11px 12px;
+    margin-bottom: 7px;
     border: 1px solid var(--rule-2);
-    border-radius: 10px;
+    border-radius: 11px;
     background: var(--paper);
   }
   .bf-app .theme-row--canvas:last-of-type {
-    padding-bottom: 9px;
+    padding-bottom: 11px;
     margin-bottom: 0;
   }
   .bf-app .theme-row--canvas .ord {
     margin-top: 0;
-    gap: 0;
+    gap: 1px;
   }
   .bf-app .theme-row--canvas .ord button {
-    width: 14px;
-    height: 11px;
-    font-size: 9px;
+    width: 16px;
+    height: 13px;
+    font-size: 8px;
+  }
+  .bf-app .theme-row--canvas .ord button:hover:not(:disabled) {
+    color: var(--brand);
   }
   .bf-app .theme-row--canvas .rank {
     font-size: 15px;
     line-height: 1;
     margin-top: 0;
+    text-align: center;
   }
   .bf-app .theme-row--canvas .nm {
+    font-family: var(--sans);
     font-size: 14.5px;
-    margin-bottom: 3px;
+    font-weight: 500;
+    margin-bottom: 2px;
     gap: 6px;
   }
   .bf-app .theme-row--canvas .nm .edit-pencil {
@@ -3976,10 +4025,15 @@ Bumps
     gap: 2px;
   }
   .bf-app .theme-row--canvas .quote {
-    font-size: 11.5px !important;
-    line-height: 1.35 !important;
-    padding-left: 8px;
-    border-left-width: 1.5px;
+    font-family: var(--mono);
+    font-size: 10px !important;
+    line-height: 1.4 !important;
+    color: var(--ink-3);
+    padding-left: 0;
+    border-left: none;
+  }
+  .bf-app .theme-row--canvas .quote em {
+    font-style: normal;
   }
   .bf-app .theme-row--canvas .quote .lab {
     font-size: 8px;
