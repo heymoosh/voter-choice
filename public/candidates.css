@@ -183,6 +183,44 @@
   color: var(--ink-3);
   margin-top: 4px;
 }
+/* ---- lineup — pinned incumbent + challenger switcher (Round-4 lane F:
+   seat clarity. Muxin: "What happened to him?" — the incumbent is the
+   fixed comparison anchor, not just one more selectable chip, so it's
+   pinned outside .cmp-switch with a visually distinct static chip.) ---- */
+.cmp-lineup {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cmp-chip-pinned {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 13px;
+  min-height: 40px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink-2);
+  background: var(--tag-bg);
+  color: var(--ink);
+}
+.cmp-chip-pinned .lab {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 700;
+}
+.cmp-chip-pinned .p {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
 .cmp-switch {
   display: inline-flex;
   gap: 7px;
@@ -409,6 +447,117 @@
   padding: 0;
 }
 
+/* ---- funding comparison — side-by-side mix bars + totals for the
+   incumbent vs. the selected challenger (Round-4 lane F: "THIS is the
+   place we should have shown the whole funding breakdown"). Honest-data:
+   a column only ever renders the fields it actually has — a challenger
+   with totalReceipts-only never gets a fabricated mix bar. Same
+   small/large/pac coloring as RepCard's .rc-money-bars, using this
+   screen's own --keep/--gold/--replace tokens. ---- */
+.cmp-money {
+  padding: 18px 34px 0;
+}
+.cmp-money-head {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+.cmp-money-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+.cmp-money-col {
+  padding: 14px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-2);
+}
+.cmp-money-col.ch {
+  background: var(--brand-soft);
+  border-color: var(--brand);
+}
+.cmp-money-name {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin-bottom: 8px;
+}
+.cmp-money-bars {
+  display: flex;
+  height: 9px;
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid var(--rule-2);
+  margin-bottom: 8px;
+}
+.cmp-money-bars i.small {
+  background: var(--keep);
+}
+.cmp-money-bars i.large {
+  background: var(--gold);
+}
+.cmp-money-bars i.pac {
+  background: var(--replace);
+}
+.cmp-money-stats {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cmp-money-tot {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cmp-money-pac {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.cmp-money-inds {
+  font-size: 11.5px;
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+.cmp-money-src {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+.cmp-money-none {
+  font-size: 12px;
+  color: var(--ink-3);
+  font-style: italic;
+}
+
+/* ---- whole-field scale wrapper — "Everyone running for this seat"
+   (relocated from RepCard; the .mgap component itself is styled globally
+   in redesign2.css, this just adds the section heading + spacing). ---- */
+.cmp-field {
+  padding: 18px 34px 0;
+}
+.cmp-field-head {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
 .cmp-foot {
   margin-top: auto;
   padding: 18px 34px 22px;
@@ -541,8 +690,13 @@
     padding: 10px 12px;
   }
   .cmp-top,
-  .cmp-foot {
+  .cmp-foot,
+  .cmp-money,
+  .cmp-field {
     padding-left: 18px;
     padding-right: 18px;
+  }
+  .cmp-money-grid {
+    grid-template-columns: 1fr;
   }
 }
