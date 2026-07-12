@@ -563,9 +563,9 @@ export async function goToWorkspace(page: Page): Promise<void> {
  * report) and the 10b-polis-contribute scenario (which stops here to
  * exercise PolisStand itself).
  */
-export async function goToPolisStand(page: Page): Promise<void> {
-  // Not-up-2026 rows carry no verdict UI (reviewable, never decidable) — only
-  // decidable rows can be verdicted here.
+export async function goToPolisEntry(page: Page): Promise<void> {
+  // Not-up-2026 rows carry no verdict UI (reviewable, never decidable), so
+  // this shared journey visits only rows that can receive a verdict.
   const rows = page.locator(".b-row:not(.not-up-2026)");
   const count = await rows.count();
   for (let i = 0; i < count; i++) {
@@ -584,9 +584,15 @@ export async function goToPolisStand(page: Page): Promise<void> {
     .getByRole("button", { name: /where you stand/ });
   await standingLink.waitFor({ timeout: 15000 });
   await standingLink.click();
-  const seeStanding = page.getByTestId("polis-entry-see-standing");
-  await seeStanding.waitFor({ timeout: 15000 });
-  await seeStanding.click();
+  // Stop AT PolisEntry (invite/preview screen) — visible and settled.
+  await page.getByTestId("polis-entry-see-standing").waitFor({
+    timeout: 15000,
+  });
+}
+
+export async function goToPolisStand(page: Page): Promise<void> {
+  await goToPolisEntry(page);
+  await page.getByTestId("polis-entry-see-standing").click();
 }
 
 /** Drive the workspace all the way to the standing (polis) report,

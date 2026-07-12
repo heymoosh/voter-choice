@@ -20,6 +20,37 @@ Heavy checks live in CI:
 - **Legacy ballot e2e** — nightly anti-rot run for the parked experience
   (`.github/workflows/e2e-legacy-nightly.yml`).
 
+## Design Parity gate — intentional changes
+
+The Design Parity workflow (`.github/workflows/design-parity.yml` →
+`scripts/design/parity-gate.ts`) diffs the app against the COMMITTED design
+spec: structural probes + waivers in `parity-gate.ts`, capture journeys in
+`parity-gallery-scenarios.ts`, ref PNGs in `.keystone-canvas-refs/`. It is a
+spec-sync check, not a no-change check — so an intentional design or product
+change is only done when the spec moves in the SAME PR:
+
+1. **Probe/waiver** — update the failing entry in
+   `scripts/design/parity-gate.ts` and record the ruling + date in its
+   note/comment (precedents: 05b's `ignoreMissing: ["rep"]`, 11a's
+   STRUCTURAL_WAIVERS ruling entry). A probe that asserts yesterday's ruling
+   is a stale spec, not a safety net.
+2. **Journey** — if the user flow changed (a button moved/vanished), update
+   the shared journey helpers (`e2e/helpers/redesign-mocks.ts` — the parity
+   gallery reuses them; never re-inline a copy: the 2026-07-12 run failed on
+   exactly such a drifted duplicate).
+3. **Ref PNG** — if the artboard itself moved/changed, re-shoot the ref in
+   `.keystone-canvas-refs/` from the updated canvas export.
+
+Never merge a red parity gate by re-running it, and never delete a probe
+without a documented waiver in its place — the gate's evidence rule blocks
+visual-only passes for a reason.
+
+Known probe limitations (learned 2026-07-12, encode new probes accordingly):
+data-dependent classes (e.g. party-color tokens) must be `ignoreMissing`, not
+required vocabulary; capture journeys must be shared with e2e helpers, not
+duplicated; a marker probe encodes a product ruling — date it, and retire it
+to a waiver when the ruling changes.
+
 ## Duplication Ratchet
 
 `npm run dup:check` (a step inside the `test` job in
