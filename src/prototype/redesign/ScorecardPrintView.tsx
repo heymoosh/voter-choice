@@ -10,7 +10,7 @@
      - Election date comes from the next upcoming election, not [0]. */
 
 import React from "react";
-import { AppNav, useI18n } from "../VoterChoiceApp";
+import { AppNav, useI18n, escapeHtml } from "../VoterChoiceApp";
 
 function fmtLong(dateIso) {
   return new Date(dateIso + "T00:00:00").toLocaleDateString("en-US", {
@@ -73,6 +73,46 @@ export function ScorecardPrintView({
     if (total === 0) return null;
     const pct = Math.round((kept / total) * 100);
     return { pct, kept, total };
+  };
+  // The reason line under each decision (canvas screens-scorecard.jsx
+  // .dec-note, e.g. "Voted with you on 9 of 11 key votes · small-donor
+  // funded"). Composed only from fields the scorecard data shape actually
+  // carries — a challenger's own issue-alignment % (canvas's "challenger
+  // aligns 83% on your issues" clause) isn't computed anywhere upstream of
+  // this view (ApiSeatChallenger only has id/name/party/totalReceipts), so
+  // that clause is omitted rather than faked.
+  const smallDonorFunded = (mix) =>
+    !!mix &&
+    mix.small != null &&
+    mix.small >= (mix.large ?? 0) &&
+    mix.small >= (mix.pac ?? 0);
+  // Canvas bolds the evidence numbers within the line (.dec-note b) — e.g.
+  // "Voted with you on <b>9 of 11</b> key votes". t()'s {vars} aren't
+  // HTML-escaped by design (see escapeHtml's doc comment in
+  // VoterChoiceApp.tsx), so callers embedding literal tags in the
+  // translation string must escape their own interpolated values before
+  // rendering the result via dangerouslySetInnerHTML — same contract
+  // RepCard.tsx's attendance line and HandoffModal already follow.
+  const reasonLine = (s, v, score) => {
+    const parts = [];
+    if (v === "keep") {
+      if (score)
+        parts.push(
+          t("scorecardPrint.decisionNoteVotes", {
+            kept: escapeHtml(score.kept),
+            total: escapeHtml(score.total),
+          }),
+        );
+      if (smallDonorFunded(s.candidate?.fundingMix))
+        parts.push(t("scorecardPrint.decisionNoteSmallDonor"));
+    } else if (v === "replace" && score) {
+      parts.push(
+        t("scorecardPrint.decisionNoteIncumbentMatch", {
+          pct: escapeHtml(score.pct),
+        }),
+      );
+    }
+    return parts.join(" · ");
   };
 
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -160,15 +200,24 @@ export function ScorecardPrintView({
               sheet; the logistics block (address, districts, where/when to
               vote) follows below. */}
           <div className="ballot-list">
+            {/* Umbrella heading (canvas screens-scorecard.jsx
+                .sheet-section-lab) — names the sheet's top-level content
+                hierarchy with a real count before the per-race groups. */}
+            <div className="sheet-section-lab">
+              {t(
+                scorecardSeats.length === 1
+                  ? "scorecardPrint.myDecisionsOne"
+                  : "scorecardPrint.myDecisionsOther",
+                { n: scorecardSeats.length },
+              )}
+            </div>
             {Object.entries(sections).map(([section, ss]) => (
               <div className="ballot-group" key={section}>
                 <div className="gtitle">{section}</div>
                 {ss.map((s) => {
                   const v = verdicts[s.id];
                   const score = scoreFor(s);
-                  const align = score
-                    ? t("scorecardPrint.aligned", score)
-                    : null;
+                  const note = reasonLine(s, v, score);
                   return (
                     <div className={"br checked verdict-row " + v} key={s.id}>
                       <div className="bx"></div>
@@ -196,10 +245,12 @@ export function ScorecardPrintView({
                               ) : null;
                             })()}
                         </div>
-                        <div className="my-note">
-                          {align ? align + " · " : ""}
-                          {s.nextElection ? s.nextElection.label : ""}
-                        </div>
+                        {note && (
+                          <div
+                            className="my-note"
+                            dangerouslySetInnerHTML={{ __html: note }}
+                          />
+                        )}
                       </div>
                       {score && (
                         <div
@@ -288,23 +339,29 @@ export function ScorecardPrintView({
               <div className="gtitle">
                 {t("scorecardPrint.judgedAgainstIssues")}
               </div>
-              <div
-                style={{ fontSize: 13, color: "var(--ink-2)", lineHeight: 1.6 }}
-              >
-                {issues.map((iss, i) => (
-                  <div key={iss.canonicalIssue || i}>
-                    {i + 1}. {iss.interpretation}{" "}
-                    <span
-                      style={{
-                        fontFamily: "var(--mono)",
-                        fontSize: 10,
-                        color: "var(--ink-3)",
-                      }}
-                    >
-                      {`(${iss.level === "both" ? t("scorecardPrint.federalPlusState") : iss.level})`}
-                    </span>
-                  </div>
-                ))}
+              {/* Live canvas screens-scorecard.jsx (2026-07-11 Design edit):
+                  .sheet-issues > .si-row > (.pill + .si-juris + .si-quote).
+                  Pill reads "N · {short label}"; the quote is optional per
+                  issue (canvas's own 3rd example has none) — omitted rather
+                  than backfilled with the interpretation line, since a
+                  missing quote isn't the same claim as a real one. */}
+              <div className="sheet-issues">
+                {issues.map((iss, i) => {
+                  const quote = iss.quotes?.[0]?.text;
+                  const levelTag =
+                    iss.level === "both"
+                      ? t("scorecardPrint.federalPlusState")
+                      : iss.level;
+                  return (
+                    <div className="si-row" key={iss.canonicalIssue || i}>
+                      <span className="pill">
+                        {i + 1} · {iss.interpretation}
+                      </span>
+                      <span className="si-juris">{levelTag}</span>
+                      {quote && <span className="si-quote">“{quote}”</span>}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
