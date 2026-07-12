@@ -74,6 +74,37 @@ export function ScorecardPrintView({
     const pct = Math.round((kept / total) * 100);
     return { pct, kept, total };
   };
+  // The reason line under each decision (canvas screens-scorecard.jsx
+  // .dec-note, e.g. "Voted with you on 9 of 11 key votes · small-donor
+  // funded"). Composed only from fields the scorecard data shape actually
+  // carries — a challenger's own issue-alignment % (canvas's "challenger
+  // aligns 83% on your issues" clause) isn't computed anywhere upstream of
+  // this view (ApiSeatChallenger only has id/name/party/totalReceipts), so
+  // that clause is omitted rather than faked.
+  const smallDonorFunded = (mix) =>
+    !!mix &&
+    mix.small != null &&
+    mix.small >= (mix.large ?? 0) &&
+    mix.small >= (mix.pac ?? 0);
+  const reasonLine = (s, v, score) => {
+    const parts = [];
+    if (v === "keep") {
+      if (score)
+        parts.push(
+          t("scorecardPrint.decisionNoteVotes", {
+            kept: score.kept,
+            total: score.total,
+          }),
+        );
+      if (smallDonorFunded(s.candidate?.fundingMix))
+        parts.push(t("scorecardPrint.decisionNoteSmallDonor"));
+    } else if (v === "replace" && score) {
+      parts.push(
+        t("scorecardPrint.decisionNoteIncumbentMatch", { pct: score.pct }),
+      );
+    }
+    return parts.join(" · ");
+  };
 
   const todayIso = new Date().toISOString().slice(0, 10);
   const upcoming = (stateData?.elections || []).filter(
@@ -177,9 +208,7 @@ export function ScorecardPrintView({
                 {ss.map((s) => {
                   const v = verdicts[s.id];
                   const score = scoreFor(s);
-                  const align = score
-                    ? t("scorecardPrint.aligned", score)
-                    : null;
+                  const note = reasonLine(s, v, score);
                   return (
                     <div className={"br checked verdict-row " + v} key={s.id}>
                       <div className="bx"></div>
@@ -207,10 +236,7 @@ export function ScorecardPrintView({
                               ) : null;
                             })()}
                         </div>
-                        <div className="my-note">
-                          {align ? align + " · " : ""}
-                          {s.nextElection ? s.nextElection.label : ""}
-                        </div>
+                        {note && <div className="my-note">{note}</div>}
                       </div>
                       {score && (
                         <div

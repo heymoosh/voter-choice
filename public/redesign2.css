@@ -505,19 +505,45 @@
   flex: 1;
   min-width: 0;
 }
+/* Candidate name size (canvas screens.css .dec-name: font-size 19px,
+   line-height 1.3). Two other rules compete for .pick-name's font-size
+   here: prototype.css's shared `.br .pick-name` (21px, the legacy
+   workspace ballot pane's size — left alone, not print-specific) and
+   src/styles/print.css's `.print-sheet .ballot-list .pick-name` (18pt =
+   24px — an older "Phase 7" print stylesheet, still imported globally in
+   layout.tsx, whose selectors happen to reuse ScorecardPrintView's own
+   print-sheet/ballot-list/pick-name wrapper class names even though it
+   predates this component and doesn't match its other markup). That 24px
+   rule is the actual worst offender behind "the text is way too big" — a
+   3-class selector, so it silently won over both the 21px base AND an
+   equal-specificity 2-class override here. This selector's 4 classes are
+   the deliberate fix: unambiguously higher specificity than both, so it
+   wins regardless of stylesheet load order. */
+.print-wrap .print-sheet .ballot-list .pick-name {
+  font-size: 19px;
+  line-height: 1.3;
+}
 .print-wrap .br .bx {
   width: 30px;
   height: 30px;
   border-radius: 8px;
   border-width: 2px;
+  /* Centering [Δ]: the base .bx::after glyphs (prototype.css) are
+     positioned with left/top magic numbers sized for the 18px workspace
+     checkbox. The print sheet blows .bx up to 30px without rescaling those
+     offsets, so the keep check and replace swap-arrow both sit
+     top/left-of-center. Flex centers whatever the pseudo-element's own box
+     turns out to be, independent of that size bump. */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 .print-wrap .br.verdict-row.keep .bx {
   border-color: var(--scp-keep-ink);
   background: var(--scp-keep);
 }
 .print-wrap .br.verdict-row.keep .bx::after {
-  left: 6px;
-  top: 10px;
+  position: static;
   width: 16px;
   height: 8px;
   border-left-color: #fff;
@@ -528,9 +554,9 @@
   background: #fff;
 }
 .print-wrap .br.verdict-row.replace .bx::after {
-  left: 4px;
-  top: 1px;
+  position: static;
   color: var(--scp-replace);
+  line-height: 1;
 }
 .print-wrap .verdict-print.keep {
   color: var(--scp-keep-ink);
@@ -541,6 +567,19 @@
   color: var(--scp-replace-ink);
   background: #fff;
   border-color: var(--scp-replace);
+}
+/* Verdict pill size (canvas screens.css .dec-verdict: font-size 10px,
+   padding 3px 9px, letter-spacing 0.06em) — .verdict-print never carried
+   its own font-size, so the two rows that also carry the `.party` class
+   (keep/replace) picked up .party's 11px almost by accident, and the
+   "Not up until 2028" tag — `.verdict-print notup` alone, no `.party` — had
+   no font-size override at all and inherited .pick-name's 19px/21px serif,
+   rendering as a giant pill. This selector's specificity matches
+   `.br .pick-name .party` so it wins for every verdict-print use. */
+.print-wrap .br .pick-name .verdict-print {
+  font-size: 10px;
+  padding: 3px 9px;
+  letter-spacing: 0.06em;
 }
 /* the big match-% readout beside each decision (canvas .dec-score) — was
    missing entirely; the % previously only existed folded into .my-note's
@@ -637,8 +676,12 @@
   background: var(--tag-bg);
   border: 1px solid var(--rule);
   border-radius: 999px;
-  padding: 3px 11px;
-  font-size: 12px;
+  /* canvas screens.css .sheet-issues .pill: padding 2px 9px, font-size
+     11.5px — this Round-3 pill adds the .lvl tag + quote-line below (no
+     canvas equivalent for those), but the pill's own footprint still owes
+     canvas's literal dimensions, not an approximation. */
+  padding: 2px 9px;
+  font-size: 11.5px;
   color: var(--ink-2);
 }
 .print-wrap .sheet-issues .pill .lvl {

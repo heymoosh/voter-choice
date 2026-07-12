@@ -970,6 +970,90 @@ const STRUCTURAL_PROBES: Probe[] = [
       "own note in parity-gallery-scenarios.ts for the product ruling (2026-07-11) that " +
       "reversed GAPS-RECONCILED-FOR-CODE.md §5's earlier 'won't build' disposition.",
   },
+  {
+    kind: "marker",
+    scenarioId: "04-scorecard",
+    // Added 2026-07-11 (Round 3.1 scorecard fix) — the visual check's own
+    // downscale-to-480px-wide step (see file header "why downscale") is
+    // exactly why it missed this: the print sheet's decision-row candidate
+    // name and verdict/notup pills rendered well above canvas's literal
+    // font-size, yet the ratio only moved 0.102 → 0.102 pre/post-fix
+    // (verified directly: `git stash` this commit's redesign2.css/
+    // ScorecardPrintView.tsx changes, rerun `--only 04-scorecard`, ratio
+    // unchanged) — the same false-PASS gap docs/operations/keystone-parity-
+    // failure-handoff-2026-07-08.md flagged. Root cause, candidate name: 3
+    // rules compete for .pick-name's font-size — prototype.css's shared
+    // workspace-ballot rule (21px), canvas's literal .dec-name (19px, the
+    // target), and src/styles/print.css's `.print-sheet .ballot-list
+    // .pick-name` (18pt = 24px) — a still-globally-imported OLDER "Phase 7"
+    // print stylesheet that predates ScorecardPrintView.tsx but happens to
+    // reuse its print-sheet/ballot-list/pick-name wrapper class names. That
+    // 24px rule, a 3-class selector, was the actual dominant offender
+    // behind "the text is way too big," silently beating a same-specificity
+    // print-wrap override by pure selector-count (see the redesign2.css fix
+    // comment). Root cause, pills: .verdict-print never carried its own
+    // font-size at all, so the KEEP/REPLACE pill only happened to read a
+    // reasonable size (11px) via the unrelated .party utility class, and
+    // the "Not up until 2028" tag — the one verdict-print span with no
+    // .party class alongside it — inherited the full 21px .pick-name serif
+    // instead, the "gigantic gray pill" Muxin flagged. These markers read
+    // the actual computed font-size instead of a downscaled pixel diff, so
+    // a regression back to any of these un-ported/shadowed sizes fails here
+    // even though the visual check can't tell the difference at 480px wide.
+    markers: [
+      {
+        check: (page) =>
+          hasComputedStyle(
+            page,
+            ".print-wrap .br.verdict-row .pick-name",
+            "fontSize",
+            "19px",
+          ),
+        description:
+          "the decision-row candidate name renders at canvas's literal .dec-name size (19px) — " +
+          "not the shared workspace-ballot .pick-name size (21px, prototype.css), and not the " +
+          "18pt/24px src/styles/print.css legacy rule that was the actual dominant offender " +
+          "(see the redesign2.css comment on this fix for how that 3-class selector was silently " +
+          "winning over both)",
+      },
+      {
+        check: (page) =>
+          hasComputedStyle(
+            page,
+            ".print-wrap .br.verdict-row .verdict-print",
+            "fontSize",
+            "10px",
+          ),
+        description:
+          "the KEEP/REPLACE verdict pill renders at canvas's literal .dec-verdict size (10px), " +
+          "not the 11px it picked up incidentally from the unrelated .party utility class",
+      },
+      {
+        check: (page) =>
+          hasComputedStyle(
+            page,
+            ".print-wrap .verdict-print.notup",
+            "fontSize",
+            "10px",
+          ),
+        description:
+          "the 'Not up until 2028' tag renders as a real 10px pill, not the 21px it inherited " +
+          "from .pick-name as the one verdict-print span with no .party class to " +
+          "(coincidentally) override its size",
+      },
+    ],
+    note:
+      "ScorecardPrintView.tsx has no class-diff probe — its print-sheet/ballot-list/verdict-row " +
+      "vocabulary shares zero overlap with screens-scorecard.jsx's sheet/dec/dec-badge tokens " +
+      "(confirmed by a full class-token diff; see this file's STRUCTURAL_WAIVERS doc comment on " +
+      "when to move a waived scenario here instead of leaving it waived). Verified against the " +
+      "pre-fix tree (this commit's parent): all 3 markers fail there (.pick-name computes 21px; " +
+      "the verdict-row pill computes 11px; the notup pill computes 21px — never 10px) and flip " +
+      "to pass with this commit's redesign2.css changes — the correctness bar MarkerProbe's own " +
+      "doc comment requires. Doesn't cover the .bx glyph centering fix in the same commit (a " +
+      "geometry check against a ::after pseudo-element's own bounding box, not exposable through " +
+      "getComputedStyle the way hasComputedStyle needs) — that stays visual-only.",
+  },
 ];
 
 /**
@@ -1028,19 +1112,6 @@ const STRUCTURAL_WAIVERS: Record<string, string> = {
     "would just re-report 02a's already-covered .median-chip result under a different id. The " +
     "canvas's own '03-color' artboard is a trimmed side-by-side palette-demo card with no " +
     "standalone repo surface to compare against anyway.",
-  "04-scorecard":
-    "ScorecardPrintView.tsx uses its own print-sheet/ballot-list/verdict-row/voter-meta-" +
-    "logistics vocabulary — confirmed by a full class-token diff against screens-scorecard.jsx's " +
-    "sheet/dec/dec-badge/sheet-mast/sheet-meta tokens (zero overlap). HANDOFF §4 only claims " +
-    "structural/behavioral parity (decisions lead, percentage copy, non-2026 filter), never a " +
-    "class port. UPDATED 2026-07-11: the previously-flagged 'Not on your ballot this year' gap " +
-    "is now closed — commit 9a5f1d82 added a dedicated notOnBallot section " +
-    "(ScorecardPrintView.tsx:236-263, '.ballot-group'/'.br notup'/'.verdict-print notup') that " +
-    "renders excluded non-2026 seats as unscored reference context, matching screens-" +
-    "scorecard.jsx's '.dec.notup' intent. Confirmed live: TX_SEATS already includes a non-2026 " +
-    "seat (senate-TX-b, onBallot2026: false), so 04-scorecard's own capture exercises this " +
-    "section today (visible in scripts/design/.parity-gate-out/04-scorecard.png as 'NOT ON " +
-    "YOUR BALLOT THIS YEAR' / Jordan Okafor).",
   "07-whynow":
     "UPDATED 2026-07-10 (07-whynow build pass): WhyNowPage (VoterChoiceApp.tsx) was rebuilt as a " +
     "literal class-token port of screens-whynow.jsx's WhyNow content sections (wn-mast/wn-sec/" +
