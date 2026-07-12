@@ -632,11 +632,18 @@ function App2Inner() {
       if (v) next[seatId] = v;
       else delete next[seatId];
       // Session-end counters: fire once when the whole delegation is done.
+      // "Done" only ever means every DECIDABLE seat — a not-up-2026 seat has
+      // no verdict UI, so requiring it in `next` would mean this trigger
+      // never fires for any delegation that includes one (Muxin, 2026-07-12:
+      // not-up seats are reviewable, never decidable).
+      const decidableSeats = seats.filter(
+        (s) => s.nextElection?.onBallot2026 !== false,
+      );
       if (
         !submittedRef.current &&
         delegation &&
-        seats.length > 0 &&
-        seats.every((s) => next[s.id])
+        decidableSeats.length > 0 &&
+        decidableSeats.every((s) => next[s.id])
       ) {
         submittedRef.current = true;
         void submitSessionCounters({
