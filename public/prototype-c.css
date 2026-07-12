@@ -3716,6 +3716,139 @@ Bumps
   max-width: 560px;
 }
 
+/* ---------- Intake Round 3 — jurisdiction pill (card 9143a622: "every
+   issue carries a JURISDICTION tag") ----------
+   Canvas's IqRow accepts a `juris` prop (screens-intake.jsx) but the local
+   snapshot never renders it — intake.css already ships the pill's styling
+   (.iq-juris/.fed/.state), just unwired. themesToIssues (IssueConversation.tsx)
+   now resolves each issue's level via the same canonical-issue→jurisdiction
+   lookup the workspace itself uses post-lock (getIssueLevel); IssueRow
+   renders the pill only once a level actually resolved — a custom issue
+   with no canonical match gets no pill rather than a guess (honest-data).
+   `.both` has no canvas precedent (the artboard only shows FEDERAL/STATE
+   examples); styled neutral with --tag-bg so it doesn't compete with the
+   two decisive fed/state colors, since "both" is in fact the most common
+   lean in ISSUE_JURISDICTION_LEAN. Scoped to .bf-app rather than narrowly
+   to .coldopen — IssueRow is shared by the live conversation (.coldopen),
+   the locked confirm screen (.issue-locked-confirm), and the edit-issues
+   modal (.amend-modal), all three of which need the pill styled. Legacy
+   AmendmentEditor's own IssueRow usage (VoterChoiceApp.tsx, gated off
+   .bf-app) never sets `issue.level`, so the pill JSX simply never renders
+   there regardless of this CSS. */
+.bf-app .iq-juris {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  white-space: nowrap;
+}
+.bf-app .iq-juris.fed {
+  background: var(--brand-soft);
+  color: var(--brand-2);
+}
+.bf-app .iq-juris.state {
+  background: oklch(0.93 0.05 78);
+  color: oklch(0.46 0.1 70);
+}
+.bf-app .iq-juris.both {
+  background: var(--tag-bg);
+  color: var(--ink-2);
+}
+
+/* ---------- Intake Round 3 — locked-state jurisdiction breakdown ----------
+   Canvas's .iq-locked defines a `.jbreak` slot (intake.css) but never fills
+   it — the aggregated "N Federal · M State" summary lets the "your issues
+   are set" moment confirm what's actionable at each level. Counts come from
+   issuesForLevel (delegationData.ts), the exact federal/state split the
+   workspace tiers already use, so an issue leaning "both" counts toward
+   both buckets. The "· " separator is presentational (next-sibling
+   ::before) so it reads correctly whichever bucket(s) are present. */
+.bf-app .iq-locked .jbreak {
+  margin-left: auto;
+  display: flex;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  flex-shrink: 0;
+}
+.bf-app .iq-locked .jbreak span + span::before {
+  content: "· ";
+}
+
+/* ---------- Intake Round 3 — "Lock these in" prominence (card 4b7e5a66)
+   ----------
+   The lock CTA is the one true commit moment in the flow — IssueConversation's
+   "Lock these in" click transitions into the confirm screen, and IntakeLocked's
+   own confirm button is what actually fires onLock; both surface the same
+   primaryBtn copy — but wore ordinary footer/button weight. IntakeLocked's
+   confirm button in particular reused the bare `.send` class, identical to a
+   mid-conversation chat Send. `.ready` marks the footer as the flow's
+   capstone; `.lock-cta` gives the button sub-label room and a heavier brand
+   shadow. Both are opt-in via JSX: IssueConversation only adds them when
+   passed a primarySubLabel, which only IntakeView supplies — EditIssuesModal's
+   re-score "Apply" keeps ordinary weight, since review has already started
+   for that flow. IntakeLocked's confirm is always the real lock, so it
+   always gets the treatment. */
+.bf-app .th-foot.ready {
+  border-top: 2px solid var(--brand);
+  padding-top: 20px;
+}
+.bf-app .th-foot.ready .lock-cta {
+  width: 100%;
+  justify-content: center;
+}
+.bf-app .co-input.ready {
+  border-top: 2px solid var(--brand);
+  padding: 18px;
+}
+.bf-app .lock-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-height: 58px;
+  padding: 12px 30px;
+  box-shadow:
+    0 10px 24px -8px color-mix(in oklch, var(--brand) 45%, transparent),
+    var(--shadow-soft);
+}
+.bf-app .lock-cta .lock-label {
+  font-size: 15.5px;
+}
+.bf-app .lock-cta .lock-sub {
+  font-family: var(--sans);
+  font-weight: 400;
+  font-size: 11px;
+  opacity: 0.85;
+}
+
+/* ---------- Intake Round 3 — privacy line reposition ----------
+   Canvas's .iq-privacy is its own centered full-width line BELOW the whole
+   footer with a leading colored dot marker (intake.css); the port had it
+   inline beside the Send button instead (.co-input .row .hint). Content was
+   already right (intake.inputHint) — this only moves it. New class, not a
+   reuse of `.hint`, so the existing `.hint` mobile-reflow rules (still used
+   by the legacy composer) are untouched. Applied to both IssueConversation's
+   ordinary composer and IntakeLocked's confirm row, replacing the latter's
+   ad-hoc inline style with the same shared treatment. */
+.bf-app .co-privacy {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  margin-top: 9px;
+  text-align: center;
+}
+.bf-app .co-privacy .dot {
+  color: var(--brand);
+}
+
 /* ============ NoContestedView — upload-first redesign ============
    Promotes the file upload to a big dropzone-style button at the
    top, with the paste textarea as the secondary path below. Adds
