@@ -42,10 +42,13 @@ test.describe("full voting record", () => {
     await expect(cta).toContainText("See the full voting record — 1 vote");
     await cta.click();
 
-    // Panel: header is the BLIND label (identity hidden until reveal),
-    // vote rows carry the bill, badge, issue tag, and roll-call link.
+    // Panel: header is the BLIND label (identity hidden until reveal) —
+    // "This seat's incumbent" (RepCard's canvas-variant blind display,
+    // consistent with the card header, not the raw seat.blindLabel used
+    // elsewhere in the app) — vote rows carry the bill, badge, issue tag,
+    // and roll-call link.
     const panel = page.locator(".av-panel");
-    await expect(panel).toContainText("Your U.S. Representative");
+    await expect(panel).toContainText("This seat's incumbent");
     await expect(panel).not.toContainText("Alex Rivera");
     await expect(panel).toContainText("S 1339");
     await expect(panel.locator(".vote-badge")).toHaveText("WITH YOU");
