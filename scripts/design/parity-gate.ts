@@ -565,7 +565,15 @@ const STRUCTURAL_PROBES: Probe[] = [
     // at all — HeadToHead.tsx's docstring: "only the data bindings and the
     // honest empty states are new" — so it never appears as "missing" here
     // and needs no entry.)
-    ignoreMissing: ["up"],
+    //
+    // "rep" is likewise a data-dependent party-color class: the canvas's
+    // incumbent mock is Republican, while this capture's real seat fixture
+    // is Democratic. HeadToHead now correctly derives the pip class from
+    // seat.partyName, so requiring the canvas's literal "rep" token would
+    // fail the gate when the real party binding is right. Party-color
+    // correctness belongs in the component's data tests, not this structural
+    // class-vocabulary comparison.
+    ignoreMissing: ["up", "rep"],
     note:
       "HeadToHead.tsx's own docstring: 'PORT of claude-code-handoff/design-session/" +
       "screens-candidates.jsx → the down-selected DIRECTION B (HeadToHead) ... markup/class " +

@@ -21,9 +21,10 @@
        also records X as the seat's successor pick (rides to scorecard/print). */
 
 import React, { useState, useEffect } from "react";
-import { formatDollars } from "../VoterChoiceApp";
+import { formatDollars, useI18n } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { buildLedger, overallAlignment } from "./duelAlignment";
+import { MoneyGapScale } from "./MoneyGap";
 
 function cdTone(p) {
   return p == null ? "na" : p >= 67 ? "good" : p >= 34 ? "mid" : "bad";
@@ -62,6 +63,36 @@ function incumbentScores(seat) {
   return seat.alignmentEntry?.scores || [];
 }
 
+/** Top named-industry labels from donorCoalition — mirrors
+ * RepCard.tsx's topFundingIndustries, same small per-screen helper,
+ * duplicated locally per this repo's convention (see RepCard.tsx's
+ * ProvBadge comment). */
+function topFundingIndustries(donorCoalition, limit = 3) {
+  return (donorCoalition || [])
+    .filter((s) => s && !s.isIssuePAC && s.label)
+    .slice(0, limit)
+    .map((s) => s.label);
+}
+
+/** Whole-field money-gap rows — every other 2026 FEC filer for this seat
+ * with a real filed total, highest first. Honest-data: a challenger with
+ * no total_receipts row is omitted, never fabricated as $0. Mirrors
+ * RepCard.tsx's moneyGapField mapping (that card is dropping these rows —
+ * the full field now lives here, "Everyone running for this seat"). */
+function buildMoneyGapField(challengers, t) {
+  return (challengers || [])
+    .filter((c) => typeof c.totalReceipts === "number" && c.totalReceipts > 0)
+    .sort((a, b) => b.totalReceipts - a.totalReceipts)
+    .map((c) => ({
+      name: c.name,
+      raised: c.totalReceipts,
+      pip: PARTY_PIP[c.party] || "ind",
+      tag: t("repCard.challengerTag", {
+        party: c.party || t("repCard.partyUnknown"),
+      }),
+    }));
+}
+
 export function HeadToHead({
   seat,
   userIssues,
@@ -73,6 +104,8 @@ export function HeadToHead({
   onClose,
   onShowBudgetOptions,
 }) {
+  const { t } = useI18n();
+  const cand = seat.candidate;
   const challengers = seat.challengers || [];
   const [sel, setSel] = useState(
     () =>
@@ -101,6 +134,7 @@ export function HeadToHead({
   const incBasis = seat.researched ? "researched" : "roll-call";
   const incOverall = overallAlignment(incScores);
   const repName = seat.candidate?.name || seat.blindLabel;
+  const incPip = PARTY_PIP[seat.partyName] || "ind";
 
   const research = ch ? getChallengerResearch(ch.id) : undefined;
   const chDone = research?.status === "done";
@@ -122,6 +156,17 @@ export function HeadToHead({
   const incPac = seat.candidate?.fundingMix?.pac;
   const chRaised =
     ch && typeof ch.totalReceipts === "number" ? ch.totalReceipts : null;
+  const incIndustries = topFundingIndustries(cand?.donorCoalition);
+  const moneyGapField = buildMoneyGapField(challengers, t);
+
+  // Explicit seat statement (Muxin: "I cannot tell if this is even
+  // accurate... are they running for the same seats?") — names the office,
+  // district, and next election in one line. Honest fallback when the
+  // election date isn't resolved (should not happen once a duel is
+  // reachable, since not-up seats never expose the duel CTA).
+  const seatWhen = seat.nextElection?.onBallot2026
+    ? seat.nextElection.label
+    : null;
 
   const repLast = lastName(repName);
 
@@ -145,35 +190,72 @@ export function HeadToHead({
             </button>
             <h2>Head-to-head</h2>
             <div className="ctx">
-              {seat.office} · {seat.districtLabel} · your rep vs. who's running
+              {seatWhen
+                ? t("headToHead.seatStatement", {
+                    office: seat.office,
+                    district: seat.districtLabel,
+                    when: seatWhen,
+                  })
+                : t("headToHead.seatStatementPlain", {
+                    office: seat.office,
+                    district: seat.districtLabel,
+                  })}
             </div>
           </div>
-          {challengers.length > 0 && (
-            <div
-              className="cmp-switch"
-              role="tablist"
-              aria-label="Challengers running for this seat"
+          {/* Lineup — the incumbent is PINNED (not selectable, not
+              dismissable): it's the fixed comparison anchor, never just
+              one more chip in the challenger row (Muxin: "What happened
+              to him?"). Challenger chips stay selectable as today. */}
+          <div className="cmp-lineup">
+            <span
+              className="cmp-chip-pinned"
+              aria-label={
+                incOverall.pct != null
+                  ? t("headToHead.yourRepPinnedAria", {
+                      name: repName,
+                      pct: incOverall.pct,
+                    })
+                  : t("headToHead.yourRepPinnedAriaNoScore", { name: repName })
+              }
             >
-              {challengers.map((c) => {
-                const r = getChallengerResearch(c.id);
-                const o =
-                  r?.status === "done" ? overallAlignment(r.scores).pct : null;
-                return (
-                  <button
-                    key={c.id}
-                    role="tab"
-                    aria-selected={sel === c.id}
-                    className={sel === c.id ? "on" : ""}
-                    onClick={() => setSel(c.id)}
-                  >
-                    <span className={"pip " + (PARTY_PIP[c.party] || "ind")} />
-                    {lastName(c.name)}
-                    {o != null && <span className="p">{o}%</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+              <span className={"pip " + incPip} aria-hidden="true" />
+              <span className="lab">{t("headToHead.yourRepPinned")}</span>
+              {repName}
+              {incOverall.pct != null && (
+                <span className="p">{incOverall.pct}%</span>
+              )}
+            </span>
+            {challengers.length > 0 && (
+              <div
+                className="cmp-switch"
+                role="tablist"
+                aria-label="Challengers running for this seat"
+              >
+                {challengers.map((c) => {
+                  const r = getChallengerResearch(c.id);
+                  const o =
+                    r?.status === "done"
+                      ? overallAlignment(r.scores).pct
+                      : null;
+                  return (
+                    <button
+                      key={c.id}
+                      role="tab"
+                      aria-selected={sel === c.id}
+                      className={sel === c.id ? "on" : ""}
+                      onClick={() => setSel(c.id)}
+                    >
+                      <span
+                        className={"pip " + (PARTY_PIP[c.party] || "ind")}
+                      />
+                      {lastName(c.name)}
+                      {o != null && <span className="p">{o}%</span>}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
         </div>
 
         {challengers.length === 0 ? (
@@ -212,7 +294,7 @@ export function HeadToHead({
                   <div className="cmp-roleline">
                     <div className="cmp-tag">The record you have</div>
                     <div className="cmp-cname">
-                      <span className="pip rep" />
+                      <span className={"pip " + incPip} />
                       {repName}
                     </div>
                     <div className="cmp-crole">
@@ -251,7 +333,8 @@ export function HeadToHead({
                       {ch?.name}
                     </div>
                     <div className="cmp-crole">
-                      {ch?.party || "Party unknown"} · 2026 FEC filer
+                      {ch?.party || "Party unknown"} ·{" "}
+                      {t("headToHead.challengerProvenance")}
                     </div>
                   </div>
                 </div>
@@ -376,6 +459,114 @@ export function HeadToHead({
                 </p>
               )}
             </div>
+
+            {/* Funding comparison — Muxin: "THIS is the place we should
+                have shown the whole funding breakdown." Side-by-side mix
+                bars + PAC% + top industries for the incumbent, dollar
+                total + FEC-filing source for the selected challenger.
+                Honest-data: a challenger only ever carries totalReceipts
+                (no mix/sectors) — render what exists, never fabricate. */}
+            {(incRaised != null || cand?.fundingMix || chRaised != null) && (
+              <div className="cmp-money">
+                <div className="cmp-money-head">
+                  {t("headToHead.moneySectionTitle")}
+                </div>
+                <div className="cmp-money-grid">
+                  <div className="cmp-money-col inc">
+                    <div className="cmp-money-name">{repName}</div>
+                    {cand?.fundingMix && (
+                      <span
+                        className="cmp-money-bars"
+                        role="img"
+                        aria-label="Funding by source type"
+                      >
+                        <i
+                          className="small"
+                          style={{ width: cand.fundingMix.small + "%" }}
+                        />
+                        <i
+                          className="large"
+                          style={{ width: cand.fundingMix.large + "%" }}
+                        />
+                        <i
+                          className="pac"
+                          style={{ width: cand.fundingMix.pac + "%" }}
+                        />
+                      </span>
+                    )}
+                    {incRaised != null || incPac != null ? (
+                      <div className="cmp-money-stats">
+                        {incRaised != null && (
+                          <span className="cmp-money-tot">
+                            {formatDollars(incRaised)}
+                          </span>
+                        )}
+                        {incPac != null && (
+                          <span className="cmp-money-pac">
+                            {t("headToHead.moneyPacPct", { pct: incPac })}
+                          </span>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="cmp-money-none">
+                        {t("headToHead.moneyUnavailable")}
+                      </div>
+                    )}
+                    {incIndustries.length > 0 && (
+                      <div className="cmp-money-inds">
+                        {t("repCard.moneyTopIndustries", {
+                          industries: incIndustries.join(", "),
+                        })}
+                      </div>
+                    )}
+                    {cand?.donorSource?.name && (
+                      <div className="cmp-money-src">
+                        {cand.donorSource.name}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="cmp-money-col ch">
+                    <div className="cmp-money-name">
+                      {ch ? ch.name : "Challenger"}
+                    </div>
+                    {chRaised != null ? (
+                      <div className="cmp-money-stats">
+                        <span className="cmp-money-tot">
+                          {formatDollars(chRaised)}
+                        </span>
+                      </div>
+                    ) : (
+                      <div className="cmp-money-none">
+                        {t("repCard.noFundsReported")}
+                      </div>
+                    )}
+                    <div className="cmp-money-src">FEC filing</div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Whole-field scale — every 2026 FEC filer for this seat, not
+                just the one selected above (relocated from RepCard, which
+                now only shows subject-vs-median for the incumbent alone). */}
+            {cand?.peerComparison != null &&
+              typeof cand.totalRaised === "number" && (
+                <div className="cmp-field">
+                  <div className="cmp-field-head">
+                    {t("headToHead.fieldSectionTitle")}
+                  </div>
+                  <MoneyGapScale
+                    subject={{
+                      name: repName,
+                      raised: cand.totalRaised,
+                      pip: incPip,
+                    }}
+                    field={moneyGapField}
+                    peer={cand.peerComparison}
+                  />
+                </div>
+              )}
 
             <div className="cmp-foot">
               <div className="cmp-fund">
