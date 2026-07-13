@@ -1243,9 +1243,10 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SOURCE RULE: Use the FEC state-election-office directory only as a starting directory; state election authorities remain the roster authority. Do not bypass access controls.
 - TESTS: Focused contract/validator tests; fixtures covering every coverage state and rejected incomplete/invalid records.
 - GOAL_CONDITION: Focused source-inventory tests and `npm run verify:congressional-source-inventory -- --fixtures` pass, followed by `npm run check`.
-- STATUS: To Do
+- STATUS: In Progress
 - DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
 - GROOMED: ready: explicit scope, tests, and goal condition; independent Wave 1 foundation — 2026-07-13
+- LANE: roster-a
 <!-- card-id: 42152a2c-ab16-4590-a03b-19f8c05b365d -->
 
 **[P0] F02 — Mutable expected-congressional-contest calendar oracle**
@@ -1257,9 +1258,10 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: FEC/state date conflicts must enter review and may never silently overwrite authoritative state evidence. State logistics JSON cannot be the contest oracle.
 - TESTS: Focused calendar tests for Alabama split, stable identity across revisions, FEC/state conflict, regular/special separation, and untriggered conditional runoffs.
 - GOAL_CONDITION: Focused calendar tests and `npm run verify:congressional-calendar -- --year 2026 --fixture al-split` pass, followed by `npm run check`.
-- STATUS: To Do
+- STATUS: In Progress
 - DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
 - GROOMED: ready: explicit scope, tests, and goal condition; parallel Wave 1 foundation — 2026-07-13
+- LANE: roster-b
 <!-- card-id: 852f0b20-69b8-4429-9ac5-6fbdb425132f -->
 
 **[P3] President/VP blind-mode redaction uses a raw last-name split (ticket names)**
