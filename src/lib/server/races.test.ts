@@ -42,14 +42,26 @@ beforeEach(() => {
 
 describe("applyViabilityFilter", () => {
   it("keeps filers over the $10k floor, ranked by receipts", () => {
-    const out = applyViabilityFilter([
-      { id: "a", fullName: "A", party: "DEM", totalReceipts: "50000.00" },
-      { id: "b", fullName: "B", party: "DEM", totalReceipts: "250000.00" },
-      { id: "c", fullName: "C", party: "REP", totalReceipts: "12000.00" },
-    ]);
+    const out = applyViabilityFilter(
+      [
+        { id: "a", fullName: "A", party: "DEM", totalReceipts: "50000.00" },
+        { id: "b", fullName: "B", party: "DEM", totalReceipts: "250000.00" },
+        { id: "c", fullName: "C", party: "REP", totalReceipts: "12000.00" },
+      ],
+      {
+        election: "2026 general",
+        retrievedAt: "2026-07-13T12:00:00.000Z",
+      },
+    );
     expect(out.map((c) => c.id)).toEqual(["b", "a", "c"]);
     expect(out[0].totalReceipts).toBe(250000);
     expect(out[0].party).toBe("Democrat");
+    expect(out[0].rosterProvenance).toMatchObject({
+      sourceKind: "fec_campaign_finance",
+      confidence: "finance_only",
+      ballotStatus: "finance_record_only",
+      selectableAsReplacement: false,
+    });
   });
 
   it("keeps top-2 per party even under the floor", () => {

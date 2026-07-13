@@ -505,8 +505,15 @@ const TRANSLATIONS = {
       moreOptions: 'More options →',
       runningForSeat: 'Running for this seat in 2026',
       fecRankedByFunds: 'FEC filings · ranked by funds raised',
+      financeOnlyFilings: 'Campaign-finance evidence only',
+      financeOnlyFilingsNote:
+        'FEC filings preserved for finance history · not verified on the ballot',
       notUp2026: 'Not up for election in 2026',
       notUp2026BandSentence: 'You can still review their record — {label}.',
+      rosterNotVerifiedEyebrow:
+        'Campaign-finance records are not ballot roster proof',
+      rosterNotVerifiedSentence:
+        "FEC filings stay visible as finance history, but we'll only compare replacement candidates after an official ballot roster is verified.",
       unresolvedNoMatch:
         "We couldn't match this seat to a sitting member in our records — we'd rather say so than guess.",
       lookThemUpAt: 'Look them up directly at',
@@ -574,7 +581,8 @@ const TRANSLATIONS = {
       yourRepPinned: 'Your rep',
       yourRepPinnedAria: 'Your rep, {name}, {pct}% aligned',
       yourRepPinnedAriaNoScore: 'Your rep, {name}',
-      challengerProvenance: 'Running for this seat · 2026 FEC filer',
+      challengerProvenance: 'verified current ballot roster',
+      financeEvidenceFec: 'Campaign-finance evidence: FEC filing',
       moneySectionTitle: 'Funding comparison',
       moneyPacPct: '{pct}% PAC',
       moneyUnavailable: 'Funding data not available',
@@ -1091,8 +1099,15 @@ const TRANSLATIONS = {
       moreOptions: 'Más opciones →',
       runningForSeat: 'Compitiendo por este puesto en 2026',
       fecRankedByFunds: 'Presentaciones ante la FEC · ordenadas por fondos recaudados',
+      financeOnlyFilings: 'Solo evidencia de financiamiento de campaña',
+      financeOnlyFilingsNote:
+        'Presentaciones ante la FEC conservadas como historial financiero · no verificadas en la boleta',
       notUp2026: 'No está en la boleta en 2026',
       notUp2026BandSentence: 'Aún puedes revisar su historial — {label}.',
+      rosterNotVerifiedEyebrow:
+        'Los registros de financiamiento no prueban la boleta',
+      rosterNotVerifiedSentence:
+        'Las presentaciones ante la FEC siguen visibles como historial financiero, pero solo compararemos reemplazos cuando una lista oficial de la boleta esté verificada.',
       unresolvedNoMatch:
         'No pudimos identificar a un miembro en funciones para este puesto en nuestros registros — preferimos decirlo así a adivinar.',
       lookThemUpAt: 'Búscalos directamente en',
@@ -1156,7 +1171,8 @@ const TRANSLATIONS = {
       yourRepPinned: 'Tu representante',
       yourRepPinnedAria: 'Tu representante, {name}, {pct}% alineado',
       yourRepPinnedAriaNoScore: 'Tu representante, {name}',
-      challengerProvenance: 'Compite por este puesto · presentación ante la FEC 2026',
+      challengerProvenance: 'lista actual de boleta verificada',
+      financeEvidenceFec: 'Evidencia de financiamiento de campaña: presentación ante la FEC',
       moneySectionTitle: 'Comparación de financiamiento',
       moneyPacPct: '{pct}% PAC',
       moneyUnavailable: 'Datos de financiamiento no disponibles',

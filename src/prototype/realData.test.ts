@@ -1,11 +1,17 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
+  fetchBallotFromAddress,
+  fetchBallotFromText,
   stateCodeFrom,
   racesSpanMultipleParties,
   filterRacesByParty,
 } from "./realData";
 import { extractionToRaces } from "../lib/extractionToRaces";
 import type { BallotExtraction } from "../lib/server/extract-types";
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
 
 /**
  * Tests for stateCodeFrom — best-effort 2-letter state/territory code from an
@@ -104,6 +110,62 @@ describe("stateCodeFrom", () => {
       expect(stateCodeFrom("")).toBe("");
       expect(stateCodeFrom("   ")).toBe("");
       expect(stateCodeFrom(undefined as unknown as string)).toBe("");
+    });
+  });
+});
+
+describe("ballot roster provenance", () => {
+  it("marks pasted ballot text as user-supplied and unverified", async () => {
+    const result = await fetchBallotFromText(
+      "MY BALLOT — Camden County, NJ\nU.S. Senate: Cory Booker (D)",
+    );
+
+    expect(result.races[0].rosterProvenance).toMatchObject({
+      sourceKind: "user_pasted_ballot",
+      confidence: "unverified_user_supplied",
+      ballotStatus: "user_supplied_unverified",
+      selectableAsReplacement: false,
+    });
+  });
+
+  it("marks exact-official Google Civic contests as address/election-tied verified roster data", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => ({
+          county: "Mercer County, NJ",
+          contests: [
+            {
+              office: "U.S. Senate",
+              district: "",
+              candidates: [{ name: "Verified Candidate", party: "Democratic" }],
+            },
+          ],
+          source: {
+            provider: "Google Civic Information API",
+            confidence: "exact_official",
+            electionName: "2026 General Election",
+            message: "Google Civic returned official contests for this address.",
+            sourceLinks: [
+              {
+                label: "Google Civic Information API",
+                url: "https://developers.google.com/civic-information",
+              },
+            ],
+          },
+        }),
+      }),
+    );
+
+    const result = await fetchBallotFromAddress("123 Main St, Trenton, NJ");
+
+    expect(result.races[0].rosterProvenance).toMatchObject({
+      sourceKind: "google_civic",
+      election: "2026 General Election",
+      confidence: "official_address_election_tied",
+      ballotStatus: "verified_current_ballot",
+      selectableAsReplacement: true,
     });
   });
 });

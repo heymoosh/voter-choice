@@ -11,6 +11,7 @@
 
 import React from "react";
 import { AppNav, useI18n, escapeHtml } from "../VoterChoiceApp";
+import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 function fmtLong(dateIso) {
   return new Date(dateIso + "T00:00:00").toLocaleDateString("en-US", {
@@ -235,7 +236,9 @@ export function ScorecardPrintView({
                           {v === "replace" &&
                             (() => {
                               const pick = (s.challengers || []).find(
-                                (c) => c.id === picks?.[s.id],
+                                (c) =>
+                                  c.id === picks?.[s.id] &&
+                                  isSelectableReplacement(c),
                               );
                               return pick ? (
                                 <span className="pick-successor">

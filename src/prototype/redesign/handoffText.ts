@@ -19,11 +19,14 @@ import type {
   SeatResearch,
 } from "./delegationData";
 import { seatAlignmentPct } from "./delegationData";
+import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 const STANCE_TEXT: Record<string, string> = {
   in_favor: "in favor",
   opposed: "opposed",
 };
+
+type HandoffChallenger = NonNullable<DelegationSeatVM["challengers"]>[number];
 
 function levelTag(level: string): string {
   return level === "federal" ? "FED" : level === "state" ? "STATE" : "BOTH";
@@ -63,6 +66,26 @@ function formatRaised(totalReceipts: unknown): string {
   if (typeof totalReceipts !== "number" || totalReceipts <= 0)
     return "no funds reported";
   return `$${Math.round(totalReceipts).toLocaleString("en-US")} raised`;
+}
+
+function challengerLine(c: HandoffChallenger): string {
+  return `    • ${c.name}${c.party ? ` (${c.party})` : ""} — ${formatRaised(c.totalReceipts)}`;
+}
+
+function rosterSection(
+  seats: DelegationSeatVM[],
+  predicate: (candidate: HandoffChallenger) => boolean,
+): string {
+  return seats
+    .map((s) => {
+      const rows = (s.challengers || []).filter(predicate);
+      if (rows.length === 0) return null;
+      return [`  ${s.office} · ${s.districtLabel}:`, ...rows.map(challengerLine)].join(
+        "\n",
+      );
+    })
+    .filter(Boolean)
+    .join("\n");
 }
 
 export interface ScorecardHandoffInput {
@@ -108,18 +131,11 @@ export function buildScorecardHandoffPrompt(
     })
     .join("\n");
 
-  const challengerLines = seats
-    .filter((s) => (s.challengers || []).length > 0)
-    .map((s) =>
-      [
-        `  ${s.office} · ${s.districtLabel}:`,
-        ...(s.challengers || []).map(
-          (c) =>
-            `    • ${c.name}${c.party ? ` (${c.party})` : ""} — ${formatRaised(c.totalReceipts)}`,
-        ),
-      ].join("\n"),
-    )
-    .join("\n");
+  const verifiedRosterLines = rosterSection(seats, isSelectableReplacement);
+  const financeOnlyLines = rosterSection(
+    seats,
+    (candidate) => !isSelectableReplacement(candidate),
+  );
 
   return [
     "MY CONGRESSIONAL SCORECARD — Voter Choice (voterchoice.app)",
@@ -134,11 +150,14 @@ export function buildScorecardHandoffPrompt(
     `MY VERDICTS SO FAR (${reviewed.length} of ${seats.length} reviewed):`,
     verdictLines || "  (none yet)",
     ...(remaining.length > 0 ? ["", "STILL TO REVIEW:", remainingLines] : []),
-    ...(challengerLines
+    ...(verifiedRosterLines
+      ? ["", "VERIFIED 2026 ROSTER CANDIDATES:", verifiedRosterLines]
+      : []),
+    ...(financeOnlyLines
       ? [
           "",
-          "ON THE 2026 BALLOT FOR THESE SEATS (FEC filers, public record):",
-          challengerLines,
+          "CAMPAIGN-FINANCE FILERS ONLY (not verified on the ballot):",
+          financeOnlyLines,
         ]
       : []),
     "",

@@ -30,6 +30,10 @@
 
 import type { Race, RaceSection } from "./raceDeriver";
 import { makeRaceId, isJudicialRetentionOffice } from "./raceDeriver";
+import {
+  userSuppliedRosterProvenance,
+  type RosterProvenance,
+} from "./rosterProvenance";
 
 /**
  * Race shape augmented with write-in slot count from the extraction and a
@@ -319,6 +323,7 @@ function buildCandidates(race: ExtractRace): {
 function buildSectionRaces(
   section: ExtractSection,
   ballotTag: string | null,
+  rosterProvenance: RosterProvenance,
 ): RaceWithWriteIns[] {
   const canonical = normalizeSection(section.section_name);
   const out: RaceWithWriteIns[] = [];
@@ -344,6 +349,7 @@ function buildSectionRaces(
       voteForN: race.vote_for_n > 0 ? race.vote_for_n : 1,
       ...(writeInSlots > 0 ? { writeInSlots } : {}),
       partyLane: partyLaneFromContext(race.party_context),
+      rosterProvenance,
       ...(race.measure_text ? { measureBody: race.measure_text } : {}),
     });
   }
@@ -364,12 +370,25 @@ export function extractionToRaces(
   // full inference semantics.
   const effectiveBallotTag =
     ballotTag ?? inferBallotTagFromExtraction(extraction);
+  const meta = extraction.election_metadata;
+  const rosterProvenance = userSuppliedRosterProvenance({
+    sourceKind: "user_uploaded_ballot",
+    election:
+      [meta?.jurisdiction, meta?.election_date, meta?.election_type]
+        .filter(Boolean)
+        .join(" · ") || "uploaded ballot extraction",
+    retrievedAt: new Date().toISOString(),
+  });
 
   // Group eligible races by canonical section name so we can emit them
   // in the canonical SECTION_ORDER regardless of the input order.
   const bySection = new Map<RaceSection, RaceWithWriteIns[]>();
   for (const section of extraction.sections as ExtractSection[]) {
-    const races = buildSectionRaces(section, effectiveBallotTag);
+    const races = buildSectionRaces(
+      section,
+      effectiveBallotTag,
+      rosterProvenance,
+    );
     for (const race of races) {
       const bucket = bySection.get(race.section);
       if (bucket) bucket.push(race);

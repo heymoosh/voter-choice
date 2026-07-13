@@ -27,6 +27,7 @@ import {
 } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { MedianChip, MoneyGapScale } from "./MoneyGap";
+import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 /** Provenance badge — the design's unifier (roll-call vs researched).
  *  Mirrors HeadToHead.tsx's ProvBadge / DelegationOverview.tsx's DgProv —
@@ -478,25 +479,53 @@ export function ChallengersStrip({
   const { t } = useI18n();
   const list = seat.challengers || [];
   if (list.length === 0) return null;
+  const verifiedRoster = list.filter((ch) => isSelectableReplacement(ch));
+  const financeOnly = list.filter((ch) => !isSelectableReplacement(ch));
   return (
-    <div className="cv2-issues challengers-strip">
-      <div className="cv2-block-head">
-        <div className="lab">{t("repCard.runningForSeat")}</div>
-        <div className="overall">
-          <span className="rp-src-note">{t("repCard.fecRankedByFunds")}</span>
+    <>
+      {verifiedRoster.length > 0 && (
+        <div className="cv2-issues challengers-strip">
+          <div className="cv2-block-head">
+            <div className="lab">{t("repCard.runningForSeat")}</div>
+            <div className="overall">
+              <span className="rp-src-note">{t("repCard.fecRankedByFunds")}</span>
+            </div>
+          </div>
+          {verifiedRoster.map((ch) => (
+            <ChallengerRow
+              key={ch.id}
+              challenger={ch}
+              seat={seat}
+              userIssues={userIssues}
+              stateCode={stateCode}
+              onShowBudgetOptions={onShowBudgetOptions}
+            />
+          ))}
         </div>
-      </div>
-      {list.map((ch) => (
-        <ChallengerRow
-          key={ch.id}
-          challenger={ch}
-          seat={seat}
-          userIssues={userIssues}
-          stateCode={stateCode}
-          onShowBudgetOptions={onShowBudgetOptions}
-        />
-      ))}
-    </div>
+      )}
+      {financeOnly.length > 0 && (
+        <div className="cv2-issues challengers-strip finance-only-strip">
+          <div className="cv2-block-head">
+            <div className="lab">{t("repCard.financeOnlyFilings")}</div>
+            <div className="overall">
+              <span className="rp-src-note">
+                {t("repCard.financeOnlyFilingsNote")}
+              </span>
+            </div>
+          </div>
+          {financeOnly.map((ch) => (
+            <ChallengerRow
+              key={ch.id}
+              challenger={ch}
+              seat={seat}
+              userIssues={userIssues}
+              stateCode={stateCode}
+              onShowBudgetOptions={onShowBudgetOptions}
+            />
+          ))}
+        </div>
+      )}
+    </>
   );
 }
 
@@ -975,49 +1004,71 @@ export function RepCard({
         </div>
       ) : (
         (() => {
-          const hasChallengers = (seat.challengers || []).length > 0;
-          const successor = hasChallengers
-            ? (seat.challengers || []).find((c) => c.id === pickId)
+          const selectableChallengers = (seat.challengers || []).filter((c) =>
+            isSelectableReplacement(c),
+          );
+          const hasSelectableChallengers = selectableChallengers.length > 0;
+          const hasRosterButNoSelectable =
+            (seat.challengers || []).length > 0 && !hasSelectableChallengers;
+          const successor = hasSelectableChallengers
+            ? selectableChallengers.find((c) => c.id === pickId)
             : null;
           return (
-            <div className="cv2-actions verdicts">
-              <button
-                className={"pick " + (verdict === "keep" ? "picked" : "")}
-                onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
-              >
-                <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
-                <span>
-                  {verdict === "keep"
-                    ? t("repCard.worthKeepingUndo")
-                    : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
-                </span>
-              </button>
-              <button
-                className={
-                  "pick replace " +
-                  (verdict === "replace" ? "picked-replace" : "")
-                }
-                data-testid="open-duel"
-                onClick={() => {
-                  if (hasChallengers && onOpenDuel) {
-                    onOpenDuel(seat.id);
-                  } else {
-                    onVerdict(verdict === "replace" ? null : "replace");
+            <>
+              {hasRosterButNoSelectable && (
+                <div
+                  className="cv2-notup-band"
+                  data-testid="roster-provenance-warning"
+                >
+                  <div className="cv2-notup-eyebrow">
+                    {t("repCard.rosterNotVerifiedEyebrow")}
+                  </div>
+                  <p className="cv2-notup-text">
+                    {t("repCard.rosterNotVerifiedSentence")}
+                  </p>
+                </div>
+              )}
+              <div className="cv2-actions verdicts">
+                <button
+                  className={"pick " + (verdict === "keep" ? "picked" : "")}
+                  onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
+                >
+                  <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
+                  <span>
+                    {verdict === "keep"
+                      ? t("repCard.worthKeepingUndo")
+                      : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
+                  </span>
+                </button>
+                <button
+                  className={
+                    "pick replace " +
+                    (verdict === "replace" ? "picked-replace" : "")
                   }
-                }}
-              >
-                <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
-                <span>
-                  {verdict === "replace"
-                    ? successor
-                      ? t("repCard.replacingWith", { name: successor.name })
-                      : t("repCard.timeToReplaceChange")
-                    : hasChallengers
-                      ? t("repCard.timeToReplaceCompare")
-                      : t("repCard.timeToReplace")}
-                </span>
-              </button>
-            </div>
+                  data-testid="open-duel"
+                  onClick={() => {
+                    if (hasSelectableChallengers && onOpenDuel) {
+                      onOpenDuel(seat.id);
+                    } else {
+                      onVerdict(verdict === "replace" ? null : "replace");
+                    }
+                  }}
+                >
+                  <span className="ck">
+                    {verdict === "replace" ? "✕" : ""}
+                  </span>
+                  <span>
+                    {verdict === "replace"
+                      ? successor
+                        ? t("repCard.replacingWith", { name: successor.name })
+                        : t("repCard.timeToReplaceChange")
+                      : hasSelectableChallengers
+                        ? t("repCard.timeToReplaceCompare")
+                        : t("repCard.timeToReplace")}
+                  </span>
+                </button>
+              </div>
+            </>
           );
         })()
       )}

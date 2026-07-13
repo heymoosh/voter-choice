@@ -83,20 +83,38 @@ export async function mockDelegation(page: Page): Promise<void> {
   });
 }
 
-/** 2026 FEC filers running against the House incumbent — drives the
- *  head-to-head duel ("Time to replace" flow). Ranked by funds raised. */
+const VERIFIED_ROSTER_PROVENANCE = {
+  sourceKind: "official_sample_ballot",
+  election: "2026 general",
+  retrievedAt: "2026-07-13T12:00:00.000Z",
+  sourceLinks: [
+    {
+      label: "Mock county sample ballot",
+      url: "https://elections.example/mock-sample-ballot",
+    },
+  ],
+  confidence: "verified_current_ballot",
+  ballotStatus: "verified_current_ballot",
+  selectableAsReplacement: true,
+} as const;
+
+/** Verified 2026 current-ballot challengers running against the House
+ *  incumbent — drives the head-to-head duel ("Time to replace" flow).
+ *  Ranked by funds raised. */
 export const HOUSE_CHALLENGERS = [
   {
     id: "ch-reyes",
     name: "Elena Reyes",
     party: "Democrat",
     totalReceipts: 1_340_000,
+    rosterProvenance: VERIFIED_ROSTER_PROVENANCE,
   },
   {
     id: "ch-whitfield",
     name: "Sam Whitfield",
     party: "Independent",
     totalReceipts: 95_000,
+    rosterProvenance: VERIFIED_ROSTER_PROVENANCE,
   },
 ] as const;
 

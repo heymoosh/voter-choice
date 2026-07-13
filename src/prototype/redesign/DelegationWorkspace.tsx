@@ -24,6 +24,7 @@ import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { DelegationOverview } from "./DelegationOverview";
 import { issuesForLevel, issuesForSeatCard } from "./delegationData";
+import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 function tierIntro(section, { t }) {
   const tr = t || ((k) => k);
@@ -212,7 +213,9 @@ export function ScorecardPane({
                           {v === "replace" &&
                             (() => {
                               const pick = (s.challengers || []).find(
-                                (c) => c.id === picks?.[s.id],
+                                (c) =>
+                                  c.id === picks?.[s.id] &&
+                                  isSelectableReplacement(c),
                               );
                               return pick ? (
                                 <span className="pick-successor">

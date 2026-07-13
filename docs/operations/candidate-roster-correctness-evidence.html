@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Candidate roster correctness containment evidence</title>
+    <style>
+      body {
+        font: 16px/1.45 system-ui, sans-serif;
+        margin: 2rem;
+        color: #162033;
+      }
+      section {
+        border: 1px solid #d7deea;
+        border-radius: 12px;
+        margin: 1rem 0;
+        padding: 1rem;
+      }
+      .unsafe {
+        border-color: #c7372f;
+        background: #fff5f3;
+      }
+      .safe {
+        border-color: #2f7d51;
+        background: #f3fbf6;
+      }
+      .muted {
+        color: #596579;
+      }
+      .candidate-row {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        padding: 0.6rem 0;
+      }
+      code {
+        background: #eef2f7;
+        border-radius: 6px;
+        padding: 0.1rem 0.35rem;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Candidate roster correctness containment evidence</h1>
+    <p>
+      Staged artifact for card c5a813bb. The before state documents the unsafe
+      presentation this change contains; the after states document how the UI
+      should read when roster provenance is finance-only, unverified, or
+      verified current-ballot data.
+    </p>
+
+    <section class="unsafe" data-evidence-state="before-unsafe-fec-only">
+      <h2>Before: unsafe FEC-only replacement roster</h2>
+      <div class="candidate-row">
+        <strong>Finance Filer</strong>
+        <button>Time to replace — compare who&apos;s running →</button>
+      </div>
+      <p>
+        Problem: a row sourced only from FEC campaign-finance filings was
+        presented as if it were running for this seat and selectable as a
+        current replacement.
+      </p>
+    </section>
+
+    <section class="safe" data-evidence-state="after-fec-finance-only">
+      <h2>After: FEC row preserved as finance history only</h2>
+      <div class="candidate-row">
+        <strong>Finance Filer</strong>
+        <span class="muted">FEC filing · campaign-finance evidence</span>
+      </div>
+      <p>
+        Campaign-finance records are not ballot roster proof. The row remains
+        available for fundraising context, but replacement comparison is not
+        opened. <code>selectableAsReplacement=false</code>
+      </p>
+    </section>
+
+    <section class="safe" data-evidence-state="after-unverified-user-supplied">
+      <h2>After: user-supplied roster is honest but not authoritative</h2>
+      <div class="candidate-row">
+        <strong>Pasted Ballot Candidate</strong>
+        <span class="muted">User pasted/uploaded ballot text</span>
+      </div>
+      <p>
+        The app can help research the user-supplied roster while labeling it
+        unverified. It must not treat pasted text, uploaded extraction, or
+        source-links-only data as an authoritative current ballot.
+        <code>selectableAsReplacement=false</code>
+      </p>
+    </section>
+
+    <section class="safe" data-evidence-state="after-verified-current-roster">
+      <h2>After: verified current-ballot roster can be selectable</h2>
+      <div class="candidate-row">
+        <strong>Verified Challenger</strong>
+        <button>Time to replace — compare who&apos;s running →</button>
+      </div>
+      <p>
+        Verified official sample-ballot, state/county official list, or
+        address/election-tied Google Civic contest data can unlock comparison.
+        <code>selectableAsReplacement=true</code>
+      </p>
+    </section>
+  </body>
+</html>

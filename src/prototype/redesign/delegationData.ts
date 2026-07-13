@@ -32,6 +32,7 @@ import {
 } from "../realData";
 import { computeOverallAlignmentPct, getScoreForIssue } from "../data";
 import { derivePeerComparison, type PeerComparison } from "./peerComparison";
+import type { RosterProvenance } from "../../lib/rosterProvenance";
 
 // ---------------------------------------------------------------------------
 // /api/delegation response (mirrors src/app/api/delegation/route.ts)
@@ -70,6 +71,7 @@ export interface ApiSeatChallenger {
   name: string;
   party: string | null;
   totalReceipts: number | null;
+  rosterProvenance: RosterProvenance;
 }
 
 export interface ApiDelegationSeat {

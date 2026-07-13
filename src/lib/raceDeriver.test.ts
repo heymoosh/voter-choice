@@ -211,6 +211,37 @@ describe("raceDeriver", () => {
   });
 
   describe("deriveRaces", () => {
+    it("threads contest roster provenance to derived races", () => {
+      const races = deriveRaces({
+        contests: [
+          {
+            office: "U.S. Senate",
+            candidates: [{ name: "Verified Candidate", party: "Democratic" }],
+            rosterProvenance: {
+              sourceKind: "google_civic",
+              election: "2026 General Election",
+              retrievedAt: "2026-07-13T12:00:00.000Z",
+              sourceLinks: [
+                {
+                  label: "Google Civic Information API",
+                  url: "https://developers.google.com/civic-information",
+                },
+              ],
+              confidence: "official_address_election_tied",
+              ballotStatus: "verified_current_ballot",
+              selectableAsReplacement: true,
+            },
+          },
+        ],
+      });
+
+      expect(races[0].rosterProvenance).toMatchObject({
+        sourceKind: "google_civic",
+        confidence: "official_address_election_tied",
+        ballotStatus: "verified_current_ballot",
+      });
+    });
+
     it("returns empty array when no contests", () => {
       expect(deriveRaces(null)).toEqual([]);
       expect(deriveRaces({ contests: [] })).toEqual([]);
