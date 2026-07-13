@@ -30,6 +30,8 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 **[P2] Refactor the codebase**
 - Do it if it makes sense for code maintainability - I’m assuming doing this will make the app more foolproof, run faster, be easier to audit and work better.
+
+CLARIFICATION (Muxin, 2026-07-12): I rely on your judgement on how to make codebase better without breaking anything. How would we test for that? what would we even do? Most importantly - don't break things. Goal: make codebase better?
 - STATUS: Backlog
 - DECISION: Auto run the deployment - if it’s not destructive (and it shouldn’t be), I accept all recommendations on the approach.
 <!-- card-id: fbe076b3-dbe8-4e03-a2f3-246229aff4b5 -->
@@ -136,6 +138,8 @@ to do. While the information is there, it took me a long time to understand what
 **[P3] Decide tablet/mobile Edit-Issues prominence**
 - Edit IS reachable via the scorecard "Edit" button (PR #173) but a tester could not find it — discoverability, not a missing feature.
 - DEFERRED to P3 (2026-06-30): re-evaluate AFTER the redesign lands — may be moot once the new layout ships. Parked in Backlog until then.
+
+CLARIFICATION (Muxin, 2026-07-12): we already have a redesigned app. I'll have to double check and see if this is still an issue.
 - STATUS: Backlog
 <!-- card-id: 05b9ca68-e9ff-4701-aa1b-0ab86041871c -->
 
@@ -363,6 +367,8 @@ Candidates UX flow".
 **[P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)**
 - Umbrella — NOT in-scope work until we're ready to launch. Rolls up the final "flip to public" toggles so they don't get mistaken for normal work. Each member points a dependency at this card, so the AUTO lane never picks them early. Closes at go-live when all members are done.
 - Members: Lower CHAT_DAILY_SESSION_LIMIT 100→10 · Reset Polis count to 0 · Translations to major languages.
+
+CLARIFICATION (Muxin, 2026-07-12): good question - so we do not go live until I feel good abou tit. Which requires UX finalized, Polis being reset, language tnranslations, but possibly other things as well - is support easy to find? Do I have a CTA to work with me - inbound clients? Have I done more UX testing with beta users? Do I have my landing page? that's outside of this repo's concern but it's my conrern for going live right now.
 - STATUS: Backlog
 <!-- card-id: 0054bb72-cb87-46a6-987d-9cebaeb3e0eb -->
 
@@ -377,9 +383,11 @@ Candidates UX flow".
 <!-- card-id: a09a77c8-b3b7-4315-a1b3-dbc03a881cff -->
 
 **[P0] Reset Polis count to 0 before launch**
+CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - all this means is, I've been doing tests on the app so it's counting my tests as actual voter info, but Polis should count real user's real issues and values. So the counter reset just makes sure my dirty test data doesn't muck up the Polis data.
 - STATUS: Backlog
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
+- GROOMED: Ready/deferred: identify dirty-test Polis storage and prepare a reviewed one-command launch reset; no prod mutation overnight — 2026-07-12
 <!-- card-id: 1f5e2506-106d-4d72-97ec-d85a2d8c214d -->
 
 **[P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 100 back to 10 before public launch**
@@ -405,6 +413,7 @@ Candidates UX flow".
 - STATUS: Backlog
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
+- GROOMED: Ready: launch-time env removal, redeploy, and verification are explicit; attended/deferred, no overnight execution — 2026-07-12
 <!-- card-id: 28bf87ec-8587-4d1f-acc7-ab5ff7467cf4 -->
 
 **[P1] Translations to major languages**
@@ -413,6 +422,8 @@ Candidates UX flow".
 - **Language set (TBD — confirm):** a defensible starting point is the federally-relevant ballot languages under Voting Rights Act §203 — Spanish (done), plus Chinese, Vietnamese, Korean, Tagalog, and the Native American / Alaska Native language groups where covered jurisdictions require them. Choose the set deliberately rather than "all major world languages." (Suggested by Claude — confirm.)
 - **Sequencing note:** Translation work depends on the final Phase 1 UX/UI — don't translate strings that are still changing. Blocks on the "[P1] Phase 1 UX/UI finalized (redesign complete)" milestone above (this carries forward the old "no translations until the UX is ironed out" instruction from the retired ES-locale card).
 - GO-LIVE GATE (2026-06-30): also a member of "[P1] EPIC: Go-live launch gate" — do NOT translate until launch prep. (Machine dep stays on Phase-1-UX since a card carries only one; the EPIC link is organizational.)
+
+CLARIFICATION (Muxin, 2026-07-12): I think I briefly mentioned this in the app: we want to be able to support any language that is spoken in the United States. Although I don't think the right decision here is for us to create our own personally translated language for the entire app, I think it's more like we need to know where we go expose content to users and what content even needs to be translated. To make sure that if I just switch it to another language, it automatically translates across all those different pages and all those different user interfaces, that's the goal.
 - STATUS: Backlog
 - DEPENDS ON: Phase 1 UX/UI finalized (redesign complete)
 <!-- card-id: 2b325135-bafc-454f-b253-5bce21e05a13 -->
@@ -422,8 +433,11 @@ Candidates UX flow".
 - The phasing model says Phase 1 is "largely built; needs prod-hardening + redesign UX." This card represents that redesign / UX-and-UI finalization as a single gate, so downstream work that can't start until the surface is stable has something concrete to block on.
 - Added new Polis UI changes 6/15
 - Not a code task in itself — it closes when the Phase 1 redesign UX/UI is locked.
+
+CLARIFICATION (Muxin, 2026-07-12): I'm currently working through this. We did a lot of big Keystone redesign, and I'm in the phase of debugging right now, but after it's actually done and I'm happy with it, then I would consider this closed.
 - STATUS: Backlog
 - DEPENDS ON: [P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED
+- GROOMED: Ready as attended milestone: close only after Keystone debugging is complete and Muxin is satisfied with UX/UI — 2026-07-12
 <!-- card-id: e18e65fd-faf8-4aaf-8c4f-cee2111725c6 -->
 
 **[P1] EPIC: Complete Alignment work**
@@ -443,6 +457,12 @@ Candidates UX flow".
   - No alignment data for non-legislative candidates (Backlog)
   - Second candidate missing alignment block when first has one (Backlog)
   - Web-search-based alignment scoring as fallback (idea)
+
+CLARIFICATION (Muxin, 2026-07-12): Yeah, alignment overall is really tricky. What it really means is we try to evaluate how somebody voted on an issue and decide from there: did they vote in your favor or not? That's what alignment means.
+
+I honestly don't even know what work is still in this category. If we have anything in our backlog that's still looking at this, I have not personally checked to see how accurate our current alignment strategy or setup is and how good it is at trying to figure out if somebody actually voted in your favor or not. I don't exactly know how to even test for this right now.
+
+I think it's gonna be a lot of vibe checks, honestly, but also doing whatever we can to make sure that we have good data and that we're interpreting that data correctly and that we're surfacing that data correctly whenever somebody gives us an issue. Again, it'd be completely up to you to tell me how to best do this.
 - STATUS: Backlog
 - DECISION: defer — umbrella tracker, not a code task; surface, do not build.
 <!-- card-id: f474c4b8-e8c0-4129-9a67-4705a1370efe -->
@@ -960,6 +980,13 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 **[P1] #151 usage metrics miss the research sub-agent (the likely spike source)**
 - Found 2026-06-30 reviewing held PR #151 (anon chat usage metrics). `recordChatUsage` only fires in the main chat SSE stream (`callKind:"chat"`, `src/app/api/chat/route.ts:1394`). The research sub-agent (`research-sub-agent.ts:161`) makes its OWN Haiku + web_search call and records only to the budget, never to `chat_usage_metrics` — so `call_kind:"research"` is never written and the most likely budget-spike driver is INVISIBLE in the table. As-is the metrics only partially answer "where is the Haiku spend going."
 - Fix: also record the research sub-agent's model + token + web-search cost with `call_kind:"research"`. Do BEFORE relying on #151 to diagnose the budget.
+
+CLARIFICATION (Muxin, 2026-07-12): I was mostly worried about whether or not my API usage was being exceeded and where exactly, so I don't actually know if we already have this. Did we already build everything out for figuring out and triaging:
+- Where is usage happening?
+- Where is my API spend happening across the app?
+- Which interface, which specific service, which specific feature is using the API?
+- How much, when?
+so I can triage what happens if I see a big spike in usage? That's what the point of it is. I don't exactly know how to set it up, though.
 - STATUS: Backlog
 <!-- card-id: 69d3e007-48b8-4ca0-ad65-b652fbb2aea4 -->
 
@@ -973,6 +1000,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 **[P2] #146 empty k-means cluster silently suppresses all consensus statements**
 - Found 2026-06-30 reviewing held PR #146 (polis clustering). `findConsensusStatements` (`src/lib/polis/clustering.ts:342-345`) treats an empty cluster (size 0) as a hard consensus failure (`allClear=false; break`), so with `DEFAULT_K=3` any empty cluster silently suppresses ALL consensus statements — the report's headline feature. Inconsistent with `detectDividedState` (`clustering.ts:412`) which correctly filters `c.size > 0`. Inert today (surface unwired); fix BEFORE wiring the Polis report surface. (Also `reportAssembly.ts:194` emits size-0 phantom clusters.)
 - STATUS: Backlog
+- GROOMED: Ready: empty-cluster consensus and phantom-cluster behavior are pinpointed and regression-testable — 2026-07-12
 <!-- card-id: 174c8798-b17b-4d40-b17f-a317810ab423 -->
 
 **[P0] Fix #171 polling-place note crash — `t(...) is not a function`**
@@ -1030,8 +1058,11 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Surfaced by PR #157 (simplify address box).
 - The new inline 01/02/03 steps under the address box overlap in intent with the existing full-width HowItWorksWalkthrough ("From address to printed ballot in three steps") that also renders below the hero.
 - DEFERRED to P3 (2026-06-30): re-evaluate AFTER the redesign lands — the inline steps + walkthrough may both change, so this de-dup may resolve itself. Parked in Backlog until then.
+
+CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there anything that's needed to hear?
 - STATUS: Backlog
 - DEPENDS ON: [P2] Simplify the Registered Address entry box
+- GROOMED: Ready/resolved: redesigned HomeView no longer renders the standalone walkthrough; verify and close with no product change — 2026-07-12
 <!-- card-id: 8807920f-0f26-4430-878e-6c012f03835b -->
 
 **[P2] Spanish/i18n for new redesign copy (Why Now? page, orientation screen)**
@@ -1053,6 +1084,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
 - GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
 - STATUS: Backlog
+- GROOMED: Ready attended: four screenshot surfaces and non-required Ubuntu CI leg are specified; human baseline review remains required — 2026-07-12
 <!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
 
 **[P0] Golden-address alignment smoke test (Cornyn / healthcare_affordability) — defense-in-depth on the drift guard**
@@ -1062,6 +1094,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - NEW infra, not a quick add.
 - STATUS: Backlog
 - DEPENDS ON: We need a deployment/test environment/server/branch?
+- GROOMED: Ready but blocked: seeded-Neon Cornyn healthcare assertion is explicit; waits on test environment — 2026-07-12
 <!-- card-id: 2baacd7e-901d-4407-8dcb-26ce56ed9fbc -->
 
 **[P2] Harden check-schema-drift parser: strip SQL comments before splitting on `;`**
@@ -1069,6 +1102,7 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Fix: in `splitStatements`, strip comments FIRST, then split on `--> statement-breakpoint` and `;` (reorder the pipeline). Add a regression test: a migration whose `CREATE TABLE` body comment contains a `;` must parse to a complete statement.
 - Why it matters: a mis-parsed `CREATE TABLE` leaves that object out of the expected schema, so the drift guard FAILS OPEN on it — the exact prod-behind failure the guard exists to catch.
 - STATUS: Backlog
+- GROOMED: Ready: parser reorder and semicolon-in-comment regression test define a concrete proof — 2026-07-12
 <!-- card-id: a06b360f-5017-45fc-b6c8-5ca67126b72d -->
 
 **[P1] Set up phase gating — gate Phase 2/3 behind [GATE] epic cards**
@@ -1081,19 +1115,27 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - NOT urgent today: auto mode ALREADY only works Phase 1 + Cross-cutting — all 14 To Do cards are Phase 1 (8) or Cross-cutting (6), zero Phase 2/3 cards are in To Do, and the picker only draws from To Do. This gate is future-proofing for the coming auto-promote loop (Backlog→To Do), the only path that could promote a ready Phase 2/3 Backlog card early.
 - Apply via the prose_kanban helpers (o.append_card for the gates, o.apply_dependency for each link) — avoid hand-editing the md — and do it while no orchestrator is running / the board file isn't open, so live STATUS lines aren't clobbered.
 - ATTENDED / not an AUTO build — board restructure needs product judgment on the mislabeled Phase 3 cards. Kept in Backlog.
+
+CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are mislabeled. Is that what this gating setup claims? Anyway, between all of these, this is just a way to make sure that the orchestrator doesn't accidentally start working on something that's not on the current roadmap. I want it to only focus on phase one cards, which is why there's this gait where we don't even want to touch phase two cards unless phase one is done. I think I also have to give it approval because I'm not ready to start working on anything in phase two, Even if phase one is done, I think I need some validation and market feedback to tell me whether or not this project is even worth additional investment into phase two, if that makes sense.
 - STATUS: Backlog
+- GROOMED: Ready attended: gate current Phase 2/3 sections; Phase 2 opens only after validation and explicit Muxin approval — 2026-07-12
 <!-- card-id: 6970765b-bce5-4850-94a5-f0e7e662f77e -->
 
 **[GATE] Phase 1 complete → open Phase 2**
 - Milestone GATE — NOT a buildable task; keep in Backlog. Stays here until Phase 1 is shippable and you decide to open Phase 2.
 - Marking this Done unblocks every Phase 2 card that DEPENDS ON it (and, once the auto-promote loop ships, lets them flow Backlog→To Do). Keep the title EXACT/stable — DEPENDS ON matches on it.
+
+CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are mislabeled. Is that what this gating setup claims? Anyway, between all of these, this is just a way to make sure that the orchestrator doesn't accidentally start working on something that's not on the current roadmap. I want it to only focus on phase one cards, which is why there's this gait where we don't even want to touch phase two cards unless phase one is done. I think I also have to give it approval because I'm not ready to start working on anything in phase two, Even if phase one is done, I think I need some validation and market feedback to tell me whether or not this project is even worth additional investment into phase two, if that makes sense.
 - STATUS: Backlog
 <!-- card-id: b5ecb804-6403-4c95-b7e0-4c7e8e99b3c9 -->
 
 **[GATE] Phase 2 complete → open Phase 3**
 - Milestone GATE — same idea, one phase up. NOT a buildable task; keep in Backlog until you open Phase 3.
 - Marking this Done unblocks every Phase 3 card that DEPENDS ON it. Keep the title EXACT/stable.
+
+CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are mislabeled. Is that what this gating setup claims? Anyway, between all of these, this is just a way to make sure that the orchestrator doesn't accidentally start working on something that's not on the current roadmap. I want it to only focus on phase one cards, which is why there's this gait where we don't even want to touch phase two cards unless phase one is done. I think I also have to give it approval because I'm not ready to start working on anything in phase two, Even if phase one is done, I think I need some validation and market feedback to tell me whether or not this project is even worth additional investment into phase two, if that makes sense.
 - STATUS: Backlog
+- DEPENDS ON: [GATE] Phase 1 complete → open Phase 2
 <!-- card-id: 726d732a-9c49-4e1f-9473-0266ba78994b -->
 
 **[P1] CI-gate hardening: design-gate spec-sync + component-minimization — PAUSED mid-implementation**
