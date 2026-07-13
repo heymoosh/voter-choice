@@ -261,6 +261,63 @@ describe("congressional calendar oracle", () => {
     );
   });
 
+  it("treats identical state replays as idempotent but flags a reused state revision ID with different evidence", () => {
+    const oracle = new CalendarOracle();
+    const original = stateRevision("2026-05-19", "al-duplicate-state");
+    oracle.applyRevision(original);
+    oracle.applyRevision(original);
+    expect(oracle.contest(original.identity)?.stateRevisions).toHaveLength(1);
+
+    oracle.applyRevision({ ...original, electionDate: "2026-08-11" });
+
+    expect(oracle.contest(original.identity)).toEqual(
+      expect.objectContaining({
+        electionDate: "2026-05-19",
+        calendarReviewRequired: true,
+        reviewItems: [
+          expect.objectContaining({ kind: "revision_id_conflict" }),
+        ],
+      }),
+    );
+  });
+
+  it("deduplicates identical FEC signals and flags a reused FEC revision ID with changed evidence", () => {
+    const oracle = new CalendarOracle();
+    const state = stateRevision("2026-05-19", "al-fec-duplicate-state");
+    const signal: CalendarRevision = {
+      ...state,
+      id: "al-fec-duplicate",
+      electionDate: "2026-08-11",
+      source: {
+        ...state.source,
+        kind: "fec_calendar_signal",
+        authorityName: "Federal Election Commission",
+      },
+    };
+    oracle.applyRevision(state);
+    oracle.applyRevision(signal);
+    oracle.applyRevision(signal);
+
+    expect(oracle.contest(state.identity)).toEqual(
+      expect.objectContaining({
+        fecSignals: [expect.objectContaining({ id: signal.id })],
+        reviewItems: [
+          expect.objectContaining({ kind: "fec_state_date_conflict" }),
+        ],
+      }),
+    );
+
+    oracle.applyRevision({
+      ...signal,
+      source: { ...signal.source, checksum: "changed-checksum" },
+    });
+    expect(oracle.contest(state.identity)?.reviewItems).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ kind: "revision_id_conflict" }),
+      ]),
+    );
+  });
+
   it("does not read state logistics JSON as calendar authority", () => {
     expect(readFileSync(oracleModule, "utf8")).not.toContain("src/data/states");
   });

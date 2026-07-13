@@ -56,7 +56,10 @@ export type CalendarRevision = {
 };
 
 export type CalendarReviewItem = {
-  kind: "fec_state_date_conflict" | "state_authority_conflict";
+  kind:
+    | "fec_state_date_conflict"
+    | "state_authority_conflict"
+    | "revision_id_conflict";
   revisionId: string;
   currentStateRevisionId?: string;
   message: string;
@@ -70,6 +73,7 @@ export type CalendarContest = {
   authoritativeStateRevisionId: string;
   stateRevisions: CalendarRevision[];
   fecSignals: CalendarRevision[];
+  revisionIdConflicts: CalendarReviewItem[];
   calendarReviewRequired: boolean;
   reviewItems: CalendarReviewItem[];
 };
@@ -176,6 +180,9 @@ function cloneContest(contest: CalendarContest): CalendarContest {
     identity: { ...contest.identity },
     stateRevisions: contest.stateRevisions.map(cloneRevision),
     fecSignals: contest.fecSignals.map(cloneRevision),
+    revisionIdConflicts: contest.revisionIdConflicts.map((item) => ({
+      ...item,
+    })),
     reviewItems: contest.reviewItems.map((item) => ({ ...item })),
   };
 }
@@ -189,6 +196,10 @@ export class CalendarOracle {
   private readonly contests = new Map<string, CalendarContest>();
   /** FEC signals may arrive before state evidence, but never create a contest. */
   private readonly pendingFecSignals = new Map<string, CalendarRevision[]>();
+  private readonly pendingRevisionIdConflicts = new Map<
+    string,
+    CalendarReviewItem[]
+  >();
 
   static fromRevisions(revisions: readonly CalendarRevision[]): CalendarOracle {
     const oracle = new CalendarOracle();
@@ -205,11 +216,31 @@ export class CalendarOracle {
       if (!existing) {
         // FEC has no authority to create an expected ballot contest.
         const signals = this.pendingFecSignals.get(id) ?? [];
-        signals.push(cloneRevision(revision));
+        const sameId = signals.find(
+          (candidate) => candidate.id === revision.id,
+        );
+        if (!sameId) signals.push(cloneRevision(revision));
+        else if (!sameRevision(sameId, revision)) {
+          const conflicts = this.pendingRevisionIdConflicts.get(id) ?? [];
+          if (!conflicts.some((item) => item.revisionId === revision.id)) {
+            conflicts.push({
+              kind: "revision_id_conflict",
+              revisionId: revision.id,
+              message: `Revision ID ${revision.id} was replayed with different evidence and was retained for review only`,
+            });
+            this.pendingRevisionIdConflicts.set(id, conflicts);
+          }
+        }
         this.pendingFecSignals.set(id, signals);
         return undefined;
       }
-      existing.fecSignals.push(cloneRevision(revision));
+      const sameId = existing.fecSignals.find(
+        (candidate) => candidate.id === revision.id,
+      );
+      if (!sameId) existing.fecSignals.push(cloneRevision(revision));
+      else if (!sameRevision(sameId, revision)) {
+        this.recordRevisionIdConflict(existing, revision, sameId);
+      }
       this.reconcileContest(existing);
       return cloneContest(existing);
     }
@@ -222,6 +253,11 @@ export class CalendarOracle {
         authoritativeStateRevisionId: revision.id,
         stateRevisions: [cloneRevision(revision)],
         fecSignals: [],
+        revisionIdConflicts: [
+          ...(this.pendingRevisionIdConflicts.get(id) ?? []).map((item) => ({
+            ...item,
+          })),
+        ],
         calendarReviewRequired: false,
         reviewItems: [],
       };
@@ -230,6 +266,7 @@ export class CalendarOracle {
         ...(this.pendingFecSignals.get(id) ?? []).map(cloneRevision),
       );
       this.pendingFecSignals.delete(id);
+      this.pendingRevisionIdConflicts.delete(id);
       this.reconcileContest(contest);
       return cloneContest(contest);
     }
@@ -238,6 +275,9 @@ export class CalendarOracle {
       (candidate) => candidate.id === revision.id,
     );
     if (!sameId) existing.stateRevisions.push(cloneRevision(revision));
+    else if (!sameRevision(sameId, revision)) {
+      this.recordRevisionIdConflict(existing, revision, sameId);
+    }
     this.reconcileContest(existing);
     return cloneContest(existing);
   }
@@ -261,6 +301,9 @@ export class CalendarOracle {
     contest.identity = { ...authoritative.identity };
     contest.authoritativeStateRevisionId = authoritative.id;
 
+    reviews.unshift(
+      ...contest.revisionIdConflicts.map((item) => ({ ...item })),
+    );
     for (const signal of contest.fecSignals) {
       if (signal.electionDate !== contest.electionDate) {
         reviews.push({
@@ -338,6 +381,29 @@ export class CalendarOracle {
 
     return { authoritative, reviews };
   }
+
+  private recordRevisionIdConflict(
+    contest: CalendarContest,
+    incoming: CalendarRevision,
+    retained: CalendarRevision,
+  ): void {
+    if (
+      contest.revisionIdConflicts.some(
+        (item) => item.revisionId === incoming.id,
+      )
+    ) {
+      return;
+    }
+    contest.revisionIdConflicts.push({
+      kind: "revision_id_conflict",
+      revisionId: incoming.id,
+      currentStateRevisionId:
+        incoming.source.kind === "state_election_authority"
+          ? retained.id
+          : contest.authoritativeStateRevisionId,
+      message: `Revision ID ${incoming.id} was replayed with different evidence and was retained for review only`,
+    });
+  }
 }
 
 function revisionTimestamp(revision: CalendarRevision): number | undefined {
@@ -363,6 +429,15 @@ function isLaterRevision(
     successorTime !== undefined &&
     predecessorTime !== undefined &&
     successorTime > predecessorTime
+  );
+}
+
+function sameRevision(a: CalendarRevision, b: CalendarRevision): boolean {
+  return (
+    a.electionDate === b.electionDate &&
+    a.supersedesRevisionId === b.supersedesRevisionId &&
+    JSON.stringify(a.identity) === JSON.stringify(b.identity) &&
+    JSON.stringify(a.source) === JSON.stringify(b.source)
   );
 }
 
