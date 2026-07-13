@@ -209,7 +209,8 @@ export class CalendarOracle {
         this.pendingFecSignals.set(id, signals);
         return undefined;
       }
-      this.attachFecSignal(existing, revision);
+      existing.fecSignals.push(cloneRevision(revision));
+      this.reconcileContest(existing);
       return cloneContest(existing);
     }
 
@@ -225,35 +226,19 @@ export class CalendarOracle {
         reviewItems: [],
       };
       this.contests.set(id, contest);
-      for (const signal of this.pendingFecSignals.get(id) ?? []) {
-        this.attachFecSignal(contest, signal);
-      }
+      contest.fecSignals.push(
+        ...(this.pendingFecSignals.get(id) ?? []).map(cloneRevision),
+      );
       this.pendingFecSignals.delete(id);
+      this.reconcileContest(contest);
       return cloneContest(contest);
     }
 
-    const current = this.authoritativeStateRevision(existing);
-    existing.stateRevisions.push(cloneRevision(revision));
-    if (!current || current.electionDate === revision.electionDate) {
-      existing.electionDate = revision.electionDate;
-      existing.identity = { ...revision.identity };
-      existing.authoritativeStateRevisionId = revision.id;
-      return cloneContest(existing);
-    }
-    if (revision.supersedesRevisionId === current.id) {
-      existing.electionDate = revision.electionDate;
-      existing.identity = { ...revision.identity };
-      existing.authoritativeStateRevisionId = revision.id;
-      return cloneContest(existing);
-    }
-
-    existing.calendarReviewRequired = true;
-    existing.reviewItems.push({
-      kind: "state_authority_conflict",
-      revisionId: revision.id,
-      currentStateRevisionId: current.id,
-      message: `State evidence ${revision.id} changes ${current.electionDate} without superseding ${current.id}`,
-    });
+    const sameId = existing.stateRevisions.find(
+      (candidate) => candidate.id === revision.id,
+    );
+    if (!sameId) existing.stateRevisions.push(cloneRevision(revision));
+    this.reconcileContest(existing);
     return cloneContest(existing);
   }
 
@@ -269,29 +254,116 @@ export class CalendarOracle {
       .map(cloneContest);
   }
 
-  private attachFecSignal(
-    contest: CalendarContest,
-    revision: CalendarRevision,
-  ): void {
-    contest.fecSignals.push(cloneRevision(revision));
-    if (contest.electionDate !== revision.electionDate) {
-      contest.calendarReviewRequired = true;
-      contest.reviewItems.push({
-        kind: "fec_state_date_conflict",
-        revisionId: revision.id,
-        currentStateRevisionId: contest.authoritativeStateRevisionId,
-        message: `FEC signal ${revision.electionDate} differs from state authority ${contest.electionDate}`,
-      });
+  /** Rebuild the authority graph so arrival order cannot choose a date. */
+  private reconcileContest(contest: CalendarContest): void {
+    const { authoritative, reviews } = this.resolveStateRevisionGraph(contest);
+    contest.electionDate = authoritative.electionDate;
+    contest.identity = { ...authoritative.identity };
+    contest.authoritativeStateRevisionId = authoritative.id;
+
+    for (const signal of contest.fecSignals) {
+      if (signal.electionDate !== contest.electionDate) {
+        reviews.push({
+          kind: "fec_state_date_conflict",
+          revisionId: signal.id,
+          currentStateRevisionId: contest.authoritativeStateRevisionId,
+          message: `FEC signal ${signal.electionDate} differs from state authority ${contest.electionDate}`,
+        });
+      }
     }
+    contest.reviewItems = reviews;
+    contest.calendarReviewRequired = reviews.length > 0;
   }
 
-  private authoritativeStateRevision(
-    contest: CalendarContest,
-  ): CalendarRevision | undefined {
-    return contest.stateRevisions.find(
-      (revision) => revision.id === contest.authoritativeStateRevisionId,
-    );
+  private resolveStateRevisionGraph(contest: CalendarContest): {
+    authoritative: CalendarRevision;
+    reviews: CalendarReviewItem[];
+  } {
+    const revisions = contest.stateRevisions;
+    const byId = new Map(revisions.map((revision) => [revision.id, revision]));
+    const reviews: CalendarReviewItem[] = [];
+    const roots = revisions
+      .filter((revision) => !revision.supersedesRevisionId)
+      .sort(compareRevisions);
+    let authoritative = roots[0] ?? [...revisions].sort(compareRevisions)[0];
+    if (!authoritative) throw new Error("contest must retain state evidence");
+
+    for (const root of roots.slice(1)) {
+      reviews.push({
+        kind: "state_authority_conflict",
+        revisionId: root.id,
+        currentStateRevisionId: authoritative.id,
+        message: `State evidence ${root.id} is a non-idempotent replacement without an explicit successor`,
+      });
+    }
+
+    for (const revision of revisions.filter(
+      (candidate) => candidate.supersedesRevisionId,
+    )) {
+      const predecessor = byId.get(revision.supersedesRevisionId!);
+      if (!predecessor || !isLaterRevision(revision, predecessor)) {
+        reviews.push({
+          kind: "state_authority_conflict",
+          revisionId: revision.id,
+          currentStateRevisionId: predecessor?.id,
+          message: !predecessor
+            ? `State evidence ${revision.id} names an unavailable predecessor ${revision.supersedesRevisionId}`
+            : `State evidence ${revision.id} does not have a later published/effective timestamp than ${predecessor.id}`,
+        });
+      }
+    }
+
+    for (;;) {
+      const successors = revisions
+        .filter(
+          (revision) =>
+            revision.supersedesRevisionId === authoritative.id &&
+            isLaterRevision(revision, authoritative),
+        )
+        .sort(compareRevisions);
+      if (successors.length === 0) break;
+      if (successors.length > 1) {
+        for (const successor of successors) {
+          reviews.push({
+            kind: "state_authority_conflict",
+            revisionId: successor.id,
+            currentStateRevisionId: authoritative.id,
+            message: `State evidence branches from ${authoritative.id}; review is required before choosing a successor`,
+          });
+        }
+        break;
+      }
+      authoritative = successors[0];
+    }
+
+    return { authoritative, reviews };
   }
+}
+
+function revisionTimestamp(revision: CalendarRevision): number | undefined {
+  const value = revision.source.effectiveAt ?? revision.source.publishedAt;
+  if (!value) return undefined;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? timestamp : undefined;
+}
+
+function compareRevisions(a: CalendarRevision, b: CalendarRevision): number {
+  const aTime = revisionTimestamp(a) ?? Number.POSITIVE_INFINITY;
+  const bTime = revisionTimestamp(b) ?? Number.POSITIVE_INFINITY;
+  return aTime - bTime || a.id.localeCompare(b.id);
+}
+
+function isLaterRevision(
+  successor: CalendarRevision,
+  predecessor: CalendarRevision,
+): boolean {
+  const successorTime = revisionTimestamp(successor);
+  const predecessorTime = revisionTimestamp(predecessor);
+  return (
+    successorTime !== undefined &&
+    predecessorTime !== undefined &&
+    successorTime > predecessorTime
+  );
 }
 
 /** Missing-contest checks intentionally ignore an untriggered conditional event. */

@@ -22,29 +22,34 @@ describe("congressional calendar oracle", () => {
   it("keeps Alabama's district-specific 2026 primary dates as exact contests", () => {
     const fixture = loadCalendarFixture("al-split");
     const oracle = CalendarOracle.fromRevisions(fixture.revisions);
-    const datesByContest = new Map(
-      oracle
-        .expectedContests()
-        .map((contest) => [
-          `${contest.identity.office}:${contest.identity.district ?? contest.identity.senateSeat}`,
-          contest.electionDate,
-        ]),
-    );
-
-    expect(datesByContest.get("senate:class-2")).toBe("2026-05-19");
-    expect(datesByContest.get("house:03")).toBe("2026-05-19");
-    expect(datesByContest.get("house:04")).toBe("2026-05-19");
-    expect(datesByContest.get("house:05")).toBe("2026-05-19");
-    expect(datesByContest.get("house:01")).toBe("2026-08-11");
-    expect(datesByContest.get("house:02")).toBe("2026-08-11");
-    expect(datesByContest.get("house:06")).toBe("2026-08-11");
-    expect(datesByContest.get("house:07")).toBe("2026-08-11");
+    expect(
+      Object.fromEntries(
+        oracle
+          .expectedContests()
+          .map((contest) => [contest.id, contest.electionDate]),
+      ),
+    ).toEqual({
+      "2026|AL|senate||class-2|regular|primary||": "2026-05-19",
+      "2026|AL|house|01||regular|primary||": "2026-08-11",
+      "2026|AL|house|02||regular|primary||": "2026-08-11",
+      "2026|AL|house|03||regular|primary||": "2026-05-19",
+      "2026|AL|house|04||regular|primary||": "2026-05-19",
+      "2026|AL|house|05||regular|primary||": "2026-05-19",
+      "2026|AL|house|06||regular|primary||": "2026-08-11",
+      "2026|AL|house|07||regular|primary||": "2026-08-11",
+    });
   });
 
   it("preserves contest identity while retaining an effective-dated state revision", () => {
     const oracle = new CalendarOracle();
     const original = stateRevision("2026-05-12", "al-primary-v1");
-    const revised = stateRevision("2026-05-19", "al-primary-v2", original.id);
+    const revised = stateRevision(
+      "2026-05-19",
+      "al-primary-v2",
+      original.id,
+      {},
+      "2026-02-01T00:00:00.000Z",
+    );
 
     oracle.applyRevision(original);
     oracle.applyRevision(revised);
@@ -113,11 +118,19 @@ describe("congressional calendar oracle", () => {
   it("does not let an unresolved state conflict displace the revision a later correction supersedes", () => {
     const oracle = new CalendarOracle();
     const original = stateRevision("2026-05-19", "al-state-original");
-    const conflicting = stateRevision("2026-08-11", "al-state-conflict");
+    const conflicting = stateRevision(
+      "2026-08-11",
+      "al-state-conflict",
+      undefined,
+      {},
+      "2026-02-01T00:00:00.000Z",
+    );
     const corrected = stateRevision(
       "2026-06-02",
       "al-state-corrected",
       original.id,
+      {},
+      "2026-03-01T00:00:00.000Z",
     );
 
     oracle.applyRevision(original);
@@ -183,12 +196,13 @@ describe("congressional calendar oracle", () => {
     const triggered = stateRevision(
       "2026-05-12",
       "runoff-triggered",
-      undefined,
+      pending.id,
       {
         stage: "runoff",
         conditionalEventId: "al-house-1-runoff",
         conditionalEventTriggered: true,
       },
+      "2026-02-01T00:00:00.000Z",
     );
 
     oracle.applyRevision(pending);
@@ -197,6 +211,54 @@ describe("congressional calendar oracle", () => {
     expect(oracle.expectedContests().map((contest) => contest.id)).toEqual([
       stableContestId(triggered.identity),
     ]);
+  });
+
+  it("resolves an explicitly superseding state revision deterministically when evidence arrives out of order", () => {
+    const oracle = new CalendarOracle();
+    const original = stateRevision("2026-05-12", "al-out-of-order-v1");
+    const revised = stateRevision(
+      "2026-05-19",
+      "al-out-of-order-v2",
+      original.id,
+      {},
+      "2026-02-01T00:00:00.000Z",
+    );
+
+    oracle.applyRevision(revised);
+    oracle.applyRevision(original);
+
+    expect(oracle.contest(original.identity)).toEqual(
+      expect.objectContaining({
+        electionDate: "2026-05-19",
+        authoritativeStateRevisionId: revised.id,
+        calendarReviewRequired: false,
+      }),
+    );
+  });
+
+  it("does not replace same-date state evidence without a valid explicit successor", () => {
+    const oracle = new CalendarOracle();
+    const original = stateRevision("2026-05-19", "al-same-date-v1");
+    const replacement = stateRevision(
+      "2026-05-19",
+      "al-same-date-v2",
+      undefined,
+      {},
+      "2026-02-01T00:00:00.000Z",
+    );
+
+    oracle.applyRevision(original);
+    oracle.applyRevision(replacement);
+
+    expect(oracle.contest(original.identity)).toEqual(
+      expect.objectContaining({
+        authoritativeStateRevisionId: original.id,
+        calendarReviewRequired: true,
+        reviewItems: [
+          expect.objectContaining({ kind: "state_authority_conflict" }),
+        ],
+      }),
+    );
   });
 
   it("does not read state logistics JSON as calendar authority", () => {
@@ -209,6 +271,7 @@ function stateRevision(
   id: string,
   supersedesRevisionId?: string,
   identity: Partial<CalendarRevision["identity"]> = {},
+  effectiveAt = "2026-01-01T00:00:00.000Z",
 ): CalendarRevision {
   return {
     id,
@@ -227,6 +290,8 @@ function stateRevision(
       authorityName: "Alabama Secretary of State",
       url: "https://www.sos.alabama.gov/example",
       retrievedAt: "2026-01-01T00:00:00.000Z",
+      publishedAt: effectiveAt,
+      effectiveAt,
       checksum: `${id}-sha256`,
     },
     supersedesRevisionId,
