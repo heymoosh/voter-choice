@@ -403,12 +403,22 @@ function validateRecord(
     : null;
 }
 
-export function validateCongressionalSourceInventory(
+function validateCongressionalSourceInventoryForJurisdictions(
   inventory: unknown,
+  expectedJurisdictions: readonly CongressionalJurisdiction[],
+  options: {
+    missingPrefix?: string;
+    outOfScopePrefix?: string;
+    rejectDuplicates?: boolean;
+  } = {},
 ): CongressionalSourceInventoryValidation {
   const errors: string[] = [];
   const covered = new Set<CongressionalJurisdiction>();
   const coverageStates = new Set<CoverageState>();
+  const missingPrefix =
+    options.missingPrefix ?? "Missing inventory record for jurisdiction";
+  const outOfScopePrefix =
+    options.outOfScopePrefix ?? "Inventory contains out-of-scope jurisdiction";
 
   if (!isRecord(inventory)) {
     return {
@@ -436,23 +446,65 @@ export function validateCongressionalSourceInventory(
 
   inventory.records.forEach((record, index) => {
     const jurisdiction = validateRecord(record, index, errors);
-    if (jurisdiction) covered.add(jurisdiction);
+    if (jurisdiction) {
+      if (
+        options.outOfScopePrefix &&
+        !expectedJurisdictions.includes(jurisdiction)
+      ) {
+        errors.push(`${outOfScopePrefix} ${jurisdiction}.`);
+      } else if (options.rejectDuplicates && covered.has(jurisdiction)) {
+        errors.push(
+          `Duplicate inventory record for jurisdiction ${jurisdiction}.`,
+        );
+      } else {
+        covered.add(jurisdiction);
+      }
+    }
     if (isRecord(record) && hasValue(COVERAGE_STATES, record.coverageState))
       coverageStates.add(record.coverageState);
   });
 
-  for (const jurisdiction of CONGRESSIONAL_JURISDICTIONS) {
+  for (const jurisdiction of expectedJurisdictions) {
     if (!covered.has(jurisdiction))
-      errors.push(`Missing inventory record for jurisdiction ${jurisdiction}.`);
+      errors.push(`${missingPrefix} ${jurisdiction}.`);
   }
 
   return {
     errors,
-    coveredJurisdictions: CONGRESSIONAL_JURISDICTIONS.filter((jurisdiction) =>
+    coveredJurisdictions: expectedJurisdictions.filter((jurisdiction) =>
       covered.has(jurisdiction),
     ),
     coverageStates: COVERAGE_STATES.filter((state) =>
       coverageStates.has(state),
     ),
   };
+}
+
+/**
+ * Validate a deliberately bounded inventory slice. This is for rehearsal and
+ * rollout gates; the national validator below retains its all-jurisdiction
+ * contract for F01.
+ */
+export function validateCongressionalSourceInventoryScope(
+  inventory: unknown,
+  expectedJurisdictions: readonly CongressionalJurisdiction[],
+  options: {
+    missingPrefix?: string;
+    outOfScopePrefix?: string;
+  } = {},
+): CongressionalSourceInventoryValidation {
+  return validateCongressionalSourceInventoryForJurisdictions(
+    inventory,
+    expectedJurisdictions,
+    { ...options, rejectDuplicates: true },
+  );
+}
+
+export function validateCongressionalSourceInventory(
+  inventory: unknown,
+): CongressionalSourceInventoryValidation {
+  return validateCongressionalSourceInventoryForJurisdictions(
+    inventory,
+    CONGRESSIONAL_JURISDICTIONS,
+  );
 }
