@@ -1,0 +1,1024 @@
+# Nationwide official-source congressional candidate roster plan
+
+Status: planning complete; implementation is explicitly not authorized.
+
+Planning date: 2026-07-13.
+
+Backlog epic: `c5a813bb-9223-4dc1-95aa-65637eb6940b`.
+
+This document is the persistent source of truth for the P0 nationwide
+congressional-roster project. It contains the original mandate, every decision
+made during the follow-up planning sessions, the complete execution catalog,
+the final robustness audit, and the acceptance criteria. The backlog card must
+point here rather than relying on terminal or chat history.
+
+No implementation, provisioning, migration, ingest, queue quarantine, or
+public rollout is authorized by this document. When Muxin separately
+authorizes execution, the implementation cards described below must be created
+and groomed in the stated waves.
+
+## Executive decision
+
+Build a cycle-generic, federated ingestion system that treats the legally
+responsible state election authority as the source of truth for each exact
+congressional contest and election stage. FEC records remain campaign-finance
+enrichment only. Raw official artifacts are retained privately, parsed into an
+exact-contest model, validated for completeness, and promoted atomically.
+
+The application must never infer ballot eligibility from filing activity,
+fundraising, incumbency, a prior stage, or a stale database row. It must display
+every qualified candidate for the user's exact upcoming contest, or an honest
+unavailable/not-yet-published state.
+
+The project will proceed through small, gated slices: source/calendar contract,
+seven-jurisdiction rehearsal, national source inventory, schema and validator,
+Texas/Alabama/California pilots, additional source-mode pilots, parser-family
+fanout, shadow application integration, national verification, and one
+attended nationwide cutover.
+
+## Original mandate and incident context
+
+The app displayed campaign filers as if they were qualified current-ballot
+candidates. A voter reported current November candidates missing while people
+who had withdrawn earlier in 2026 remained visible. PR #295 added containment:
+FEC-only rows can remain as finance evidence but cannot be presented as a
+verified replacement roster. Draft PR #296 and its Texas Senate comparison are
+historical evidence, not the nationwide solution.
+
+The original backlog proposal required:
+
+1. A national official-source inventory for every applicable jurisdiction.
+2. A canonical election, contest, candidate-identity, candidate-appearance,
+   snapshot, completeness, and provenance model.
+3. Reusable official CSV/XLSX/JSON/XML, HTML, text-PDF, rendered-portal, and
+   human-downloaded official-document ingestion modes.
+4. Representative pilots, including Texas.
+5. Configuration-first national adapter fanout with custom code only for
+   unusual sources.
+6. Promotion only for complete, validated, exact-stage snapshots.
+7. Scheduled freshness, change, staleness, and manual-review monitoring.
+8. Integration through the existing database and address/race-resolution path
+   where safe.
+
+Muxin's original requirement is preserved verbatim:
+
+> Ensure you use a sanity check and include a testing/validation- for isntance, there's TONS of candidates for Alabama (I think nearly 33 for House alone) whereas TX only has like a dozen. Nobody gets left out. I would also want a scheduled or periodic scraper that repulls new data (can be based on upcoming election dates etc.) I don't see a scope for how to make sure the data is fresh and clean and updated/maintained. The data we do pull MUST work perfectly in the app - use exxisting database schemas where appropriate, etc. It must ensure that users of the app are able to actually see the correct candidate information on their upcoming ballot.
+
+Later planning instructions added these requirements:
+
+- Persist every planning detail in this file rather than only in chat.
+- Use Ballotpedia's 2026 master list for sampled sanity checks without
+  scraping or treating it as authoritative.
+- Explicitly address mutable calendars and Alabama's district-specific dates.
+- Decompose the work into small cards that test the approach before fanout.
+- Make the work safe for `groom-backlog` and `orchestrate-pipeline`.
+- Include Codex-specific model recommendations, excluding Terra.
+
+## Repository baseline
+
+The implementation must start from these current facts:
+
+- `db/schema.ts` has a general `candidates` table with FEC/cycle/seat/finance
+  fields, but no exact elections, contests, official snapshots, appearances,
+  or promotion history.
+- `scripts/ingest/federal-candidates.ts` ingests FEC filing records. It is not
+  a ballot-qualification ingest.
+- `src/lib/server/races.ts` filters FEC rows by fundraising, caps them at eight,
+  and now marks them finance-only. Those filters must never apply to an
+  official ballot roster.
+- `POST /api/delegation` attaches a statewide Senate list to an incumbent seat
+  and cannot model overlapping regular/special contests or distinct Senate
+  seats. It also returns `no_representation` for DC and territories before
+  exposing delegate contests.
+- The current UI consumes `seats[].challengers` and protects selection through
+  roster-provenance checks.
+- `src/data/states/*.json` describes statewide election logistics and is not
+  precise enough to be the congressional contest calendar.
+- `src/data/states/AL.json` explicitly says the congressional district split is
+  not modeled.
+- GitHub Actions is the existing bulk-ingestion layer. Vercel remains the app
+  read path; Vercel Cron is not required for this project.
+- Existing containment policy is documented in
+  `docs/operations/candidate-roster-source-decision-report.md`.
+- `.orchestrator.json` points at
+  `docs/operations/voter-choice-backlog.md`, uses `main`, and claims only
+  `To Do` cards.
+- The prose-kanban parser stores only one `DEPENDS ON` value per card; parallel
+  fan-in must therefore be represented by creating a gate card only after its
+  whole preceding wave is Done.
+
+## Locked product and infrastructure decisions
+
+These decisions require no further implementation-time choice:
+
+- **Public rollout:** one nationwide cutover after shadow validation, not
+  progressive public enablement.
+- **Stale data:** retain the last verified snapshot for audit/context but make
+  it non-selectable.
+- **Raw artifacts:** private Vercel Blob.
+- **Parsed and promoted state:** Neon Postgres.
+- **Bulk scheduler:** GitHub Actions.
+- **Application runtime:** the existing Next.js/Vercel path reads promoted
+  Neon data.
+- **Ballotpedia:** manual sampled comparison only; never scraped or ingested.
+- **FEC:** calendar discovery/change signal and finance enrichment only; never
+  ballot qualification.
+- **Source blocking:** use an official manual import, request an official bulk
+  export, or mark the source blocked. Never bypass CAPTCHA, WAF, authentication,
+  robots restrictions, or other controls.
+- **Candidate visibility:** every qualified candidate is displayed. Official
+  rosters bypass the FEC fundraising threshold and eight-candidate cap.
+- **Uncertain identity match:** retain the official appearance without finance
+  enrichment. Identity ambiguity cannot omit a candidate.
+- **Implementation hold:** no child card becomes runnable until Muxin separately
+  authorizes execution.
+
+Before attended Vercel Blob provisioning, upgrade the currently outdated
+Vercel CLI from 55.0.0 to the current release with one of:
+
+```sh
+npm i -g vercel@latest
+# or
+pnpm add -g vercel@latest
+```
+
+This upgrade is an infrastructure prerequisite, not part of the present
+documentation-only work.
+
+## Source authority and conflict policy
+
+### Source hierarchy
+
+1. The legally responsible state election authority's current artifact for the
+   exact office, district/seat, election, and stage.
+2. A county/local official sample ballot where that authority is responsible
+   for publishing the exact ballot or where it independently confirms the state
+   list.
+3. Another official publication used as a cross-check.
+4. The FEC calendar as a discovery/change signal, not the final legal oracle.
+5. Ballotpedia as a manual secondary discrepancy detector.
+6. FEC filing/finance rows as identity and fundraising enrichment only.
+
+The FEC state-election-office directory is the starting authority directory:
+https://www.fec.gov/introduction-campaign-finance/how-to-research-public-records/state-election-offices/
+
+### Official-source conflicts
+
+- If an FEC calendar date differs from the responsible state authority, mark
+  affected contests `calendar_review_required` while an operator verifies and
+  records the authoritative state evidence.
+- If two state-authority publications disagree, do not guess. Retain both
+  revisions, block selection for the affected contest, and require review.
+- A conflict scoped to one contest does not invalidate unrelated contests in
+  the jurisdiction.
+- The resolution record must name both URLs, retrieval/checksum metadata, the
+  authority chosen, the reason, reviewer, and timestamp.
+
+### Ballotpedia policy
+
+The 2026 comparison page is:
+https://ballotpedia.org/List_of_congressional_candidates_in_the_2026_elections
+
+It is useful because it covers House, Senate, DC, and applicable territories
+and exposes candidate, party, office, and candidacy-status information. It is
+not exact-stage official proof.
+
+Rules:
+
+- No automated fetch, scrape, bulk copy, access-control bypass, ingest, or
+  production dependency.
+- Compare only aligned scopes. If the master list cannot distinguish the exact
+  stage/status, inspect its linked race page manually or mark the comparison
+  `not_comparable`.
+- A mismatch opens review against the official source.
+- If the official source proves our ingest is wrong, block promotion and fix
+  the adapter.
+- If the official source proves our ingest is right, record Ballotpedia's
+  difference/lag and continue.
+- Ballotpedia agreement alone never proves completeness.
+
+## Contest-calendar design
+
+State logistics JSON and the FEC reporting calendar cannot be the sole contest
+oracle. The FEC page itself says election dates are subject to change:
+https://www.fec.gov/help-candidates-and-committees/dates-and-deadlines/2026-reporting-dates/congressional-pre-election-reporting-dates-2026/
+
+It currently records:
+
+- Alabama Senate and Congressional Districts 3, 4, and 5 primary on
+  2026-05-19.
+- Alabama Districts 3, 4, and 5 runoff on 2026-06-16.
+- Alabama Congressional Districts 1, 2, 6, and 7 primary on 2026-08-11 after
+  the governor's 2026-05-12 proclamation.
+- Other 2026 changes in Arizona, Louisiana, Rhode Island, and Virginia,
+  demonstrating that mutable dates are a general problem.
+
+### Stable contest identity
+
+A stable contest/election instance is keyed by:
+
+- cycle;
+- jurisdiction;
+- office (`house`, `senate`, `delegate`, `resident_commissioner`);
+- House district, at-large seat, or Senate seat/class/term;
+- `regular` or `special`;
+- stage (`primary`, `convention`, `runoff`, `general`);
+- party lane where an authority models separate party stages;
+- conditional-event identity where applicable.
+
+The election date is a mutable, effective-dated revision and is not part of the
+stable identity. This preserves continuity when a proclamation moves a date.
+
+The oracle must represent:
+
+- concurrent regular and special elections, including same-day contests;
+- distinct Senate seats/classes/term lengths;
+- party conventions where they determine access;
+- conditional runoffs that are not expected until officially triggered;
+- top-two, top-four, ranked-choice, and nonpartisan systems;
+- DC/territorial delegate and resident-commissioner contests;
+- cancelled or superseded election instances without deleting history.
+
+### Calendar refresh
+
+- Fetch/check national and configured state calendar signals daily during the
+  active election year, independently of dates already stored.
+- Preserve URL, authority, retrieval time, publication/effective time,
+  checksum, parser version, and raw artifact for each revision.
+- A changed checksum/date/proclamation triggers affected-source re-verification.
+- A changed FEC artifact is a review signal, not permission to overwrite state
+  evidence.
+
+## Canonical data model
+
+The current `candidates` table remains the finance/person-enrichment store.
+Add additive, roster-specific structures rather than overloading its cycle
+filing fields.
+
+### Elections and contests
+
+- `congressional_elections`: stable election instance, jurisdiction, cycle,
+  stage, kind, current effective date, conditional/cancelled state.
+- `congressional_contests`: exact office, district/seat/class/term, party lane,
+  and representation type linked to an election instance.
+- Effective-dated calendar revisions retain every official-source change.
+
+### Candidate identities and appearances
+
+- `congressional_candidate_identities`: source-agnostic person identity.
+- `congressional_candidate_appearances`: exact contest/snapshot appearance,
+  official ballot name, party, official source order, raw status, normalized
+  lifecycle status, ballot-access method, and source-row reference.
+- `congressional_candidate_finance_links`: explicit reviewed link between a
+  roster identity and an existing `candidates` finance row, with match method
+  and review metadata.
+
+An appearance is the eligibility fact. An identity or finance link never is.
+
+### Snapshots and promotion
+
+- `congressional_roster_snapshots`: immutable authority, URLs, retrieval,
+  publication/effective time, checksum, parser version, private artifact path,
+  row counts, rejection/duplicate counts, completeness, validation outcome,
+  and freshness deadline.
+- `congressional_roster_promotions`: auditable atomic pointer/history selecting
+  the current verified snapshot for each contest.
+
+Migration code is additive. Building it may eventually be automated; applying
+it to staging or production is attended and separately authorized.
+
+### Status semantics
+
+Preserve official raw values and normalize lifecycle status to:
+
+- `filed`
+- `qualified`
+- `certified`
+- `advanced`
+- `defeated`
+- `withdrawn`
+- `disqualified`
+- `unknown`
+
+Model ballot-access method separately:
+
+- `printed`
+- `write_in`
+
+Only a fresh, promoted, exact-upcoming-contest appearance that the responsible
+authority reports as qualified/certified is selectable. An `advanced` result
+from a prior stage is historical unless the authority also establishes the
+person's exact next-contest appearance.
+
+FEC-only, filed/pending, defeated, withdrawn, disqualified, unknown, stale,
+and calendar-conflicted appearances remain auditable and non-selectable.
+
+## Source inventory and artifacts
+
+Maintain a versioned repository record for every jurisdiction. Required fields:
+
+- cycle and jurisdiction;
+- official authority and authority role;
+- official landing page;
+- calendar source;
+- candidate-publication source;
+- source role (`calendar_seed`, `calendar_authority`, `filing_list`,
+  `qualified_or_certified_roster`, `sample_ballot`, `secondary_check`);
+- exact contest/date/stage scope;
+- source format and parser family;
+- update cadence and active window;
+- access, robots, terms, WAF, authentication, or manual constraints;
+- fallback/manual-import procedure;
+- last verification and reviewer;
+- coverage state.
+
+Coverage states:
+
+- `automatable`
+- `manual_official_import`
+- `official_roster_not_yet_published`
+- `blocked`
+
+An unresolved `blocked` jurisdiction or contest prevents nationwide cutover.
+A manual-import source can pass once a current official artifact has completed
+the same validation/promotion path.
+
+### Raw artifact storage
+
+- Store immutable raw artifacts in private Vercel Blob.
+- Use content-addressed paths such as
+  `congressional-rosters/{cycle}/{jurisdiction}/{source}/{sha256}.{ext}`.
+- Store the Blob pathname/checksum in Neon; do not store an expiring public URL
+  as provenance.
+- Display the official authority URL to users, never the private artifact URL.
+- Pass `BLOB_READ_WRITE_TOKEN` to GitHub Actions through the existing
+  Bitwarden-based secret flow.
+- Provision and test Blob/isolated Neon staging in an attended card using only
+  a harmless canary write/read/delete.
+
+## Acquisition and parsing
+
+Preferred modes, in order:
+
+1. Official CSV/XLSX/JSON/XML.
+2. Official HTML table/database export.
+3. Text-based official PDF.
+4. Browser-rendered official public portal.
+5. Human-downloaded official document imported through the same parser.
+
+Every mode must:
+
+- retain the exact official artifact before parsing;
+- use low-frequency requests and conditional retrieval where supported;
+- use an identifying user agent/contact where appropriate;
+- respect authentication, CAPTCHA, WAF, robots, and terms constraints;
+- produce the same normalized snapshot/reconciliation contract;
+- use saved official fixtures in tests;
+- classify every source row rather than silently dropping it.
+
+OCR is not a default ingestion mode. If an official PDF has no reliable text
+layer, the source-inventory gate must choose a human-reviewed official import
+or an explicit OCR pilot with heightened review; ordinary adapters may not
+silently add OCR.
+
+## Completeness, validation, and promotion contract
+
+Promotion is fail-closed and atomic.
+
+### Required reconciliation
+
+For every artifact and contest, persist:
+
+- source row count;
+- parsed candidate row count;
+- explicitly rejected/non-candidate row count with reason;
+- duplicate row count and resolution;
+- per-contest row count;
+- status totals;
+- promoted row count.
+
+Required equation:
+
+`source rows = parsed candidate rows + explicitly classified non-candidate/rejected rows`
+
+Promotion requires zero unexplained rejected rows.
+
+### Promotion blockers
+
+- non-successful retrieval or unexpected content type;
+- empty/error/login/challenge page masquerading as data;
+- truncated or zero-byte artifact;
+- schema/header change;
+- parse-zero result unless an official artifact explicitly represents a
+  candidate-free contest;
+- missing expected district, party lane, stage, or contest;
+- unexpected candidate removal or source shrink;
+- ambiguous duplicate or identity collapse;
+- unknown/unmapped official status;
+- calendar conflict;
+- stale source;
+- Blob or database failure;
+- unresolved completeness difference.
+
+Every candidate removal must be supported by a new official roster/status or
+reviewed official evidence. There is no numeric shrink threshold that silently
+accepts losses.
+
+### Failure behavior
+
+- Retain the previous verified snapshot and its history.
+- Do not replace or partially update its active promotion.
+- Mark the new attempt rejected/review-required with evidence.
+- Disable selection when the retained snapshot crosses `stale_after` or its
+  calendar becomes conflicted.
+- Scope the failure to affected contests where safely possible.
+
+### Honest unavailable state
+
+`official_roster_not_yet_published` requires a timestamped successful check of
+the configured official publication channel. An HTTP error, access challenge,
+empty/error page, or parser failure cannot create this state.
+
+## Freshness and maintenance SLA
+
+“Always current” is an operational SLA relative to what the authority has
+published, not a guarantee that an authority has already published data.
+
+- Check national/FEC calendar signals daily during an active election year.
+- Check each roster source weekly outside an active window.
+- Check daily from 45 days before the next filing, withdrawal, certification,
+  primary, runoff, or general milestone through seven days afterward.
+- Allow shorter intervals only where the official source explicitly supports
+  inexpensive conditional retrieval.
+- Immediately re-verify affected contests after a calendar or artifact change.
+- Set `stale_after` to no more than twice the required check interval:
+  48 hours in daily windows and 14 days in weekly windows.
+- Put manual-only sources into an attended queue with the same due date.
+- Retain stale data for audit/context but disable selection.
+
+GitHub Actions runs a daily due-source selector, acquisition, validation, and
+coverage report. It reports:
+
+- expected contests without a current source state;
+- changed artifacts;
+- additions/removals/status changes;
+- stale or due manual sources;
+- parser/schema failures;
+- rejected promotions;
+- calendar conflicts;
+- unresolved review items.
+
+## Application interface and behavior
+
+Add an exact-contest read model and an additive shadow field to
+`POST /api/delegation`:
+
+```ts
+type UpcomingCongressionalContest = {
+  contestId: string;
+  office: "house" | "senate" | "delegate" | "resident_commissioner";
+  districtLabel: string | null;
+  electionDate: string;
+  stage: "primary" | "runoff" | "convention" | "general";
+  electionKind: "regular" | "special";
+  roster: {
+    availability:
+      | "verified_complete"
+      | "official_roster_not_yet_published"
+      | "manual_review_required"
+      | "calendar_review_required"
+      | "stale";
+    retrievedAt: string | null;
+    staleAfter: string | null;
+    sourceLinks: Array<{ label: string; url: string }>;
+    candidates: Array<{
+      appearanceId: string;
+      identityId: string | null;
+      ballotName: string;
+      party: string | null;
+      status: string;
+      ballotAccess: "printed" | "write_in";
+      selectable: boolean;
+      totalReceipts: number | null;
+    }>;
+  };
+};
+```
+
+Behavior:
+
+- Resolve the voter's exact House district and applicable statewide Senate
+  seat/contest as of the requested/current date.
+- Return concurrent regular/special contests separately; never blend rosters.
+- Return delegate/resident-commissioner contests for DC/territories even when
+  the current-member assessment honestly says representation is non-voting.
+- Preserve the compatibility `challengers` path during shadow operation.
+- At cutover, official `upcomingContests` becomes the sole eligibility source.
+- Show every qualified official candidate; do not use fundraising viability or
+  the eight-row FEC cap.
+- Use official ballot order where provided, otherwise official document order,
+  then stable alphabetical fallback.
+- Display official source and freshness.
+- Display honest unpublished/stale/review states rather than guessed rosters.
+- Merge an incumbent's roster appearance with the sitting-member card only
+  after a confirmed identity link. Ambiguity produces a separate official
+  appearance, not an omission.
+
+Feature mode:
+
+`CONGRESSIONAL_ROSTER_READ_MODE=contained|shadow|official`
+
+- Default: `contained`.
+- `shadow`: compute/read official results for comparison without making them
+  the public eligibility path.
+- `official`: nationwide public official-roster path after all release gates.
+- Rollback: return to `contained`; retain acquisition and audit history.
+
+## Ballotpedia sampled QA protocol
+
+Ballotpedia checks are attended and manual.
+
+### Progressive sampling
+
+- Compare every pilot contest with a comparable Ballotpedia entry.
+- For each adapter tranche, select three contests deterministically from that
+  tranche's expected-contest inventory.
+- Before national cutover, select at least 30 contests across at least
+  15 jurisdictions.
+- Repeat a smaller stratified sample monthly during the active cycle and after
+  a material source/parser change.
+
+### Required strata
+
+- House and Senate;
+- delegate/resident commissioner where applicable;
+- primary, runoff, and general;
+- regular and special;
+- high- and low-candidate-count contests;
+- partisan, nonpartisan, and top-N/ranked systems;
+- active and inactive/withdrawn candidacies.
+
+Mandatory checks outside the random draw:
+
+- existing Texas regression;
+- Alabama district-date split and high-volume roster;
+- one territory/delegate contest;
+- one overlapping regular/special contest.
+
+### Persisted report
+
+Record:
+
+- cycle and check timestamp;
+- deterministic seed;
+- operator;
+- Ballotpedia page/race URL and comparison scope;
+- selected contests;
+- compared names/party/status where scope aligns;
+- `match`, `mismatch`, or `not_comparable`;
+- official artifact used to adjudicate every mismatch;
+- resulting app/adapter correction or documented Ballotpedia difference.
+
+## Progressive execution plan
+
+The current mega-card is not implementation-ready as one card. It is an epic.
+The cards below are created only at their gates and each receives:
+
+- `PARENT: c5a813bb`;
+- `PLAN: docs/operations/nationwide-congressional-roster-plan.md`;
+- one literal `GOAL_CONDITION`;
+- exact in/out scope;
+- named tests/direct evidence;
+- explicit `DECISION` routing;
+- a unique title and one resolvable dependency at most.
+
+### Wave 0 — documentation bootstrap
+
+Outcome:
+
+- this file exists and contains the full plan and robustness audit;
+- the backlog epic points here and is parked/non-executable;
+- no implementation cards are created or promoted;
+- `npm run check` passes.
+
+GOAL_CONDITION:
+
+```sh
+test -f docs/operations/nationwide-congressional-roster-plan.md \
+  && rg -F "PLAN: docs/operations/nationwide-congressional-roster-plan.md" docs/operations/voter-choice-backlog.md \
+  && rg -F "## Final robustness audit" docs/operations/nationwide-congressional-roster-plan.md \
+  && npm run check
+```
+
+### Wave 1 — source and calendar foundations
+
+Create only after explicit execution authorization.
+
+#### F01 — Source-inventory contract and verifier
+
+Outcome: versioned source-record schema validates every required field and
+coverage state.
+
+GOAL_CONDITION: focused source-inventory tests and
+`npm run verify:congressional-source-inventory -- --fixtures` pass, followed by
+`npm run check`.
+
+#### F02 — Mutable expected-contest/calendar oracle
+
+Outcome: effective-dated exact contests and revisions work; Alabama's split is
+a permanent regression; state logistics JSON cannot act as the oracle.
+
+GOAL_CONDITION: focused calendar tests and
+`npm run verify:congressional-calendar -- --year 2026 --fixture al-split` pass,
+followed by `npm run check`.
+
+F01 and F02 may run in parallel with disjoint files.
+
+### Wave 2 — seven-jurisdiction rehearsal
+
+Create after F01 and F02 are both Done rather than representing a false
+multi-dependency.
+
+#### F03 — Inventory rehearsal: AL, TX, CA, DC, AK, LA, PR
+
+Each jurisdiction must have validator-clean official-source records or an
+evidenced explicit state. No unknown omission is permitted.
+
+#### F04 — Rehearsal review and contract correction gate
+
+Adjudicate every rehearsal gap. Fanout is blocked until the contract is
+declared fit or exact correction cards are completed.
+
+### Wave 3 — national source inventory
+
+After F04, create seven exact-scope cards:
+
+- I05: AZ, AR, CO, CT, DE, FL, GA
+- I06: HI, ID, IL, IN, IA, KS, KY
+- I07: ME, MD, MA, MI, MN, MS, MO
+- I08: MT, NE, NV, NH, NJ, NM, NY
+- I09: NC, ND, OH, OK, OR, PA, RI
+- I10: SC, SD, TN, UT, VT, VA, WA
+- I11: WV, WI, WY, AS, GU, MP, VI
+
+Each passes a group-scoped inventory verifier with no silent omissions.
+
+After all seven are Done, create I12 rather than pre-encoding fan-in.
+
+#### I12 — National inventory consolidation and semantic gate
+
+Outcome:
+
+- all 56 jurisdictions accounted for;
+- every expected 2026 contest has an official-source path/state;
+- parser families and access constraints frozen;
+- non-sensitive public golden addresses selected for later app testing;
+- exact pilot and adapter cards emitted;
+- no placeholder/unknown adapter card promoted.
+
+### Wave 4 — model, validator, and pilots
+
+#### M13 — Canonical roster schema and migration
+
+Add the exact-election, contest, identity, appearance, snapshot, promotion, and
+finance-link structures. Migration code only; no production application.
+
+#### M14 — Private artifact abstraction and fail-closed promotion engine
+
+Use TDD and fake Blob/database implementations. Prove all failure cases retain
+the prior promoted snapshot.
+
+#### M15 — Isolated staging resources
+
+Attended provisioning of private Blob and isolated Neon staging. Canary only;
+no production data.
+
+#### P16 — Texas live pilot
+
+One complete official staging snapshot, full reconciliation, saved fixtures,
+and the existing Texas Senate regression.
+
+#### P17 — Alabama live pilot
+
+Separate after Texas. Prove district-specific dates, high-volume completeness,
+and simulated calendar-change invalidation. Do not hardcode “33 candidates.”
+
+#### P18 — California live pilot
+
+Prove top-two semantics and prevent premature inference of a future certified
+general roster.
+
+#### P19 — Additional source/semantic pilots
+
+I12 creates one small card per still-unproven class: spreadsheet, text PDF,
+rendered portal/manual import, write-in/replacement, regular/special overlap,
+conditional runoff, territory/delegate, or ranked/top-N. Use one unusual
+jurisdiction or one source mode per card.
+
+#### P20 — Pilot review and contract freeze
+
+An independent review either freezes the shared contract or creates blocking
+correction cards. Any semantic correction reruns affected completed pilots.
+
+### Wave 5 — national fanout and application
+
+#### N21 — Parser-family adapter tranche pairs
+
+Create exact cards after P20. Limit each implementation card to one parser
+family and no more than seven ordinary jurisdictions; unusual sources receive
+one card each.
+
+Follow every implementation card with a separate audit card that verifies
+official reconciliation and three manual Ballotpedia samples. A failed audit
+blocks the next tranche.
+
+#### N22 — Calendar-driven acquisition/freshness dry run
+
+Compute due sources and review states without promotion. Test Alabama revisions,
+conditional events, manual sources, failures, and stale deadlines.
+
+#### N23 — Scheduled staging ingestion and monitoring
+
+Add GitHub Actions acquisition/reporting. Workflow code may be built
+automatically later; schedule activation and secrets remain attended.
+
+#### A24 — Exact-contest read model/API in shadow
+
+Address resolution returns the exact upcoming contests, separate regular and
+special elections, Senate seats, delegates, provenance, freshness, and finance
+enrichment without using finance as eligibility.
+
+#### A25 — Pilot UI flow behind the flag
+
+Golden public addresses show every qualified candidate and honest unavailable
+states. Genuine visual changes remain held for attended preview review.
+
+### Wave 6 — national verification and release
+
+#### V26 — National official-source verifier
+
+Implement:
+
+`npm run verify:congressional-rosters -- --year 2026`
+
+Every expected contest must map to a fresh complete verified roster or an
+evidenced official-not-yet-published state. `blocked`, stale,
+calendar-conflicted, or unresolved review states fail cutover.
+
+#### Q27 — National Ballotpedia sample QA
+
+Attended 30-contest/15-jurisdiction manual report with official adjudication.
+
+#### S28 — Nationwide shadow soak and rollback rehearsal
+
+At least seven consecutive days and one complete scheduled cycle with no
+unexplained coverage loss, stale selectable rows, or unresolved high-severity
+discrepancy. Rehearse rollback to `contained`.
+
+#### C29 — Attended nationwide cutover
+
+Apply `official` mode once nationwide and run representative golden-address
+smokes. Keep rollback ready.
+
+#### X30 — Epic closeout and queue restoration
+
+Stop roster conductors, verify every P0 child is Done, then perform one
+attended locked board transition that closes the epic and restores all cards
+quarantined at execution start to their recorded prior statuses.
+
+## Orchestrator and grooming contract
+
+### Current documentation-only state
+
+- Keep the epic in `Backlog` with a `PARKED` execution-hold note.
+- Do not create F01/F02 or any runnable child during documentation work.
+- Do not move or quarantine unrelated cards during documentation work.
+
+### When execution is separately authorized
+
+1. Ensure this plan/backlog change is committed and merged to `origin/main` so
+   fresh worktrees can resolve the cited plan.
+2. Run an actual `groom-backlog` pass over only the next wave.
+3. Create/stamp only cards that are startable at that gate.
+4. Mechanically quarantine unrelated `To Do` cards by moving them to
+   `Backlog` and adding a reversible P0 `PARKED` note containing
+   `prior_status=To Do`.
+5. Before every batch, abort if an unparked eligible non-P0 card exists.
+6. Use non-primary conductor lanes such as `roster-a` and `roster-b` so the
+   primary lane's repository-wide PR babysitting does not continue unrelated
+   Review work during the lock.
+7. Use at most two lanes and give them disjoint jurisdiction/config paths.
+8. Create fan-in gates only after all cards in the preceding wave are Done.
+9. Every code card uses TDD when meaningful and returns literal
+   `GOAL_EVIDENCE`.
+10. Every code card runs a focused test and `npm run check`.
+11. Run `npm run e2e` once only on cards changing UI behavior or user-visible
+    copy.
+12. Never run Stryker locally.
+
+External provisioning, applying migrations, secrets/schedule activation,
+manual Ballotpedia review, public cutover, and queue restoration are attended
+and cannot be auto-approved by a build card.
+
+## Codex model tiers
+
+Current official model references checked on 2026-07-13:
+
+- OpenAI model guidance:
+  https://developers.openai.com/api/docs/models
+- Codex rate card and current Codex model availability:
+  https://help.openai.com/en/articles/20001106
+
+Terra is intentionally excluded from this plan, as requested.
+
+### Tier 1 — GPT-5.6 Sol
+
+Use `GPT-5.6 Sol` with high/xhigh reasoning for the highest-stakes work:
+
+- calendar and election-law semantics;
+- official-source conflict resolution;
+- canonical schema and promotion invariants;
+- PDF/OCR or ambiguous portal decisions;
+- rehearsal/pilot contract gates;
+- national verifier and final robustness review;
+- rollout/rollback and cutover review.
+
+Use max reasoning only for a genuinely unresolved national-release or
+official-source conflict, not routine implementation.
+
+### Tier 2 — GPT-5.3-Codex
+
+Use `GPT-5.3-Codex` with high reasoning for agentic implementation and code
+review:
+
+- schema/migration implementation after Sol fixes semantics;
+- validators and promotion engine;
+- ordinary adapters with known contracts;
+- GitHub Actions and storage integration;
+- read-model/API and UI integration;
+- TDD, refactoring, and final diff review.
+
+OpenAI's current Codex rate card states that Codex code review uses
+GPT-5.3-Codex, making it the default implementation/review tier here.
+
+### Tier 3 — GPT-5.6 Luna
+
+Use `GPT-5.6 Luna` with medium/high reasoning for bounded, high-volume work:
+
+- jurisdiction source-inventory research against a fixed schema;
+- ordinary CSV/XLSX/HTML source classification;
+- fixture generation from retained official artifacts;
+- deterministic reconciliation reports;
+- adapter-tranche evidence collection.
+
+Escalate to Sol whenever authority, status, calendar, or completeness is
+ambiguous. Luna must not independently decide legal authority or waive a
+validation failure.
+
+### Tier 4 — GPT-5.4 Mini
+
+Use `GPT-5.4 Mini` with low/medium reasoning only for mechanical tasks:
+
+- report formatting;
+- deterministic fixture normalization after expected output is fixed;
+- documentation cross-links;
+- non-semantic inventory formatting and completeness bookkeeping.
+
+It must not decide election semantics, source authority, eligibility,
+promotion, or cutover.
+
+### Parallel and verification assignments
+
+- F01/F02 may run in parallel after documentation merges.
+- National inventory and adapter fanout use at most two lanes.
+- Schema/promotion, pilot gates, contract freeze, national verification,
+  cutover, and closeout remain sequential.
+- High-ambiguity consolidation, pilot freeze, and national verification should
+  use a Sol agent team to propose, challenge, and converge on one verdict.
+- Verification uses Sol for semantic/release gates and GPT-5.3-Codex for code
+  correctness. A verifying agent must not be the sole author of the artifact
+  it approves.
+
+If a recommended model is unavailable in the active Codex workspace, use:
+
+- GPT-5.4 as the fallback for Sol-level semantic review;
+- GPT-5.4 or GPT-5.3-Codex for implementation;
+- GPT-5.4 Mini for Luna-level bounded/mechanical work.
+
+Do not silently substitute a weaker tier for an authority, eligibility,
+promotion, or release decision.
+
+## Test matrix and acceptance gates
+
+### Calendar and contest fixtures
+
+- Alabama Senate/CDs 3-5 remain 2026-05-19; CDs 1/2/6/7 are 2026-08-11.
+- A simulated FEC/state revision preserves stable contest identity and creates
+  a reviewable diff.
+- FEC/state conflict cannot silently overwrite state evidence.
+- Concurrent regular and special contests never blend.
+- Conditional runoff is not reported missing before an official trigger.
+- Distinct Senate seats/classes/terms resolve independently.
+
+### Candidate/status fixtures
+
+- Same person filed/qualified/defeated/withdrawn across different stages.
+- Only the exact qualified/certified upcoming appearance is selectable.
+- Official write-in eligibility is separate from lifecycle status.
+- FEC finance survives status changes without granting eligibility.
+- Unmatched/ambiguous identity rows remain visible without finance data.
+- Incumbent deduplication requires a confirmed identity link.
+
+### Failure fixtures
+
+- truncated or zero-byte artifact;
+- HTML error/login/challenge page;
+- unexpected shrink or candidate removal;
+- missing district or party lane;
+- schema/header change;
+- duplicate/ambiguous row;
+- parse rejection or unmapped status;
+- stale source;
+- Blob/network/database failure.
+
+Every failure must preserve the previous promotion. Stale/conflicted snapshots
+remain auditable but non-selectable.
+
+### Completeness and application gates
+
+- Every promoted snapshot reports source, parsed, rejected, duplicate,
+  per-contest, status, and promoted counts.
+- Zero unexplained rejections.
+- Every expected contest maps to a verified roster or an evidenced honest
+  state.
+- Golden public addresses resolve to the correct House, Senate, special, and
+  delegate contests.
+- Every qualified candidate is visible with ballot name, party, office,
+  district/seat, date, stage, source, and freshness.
+- No FEC-only, filed-only, defeated, withdrawn, disqualified, stale, unknown,
+  or calendar-conflicted appearance is selectable.
+
+### National release gate
+
+- National verifier passes.
+- No unresolved `blocked`, stale, calendar-conflicted, or manual-review contest.
+- Ballotpedia sampling is complete and adjudicated.
+- Seven consecutive shadow days and at least one full scheduled cycle pass.
+- Rollback to containment is rehearsed.
+- Nationwide golden-address smoke passes after the attended flag change.
+
+## Final robustness audit
+
+Verdict: the plan is robust after the controls below. No unmitigated
+architecture blocker remains. Residual risks are official publication delay,
+authority-site access changes, and manual-source workload; each produces an
+honest non-selectable state rather than false completeness.
+
+| Risk | Persisted control |
+| --- | --- |
+| Plan exists only in chat/current branch | This document is the source of truth; merge it before worktrees are created. |
+| Mega-card is accidentally claimed | Backlog card is a parked, non-`To Do` epic with no `GROOMED` marker. |
+| Documentation update accidentally starts implementation | No child cards or queue quarantine are created until separate authorization. |
+| Unrelated work runs after authorization | Reversible P0 quarantine plus pre-batch eligibility audit and non-primary lanes. |
+| Prose priority lock is not machine-enforced | `PARKED` metadata, queue audit, lane isolation, and attended restoration. |
+| Board supports one dependency only | Gate cards are created only after the full preceding wave is Done. |
+| Parallel agents drift on shared semantics | Contract freeze precedes fanout; maximum two disjoint lanes. |
+| Plan fails only after national fanout | Foundation rehearsal, three named pilots, semantic pilots, and independent contract-freeze gates. |
+| Calendar changes silently | Fixed daily refresh, immutable revisions, stable identity, and Alabama regression. |
+| Official sources disagree | Contest-scoped `calendar_review_required`; no guessing or overwrite. |
+| Partial/error source replaces good data | Immutable raw artifacts, reconciliation, and atomic fail-closed promotion. |
+| Candidate removal slips through a threshold | Every removal requires official evidence or review; no silent shrink threshold. |
+| Identity matching hides someone | Official appearance remains visible without a finance link. |
+| Empty/error response becomes “not published” | Requires a successful timestamped official-channel check. |
+| Manual source freshness is overstated | Attended SLA queue and non-selectable stale state. |
+| Ballotpedia becomes an authority | Manual sample only; every mismatch adjudicated against official evidence. |
+| Ballotpedia comparison mixes stages | Aligned scope or `not_comparable`; no all-cycle list treated as certified general ballot. |
+| UI still truncates candidates | Official roster bypasses fundraising filter/cap and uses authoritative order. |
+| Territories remain hidden | Upcoming delegate contests are returned alongside honest representation status. |
+| Public systemic error | Shadow mode, national verifier, seven-day soak, attended cutover, one-setting rollback. |
+| Final unlock races with epic completion | Stop conductors and perform one attended locked closeout/restoration transition. |
+| Weak model makes an authority/release decision | Sol semantic/release tier and independent verification; weaker tiers have explicit boundaries. |
+
+## Assumptions and explicit non-goals
+
+- Initial operational cycle is 2026; schemas/configuration are cycle-generic.
+- This project covers federal congressional contests, including applicable
+  non-voting delegates/resident commissioner, not state/local ballots.
+- It does not build a universal election-calendar replacement for unrelated
+  product logistics.
+- It does not remove existing FEC finance history.
+- It does not scrape Ballotpedia or bypass official-site controls.
+- It does not promise that an authority has published a roster before it has.
+- It does not apply migrations, provision services, ingest live data, change
+  production flags, or deploy as part of planning/documentation.
+- Later discovery may supply exact source URLs, parser families, and golden
+  addresses, but it may not weaken the authority, completeness, freshness,
+  promotion, or release rules in this document without updating the plan and
+  re-running the relevant gate.
+
+## Documentation maintenance rule
+
+Any later planning decision that changes scope, authority, schema, validation,
+freshness, orchestration, model routing, or rollout must update this file in the
+same change as its backlog-card update. Implementation cards may cite narrower
+reports and fixtures, but they may not replace or abbreviate this plan.
