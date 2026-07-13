@@ -11,24 +11,24 @@
    polish) build on these tokens.
    ============================================================ */
 :root {
-  /* ── Color (okLCh) — prototype palette ───────────────────── */
-  --paper: oklch(0.965 0.012 85);
-  --paper-2: oklch(0.985 0.008 85);
-  --rule: oklch(0.86 0.012 85);
-  --rule-2: oklch(0.92 0.01 85);
-  --ink: oklch(0.18 0.018 240);
-  --ink-2: oklch(0.36 0.018 240);
-  --ink-3: oklch(0.55 0.015 240);
-  --civic: oklch(0.4 0.075 170);
-  --civic-2: oklch(0.32 0.075 170);
-  --civic-soft: oklch(0.9 0.025 170);
-  --vote-red: oklch(0.54 0.16 28);
-  --gold: oklch(0.76 0.1 75);
-  --tag-bg: oklch(0.92 0.012 85);
+  /* ── Color (okLCh) — Bold Flag palette (white ground, navy + flag red) ── */
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --civic: oklch(0.4 0.155 262);
+  --civic-2: oklch(0.31 0.145 262);
+  --civic-soft: oklch(0.94 0.04 262);
+  --vote-red: oklch(0.53 0.205 27);
+  --gold: oklch(0.72 0.125 76);
+  --tag-bg: oklch(0.95 0.006 260);
   --shadow-card:
-    0 1px 0 oklch(0.86 0.012 85), 0 30px 60px -30px oklch(0.18 0.018 240 / 0.18);
+    0 1px 0 oklch(0.88 0.006 260), 0 30px 60px -30px oklch(0.2 0.035 260 / 0.18);
   --shadow-soft:
-    0 1px 0 oklch(0.92 0.012 85), 0 10px 30px -20px oklch(0.18 0.018 240 / 0.12);
+    0 1px 0 oklch(0.93 0.005 260), 0 10px 30px -20px oklch(0.2 0.035 260 / 0.12);
 
   /* ── Type families — chain through next/font CSS variables ─
      Civic mood is the production default (`body[data-mood="civic"]`),
