@@ -49,22 +49,25 @@
 </head>
 <body>
   <h1>Keystone review — Polis</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (30211d3f)</code> &middot; generated 2026-07-08T18:00:51.307Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (30211d3f))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">10a-polis-entry</div>
           <div class="label">Polis — entry point</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag proxy">proxy</span>
           <div class="note">The canvas's dedicated PolisEntry screen (invite panel + preview scatter) doesn't exist — per e2e/redesign-core.spec.ts's own comment, 'the see where you stand teaser was removed ([P1])'; entry today is only the inline '.all-done … where you stand' link on the completed workspace. Proxy: the completed workspace showing that link.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/10a-polis-entry.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/10a-polis-entry.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr>
 
       <tr>
@@ -88,7 +91,10 @@
           <div class="note">Bridges mock returns several high-agreement statements → 'Common ground' panel renders populated.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/10c-polis-report-consensus.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/10c-polis-report-consensus.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr>
 
       <tr>
@@ -100,7 +106,10 @@
           <div class="note">PolisClose has no computed 'divided/split' branch (only an early-days vs. normal lede, toggled purely by sampleSize&lt;30 — see LOW_N in PolisClose.tsx). There is no 'Where it split' section anywhere in the component. Proxy: bridges mock returns a single, low-agreement statement (vs. 10c's four strong ones) to approximate a thin-consensus cycle within the UI that actually exists; the canvas's dedicated divided narrative is not ported.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/10d-polis-report-divided.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/10d-polis-report-divided.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr></tbody>
   </table>
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>

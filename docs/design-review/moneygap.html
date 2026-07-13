@@ -49,11 +49,11 @@
 </head>
 <body>
   <h1>Keystone review — Money-gap</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (30211d3f)</code> &middot; generated 2026-07-08T18:00:51.307Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (30211d3f))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
@@ -64,7 +64,10 @@
           <div class="note">The canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by reading RepCard.tsx: it calls &lt;MoneyGapScale subject=... peer=...&gt; WITHOUT a `field` prop, so only the single subject row ever renders in the card. Proxy: same funding-expanded panel as 02b, with a chamberMedian mock so the populated (non-blank) scale shows.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11a-fieldmoneygap.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/11a-fieldmoneygap.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr>
 
       <tr>
@@ -76,7 +79,10 @@
           <div class="note">The canvas artboard is a style-guide-style enumeration of 4 states + the collapsed chip side by side — there is no single app screen that shows all of them at once (the real app renders whichever ONE band the data produces per card). Proxy: the same funding-expanded panel (chamberMedian mock puts this candidate in the 'above median' band); the collapsed MedianChip glance is visible elsewhere on the same card, collapsed.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11b-scalestates.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/11b-scalestates.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr>
 
       <tr>
@@ -88,7 +94,10 @@
           <div class="note">MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx at all — confirmed by grep: it has zero usages outside MoneyGap.tsx/MoneyGap.test.tsx. The duel screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not the ratio + shared-scale component the canvas shows. Proxy: same HeadToHead screenshot as 05b, so the gap is visible rather than hidden.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11c-moneygaph2h.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/11c-moneygaph2h.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr></tbody>
   </table>
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>

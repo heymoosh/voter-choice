@@ -49,11 +49,11 @@
 </head>
 <body>
   <h1>Keystone review — Intake</h1>
-  <div class="sub">ref: <code>HEAD (c7732198)</code> &middot; generated 2026-07-08T17:04:09.621Z</div>
+  <div class="sub">ref: <code>HEAD (30211d3f)</code> &middot; generated 2026-07-08T18:00:51.307Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (c7732198))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (30211d3f))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
@@ -83,7 +83,7 @@
         <td class="meta">
           <div class="id">09c-intake-locked</div>
           <div class="label">Intake step 3 — ready to lock</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag proxy">proxy</span>
           <div class="note">The canvas's distinct pre-lock confirmation state (green 'Your issues are set' banner, drag-to-rerank) is not built — current UI reuses the same running issues-card for every turn (up/down-arrow rerank, not drag). Proxy: same UI one turn further (3 issues, after a refinement reply), right before clicking Lock.</div>
         </td>
@@ -100,19 +100,25 @@
           <div class="note">Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/09d-edit-issues.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/09d-edit-issues.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr>
 
       <tr>
         <td class="meta">
           <div class="id">09e-edit-rescored</div>
           <div class="label">Intake step 5 — apply → re-scored with Revisit flags</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">Race-data mock swings the House score hard (83%→17%) once 'congressional accountability' enters the issue list, so Apply produces a real &gt;5pt REVISIT flag instead of the flat 'nothing moved' branch.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/09e-edit-rescored.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/09e-edit-rescored.png" alt="repo screenshot"></td>
+        <td class="shot"><div class="error">capture failed:<br>locator.waitFor: Timeout 20000ms exceeded.
+Call log:
+[2m  - waiting for locator('.b-row').first() to be visible[22m
+</div></td>
       </tr></tbody>
   </table>
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
