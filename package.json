@@ -38,7 +38,10 @@
     "design:parity-gallery": "npx tsx scripts/design/parity-gallery.ts",
     "design:parity-gate": "npx tsx scripts/design/parity-gate.ts",
     "design:review-gallery": "npx tsx scripts/design/review-gallery.ts",
-    "design:gate-summary": "npx tsx scripts/design/gate-summary.ts"
+    "design:gate-summary": "npx tsx scripts/design/gate-summary.ts",
+    "dup:check": "npx tsx scripts/quality/duplication-gate.ts",
+    "dup:baseline": "npx tsx scripts/quality/duplication-gate.ts --update",
+    "inventory:check": "npx tsx scripts/quality/component-inventory-gate.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",

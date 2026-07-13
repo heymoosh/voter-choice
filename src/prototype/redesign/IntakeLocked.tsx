@@ -26,17 +26,23 @@
 import React from "react";
 import { useI18n } from "../VoterChoiceApp";
 import { IssueReviewCard } from "./IssueConversation";
-import { issuesForLevel } from "./delegationData";
+import { decorateIssues, issuesForLevel } from "./delegationData";
 
 export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
   const { t } = useI18n();
-  // Same per-issue level IssueRow's pill reads (set at extraction time by
-  // themesToIssues) — issuesForLevel's "both" counts toward each bucket,
-  // matching how the workspace itself splits an issue's jurisdiction.
-  // Issues with no resolved level (custom, no canonicalIssue match) count
-  // toward neither — omitted, not guessed.
-  const fedCount = issuesForLevel(issues, "federal").length;
-  const stateCount = issuesForLevel(issues, "state").length;
+  // Count on the DECORATED list — the exact levels the workspace will use
+  // once these issues lock (App2's analyze() runs decorateIssues on this
+  // same list). Counting the raw pre-decorate issues left custom issues
+  // (no canonicalIssue → level undefined at extraction time) out of BOTH
+  // buckets, so the banner's federal/state split disagreed with the list
+  // rendered right above it and with the seat cards the user meets next —
+  // the issue-consistency drift e2e/redesign-issue-consistency.spec.ts now
+  // gates. decorateIssues resolves a custom issue to "both" (it will show
+  // on federal and state surfaces alike), so it counts toward each bucket
+  // here for the same reason it appears on both downstream.
+  const decorated = decorateIssues(issues);
+  const fedCount = issuesForLevel(decorated, "federal").length;
+  const stateCount = issuesForLevel(decorated, "state").length;
 
   return (
     <div className="issue-locked-confirm" data-testid="issue-locked-confirm">

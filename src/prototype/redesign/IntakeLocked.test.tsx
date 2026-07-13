@@ -109,6 +109,21 @@ describe("IntakeView → IntakeLocked pre-lock confirm gate", () => {
     expect(locked[0].interpretation).toBe("Cost of living & inflation");
   });
 
+  it("counts a custom (unmapped) issue toward BOTH jurisdiction buckets — the same 'both' level decorateIssues gives it after lock", async () => {
+    // EXTRACTED_THEME carries no canonicalIssue, so at extraction time its
+    // level is undefined. Pre-fix, the banner counted it toward neither
+    // bucket ("1 issue listed, 0 federal · 0 state" — the split disagreed
+    // with the list right above it). The workspace resolves exactly this
+    // issue to level "both" (decorateIssues), so the banner must predict
+    // that: 1 federal · 1 state.
+    renderIntake();
+    await driveToThemesCard();
+    fireEvent.click(screen.getByTestId("issue-primary"));
+
+    expect(screen.getByText("1 Federal")).toBeInTheDocument();
+    expect(screen.getByText("1 State")).toBeInTheDocument();
+  });
+
   it("the confirm screen's back control returns to the live conversation without losing it", async () => {
     const { onLock } = renderIntake();
     await driveToThemesCard();

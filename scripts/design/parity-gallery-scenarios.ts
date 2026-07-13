@@ -20,6 +20,7 @@ import {
   mockCounters,
   mockPolisRespond,
   goToStanding,
+  goToPolisEntry,
   goToPolisStand,
   TX_SEATS,
 } from "../../e2e/helpers/redesign-mocks";
@@ -750,7 +751,7 @@ async function verdictRow(
   verdict: "keep" | "replace",
 ): Promise<void> {
   // Indexes DECIDABLE rows only — not-up-2026 rows carry no verdict UI
-  // (reviewable, never decidable), same scoping as goToPolisStand's loop.
+  // (reviewable, never decidable), same scoping as the shared journey.
   const rows = page.locator(".b-row:not(.not-up-2026)");
   await rows.nth(rowIndex).click();
   const btn =
@@ -1313,37 +1314,14 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page, true);
       await mockCounters(page);
       await reachWorkspace(page);
-      // Verdict every DECIDABLE seat — PolisEntry renders once every seat
-      // that can carry a verdict has one (App2.tsx's ".all-done" completion
-      // link; not-up-2026 rows are reviewable but never decidable, so they
-      // carry no verdict UI and don't gate completion). Duplicated from
-      // goToStanding (e2e/helpers/redesign-mocks.ts) rather than reusing it
-      // directly: goToStanding drives one step further, clicking through
-      // PolisEntry's own "See where I stand" CTA into the real standing
-      // report, but this scenario needs to stop and shoot PolisEntry itself.
-      const rows = page.locator(".b-row:not(.not-up-2026)");
-      const count = await rows.count();
-      for (let i = 0; i < count; i++) {
-        await rows.nth(i).click();
-        const keep = page
-          .getByRole("button", { name: /Worth keeping/ })
-          .first();
-        await keep.waitFor({ timeout: 15000 });
-        await keep.click();
-        // Let the verdict commit (commitVerdict defers the auto-advance ~600ms).
-        await page.waitForTimeout(700);
-      }
-      // Re-open a seat so the center column (which holds .all-done) is on
-      // screen; on mobile the last verdict closed the overlay.
-      await rows.first().click();
-      const standingLink = page
-        .locator(".all-done")
-        .getByRole("button", { name: /where you stand/ });
-      await standingLink.waitFor({ timeout: 15000 });
-      await standingLink.click();
-      await page
-        .getByTestId("polis-entry-see-standing")
-        .waitFor({ timeout: 15000 });
+      // Verdict every decidable seat and stop AT PolisEntry — the shared
+      // goToPolisEntry helper (e2e/helpers/redesign-mocks.ts) is the single
+      // copy of this journey. This capture used to carry its own inline
+      // duplicate of the loop, which drifted the moment the verdict flow
+      // changed (feat/not-up-seat-review removed verdict buttons from
+      // not-up seats; the helper was fixed, the duplicate here wasn't, and
+      // this scenario's capture timed out — 2026-07-12 run 29203094005).
+      await goToPolisEntry(page);
     },
   },
   {

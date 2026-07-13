@@ -1066,8 +1066,9 @@ const STRUCTURAL_PROBES: Probe[] = [
  * automatable at all — see its own note in parity-gallery-scenarios.ts;
  * 10a-polis-entry moved into STRUCTURAL_PROBES once PR #237 made it
  * automatable, 10b-polis-contribute followed once PolisStand landed, and
- * 11a-fieldmoneygap followed once RepCard.tsx's field prop was wired) now
- * resolves to exactly one of STRUCTURAL_PROBES above
+ * 11a-fieldmoneygap moved back HERE when the 2026-07-12 product ruling
+ * relocated the whole-field scale off the incumbent card — see its waiver
+ * below) now resolves to exactly one of STRUCTURAL_PROBES above
  * (class-diff or marker) or this map — silently skipping a scenario (the
  * pre-existing "24 of 27 uncovered, unexplained" state this file's own
  * header used to describe) is exactly the failure Phase 2 of
@@ -1104,6 +1105,19 @@ const STRUCTURAL_PROBES: Probe[] = [
  * — see MarkerProbe's doc comment above for the correctness bar.
  */
 const STRUCTURAL_WAIVERS: Record<string, string> = {
+  "11a-fieldmoneygap":
+    "PRODUCT RULING REVERSED 2026-07-12 (Muxin, Round-4 screenshot review): the whole-field " +
+    "money scale moves OFF the incumbent's own card and into the head-to-head duel " +
+    "('Everyone running for this seat', .cmp-field — feat/headtohead-money-clarity), because " +
+    "the incumbent's card is about the incumbent, not every FEC filer for the seat " +
+    "(feat/repcard-evidence-hierarchy drops RepCard's `field` prop accordingly). The marker " +
+    "probe that used to live here asserted the OPPOSITE (the 2026-07-11 ruling: 2+ rows on the " +
+    "incumbent card's scale) and failed feat/repcard-evidence-hierarchy's intentional change " +
+    "on 2026-07-12 (run 29203079248) — a stale spec, not a caught regression. FOLLOW-UP once " +
+    "the head-to-head lane merges: probe the relocated field scale on the 05b/H2H surface " +
+    "(.cmp-field row-count + challenger-tag markers, same correctness bar as before) and " +
+    "re-shoot this scenario's ref against the new home. Until then the visual check still " +
+    "runs and gates this scenario same as any other.",
   "02c-results-votes-drilldown":
     "RepCard.tsx's vote-drilldown markup uses its own cv2-drill/cv2-drill-head prefix — " +
     "confirmed by a full class-token diff against screens-results.jsx's align-band/align-row/" +
@@ -2298,6 +2312,34 @@ function printReport(results: GateResult[], threshold: number): boolean {
         : ""),
   );
   console.log("=".repeat(72));
+  if (anyFail) {
+    // This gate checks SPEC-SYNC, not no-change: the committed design spec
+    // (probes here, refs in .keystone-canvas-refs/, journeys in
+    // parity-gallery-scenarios.ts) is the ground truth the app is diffed
+    // against, so a deliberate design change is only "done" when the spec
+    // moves with it. Printed on every failure because the 2026-07-12 round
+    // showed the opposite default: three intentional-change PRs went red
+    // against yesterday's expectations and nothing told their authors what
+    // the sanctioned fix path was. See docs/testing.md "Design Parity gate"
+    // for the playbook.
+    console.log(
+      [
+        "",
+        "A FAIL above means the app and the committed design spec disagree — it does",
+        "not by itself say which side is wrong:",
+        "  - Unintended change (regression): fix the app code.",
+        "  - INTENTIONAL design/product change: update the spec IN THIS SAME PR —",
+        "    the failing probe/waiver in scripts/design/parity-gate.ts (record the",
+        "    ruling + date in its note), the scenario capture/journey in",
+        "    scripts/design/parity-gallery-scenarios.ts if the user flow changed,",
+        "    and the ref PNG in .keystone-canvas-refs/ if the artboard moved.",
+        "    Precedents: 05b's ignoreMissing 'rep' note, 11a's STRUCTURAL_WAIVERS",
+        "    ruling entry. A red gate on an intentional change is a stale spec, not",
+        "    a license to skip the check.",
+        "See docs/testing.md ('Design Parity gate — intentional changes') for the playbook.",
+      ].join("\n"),
+    );
+  }
   return anyRan && !anyFail;
 }
 

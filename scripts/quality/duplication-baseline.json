@@ -1,0 +1,124 @@
+{
+  "pairs": {
+    "e2e/helpers/prototype-mocks.ts :: e2e/helpers/redesign-mocks.ts": {
+      "clones": 1,
+      "lines": 22
+    },
+    "e2e/helpers/redesign-mocks.ts :: e2e/helpers/redesign-mocks.ts": {
+      "clones": 1,
+      "lines": 11
+    },
+    "scripts/design/design-sync-extract.ts :: scripts/design/review-gallery.ts": {
+      "clones": 1,
+      "lines": 13
+    },
+    "scripts/design/parity-gallery.ts :: scripts/design/review-gallery.ts": {
+      "clones": 5,
+      "lines": 67
+    },
+    "src/app/about/page.tsx :: src/app/methodology/page.tsx": {
+      "clones": 1,
+      "lines": 15
+    },
+    "src/app/api/alignment/route.ts :: src/app/api/donors/route.ts": {
+      "clones": 2,
+      "lines": 34
+    },
+    "src/app/api/extract-ballot/route.ts :: src/app/api/extract-ballot/route.ts": {
+      "clones": 1,
+      "lines": 12
+    },
+    "src/app/api/extract-ballot/route.ts :: src/lib/server/extract-vision.ts": {
+      "clones": 1,
+      "lines": 13
+    },
+    "src/app/api/polis/bars/route.ts :: src/app/api/polis/compass/route.ts": {
+      "clones": 2,
+      "lines": 36
+    },
+    "src/app/api/polis/bridges/route.ts :: src/app/api/polis/compass/route.ts": {
+      "clones": 2,
+      "lines": 44
+    },
+    "src/lib/alignment/subIssues.ts :: src/lib/alignment/subIssues.ts": {
+      "clones": 1,
+      "lines": 8
+    },
+    "src/lib/generatePrompt.ts :: src/lib/generatePrompt.ts": {
+      "clones": 2,
+      "lines": 26
+    },
+    "src/lib/issuePacRules.ts :: src/lib/issuePacRules.ts": {
+      "clones": 1,
+      "lines": 8
+    },
+    "src/lib/prompts/parse-theme-amendment.ts :: src/lib/prompts/parse-theme-extraction.ts": {
+      "clones": 1,
+      "lines": 7
+    },
+    "src/lib/server/alignment.ts :: src/lib/server/alignment.ts": {
+      "clones": 2,
+      "lines": 30
+    },
+    "src/lib/server/chat-catch-sub-agent.ts :: src/lib/server/research-sub-agent.ts": {
+      "clones": 2,
+      "lines": 25
+    },
+    "src/lib/server/counters-rate-limit.ts :: src/lib/server/polis/route-guard.ts": {
+      "clones": 1,
+      "lines": 6
+    },
+    "src/lib/server/counters.ts :: src/lib/server/counters.ts": {
+      "clones": 3,
+      "lines": 30
+    },
+    "src/lib/server/donors.ts :: src/lib/server/donors.ts": {
+      "clones": 1,
+      "lines": 12
+    },
+    "src/lib/server/extract-textract.ts :: src/lib/server/extract-vision.ts": {
+      "clones": 1,
+      "lines": 13
+    },
+    "src/lib/server/polis/route-guard.ts :: src/lib/server/race-data-rate-limit.ts": {
+      "clones": 1,
+      "lines": 8
+    },
+    "src/lib/server/polis/route-guard.ts :: src/lib/server/research-spend-limit.ts": {
+      "clones": 1,
+      "lines": 6
+    },
+    "src/lib/server/research-sub-agent.ts :: src/lib/server/research-sub-agent.ts": {
+      "clones": 1,
+      "lines": 23
+    },
+    "src/prototype/redesign/BudgetModal.tsx :: src/prototype/redesign/HandoffModal.tsx": {
+      "clones": 1,
+      "lines": 20
+    },
+    "src/prototype/redesign/DelegationWorkspace.tsx :: src/prototype/redesign/ScorecardPrintView.tsx": {
+      "clones": 2,
+      "lines": 31
+    },
+    "src/prototype/redesign/EditIssuesModal.tsx :: src/prototype/redesign/IntakeView.tsx": {
+      "clones": 1,
+      "lines": 13
+    },
+    "src/prototype/redesign/IntakeLocked.tsx :: src/prototype/redesign/SeatChat.tsx": {
+      "clones": 1,
+      "lines": 10
+    },
+    "src/prototype/redesign/IssueConversation.tsx :: src/prototype/redesign/SeatChat.tsx": {
+      "clones": 1,
+      "lines": 7
+    },
+    "src/prototype/redesign/PolisClose.tsx :: src/prototype/redesign/PolisEntry.tsx": {
+      "clones": 1,
+      "lines": 14
+    },
+    "src/prototype/redesign/delegationData.ts :: src/prototype/redesign/delegationData.ts": {
+      "clones": 2,
+      "lines": 20
+    }
+  }
+}
