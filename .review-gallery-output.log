@@ -1,0 +1,42 @@
+
+> voter-choice@0.1.0 design:review-gallery
+> npx tsx scripts/design/review-gallery.ts --ref HEAD
+
+Resolving app instance (ref="HEAD")…
+  [repo] "HEAD" resolves to the current worktree's HEAD — no checkout needed.
+
+Launching browser…
+
+Capturing (http://127.0.0.1:62718)…
+  [repo] 01-orientation-activated ✓
+  [repo] 02a-results-main ✓
+  [repo] 02b-results-funding-expanded ✓
+  [repo] 02c-results-votes-drilldown ✓
+  [repo] 02d-results-allvotes-sheet ✓
+  [repo] 03-color-bold-flag ✓
+  [repo] 04-scorecard ✓
+  [repo] 05a-candidates-parity ✓
+  [repo] 05b-headtohead ✓
+  [repo] 06-homehero ✓
+  [repo] 07-whynow ✓
+  [repo] 08a-about ✓
+  [repo] 08b-howitworks ✓
+  [repo] 08c-privacy ✓
+  [repo] 08d-tipjar ✓
+  [repo] 08e-loading ✓
+  [repo] 09a-intake-ask ✓
+  [repo] 09b-intake-propose ✓
+  [repo] 09c-intake-locked ✓
+  [repo] 09d-edit-issues ✓
+  [repo] 09e-edit-rescored ✓
+  [repo] 10a-polis-entry ✓
+  [repo] 10c-polis-report-consensus ✓
+  [repo] 10d-polis-report-divided ✓
+  [repo] 11a-fieldmoneygap ✓
+  [repo] 11b-scalestates ✓
+  [repo] 11c-moneygaph2h ✓
+
+============================================================
+Review artifact: /Users/Muxin/Documents/GitHub/voter-choice-worktrees/phase4-audit-237/docs/design-review/index.html
+============================================================
+
