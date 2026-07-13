@@ -71,4 +71,31 @@ describe("congressional source inventory contract", () => {
       "AL: authority.role must name the responsible state, district, or territorial election authority; FEC is discovery-only.",
     );
   });
+
+  it("fails closed for malformed date and freshness metadata", () => {
+    const malformedDates = {
+      ...fixtureCongressionalSourceInventory,
+      records: fixtureCongressionalSourceInventory.records.map((record) =>
+        record.jurisdiction === "AL"
+          ? {
+              ...record,
+              contestScope: {
+                ...record.contestScope,
+                electionDates: ["2026-99-99"],
+              },
+              activeWindow: "2026-01-01/invalid",
+              lastVerifiedAt: "2026-02-30T00:00:00.000Z",
+            }
+          : record,
+      ),
+    };
+
+    expect(validateCongressionalSourceInventory(malformedDates).errors).toEqual(
+      expect.arrayContaining([
+        "AL: contestScope.electionDates must contain ISO dates.",
+        "AL: activeWindow must be an inclusive ISO date range.",
+        "AL: lastVerifiedAt must be an ISO timestamp.",
+      ]),
+    );
+  });
 });

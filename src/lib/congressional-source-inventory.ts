@@ -224,6 +224,29 @@ function isHttpsUrl(value: unknown): value is string {
   }
 }
 
+function isIsoDate(value: unknown): value is string {
+  if (!isNonEmptyString(value) || !/^\d{4}-\d{2}-\d{2}$/.test(value))
+    return false;
+  const date = new Date(`${value}T00:00:00.000Z`);
+  return !Number.isNaN(date.getTime()) && date.toISOString().startsWith(value);
+}
+
+function isIsoTimestamp(value: unknown): value is string {
+  return (
+    isNonEmptyString(value) &&
+    isIsoDate(value.slice(0, 10)) &&
+    /^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:?\d{2})$/.test(value) &&
+    !Number.isNaN(Date.parse(value))
+  );
+}
+
+function isActiveWindow(value: unknown): value is string {
+  if (!isNonEmptyString(value)) return false;
+  const [start, end, ...rest] = value.split("/");
+  if (rest.length > 0 || !isIsoDate(start) || !isIsoDate(end)) return false;
+  return start <= end;
+}
+
 function isFecUrl(value: unknown): boolean {
   if (!isHttpsUrl(value)) return false;
   return (
@@ -295,9 +318,7 @@ function validateContestScope(
   }
   if (
     !hasNonEmptyStrings(contestScope.electionDates) ||
-    !contestScope.electionDates.every((date) =>
-      /^\d{4}-\d{2}-\d{2}$/.test(date),
-    )
+    !contestScope.electionDates.every(isIsoDate)
   ) {
     errors.push(`${label}: contestScope.electionDates must contain ISO dates.`);
   }
@@ -327,8 +348,8 @@ function validateOperationalMetadata(
   label: string,
   errors: string[],
 ): void {
-  if (!isNonEmptyString(record.activeWindow))
-    errors.push(`${label}: activeWindow is required.`);
+  if (!isActiveWindow(record.activeWindow))
+    errors.push(`${label}: activeWindow must be an inclusive ISO date range.`);
   if (
     !Array.isArray(record.accessConstraints) ||
     !record.accessConstraints.every(isNonEmptyString)
@@ -336,10 +357,7 @@ function validateOperationalMetadata(
     errors.push(`${label}: accessConstraints must be an array of strings.`);
   if (!isNonEmptyString(record.fallbackManualImportProcedure))
     errors.push(`${label}: fallbackManualImportProcedure is required.`);
-  if (
-    !isNonEmptyString(record.lastVerifiedAt) ||
-    Number.isNaN(Date.parse(record.lastVerifiedAt))
-  )
+  if (!isIsoTimestamp(record.lastVerifiedAt))
     errors.push(`${label}: lastVerifiedAt must be an ISO timestamp.`);
   if (!isNonEmptyString(record.reviewedBy))
     errors.push(`${label}: reviewedBy is required.`);
