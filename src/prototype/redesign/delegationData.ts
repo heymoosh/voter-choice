@@ -172,6 +172,33 @@ export function issuesForLevel(
   return (issues || []).filter((i) => i.level === level || i.level === "both");
 }
 
+/**
+ * Issues to render as alignment rows on a seat's card: level-eligible issues
+ * (issuesForLevel), plus any user issue that already has a real scored
+ * record for THIS seat's candidate. A static jurisdiction-lean guess
+ * (ISSUE_JURISDICTION_LEAN) must never suppress a row the seat's own data
+ * proves is real — e.g. an issue tagged "state" that nonetheless has scored
+ * federal votes for this candidate (show-thin-records: never hide votes that
+ * exist). Bug repro: 2026-07-12 Dallas TX senior senator — "Education
+ * keeping pace with AI" tagged education_funding (state lean) was dropped
+ * from a federal seat's card despite AllVotesPanel (which reads
+ * alignmentEntry.scores directly, unfiltered by level) showing real votes.
+ */
+export function issuesForSeatCard(
+  issues: UserIssue[],
+  seat: {
+    level: "federal" | "state";
+    alignmentEntry: SeatCardData["alignmentEntry"];
+  },
+): UserIssue[] {
+  return (issues || []).filter(
+    (i) =>
+      i.level === seat.level ||
+      i.level === "both" ||
+      getScoreForIssue(seat.alignmentEntry, i.canonicalIssue) !== null,
+  );
+}
+
 // ---------------------------------------------------------------------------
 // Per-seat card data (/api/race-data with a single-member roster)
 // ---------------------------------------------------------------------------
@@ -416,14 +443,16 @@ export async function loadAllSeatCardData(
 
 /** Overall average alignment % for a seat's card — same average-of-per-issue-
  *  percentages formula as AlignmentScoreBanner, scoped to the issues that
- *  apply at this seat's level (federal vs. state). */
+ *  apply at this seat's level (federal vs. state), plus any issue this
+ *  seat's data actually scores (issuesForSeatCard — never suppress real
+ *  votes behind a static jurisdiction guess). */
 export function seatOverviewAlignmentPct(
   seat: Pick<DelegationSeatVM, "alignmentEntry" | "level">,
   userIssues: UserIssue[],
 ): number | null {
   return computeOverallAlignmentPct(
     seat.alignmentEntry,
-    issuesForLevel(userIssues, seat.level),
+    issuesForSeatCard(userIssues, seat),
   );
 }
 
@@ -434,12 +463,15 @@ export interface SeatIssueAlignmentRow {
 }
 
 /** Per-issue alignment rows for a seat's overview card bars — same lookup
- *  (getScoreForIssue) and same pct math as AlignmentIssueRow. */
+ *  (getScoreForIssue) and same pct math as AlignmentIssueRow. Every user
+ *  issue eligible for this seat (issuesForSeatCard) gets exactly one row;
+ *  an issue with no scoreable record renders the honest n/a state below,
+ *  never suppressed (show-thin-records). */
 export function seatIssueAlignmentRows(
   seat: Pick<DelegationSeatVM, "alignmentEntry" | "level">,
   userIssues: UserIssue[],
 ): SeatIssueAlignmentRow[] {
-  return issuesForLevel(userIssues, seat.level).map((issue) => {
+  return issuesForSeatCard(userIssues, seat).map((issue) => {
     const score = getScoreForIssue(seat.alignmentEntry, issue.canonicalIssue);
     const hasRecord = !!(score && score.total > 0);
     return {

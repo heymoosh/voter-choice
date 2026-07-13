@@ -23,7 +23,7 @@ import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { DelegationOverview } from "./DelegationOverview";
-import { issuesForLevel } from "./delegationData";
+import { issuesForLevel, issuesForSeatCard } from "./delegationData";
 
 function tierIntro(section, { t }) {
   const tr = t || ((k) => k);
@@ -77,8 +77,12 @@ export function ScorecardPane({
   onEditIssues,
 }) {
   const { t } = useI18n();
+  // Decided-count/total only ever counts seats that CAN be decided — a
+  // not-up-2026 seat has no verdict UI, so it must never sit in the
+  // denominator (else "N of total decided" gets permanently stuck short).
+  const upSeats = seats.filter((s) => s.nextElection?.onBallot2026 !== false);
   const doneCount = Object.keys(verdicts).filter((id) =>
-    seats.some((s) => s.id === id),
+    upSeats.some((s) => s.id === id),
   ).length;
   const canPrint = doneCount > 0;
   const sections = {};
@@ -127,7 +131,7 @@ export function ScorecardPane({
           </span>
         </div>
         <span className="sub">
-          {doneCount}/{seats.length} {t("scorecard.decided")}
+          {doneCount}/{upSeats.length} {t("scorecard.decided")}
         </span>
         <address>
           {address || "—"}
@@ -194,9 +198,7 @@ export function ScorecardPane({
                       {s.office} · {s.districtLabel}
                     </div>
                     {notUp2026 && (
-                      <div className="b-not-up">
-                        Not up for election in 2026
-                      </div>
+                      <div className="b-not-up">{t("repCard.notUp2026")}</div>
                     )}
                     <div className="pick">
                       {v ? (
@@ -220,6 +222,11 @@ export function ScorecardPane({
                               ) : null;
                             })()}
                         </>
+                      ) : notUp2026 ? (
+                        t("scorecard.recordOnly", {
+                          label:
+                            s.nextElection?.label || t("repCard.notUp2026"),
+                        })
                       ) : isActive ? (
                         t("scorecard.reviewingNow")
                       ) : (
@@ -350,8 +357,14 @@ export function DelegationWorkspace({
     if (!v) return;
     setMobileChatOpen(false);
     setTimeout(() => {
+      // Skip not-up-2026 seats — they have no verdict UI to land on, so
+      // auto-advancing into one would strand the flow short of "all done".
       const next = seats.find(
-        (s, i) => i > activeIdx && !verdicts[s.id] && s.id !== activeSeat.id,
+        (s, i) =>
+          i > activeIdx &&
+          !verdicts[s.id] &&
+          s.id !== activeSeat.id &&
+          s.nextElection?.onBallot2026 !== false,
       );
       if (next) onSelectSeat(next.id);
     }, 600);
@@ -430,7 +443,7 @@ export function DelegationWorkspace({
           <RepCard
             key={activeSeat.id}
             seat={activeSeat}
-            userIssues={issuesForLevel(userIssues, activeSeat.level)}
+            userIssues={issuesForSeatCard(userIssues, activeSeat)}
             stateCode={stateData?.stateCode || ""}
             research={researchFor ? researchFor(activeSeat.id) : undefined}
             blindMode={blindMode}
@@ -444,7 +457,9 @@ export function DelegationWorkspace({
             onShowBudgetOptions={onShowBudgetOptions}
           />
 
-          {doneCount === seats.length && (
+          {/* upSeats.length, not seats.length — a not-up-2026 seat can never
+              carry a verdict, so it must not sit in the "all done" denominator. */}
+          {doneCount === upSeats.length && (
             <div className="all-done" data-testid="all-done">
               <div className="all-done-kick">{t("scorecard.allDoneKick")}</div>
               <b>{t("scorecard.allDoneHeadline")}</b>

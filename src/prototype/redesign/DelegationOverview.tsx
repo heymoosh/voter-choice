@@ -260,7 +260,19 @@ export function DelegationOverview({
       </div>
 
       {excludedSeats.map((s) => (
-        <div className="dg-excluded" key={s.id}>
+        <div
+          className="dg-excluded"
+          key={s.id}
+          role="button"
+          tabIndex={0}
+          onClick={() => onOpen(s.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              onOpen(s.id);
+            }
+          }}
+        >
           <span className="ri">
             {s.office === "U.S. House"
               ? "HR"
@@ -278,6 +290,11 @@ export function DelegationOverview({
             {[t("delegationOverview.excludedNote"), s.nextElection?.label]
               .filter(Boolean)
               .join(" · ")}
+          </span>
+          {/* Reviewable, never decidable (Muxin, 2026-07-12): the row itself
+              is the affordance — no verdict UI, just a way in to the record. */}
+          <span className="dg-excluded-open">
+            {t("delegationOverview.excludedOpen")}
           </span>
         </div>
       ))}

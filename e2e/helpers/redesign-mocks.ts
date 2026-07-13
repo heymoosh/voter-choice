@@ -564,7 +564,9 @@ export async function goToWorkspace(page: Page): Promise<void> {
  * exercise PolisStand itself).
  */
 export async function goToPolisStand(page: Page): Promise<void> {
-  const rows = page.locator(".b-row");
+  // Not-up-2026 rows carry no verdict UI (reviewable, never decidable) — only
+  // decidable rows can be verdicted here.
+  const rows = page.locator(".b-row:not(.not-up-2026)");
   const count = await rows.count();
   for (let i = 0; i < count; i++) {
     await rows.nth(i).click();

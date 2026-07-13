@@ -749,7 +749,9 @@ async function verdictRow(
   rowIndex: number,
   verdict: "keep" | "replace",
 ): Promise<void> {
-  const rows = page.locator(".b-row");
+  // Indexes DECIDABLE rows only — not-up-2026 rows carry no verdict UI
+  // (reviewable, never decidable), same scoping as goToPolisStand's loop.
+  const rows = page.locator(".b-row:not(.not-up-2026)");
   await rows.nth(rowIndex).click();
   const btn =
     verdict === "keep"
@@ -1311,14 +1313,15 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page, true);
       await mockCounters(page);
       await reachWorkspace(page);
-      // Verdict every seat — PolisEntry only renders once the whole
-      // delegation has a verdict (App2.tsx's ".all-done" completion link).
-      // Duplicated from goToStanding (e2e/helpers/redesign-mocks.ts) rather
-      // than reusing it directly: goToStanding drives one step further,
-      // clicking through PolisEntry's own "See where I stand" CTA into the
-      // real standing report, but this scenario needs to stop and shoot
-      // PolisEntry itself.
-      const rows = page.locator(".b-row");
+      // Verdict every DECIDABLE seat — PolisEntry renders once every seat
+      // that can carry a verdict has one (App2.tsx's ".all-done" completion
+      // link; not-up-2026 rows are reviewable but never decidable, so they
+      // carry no verdict UI and don't gate completion). Duplicated from
+      // goToStanding (e2e/helpers/redesign-mocks.ts) rather than reusing it
+      // directly: goToStanding drives one step further, clicking through
+      // PolisEntry's own "See where I stand" CTA into the real standing
+      // report, but this scenario needs to stop and shoot PolisEntry itself.
+      const rows = page.locator(".b-row:not(.not-up-2026)");
       const count = await rows.count();
       for (let i = 0; i < count; i++) {
         await rows.nth(i).click();

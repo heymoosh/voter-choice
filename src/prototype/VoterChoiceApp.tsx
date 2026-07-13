@@ -362,6 +362,7 @@ const TRANSLATIONS = {
       timeToReplace: '⇄ REPLACE',
       reviewingNow: 'Reviewing now…',
       notYetReviewed: 'Not yet reviewed',
+      recordOnly: 'Record only · {label}',
       progress: 'Progress',
       reviewed: '% reviewed',
       standingKick: "You're not alone",
@@ -404,6 +405,7 @@ const TRANSLATIONS = {
       printReady: 'Print my scorecard →',
       printNotReady: 'Decide {n} seats to print',
       excludedNote: 'Not on your ballot this year',
+      excludedOpen: 'See their record →',
       backToOverview: '← All seats',
     },
     editIssues: {
@@ -503,6 +505,7 @@ const TRANSLATIONS = {
       runningForSeat: 'Running for this seat in 2026',
       fecRankedByFunds: 'FEC filings · ranked by funds raised',
       notUp2026: 'Not up for election in 2026',
+      notUp2026BandSentence: 'You can still review their record — {label}.',
       unresolvedNoMatch:
         "We couldn't match this seat to a sitting member in our records — we'd rather say so than guess.",
       lookThemUpAt: 'Look them up directly at',
@@ -931,6 +934,7 @@ const TRANSLATIONS = {
       timeToReplace: '⇄ REEMPLAZAR',
       reviewingNow: 'Revisando ahora…',
       notYetReviewed: 'Aún no revisado',
+      recordOnly: 'Solo historial · {label}',
       progress: 'Progreso',
       reviewed: '% revisado',
       standingKick: 'No estás solo/a',
@@ -973,6 +977,7 @@ const TRANSLATIONS = {
       printReady: 'Imprimir mi tarjeta →',
       printNotReady: 'Decide {n} escaños para imprimir',
       excludedNote: 'No está en tu boleta este año',
+      excludedOpen: 'Ver su historial →',
       backToOverview: '← Todos los escaños',
     },
     editIssues: {
@@ -1074,6 +1079,7 @@ const TRANSLATIONS = {
       runningForSeat: 'Compitiendo por este puesto en 2026',
       fecRankedByFunds: 'Presentaciones ante la FEC · ordenadas por fondos recaudados',
       notUp2026: 'No está en la boleta en 2026',
+      notUp2026BandSentence: 'Aún puedes revisar su historial — {label}.',
       unresolvedNoMatch:
         'No pudimos identificar a un miembro en funciones para este puesto en nuestros registros — preferimos decirlo así a adivinar.',
       lookThemUpAt: 'Búscalos directamente en',

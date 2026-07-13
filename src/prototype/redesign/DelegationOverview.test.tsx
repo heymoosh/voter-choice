@@ -36,7 +36,13 @@ function mkSeat(overrides: Partial<DelegationSeatVM> = {}): DelegationSeatVM {
       incumbent: true,
       priorRole: "U.S. Representative since 2019",
       totalRaised: 5_000_000,
-      fundingMix: { small: 40, large: 0, pac: 60, total: 5_000_000, cycle: "2026" },
+      fundingMix: {
+        small: 40,
+        large: 0,
+        pac: 60,
+        total: 5_000_000,
+        cycle: "2026",
+      },
       donorSource: undefined,
       donorCoalition: null,
       peerComparison: null,
@@ -52,7 +58,11 @@ function mkSeat(overrides: Partial<DelegationSeatVM> = {}): DelegationSeatVM {
 }
 
 const userIssues: UserIssue[] = [
-  { canonicalIssue: "healthcare_affordability", interpretation: "Lower drug prices", level: "federal" },
+  {
+    canonicalIssue: "healthcare_affordability",
+    interpretation: "Lower drug prices",
+    level: "federal",
+  },
 ];
 
 // t() only resolves real copy under an I18nProvider (its default context
@@ -82,7 +92,9 @@ describe("DelegationOverview", () => {
     renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
     const cards = screen.getAllByTestId("seat-card");
     expect(cards).toHaveLength(1);
-    expect(within(cards[0]).getByText("U.S. House · TX-37")).toBeInTheDocument();
+    expect(
+      within(cards[0]).getByText("U.S. House · TX-37"),
+    ).toBeInTheDocument();
     // excluded seat shows as a row, not a card
     expect(screen.getByText(/Your Junior U.S. Senator/)).toBeInTheDocument();
   });
@@ -95,7 +107,9 @@ describe("DelegationOverview", () => {
   });
 
   it("shows an honest dash, not a fabricated 0%, when a seat has no scoreable record", () => {
-    const seats = [mkSeat({ alignmentEntry: { candidateId: "federal-TEST1", scores: [] } })];
+    const seats = [
+      mkSeat({ alignmentEntry: { candidateId: "federal-TEST1", scores: [] } }),
+    ];
     renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
     // both the big align % and the issue row's fraction fall back to the
     // same honest dash — assert on the specific % slot, not just "some '—'
@@ -123,6 +137,31 @@ describe("DelegationOverview", () => {
       onOpen: () => {},
     });
     expect(screen.getByTestId("seat-card").className).toContain("is-pick");
+  });
+
+  it("excluded (not-up) row is a real entry: clicking it opens the seat, and it never renders verdict UI", async () => {
+    const onOpen = vi.fn();
+    const seats = [
+      mkSeat({ id: "house-TX-37" }),
+      mkSeat({
+        id: "senate-TX-b",
+        office: "U.S. Senate",
+        districtLabel: "Texas (statewide)",
+        blindLabel: "Your Junior U.S. Senator",
+        nextElection: { label: "next up 2030", onBallot2026: false },
+      }),
+    ];
+    renderOverview({ seats, verdicts: {}, userIssues, onOpen });
+
+    expect(
+      screen.queryByRole("button", { name: /Worth keeping/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Time to replace/ }),
+    ).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByText("See their record →"));
+    expect(onOpen).toHaveBeenCalledWith("senate-TX-b");
   });
 
   it("gates the print CTA on every up-2026 seat being decided", () => {

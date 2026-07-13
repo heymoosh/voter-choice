@@ -959,53 +959,67 @@ export function RepCard({
          leave it empty when unselected and fill it with a mark when set.
          "Time to replace" routes to the duel when challengers exist (the duel
          records the verdict + successor); with no challenger it degrades to
-         the inline verdict toggle. */}
-      {(() => {
-        const hasChallengers = (seat.challengers || []).length > 0;
-        const successor = hasChallengers
-          ? (seat.challengers || []).find((c) => c.id === pickId)
-          : null;
-        return (
-          <div className="cv2-actions verdicts">
-            <button
-              className={"pick " + (verdict === "keep" ? "picked" : "")}
-              onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
-            >
-              <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
-              <span>
-                {verdict === "keep"
-                  ? t("repCard.worthKeepingUndo")
-                  : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
-              </span>
-            </button>
-            <button
-              className={
-                "pick replace " +
-                (verdict === "replace" ? "picked-replace" : "")
-              }
-              data-testid="open-duel"
-              onClick={() => {
-                if (hasChallengers && onOpenDuel) {
-                  onOpenDuel(seat.id);
-                } else {
-                  onVerdict(verdict === "replace" ? null : "replace");
+         the inline verdict toggle.
+
+         Not-up-for-2026 seats are reviewable, never decidable (Muxin,
+         2026-07-12): no keep/replace here — an info band explains why. */}
+      {notUp2026 ? (
+        <div className="cv2-notup-band">
+          <div className="cv2-notup-eyebrow">{t("repCard.notUp2026")}</div>
+          <p className="cv2-notup-text">
+            {t("repCard.notUp2026BandSentence", {
+              label: seat.nextElection?.label || t("repCard.notUp2026"),
+            })}
+          </p>
+        </div>
+      ) : (
+        (() => {
+          const hasChallengers = (seat.challengers || []).length > 0;
+          const successor = hasChallengers
+            ? (seat.challengers || []).find((c) => c.id === pickId)
+            : null;
+          return (
+            <div className="cv2-actions verdicts">
+              <button
+                className={"pick " + (verdict === "keep" ? "picked" : "")}
+                onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
+              >
+                <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
+                <span>
+                  {verdict === "keep"
+                    ? t("repCard.worthKeepingUndo")
+                    : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
+                </span>
+              </button>
+              <button
+                className={
+                  "pick replace " +
+                  (verdict === "replace" ? "picked-replace" : "")
                 }
-              }}
-            >
-              <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
-              <span>
-                {verdict === "replace"
-                  ? successor
-                    ? t("repCard.replacingWith", { name: successor.name })
-                    : t("repCard.timeToReplaceChange")
-                  : hasChallengers
-                    ? t("repCard.timeToReplaceCompare")
-                    : t("repCard.timeToReplace")}
-              </span>
-            </button>
-          </div>
-        );
-      })()}
+                data-testid="open-duel"
+                onClick={() => {
+                  if (hasChallengers && onOpenDuel) {
+                    onOpenDuel(seat.id);
+                  } else {
+                    onVerdict(verdict === "replace" ? null : "replace");
+                  }
+                }}
+              >
+                <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
+                <span>
+                  {verdict === "replace"
+                    ? successor
+                      ? t("repCard.replacingWith", { name: successor.name })
+                      : t("repCard.timeToReplaceChange")
+                    : hasChallengers
+                      ? t("repCard.timeToReplaceCompare")
+                      : t("repCard.timeToReplace")}
+                </span>
+              </button>
+            </div>
+          );
+        })()
+      )}
 
       <CardSources seat={seat} />
     </div>
