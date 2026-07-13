@@ -1510,7 +1510,7 @@ export const SCENARIOS: Scenario[] = [
   {
     id: "11a-fieldmoneygap",
     refFile: "11a-fieldmoneygap.png",
-    label: "Money-gap — whole field on one scale",
+    label: "Money-gap — subject vs the median (field rows moved to the duel)",
     files: [
       "src/prototype/redesign/MoneyGap.tsx",
       "src/prototype/redesign/peerComparison.ts",
@@ -1518,10 +1518,16 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note:
-      "The `field` prop is now wired at the RepCard call site (product ruling 2026-07-11, " +
-      "reversing the earlier 'won't build' disposition) — house-TX-37's funded 2026 " +
-      "challengers (Elena Reyes, Sam Whitfield) render as extra rows on the incumbent's own " +
-      "scale, alongside the subject.",
+      "REWRITTEN 2026-07-12 (Round-4 problem #10): the incumbent card's scale is subject-vs-" +
+      "median ONLY — the `field` challenger rows the 2026-07-11 ruling wired here were removed " +
+      "again by Muxin's Round-4 review (challenger money bars don't belong on the incumbent's " +
+      "own card); the whole-field comparison relocates to the head-to-head duel ('Everyone " +
+      "running for this seat', feat/headtohead-money-clarity). The canvas artboard (refFile) " +
+      "still shows the whole-field composition; subject-only renders as a strict subset of it, " +
+      "inside the coarse visual threshold — the marker probe in parity-gate.ts is the binding " +
+      "check for the removal. mockDelegationWithChallengers stays in this capture ON PURPOSE: " +
+      "the mock supplies funded challengers so a regressed tree that re-wires `field` would " +
+      "genuinely render the rows the probe asserts are gone.",
     async capture(page) {
       await mockDelegationWithChallengers(page);
       await mockSeatRaceDataMedian(page);

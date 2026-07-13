@@ -896,79 +896,74 @@ const STRUCTURAL_PROBES: Probe[] = [
   {
     kind: "marker",
     scenarioId: "11a-fieldmoneygap",
-    // Added when 11a-fieldmoneygap was flipped from automatable:"no" to a
-    // real capture (RepCard.tsx now passes MoneyGapScale a `field` built
-    // from seat.challengers). A class-diff probe against MoneyGap.tsx's own
-    // ".mgap"/".mgap-row" vocabulary would be a no-op here: those classes
-    // are already the confirmed verbatim port 02b-results-funding-expanded
-    // probes, and MoneyGap.tsx itself didn't change in this PR — only the
-    // RepCard.tsx call site did. A class-diff only diffs the SET of class
-    // tokens present, so it can't tell "one .mgap-row" from "three
-    // .mgap-row" — it would pass identically whether or not the field prop
-    // is wired, which is exactly the false-signal a marker probe exists to
-    // avoid (see MarkerProbe's doc comment above). These markers instead
-    // check the actual regression this PR fixes: multiple rows render, at
-    // least one is a real funded-challenger row with the artboard's tag
-    // copy, and it carries the same scale markup as the subject row (not a
-    // name-only decoration). Verified against pre-fix origin/main (the
-    // <MoneyGapScale subject=... peer=...> call with no `field` prop): the
-    // row-count marker genuinely fails there (exactly 1 .mgap-row, the
-    // subject) and flips to pass once the field prop is wired — the
-    // correctness bar MarkerProbe's doc comment requires.
+    // REWRITTEN 2026-07-12 (Round-4, feat/repcard-evidence-hierarchy): the
+    // 2026-07-11 field-prop ruling this probe previously enforced was
+    // REVERSED by Muxin's Round-4 screenshot review (problem #10:
+    // challenger money bars don't belong on the incumbent's own card) —
+    // RepCard.tsx now calls MoneyGapScale subject-vs-median ONLY, and the
+    // whole-field comparison relocates to the head-to-head duel ("Everyone
+    // running for this seat", feat/headtohead-money-clarity). These
+    // markers flip exactly opposite to their predecessors and were
+    // verified the same way: on pre-fix origin/main (RepCard.tsx wires
+    // `field` from seat.challengers) the exactly-one-row and
+    // no-challenger-tag markers genuinely fail (3 .mgap-row render —
+    // subject + Elena Reyes + Sam Whitfield, tagged "Challenger · …"),
+    // and they pass on this branch's subject-only call site — the
+    // correctness bar MarkerProbe's doc comment requires. MoneyGapScale
+    // itself still accepts `field` (the duel is its remaining field
+    // caller); this probe pins the RepCard call site only.
     markers: [
       {
-        check: async (page) =>
-          (await page.locator(".mgap .mgap-row").count()) >= 2,
-        description:
-          "renders at least 2 rows on the money-gap scale — the subject plus 1+ funded " +
-          "challengers, not just the incumbent's own row (fails on pre-fix RepCard.tsx, which " +
-          "calls MoneyGapScale with no `field` prop at all)",
-      },
-      {
         check: async (page) => {
-          const tags = page.locator(".mgap .mgap-row .mgap-tag");
-          const count = await tags.count();
-          for (let i = 0; i < count; i++) {
-            const txt = (await tags.nth(i).innerText()) || "";
-            // house-TX-37's mocked 2026 challengers (redesign-mocks.ts)
-            // include Elena Reyes, party "Democrat" — the specific party
-            // this scenario's fixture produces, not just any tag string.
-            if (txt.includes("Challenger") && txt.includes("Democrat"))
-              return true;
-          }
-          return false;
+          const rows = page.locator(".mgap .mgap-row");
+          return (
+            (await rows.count()) === 1 &&
+            (await rows.first().locator(".you").count()) === 1
+          );
         },
         description:
-          "at least one field row carries the artboard's 'Challenger · Democrat' tag line " +
-          "(RepCard.tsx's moneyGapField mapping through t('repCard.challengerTag'), not a " +
-          "hardcoded or missing party label)",
+          "exactly ONE row renders on the incumbent card's money-gap scale, and it is the " +
+          "subject's own (carries GapRow's .you pill) — challenger field rows are gone from " +
+          "this surface (fails on pre-fix origin/main, which wires `field` from " +
+          "seat.challengers and renders 3 rows)",
       },
       {
         check: async (page) => {
-          // A field row is any .mgap-row that ISN'T the subject (the
-          // subject is the only row MoneyGapScale marks with the "you"
-          // pill — see GapRow's `c.you && <span className="you">`).
-          const fieldRows = page.locator(".mgap .mgap-row:not(:has(.you))");
-          const count = await fieldRows.count();
-          if (count === 0) return false;
-          const row = fieldRows.first();
+          const scale = page.locator(".mgap");
+          if ((await scale.count()) === 0) return false;
+          const txt = (await scale.first().innerText()) || "";
+          return !txt.includes("Challenger");
+        },
+        description:
+          "no 'Challenger' tag line appears anywhere inside the scale — the specific rows the " +
+          "2026-07-12 ruling removes (this scenario's mock still supplies house-TX-37's funded " +
+          "challengers ON PURPOSE, so a regressed tree that re-wires `field` WOULD render " +
+          "Elena Reyes's 'Challenger · Democrat' tag here and fail)",
+      },
+      {
+        check: async (page) => {
+          const row = page.locator(".mgap .mgap-row").first();
           return (
             (await row.locator(".mgap-track .mgap-bar").count()) > 0 &&
             (await row.locator(".mgap-medline").count()) > 0
           );
         },
         description:
-          "a field (non-subject) row renders the real GapRow scale markup — its own " +
-          ".mgap-track/.mgap-bar/.mgap-medline — the same shared-axis bar every row gets, not " +
-          "a name-only stub row",
+          "the subject row still renders the real GapRow scale markup — .mgap-track/.mgap-bar " +
+          "plus the .mgap-medline median marker — i.e. subject-vs-median stays a readable " +
+          "scale, not a bare number or a name-only stub",
       },
     ],
     note:
       "MoneyGap.tsx's MoneyGapScale/GapRow markup is the confirmed verbatim port 02b-results-" +
-      "funding-expanded already class-diffs — this probe targets the RepCard.tsx wiring gap " +
-      "that class-diff can't see (a class SET check, not a row-count check). See the scenario's " +
-      "own note in parity-gallery-scenarios.ts for the product ruling (2026-07-11) that " +
-      "reversed GAPS-RECONCILED-FOR-CODE.md §5's earlier 'won't build' disposition.",
+      "funding-expanded already class-diffs — this probe targets the RepCard.tsx call site, " +
+      "which a class-diff can't see (a class SET check, not a row-count check). Ruling " +
+      "history: GAPS-RECONCILED-FOR-CODE.md §5 said 'won't build' → 2026-07-11 ruling wired " +
+      "`field` here → 2026-07-12 Round-4 review reversed that again (incumbent card = subject " +
+      "only; the whole-field scale is the duel's job, feat/headtohead-money-clarity). When the " +
+      "duel PR lands, field-row coverage belongs in a duel-surface probe, not here. The canvas " +
+      "11a artboard still draws the whole-field composition; subject-only renders as a strict " +
+      "subset within the coarse visual threshold, so THIS marker probe is the binding check.",
   },
   {
     kind: "marker",
