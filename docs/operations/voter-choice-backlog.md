@@ -127,12 +127,14 @@ to do. While the information is there, it took me a long time to understand what
 - "Settings button does not show any functionality"
 - Mechanical bug — renders but is a no-op. Wire a settings panel or remove before launch.
 - STATUS: Review
+- DECISION: defer — Do not implement Settings until Muxin decides it is a real product need.
 <!-- card-id: 403ed2a6-1ddd-4c17-ba12-fed04efa32d1 -->
 
 **Finish Spanish coverage for remaining redesign surfaces**
 - After PR #168 wired the main body, these still render English: tier-intro paragraphs (Federal/Executive), SeatChat / RepCard / HandoffModal / ScorecardPrintView, App2 stage error strings (geocodefail/norep/dberror), IssueConversation refinement fallbacks. Add t() keys + ES.
 - STATUS: To Do
 - DEPENDS ON: Spanish translation covers only the top bar
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 7855fddd-e389-483c-9e55-163a4c011870 -->
 
 **[P3] Decide tablet/mobile Edit-Issues prominence**
@@ -141,6 +143,7 @@ to do. While the information is there, it took me a long time to understand what
 
 CLARIFICATION (Muxin, 2026-07-12): we already have a redesigned app. I'll have to double check and see if this is still an issue.
 - STATUS: Backlog
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 05b9ca68-e9ff-4701-aa1b-0ab86041871c -->
 
 **[P1] Spanish translation covers only the top bar**
@@ -174,12 +177,14 @@ Methodology, which I think might be a bit of difficult word."
 - NOTE: complements existing nav/footer cards — reconcile at grooming.
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: b1a5f64a-cd8c-47a0-8cb5-d9eaf0794977 -->
 
 **[P2] Add a "Why Now?" page for the fact snippets + the larger case**
 - "I think another Page of Why Now? would be good where the fact snippets could live and you could make a larger case for the
 site."
 - STATUS: Review
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 9031f1ce-e4f3-44c7-89c7-3bbb664be988 -->
 
 ### Home Page
@@ -190,6 +195,7 @@ think a stronger, clearer CTA that folds in what the site does would be stronger
 - "While the 2 fact snippets are interesting, they clutter the visual and make the next action less clear."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: b4cc1c9e-b7c2-4442-ae5c-1a25af5272d3 -->
 
 **[P2] Simplify the Registered Address entry box**
@@ -200,6 +206,7 @@ Registered Address."
 address in addition to the text that was in the popup, then followed by steps 2 and 3."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 1850349c-0bcd-46d0-8b76-970d964389ba -->
 
 ### Issues / Lock-in
@@ -208,6 +215,7 @@ address in addition to the text that was in the popup, then followed by steps 2 
 - "I think the Lock Theses In box could be bigger."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 4b7e5a66-4013-4274-ac67-183ba240b92a -->
 
 **[P2] Show jurisdiction context on the issues page, not as a separate results block**
@@ -217,6 +225,7 @@ level), etc."
 - NOTE: overlaps the Fed/State issue-label work — reconcile at grooming.
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 9143a622-82fc-4ab1-8a19-90823453856a -->
 
 **[P1] Chat fails when community budget used up - unclear**
@@ -235,6 +244,7 @@ bottom of the page, you will be asked to replace or keep the current representat
 can then print out your scorecard. Let's move to the first candidate."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 0b9d40c9-82ca-40e5-bf82-9a23bb4769f5 -->
 
 **[P1] Reduce panel clutter in results — one visible panel, simpler progress**
@@ -244,6 +254,7 @@ and Reviewed on the right."
 - "Remove see where you stand until it's ready, there is so much here already."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 335829af-98e9-454e-a014-42f41eb95c7d -->
 
 **[P1] Make "Print My Scorecard" discoverable after the last rep**
@@ -251,6 +262,7 @@ and Reviewed on the right."
 button."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 1f77c3eb-909d-4ff2-95a6-180e89603da7 -->
 
 **[P2] Distinguish + de-emphasize non-2026 representatives**
@@ -258,6 +270,7 @@ button."
 white and state earlier that they are not up for election. I would also not include them in the score card."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 97eda1e0-9894-405e-8284-de18b546d43b -->
 
 ### Scorecard
@@ -298,6 +311,7 @@ the X/Y votes matched you would be better made into a percentage."
 - "I would also really recommend a white background for the site, so the scorecard look better when printed."
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 78f5ce94-9b47-4857-b13b-f148af45c491 -->
 
 ### House/Senate parity
@@ -312,6 +326,7 @@ sources - just not all at once."
 Candidates UX flow".
 - STATUS: Review
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 05b995c8-2ca9-418a-b872-3cbeb17d0b3f -->
 
 **[P1] Header and Footer are redundant**
@@ -320,6 +335,7 @@ Candidates UX flow".
 - Add Support to the top as well
 - Footer - remove links, keep the voter choice and © 2025 Grey Bird LLC. All Rights Reserved.
 - STATUS: Review
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: c9891a1f-ba31-4dce-bd1b-0ce372c9de12 -->
 
 **[P2] Show a "polling place not published yet" note when Civic returns no location (far from election)**
@@ -426,6 +442,7 @@ CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - a
 CLARIFICATION (Muxin, 2026-07-12): I think I briefly mentioned this in the app: we want to be able to support any language that is spoken in the United States. Although I don't think the right decision here is for us to create our own personally translated language for the entire app, I think it's more like we need to know where we go expose content to users and what content even needs to be translated. To make sure that if I just switch it to another language, it automatically translates across all those different pages and all those different user interfaces, that's the goal.
 - STATUS: Backlog
 - DEPENDS ON: Phase 1 UX/UI finalized (redesign complete)
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 2b325135-bafc-454f-b253-5bce21e05a13 -->
 
 **[P1] EPIC: Phase 1 UX/UI finalized (redesign complete)**
@@ -617,6 +634,19 @@ tags, mirroring the realtime path; add `billsSkipReasonWritten` to the batch cou
 - **DECIDED 2026-06-17 (Muxin): TARGETED re-tag** (not a full-corpus TAGGER_VERSION bump). Build a bill-selector (the named states + keyword/title filters for repro/immigration topics) + a force-retag flag on the tagger, then re-tag just that subset via Claude Code subscription subagents (overnight batch). Surgical, low regression risk to other issues' tags. Validate the re-tagged subset against the gold gate before/after. The CODE (selector + force-retag flag) is buildable now; the prod re-tag RUN is the overnight subagent job.
 - STATUS: Review
 <!-- card-id: e782e72f-5c9c-41c5-aedc-7e95f586dbc4 -->
+
+**[P0] Candidate-roster correctness incident — never call a FEC filer “on the ballot”**
+- Incident: a voter reported current November candidates missing while people who withdrew earlier in 2026 were displayed. This is an election-data accuracy incident, not a cosmetic candidate-card issue.
+- Current evidence: the redesigned challenger list is sourced only from a weekly FEC Form-2/campaign-filing ingest. The app labels those rows “Running for this seat”; a filing is not ballot qualification, and the ingest upserts but does not remove former filers.
+- Immediate containment: no unverified FEC row may be presented as a current candidate, selectable replacement, or “on the ticket.” When a verified roster is absent, show an explicit honest state rather than a stale or incomplete list.
+- Trace both live roster paths: FEC challengers in the redesigned delegation flow, and Google Civic / uploaded-ballot extraction in the ballot flow. Record source, election, retrieval time, and confidence for every displayed roster.
+- Research and recommend the production source strategy: official state/county election authority or voter-specific official sample ballot is the standard for ballot status; compare provider coverage, freshness, terms, and withdrawal handling before selecting or buying any third-party source. Ballotpedia may be a comparison oracle, not assumed production authority.
+- Verification: add fixtures proving that a stale FEC filer is never labeled as a current ballot candidate; that the known user-reported race (once its link/state/office is re-supplied) matches an official roster; and that source refreshes can deactivate/remove withdrawn rows without erasing financial-history evidence.
+- GOAL_CONDITION: a staged PR contains the containment behavior, provenance model, regression tests, and a source-decision report with a verified current-race comparison; no production roster migration, provider contract, merge, or deploy occurs overnight.
+- STATUS: To Do
+- DECISION: stage — Urgent accuracy work: implement safety containment and an evidence report only. Treat FEC as campaign-finance evidence, never current-ballot proof; include before/after HTML for unsafe, unverified, and verified-roster states; no merge or deploy without Muxin’s review of the verified-race comparison.
+- GROOMED: Ready — P0 containment, source audit, and verifiable fixtures are explicit; staged review only — 2026-07-12
+<!-- card-id: c5a813bb-9223-4dc1-95aa-65637eb6940b -->
 
 **[P1] Alignment 2b — in-chat pole disambiguation (not a theme-card)**
 - 2026-06-16 (Muxin): handle contested-issue side-picking IN the intake chat, not a separate theme-card UI. Builds on #130
@@ -1052,6 +1082,7 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 - Preserve the design's honest-state discipline (PAC honesty, never blend roll-call/researched, donor-unavailable path, 'no votes match', divided Polis). Closes the ~18 design cards (e688d5a6 + UX cluster) as surfaces land.
 - PROGRESS (2026-06-25, conductor): funding-detail surface integrated + deployed (the claude-code-handoff "Raised vs. the median" feature). MoneyGapH2H component is PORTED + tested but NOT wired — the head-to-head/duel surface doesn't exist yet (6a1fb1fb) and challenger alignment scores don't exist; wiring it would fabricate data. Remaining handoff surfaces stay backend-gated. Moved to Review for Muxin to assess the umbrella's remaining (gated) surfaces.
 - STATUS: Review
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: c44193cf-134d-4685-8e98-159ab411cbd7 -->
 
 **[P3] De-dup inline address steps vs the existing three-step walkthrough**
@@ -1070,6 +1101,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - New page/screen body copy is English-only; nav labels were translated (en+es) but page bodies were not, matching existing static pages.
 - Add ES (and other supported locales) when the redesign adopts t() keys for body copy.
 - STATUS: To Do
+- DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 694cfc22-9c20-47e9-b559-4667b9923bf7 -->
 
 **[P2] CSS housekeeping: prune orphaned .addr-why-* and unused .lvl-tag rules**
@@ -1083,7 +1115,9 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
 - Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
 - GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
-- STATUS: To Do
+ - STATUS: To Do
+ - DECISION: stage — Build a review-only before/after HTML/contact-sheet harness. Visual differences inform human batch review only; do not make broad pixel diffs a merge blocker.
+- STATUS: Backlog
 - GROOMED: Ready attended: four screenshot surfaces and non-required Ubuntu CI leg are specified; human baseline review remains required — 2026-07-12
 <!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
 
@@ -1143,6 +1177,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS AT PAUSE (2026-07-12, branch `claude/visual-ci-gate-strategy-217oxv`, PR #289): (A) parity-gate expectation fixes for 05b/10a/11a — DONE, committed (`f093d99`), verified against the actual #285/#286/#287 branches via disposable worktree merges (all 3 go green). (B) jscpd scope widened to include e2e/helpers + scripts/design, new component-inventory.md + blocking inventory-gate script + advisory AI overlap-review workflow — code complete, unit-tested, committed as WIP (`9536bd5`), NOT yet verified end-to-end via e2e (build/e2e run was interrupted by the pause) and the advisory AI workflow has never been smoke-tested against a real ANTHROPIC_API_KEY secret. (C) reconciling with the parallel PR #284 (`fix/issue-alignment-rows`, different fix for the same "issues drop off surfaces" bug family) — not started.
 - RESUME FROM: full engineering detail (files touched, exact verification done/not-done, next steps) is in the session's plan file (`so-are-we-checking-indexed-willow.md`) — ask to have that context re-loaded, or read the PR #289 diff + its description once updated. Immediate next steps: re-run e2e (`redesign-core`, `redesign-issue-consistency`, `redesign-record`, `redesign-issues` specs) against the refactored `e2e/helpers/redesign-mocks.ts`; smoke-test or drop `component-review.yml`; do the #284/#289 reconciliation; update PR #289's description.
 - STATUS: To Do
+- DECISION: stage — Propose/build a risk-based UI gate: hard-fail only deterministic critical-flow, semantic, and accessibility regressions; produce HTML/contact-sheet diffs for human review; measure false positives and do not block intended design changes on pixel baselines.
 <!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
 
 **[P3] President/VP blind-mode redaction uses a raw last-name split (ticket names)**
