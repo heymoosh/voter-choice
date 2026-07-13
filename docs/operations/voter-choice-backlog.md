@@ -30,7 +30,9 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 
 **[P2] Refactor the codebase**
 - Do it if it makes sense for code maintainability - I’m assuming doing this will make the app more foolproof, run faster, be easier to audit and work better.
-- DECISION: Auto run the deployment - if it’s not destructive (and it shouldn’t be), I accept all recommendations on the approach. 
+- STATUS: Backlog
+- DECISION: Auto run the deployment - if it’s not destructive (and it shouldn’t be), I accept all recommendations on the approach.
+<!-- card-id: fbe076b3-dbe8-4e03-a2f3-246229aff4b5 -->
 
 **[P0] We need a deployment/test environment/server/branch?**
 - Don’t know how to do this, but essentially how do we test the app’s new features without deploying it to the live app?
@@ -1094,6 +1096,13 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - STATUS: Backlog
 <!-- card-id: 726d732a-9c49-4e1f-9473-0266ba78994b -->
 
+**[P1] CI-gate hardening: design-gate spec-sync + component-minimization — PAUSED mid-implementation**
+- Follow-up from PR #289 (issue-consistency gate + duplication ratchet). Investigating why 3 same-day PRs (#285, #286, #287) failed Design Parity CI on 2026-07-12 found the failures were the gate's own stale expectations, not real regressions (10a's e2e journey drifted from a duplicated inline copy; 05b flagged a data-dependent party-color class as missing structural vocabulary; 11a's marker probe asserted a ruling Round-4 reversed). Also addressed: component-level duplication (jscpd) only catches literal clones, not two independently-built components serving the same UI function — the exact thing that caused 11a's field-scale logic existing in both RepCard and HeadToHead.
+- STATUS AT PAUSE (2026-07-12, branch `claude/visual-ci-gate-strategy-217oxv`, PR #289): (A) parity-gate expectation fixes for 05b/10a/11a — DONE, committed (`f093d99`), verified against the actual #285/#286/#287 branches via disposable worktree merges (all 3 go green). (B) jscpd scope widened to include e2e/helpers + scripts/design, new component-inventory.md + blocking inventory-gate script + advisory AI overlap-review workflow — code complete, unit-tested, committed as WIP (`9536bd5`), NOT yet verified end-to-end via e2e (build/e2e run was interrupted by the pause) and the advisory AI workflow has never been smoke-tested against a real ANTHROPIC_API_KEY secret. (C) reconciling with the parallel PR #284 (`fix/issue-alignment-rows`, different fix for the same "issues drop off surfaces" bug family) — not started.
+- RESUME FROM: full engineering detail (files touched, exact verification done/not-done, next steps) is in the session's plan file (`so-are-we-checking-indexed-willow.md`) — ask to have that context re-loaded, or read the PR #289 diff + its description once updated. Immediate next steps: re-run e2e (`redesign-core`, `redesign-issue-consistency`, `redesign-record`, `redesign-issues` specs) against the refactored `e2e/helpers/redesign-mocks.ts`; smoke-test or drop `component-review.yml`; do the #284/#289 reconciliation; update PR #289's description.
+- STATUS: To Do
+<!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
+
 **[P3] President/VP blind-mode redaction uses a raw last-name split (ticket names)**
 - Surfaced 2026-06-30 reviewing PR #174. `RepCard.tsx:620,623` derive the blind-mode redacted last name via `cand.name?.split(" ").pop()`, which yields "Vance" not "Trump" for a President/VP ticket. PR #174 fixed the visible card header (`VoterChoiceApp.tsx`) but not these RepCard call sites.
 - Fix: derive the ticket's primary last name consistently for blind-mode redaction. Low priority — only matters if blind-mode shows on the President/VP card.
@@ -1264,9 +1273,3 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 - Perf follow-up: `src/app/layout.tsx` loads 6 Google Font families via `<link>` for the in-app mood/palette switcher, but production hardcodes `data-mood='civic'` — consider trimming to the Civic families (IBM Plex Sans/Serif/Mono) for the prod default to cut font payload.
 - STATUS: Done
 <!-- card-id: f3bfe5e0-dc5e-403b-bc38-2306e5c0965f -->
-
-**[P1] CI-gate hardening: design-gate spec-sync + component-minimization — PAUSED mid-implementation**
-- Follow-up from PR #289 (issue-consistency gate + duplication ratchet). Investigating why 3 same-day PRs (#285, #286, #287) failed Design Parity CI on 2026-07-12 found the failures were the gate's own stale expectations, not real regressions (10a's e2e journey drifted from a duplicated inline copy; 05b flagged a data-dependent party-color class as missing structural vocabulary; 11a's marker probe asserted a ruling Round-4 reversed). Also addressed: component-level duplication (jscpd) only catches literal clones, not two independently-built components serving the same UI function — the exact thing that caused 11a's field-scale logic existing in both RepCard and HeadToHead.
-- STATUS AT PAUSE (2026-07-12, branch `claude/visual-ci-gate-strategy-217oxv`, PR #289): (A) parity-gate expectation fixes for 05b/10a/11a — DONE, committed (`f093d99`), verified against the actual #285/#286/#287 branches via disposable worktree merges (all 3 go green). (B) jscpd scope widened to include e2e/helpers + scripts/design, new component-inventory.md + blocking inventory-gate script + advisory AI overlap-review workflow — code complete, unit-tested, committed as WIP (`9536bd5`), NOT yet verified end-to-end via e2e (build/e2e run was interrupted by the pause) and the advisory AI workflow has never been smoke-tested against a real ANTHROPIC_API_KEY secret. (C) reconciling with the parallel PR #284 (`fix/issue-alignment-rows`, different fix for the same "issues drop off surfaces" bug family) — not started.
-- RESUME FROM: full engineering detail (files touched, exact verification done/not-done, next steps) is in the session's plan file (`so-are-we-checking-indexed-willow.md`) — ask to have that context re-loaded, or read the PR #289 diff + its description once updated. Immediate next steps: re-run e2e (`redesign-core`, `redesign-issue-consistency`, `redesign-record`, `redesign-issues` specs) against the refactored `e2e/helpers/redesign-mocks.ts`; smoke-test or drop `component-review.yml`; do the #284/#289 reconciliation; update PR #289's description.
-- STATUS: To Do

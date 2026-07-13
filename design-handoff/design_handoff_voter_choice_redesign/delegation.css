@@ -1,0 +1,80 @@
+/* ====================================================
+   §8 · DELEGATION OVERVIEW → DRILL-DOWN
+   Layers on top of the Bold Flag system (screens.css tokens) and reuses
+   the candidate-card (.cd-*) + results-surface (.res-*/.rcard/.rseat)
+   classes. This file only adds the overview shell, the progress meter,
+   the verdict-status pills, the excluded-seat row, and the interaction
+   affordances (clickable card + clickable rail seat).
+   ==================================================== */
+
+.dg { height: 100%; display: flex; flex-direction: column; background: var(--paper); }
+.dg .flagbar { flex: 0 0 auto; }
+
+/* ---------- overview header + progress ---------- */
+.dg-ov-head {
+  padding: 20px 30px 8px; display: flex; align-items: flex-end; justify-content: space-between;
+  gap: 24px; flex-wrap: wrap;
+}
+.dg-ov-intro { min-width: 0; }
+.dg-kicker { font-family: var(--mono); font-size: 10px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--brand); }
+.dg-ov-head h2 { font-family: var(--serif); font-size: 24px; font-weight: 600; letter-spacing: -0.015em; margin: 5px 0 0; color: var(--ink); }
+.dg-ov-head .sub { font-size: 13px; color: var(--ink-3); margin: 5px 0 0; max-width: 560px; line-height: 1.5; }
+
+.dg-prog { display: flex; align-items: center; gap: 16px; flex-shrink: 0; }
+.dg-prog .meter { display: flex; flex-direction: column; gap: 7px; align-items: flex-end; }
+.dg-prog .mlab { font-family: var(--mono); font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-3); }
+.dg-prog .dots { display: flex; gap: 5px; }
+.dg-prog .dots i { width: 26px; height: 6px; border-radius: 999px; background: var(--rule); display: block; }
+.dg-prog .dots i.done { background: var(--keep); }
+.dg-print {
+  min-height: 46px; padding: 0 20px; border-radius: 11px; font-family: var(--sans); font-weight: 600;
+  font-size: 13.5px; border: 1.5px solid var(--rule); background: var(--paper-2); color: var(--ink-3);
+  cursor: not-allowed; white-space: nowrap;
+}
+.dg-print.ready { background: var(--brand); border-color: var(--brand); color: var(--paper-2); cursor: pointer; box-shadow: var(--shadow-soft); }
+
+/* ---------- the seat grid ---------- */
+.dg-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 18px; padding: 16px 30px 10px; align-items: start; }
+
+/* verdict-status pill in the seat label row */
+.dg-status { font-family: var(--mono); font-size: 8.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; padding: 3px 9px; border-radius: 999px; white-space: nowrap; }
+.dg-status.todo { background: var(--tag-bg); color: var(--ink-3); }
+.dg-status.keep { background: var(--keep-soft); color: var(--keep); }
+.dg-status.replace { background: var(--replace-soft); color: var(--replace); }
+
+/* the card is now a button into the deep view */
+.cd-card.dg-open { cursor: pointer; transition: box-shadow .13s ease, transform .13s ease; }
+.cd-card.dg-open:hover { box-shadow: 0 0 0 2px var(--brand-soft), var(--shadow-card); transform: translateY(-2px); }
+.cd-card.dg-open:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.cd-card.verdict-replace { border-color: var(--replace); box-shadow: 0 0 0 2px var(--replace-soft), var(--shadow-soft); }
+.cd-card.verdict-replace .cd-select { color: var(--replace); }
+/* decided (keep) card: green-filled CTA needs white text for contrast */
+.cd-card.is-pick .cd-select { color: var(--paper-2); }
+
+/* ---------- excluded (non-2026) seat row ---------- */
+.dg-excluded {
+  margin: 8px 30px 0; padding: 12px 16px; border: 1px dashed var(--rule); border-radius: 12px;
+  background: var(--tag-bg); display: flex; align-items: center; gap: 12px; opacity: 0.85;
+}
+.dg-excluded .ri { width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0; display: grid; place-items: center; font-family: var(--mono); font-size: 11px; font-weight: 700; background: var(--rule); color: var(--ink-3); }
+.dg-excluded .ex-meta { font-size: 13px; color: var(--ink-2); }
+.dg-excluded .ex-meta b { font-family: var(--serif); font-weight: 600; color: var(--ink); }
+.dg-excluded .ex-tag { margin-left: auto; font-family: var(--mono); font-size: 10px; letter-spacing: 0.04em; color: var(--ink-3); }
+
+/* ---------- deep-view affordances layered on the reused .res chrome ---------- */
+/* make the return-to-overview control read as a real button */
+.dg-deep .rc-back {
+  cursor: pointer; display: inline-flex; align-items: center; gap: 6px;
+  padding: 7px 14px 7px 11px; border-radius: 999px; border: 1px solid var(--brand);
+  background: var(--brand-soft); color: var(--brand); font-weight: 600;
+  transition: background .12s ease, color .12s ease;
+}
+.dg-deep .rc-back:hover { background: var(--brand); color: var(--paper-2); }
+.res-rail .rseat.click { cursor: pointer; transition: border-color .12s ease, background .12s ease; }
+.res-rail .rseat.click:hover { border-color: var(--brand); background: var(--brand-soft); }
+.rh-dots i.done { background: var(--keep); }
+
+/* pressed verdict state in the deep card */
+.vbtn.keep.is-on { box-shadow: 0 0 0 3px var(--keep-soft), var(--shadow-soft); }
+.vbtn.replace.is-on { background: var(--replace); color: var(--paper-2); }
+.vbtn.replace.is-on .ck::before { content: "⇄"; }
