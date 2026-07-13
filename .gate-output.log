@@ -1,0 +1,201 @@
+
+> voter-choice@0.1.0 design:parity-gate
+> npx tsx scripts/design/parity-gate.ts --all
+
+Booting a dev server on the current worktree's HEAD…
+
+Launching browser…
+  01-orientation-activated captured + checked
+  02a-results-main captured + checked
+  02b-results-funding-expanded captured + checked
+  02c-results-votes-drilldown captured + checked
+  02d-results-allvotes-sheet captured + checked
+  03-color-bold-flag captured + checked
+  04-scorecard captured + checked
+  05a-candidates-parity captured + checked
+  05b-headtohead captured + checked
+  06-homehero captured + checked
+  07-whynow captured + checked
+  08a-about captured + checked
+  08b-howitworks captured + checked
+  08c-privacy captured + checked
+  08d-tipjar captured + checked
+  08e-loading captured + checked
+  09a-intake-ask captured + checked
+  09b-intake-propose captured + checked
+  09c-intake-locked captured + checked
+  09d-edit-issues captured + checked
+  09e-edit-rescored captured + checked
+  10a-polis-entry captured + checked
+  10c-polis-report-consensus captured + checked
+  10d-polis-report-divided captured + checked
+  11a-fieldmoneygap captured + checked
+  11b-scalestates captured + checked
+  11c-moneygaph2h captured + checked
+
+========================================================================
+Keystone parity gate report
+visual threshold: diff ratio <= 0.18 (downscaled to 480px wide)
+========================================================================
+
+01-orientation-activated — FAIL
+  Orientation — OrientationActivated
+  structural: FAIL — 18 design classes checked, 17 missing, 5 extra
+    missing: screen, ori, flagbar, ori-body, ori-card, activated, ori-ey, star, ori-lede, ori-steps, ori-step, n, st-t, st-d, ori-cta, btn-primary, ori-meta
+    extra:   coldopen, orientation, orient-lede, orient-foot, lock
+    note: Confirmed gap, HANDOFF-EXACT-MATCH.md §1: OrientationView (App2.tsx) still renders a bare div — none of the flagbar/ori-card/ori-step/ori-cta structure has been ported yet.
+  visual: PASS — diff 8876/195360 px (ratio 0.045, threshold 0.18) — diff image: scripts/design/.parity-gate-out/01-orientation-activated.diff.png
+
+02a-results-main — PASS
+  Results — main review surface
+  structural: PASS — 4 design classes checked, 0 missing, 1 extra
+    ignored (documented exemption, not gate-failing): none
+    extra:   above
+    note: The collapsed money-gap glance, always visible on the card's funding summary line (RepCard.tsx renders <MedianChip> outside the disclosure body) — a confirmed verbatim port per MoneyGap.tsx's own docstring.
+  visual: PASS — diff 13711/195360 px (ratio 0.070, threshold 0.18) — diff image: scripts/design/.parity-gate-out/02a-results-main.diff.png
+
+02b-results-funding-expanded — PASS
+  Results — funding expanded (FunderBars)
+  structural: PASS — 6 design classes checked, 0 missing, 20 extra
+    extra:   20 classes not in the design source (informational)
+    note: The full money-gap scale (MedianAxis + GapRow rows + legend) rendered inside the expanded funding disclosure — a confirmed verbatim port per MoneyGap.tsx's own docstring. FieldMoneyGap is the design source's fullest '.mgap' definition (shared by MoneyGapH2H too); its one known non-match is 'mgap-src' vs. the design's 'fund-src' (which lives outside .mgap in the page chrome there) — reported as an extra, not a gap.
+  visual: PASS — diff 15898/220320 px (ratio 0.072, threshold 0.18) — diff image: scripts/design/.parity-gate-out/02b-results-funding-expanded.diff.png
+
+02c-results-votes-drilldown — PASS
+  Results — per-issue vote drilldown
+  structural: skipped (WAIVED: RepCard.tsx's vote-drilldown markup uses its own cv2-drill/cv2-drill-head prefix — confirmed by a full class-token diff against screens-results.jsx's align-band/align-row/align-track/at-* tokens (zero overlap). HANDOFF-EXACT-MATCH.md §2 only ever claims functional equivalence for RepCard, never a literal class port (the same reason 02a/02b's probes above target MedianChip/FieldMoneyGap, not RepCard's own markup).)
+  visual: PASS — diff 17488/236640 px (ratio 0.074, threshold 0.18) — diff image: scripts/design/.parity-gate-out/02c-results-votes-drilldown.diff.png
+
+02d-results-allvotes-sheet — FAIL
+  Results — see all votes (full record sheet)
+  structural: FAIL — 33 design classes checked, 30 missing, 21 extra
+    missing: avsheet-scrim, avsheet, av-htext, av-eyebrow, av-close, avf, avf-sep, av-body, av-group, av-glab, avg-name, avg-frac, av-row, with, against, open, avr-flag, avr-bill, avr-cast, avr-date, avr-chev, av-detail, avd-what, avd-meta, avd-pair, k, val, avd-link, av-foot, av-src
+    extra:   21 classes not in the design source (informational)
+    note: VoterChoiceApp.tsx's AllVotesPanel literally reuses av-head/av-filters/active from AllVotesSheet (confirmed by grep — not coincidence, same feature) but flattens the canvas's grouped-by-issue/collapsible-detail structure (av-body/av-group/av-row/avr-*/av-detail/avd-*) into a single flat vote list (av-list/av-vote-*) — a real, confirmed structural divergence, matching Muxin's flagged 'the see all votes sheet doesn't match' finding (docs/operations/keystone-parity-failure-handoff-2026-07-08.md).
+  visual: FAIL — diff 144747/195360 px (ratio 0.741, threshold 0.18) — diff image: scripts/design/.parity-gate-out/02d-results-allvotes-sheet.diff.png
+
+03-color-bold-flag — PASS
+  Color — Bold Flag palette confirmation
+  structural: skipped (WAIVED: Proxy scenario (see parity-gallery-scenarios.ts) — its capture() is the same sequence as 02a-results-main's (mockSeatRaceDataMedian + setMoneyDisclosure(false)), so a probe here would just re-report 02a's already-covered .median-chip result under a different id. The canvas's own '03-color' artboard is a trimmed side-by-side palette-demo card with no standalone repo surface to compare against anyway.)
+  visual: PASS — diff 13490/195360 px (ratio 0.069, threshold 0.18) — diff image: scripts/design/.parity-gate-out/03-color-bold-flag.diff.png
+
+04-scorecard — FAIL
+  Scorecard — printable sheet
+  structural: skipped (WAIVED: ScorecardPrintView.tsx uses its own print-sheet/ballot-list/verdict-row/voter-meta-logistics vocabulary — confirmed by a full class-token diff against screens-scorecard.jsx's sheet/dec/dec-badge/sheet-mast/sheet-meta tokens (zero overlap). HANDOFF §4 only claims structural/behavioral parity (decisions lead, percentage copy, non-2026 filter), never a class port. Known real gap this can't localize by class-diffing alone: the 'Not on your ballot this year' section has no repo equivalent — ScorecardPrintView.tsx:43-46 filters non-2026 seats out entirely (Phase 0 finding #4, docs/operations/keystone-phase0-findings-2026-07-08.md).)
+  visual: FAIL — diff 98747/262560 px (ratio 0.376, threshold 0.18) — diff image: scripts/design/.parity-gate-out/04-scorecard.diff.png
+
+05a-candidates-parity — PASS
+  Candidates — CandidateParity (unified card)
+  structural: skipped (WAIVED: RepCard.tsx (cv2-* prefix) is the same confirmed-functional-only, non-literal-port component as 02c-results-votes-drilldown above — zero class-token overlap with screens-candidates.jsx's CandidateParity (cd-* prefix).)
+  visual: PASS — diff 13243/195360 px (ratio 0.068, threshold 0.18) — diff image: scripts/design/.parity-gate-out/05a-candidates-parity.diff.png
+
+05b-headtohead — PASS
+  Candidates — HeadToHead duel
+  structural: PASS — 43 design classes checked, 0 missing, 8 extra
+    ignored (documented exemption, not gate-failing): up
+    extra:   cmp-back, dem, ind, prov, rollcall, researched, tone-na, cmp-ledger-note
+    note: HeadToHead.tsx's own docstring: 'PORT of claude-code-handoff/design-session/screens-candidates.jsx → the down-selected DIRECTION B (HeadToHead) ... markup/class names are the design's' — the clearest documented verbatim-port precedent in the repo alongside MoneyGap.tsx's.
+  visual: PASS — diff 7949/195360 px (ratio 0.041, threshold 0.18) — diff image: scripts/design/.parity-gate-out/05b-headtohead.diff.png
+
+05c-candidates-overview — SKIPPED (no structural probe, no ref PNG)
+
+06-homehero — PASS
+  Homepage — HomeHero
+  structural: skipped (WAIVED: HomeView (VoterChoiceApp.tsx) uses its own hp-hero/addr-*/eyebrow/lede vocabulary — confirmed by a full class-token diff against screens-home.jsx's HomeHero (vh-* prefix): zero overlap.)
+  visual: PASS — diff 17614/363840 px (ratio 0.048, threshold 0.18) — diff image: scripts/design/.parity-gate-out/06-homehero.diff.png
+
+07-whynow — FAIL
+  Why Now — editorial page
+  structural: skipped (WAIVED: WhyNowPage (VoterChoiceApp.tsx) uses its own stat-stack vocabulary — confirmed by a full class-token diff against screens-whynow.jsx's WhyNow (wn-* prefix): zero overlap beyond single-letter tokens too generic to probe meaningfully (cite/l/v).)
+  visual: FAIL — diff 129239/305760 px (ratio 0.423, threshold 0.18) — diff image: scripts/design/.parity-gate-out/07-whynow.diff.png
+
+08a-about — FAIL
+  Statics — About
+  structural: FAIL — 6 design classes checked, 4 missing, 4 extra
+    missing: sp-mast, sp-kicker, dek, sp-prose
+    extra:   sp-inner, sp-eyebrow, sp-title, sp-article
+    note: The shared shell every static page (About/How it works/Privacy/Tip jar) renders through — repo's StaticPage (VoterChoiceApp.tsx) reuses '.sp-wrap'/'.sp-back' literally but flattens the canvas's sp-mast/sp-kicker/dek grouping into flat sp-eyebrow/sp-title, and renders 'sp-article' instead of 'sp-prose' for the body — a real, confirmed partial port. Probed once here (rather than once per static-page scenario) since all four share this exact component; see the STRUCTURAL_WAIVERS entries for 08b/08c/08d cross-referencing this probe instead of duplicating it.
+  visual: FAIL — diff 98936/261120 px (ratio 0.379, threshold 0.18) — diff image: scripts/design/.parity-gate-out/08a-about.diff.png
+
+08b-howitworks — FAIL
+  Statics — How it works (MethodologyPage)
+  structural: skipped (WAIVED: Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see that probe's note. MethodologyPage's own body content sits outside the probed shell.)
+  visual: FAIL — diff 101589/303840 px (ratio 0.334, threshold 0.18) — diff image: scripts/design/.parity-gate-out/08b-howitworks.diff.png
+
+08c-privacy — FAIL
+  Statics — Privacy
+  structural: skipped (WAIVED: Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see that probe's note.)
+  visual: FAIL — diff 103832/375360 px (ratio 0.277, threshold 0.18) — diff image: scripts/design/.parity-gate-out/08c-privacy.diff.png
+
+08d-tipjar — PASS
+  Statics — Tip jar
+  structural: skipped (WAIVED: Renders the same shared StaticPage shell (sp-wrap/sp-back) probed via 08a-about — see that probe's note. TipJarPage's own tip-list/tip-amount-btn markup has no matching canvas TipJarVC vocabulary to diff against (sp-tip/sp-tips/sp-tipnote — a different prefix, zero overlap), so that part stays unprobed — a real gap for Phase 4 to size, not silenced here.)
+  visual: PASS — diff 7115/195360 px (ratio 0.036, threshold 0.18) — diff image: scripts/design/.parity-gate-out/08d-tipjar.diff.png
+
+08e-loading — PASS
+  Statics — Loading state
+  structural: skipped (WAIVED: LoadingView (VoterChoiceApp.tsx) uses its own loading-screen/loading-card/pulse vocabulary — confirmed by a full class-token diff against screens-statics.jsx's LoadingVC (ldg-* prefix): zero overlap beyond the generic 'ck' checkmark token. Phase 0 already confirmed the underlying checklist-timing behavior is correct; this waiver is about class vocabulary only, not a behavioral gap.)
+  visual: PASS — diff 2339/195360 px (ratio 0.012, threshold 0.18) — diff image: scripts/design/.parity-gate-out/08e-loading.diff.png
+
+09a-intake-ask — PASS
+  Intake step 1 — the ask
+  structural: skipped (WAIVED: IssueConversation.tsx/IntakeView.tsx use their own co-*/msg/bubble/chip/send vocabulary — confirmed by a full class-token diff against screens-intake.jsx's IqShell/IqMsg/IqRow/IqComposer family (iq-* prefix): zero exact-token overlap (semantically similar names like 'chip'/'iq-chip' don't count as a literal-class match, only identical tokens do).)
+  visual: PASS — diff 6203/195360 px (ratio 0.032, threshold 0.18) — diff image: scripts/design/.parity-gate-out/09a-intake-ask.diff.png
+
+09b-intake-propose — PASS
+  Intake step 2 — AI proposes + running issues card
+  structural: skipped (WAIVED: Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.)
+  visual: PASS — diff 12937/269280 px (ratio 0.048, threshold 0.18) — diff image: scripts/design/.parity-gate-out/09b-intake-propose.diff.png
+
+09c-intake-locked — PASS
+  Intake step 3 — ready to lock
+  structural: skipped (WAIVED: Same IssueConversation.tsx component as 09a-intake-ask — see that waiver's note.)
+  visual: PASS — diff 21447/326880 px (ratio 0.066, threshold 0.18) — diff image: scripts/design/.parity-gate-out/09c-intake-locked.diff.png
+
+09d-edit-issues — FAIL
+  Intake step 4 — edit issues from workspace
+  structural: skipped (WAIVED: EditIssuesModal.tsx renamed the canvas's amd-* prefix (screens-intake.jsx's EditIssues) to amend-*/amend-modal/amend-card — not an exact-token match, confirmed by a full class-token diff (zero literal overlap). The one part of this flow that IS a confirmed verbatim port (IssueDeltaBanner's ad-list ledger) is probed separately at 09e-edit-rescored, the scenario where it actually renders.)
+  visual: FAIL — diff 75415/195360 px (ratio 0.386, threshold 0.18) — diff image: scripts/design/.parity-gate-out/09d-edit-issues.diff.png
+
+09e-edit-rescored — FAIL
+  Intake step 5 — apply → re-scored with Revisit flags
+  structural: FAIL — 13 design classes checked, 1 missing, 0 extra
+    missing: up
+    note: IssueDeltaBanner.tsx's own docstring: 'the shipped AmendDeltaMessage visuals (.amend-delta / .ad-* classes) over REAL deltas' — a confirmed verbatim port of EditRescored's ad-list/ad-row/ad-race/ad-score/ad-revisit ledger, the same documented precedent as MoneyGap.tsx and HeadToHead.tsx.
+  visual: PASS — diff 14628/195360 px (ratio 0.075, threshold 0.18) — diff image: scripts/design/.parity-gate-out/09e-edit-rescored.diff.png
+
+10a-polis-entry — PASS
+  Polis — entry point
+  structural: skipped (WAIVED: PolisClose.tsx uses its own polis-*/overlap-*/bridge*/scatter* vocabulary — confirmed by a full class-token diff against screens-polis.jsx's PolisReport/PolisEntry (pr-*/pe-* prefixes): zero overlap. Also itself a documented proxy — no dedicated PolisEntry screen exists yet (see this scenario's own note in parity-gallery-scenarios.ts).)
+  visual: PASS — diff 19154/195360 px (ratio 0.098, threshold 0.18) — diff image: scripts/design/.parity-gate-out/10a-polis-entry.diff.png
+
+10b-polis-contribute — SKIPPED (no structural probe, no ref PNG)
+
+10c-polis-report-consensus — FAIL
+  Polis — report, common-ground state
+  structural: skipped (WAIVED: Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Known real gap: no group-clustering/'where it split' section exists at all (Phase 0 finding #5, blocked on a counters-schema change per memory project_polis_viz_phase1 — a pre-existing scope gap, not a regression).)
+  visual: FAIL — diff 111759/213600 px (ratio 0.523, threshold 0.18) — diff image: scripts/design/.parity-gate-out/10c-polis-report-consensus.diff.png
+
+10d-polis-report-divided — FAIL
+  Polis — report, divided/no-common-ground state
+  structural: skipped (WAIVED: Same PolisClose.tsx vocabulary gap as 10a-polis-entry — see that waiver's note. Also a documented proxy itself: PolisClose has no computed divided/split branch (see this scenario's own note in parity-gallery-scenarios.ts).)
+  visual: FAIL — diff 102223/213600 px (ratio 0.479, threshold 0.18) — diff image: scripts/design/.parity-gate-out/10d-polis-report-divided.diff.png
+
+11a-fieldmoneygap — PASS
+  Money-gap — whole field on one scale
+  structural: skipped (WAIVED: Proxy scenario — its capture() renders the same funding-expanded panel DOM as 02b-results-funding-expanded, already probed via FieldMoneyGap/.mgap. The canvas's 'whole field' (3+ candidates on one scale) isn't wired in the repo at all (RepCard.tsx never passes MoneyGapScale a `field` prop) — a real, documented gap, but re-probing 02b's identical DOM under this id would add no new signal.)
+  visual: PASS — diff 13024/195360 px (ratio 0.067, threshold 0.18) — diff image: scripts/design/.parity-gate-out/11a-fieldmoneygap.diff.png
+
+11b-scalestates — PASS
+  Money-gap — reading the scale, 4 states + honest blank
+  structural: skipped (WAIVED: Proxy scenario — same funding-expanded DOM as 02b-results-funding-expanded and 11a-fieldmoneygap; see 11a's waiver note.)
+  visual: PASS — diff 8874/195360 px (ratio 0.045, threshold 0.18) — diff image: scripts/design/.parity-gate-out/11b-scalestates.diff.png
+
+11c-moneygaph2h — PASS
+  Money-gap — in the head-to-head
+  structural: skipped (WAIVED: MoneyGapH2H was removed as dead code (#239, 2026-07-08) — the duel screen's money treatment is the '.cmp-fund' PAC-percentage footnote instead, which the 05b-headtohead probe above already covers as a required class (cmp-fund is part of HeadToHead's own canvas markup, not MoneyGapH2H's — confirmed by reading screens-candidates.jsx's HeadToHead directly).)
+  visual: PASS — diff 10671/195360 px (ratio 0.055, threshold 0.18) — diff image: scripts/design/.parity-gate-out/11c-moneygaph2h.diff.png
+
+========================================================================
+16/27 gated scenarios passed (2 skipped — no probe/ref)
+========================================================================
