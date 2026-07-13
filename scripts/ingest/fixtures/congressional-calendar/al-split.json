@@ -1,0 +1,157 @@
+{
+  "year": 2026,
+  "revisions": [
+    {
+      "id": "al-2026-senate-class-2-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "senate",
+        "senateSeat": "class-2",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-05-19",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-senate-class-2"
+      }
+    },
+    {
+      "id": "al-2026-house-03-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "03",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-05-19",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-03"
+      }
+    },
+    {
+      "id": "al-2026-house-04-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "04",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-05-19",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-04"
+      }
+    },
+    {
+      "id": "al-2026-house-05-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "05",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-05-19",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-05"
+      }
+    },
+    {
+      "id": "al-2026-house-01-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "01",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-08-11",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-01"
+      }
+    },
+    {
+      "id": "al-2026-house-02-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "02",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-08-11",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-02"
+      }
+    },
+    {
+      "id": "al-2026-house-06-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "06",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-08-11",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-06"
+      }
+    },
+    {
+      "id": "al-2026-house-07-primary",
+      "identity": {
+        "cycle": 2026,
+        "jurisdiction": "AL",
+        "office": "house",
+        "district": "07",
+        "electionKind": "regular",
+        "stage": "primary"
+      },
+      "electionDate": "2026-08-11",
+      "source": {
+        "kind": "state_election_authority",
+        "authorityName": "Alabama Secretary of State",
+        "url": "https://www.sos.alabama.gov/alabama-votes/voter/election-information",
+        "retrievedAt": "2026-07-13T00:00:00.000Z",
+        "checksum": "fixture-al-house-07"
+      }
+    }
+  ]
+}
