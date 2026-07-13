@@ -1,6 +1,6 @@
 # Voter Choice Backlog
 
-**PICK UP FIRST, before any other card:** `[P0][GATE] STOP-SHIP` (card id `e840c072`, moved to the top of the Cross-cutting section below — search for it) — STATUS: In Progress, not Done. Its own gate found real false-pass bugs in itself (6 of 13 "PASS" scenarios don't actually match the design); the fix is planned but not built. Read that card's full note stack before touching anything else Keystone/design-related — Stage B stays mechanically blocked (via DEPENDS ON) until it's genuinely done and re-verified, not just claimed. **Standing rule (Muxin, 2026-07-08): no work that affects the UI — including a backend/data change that merely renders into a Keystone-scoped surface, not just visual/design-experience changes — proceeds until this card passes a genuine re-verified gate run. Non-UI work (data pipelines, ops, ingest, alignment-data-quality, telemetry, etc.) is NOT gated by this and stays safe for an unattended overnight run.** **Order (Muxin, 2026-07-09): STOP-SHIP first, then — only after it passes a HUMAN visual sign-off, not a self-vet (see its card) — the 8 FE/Keystone cards clustered right after it, before any other Cross-cutting card.** Remove this banner once that card is back to STATUS: Done.
+**PICK UP FIRST, before any other card:** `[P0][GATE] STOP-SHIP` (card id `e840c072`, moved to the top of the Cross-cutting section below — search for it) — STATUS: In Progress, not Done. Its own gate found real false-pass bugs in itself (6 of 13 "PASS" scenarios don't actually match the design); the fix is planned but not built. Read that card's full note stack before touching anything else Keystone/design-related — Stage B stays mechanically blocked (via DEPENDS ON) until it's genuinely done and re-verified, not just claimed. **Standing rule (Muxin, 2026-07-08): no work that affects the UI — including a backend/data change that merely renders into a Keystone-scoped surface, not just visual/design-experience changes — proceeds until this card passes a genuine re-verified gate run. Non-UI work (data pipelines, ops, ingest, alignment-data-quality, telemetry, etc.) is NOT gated by this and stays safe for an unattended overnight run.** **Order (Muxin, 2026-07-09): STOP-SHIP first, then — only after it passes a HUMAN visual sign-off, not a self-vet (see its card) — the 8 FE/Keystone cards clustered right after it, before any other Cross-cutting card.** Remove this banner once that card is back to STATUS: Done. UPDATE 2026-07-11: Stage B/C substantially landed via PR #267 (27/27 hardened gate, merged by Muxin); e840c072 stays Review pending her formal close.
 
 Issues, monitoring gaps, data-quality concerns, and enhancement ideas. **Reorganized 2026-06-07 by product phase** (model below). Resolved items moved to `voter-choice-backlog-archive.md` on 2026-06-12 to keep the board live-state-only.
 
@@ -30,6 +30,54 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 ## Phase 1 — Assess Congress (no ballot)
 
 #### Resolve before Phase 1 public release — prod-hardening, NOT design-dependent:
+
+**MUST confirm - do we have the latest election data of who is running for what??**
+- e.g. Cornyn is replaced by Paxton as of the May 26 runoff for the Nov 3 elections, and Talarico is also running for Senate - but our data is way, way off
+- Ex: https://ballotpedia.org/Texas_election_results,_2026 - Cornyn did NOT advance the runoff but Paxton did, and Talarico is also facing Paxton for Senate - but when I checked our app earlier it said Cornyn vs ppl that did NOT advance this year for the Nov elections!
+- STATUS: Backlog
+<!-- card-id: 7aa2f298-8309-45da-89af-f30fc43d0264 -->
+
+## Lane G audit — 8 paste-ready backlog cards (2026-07-12)
+
+For Muxin to paste into docs/operations/voter-choice-backlog.md herself (conductor never
+writes the backlog during review). Source: Lane G responsive+a11y audit of origin/main
+(0931bc60), screenshots + findings.json in this directory.
+
+NOTE: the last card's "Funders & influence disclosure toggle (37px)" item may be partially
+addressed by PR #285 (lane D rebuilt that toggle as the money-glance disclosure) — re-measure
+after the Round-4 cascade lands before building.
+
+### Fix composer Send button overflow on mobile (390px)
+The issue-conversation "Send →" button in the cold-open composer renders 354px wide but starts far enough left that it overflows the viewport by 24px on 390px-wide screens, causing a horizontal scrollbar and a partially-offscreen primary CTA on the very first interactive screen a mobile user sees.
+ACCEPTANCE: at 390px viewport width, `document.documentElement.scrollWidth` equals `clientWidth` on the intake conversation screen, and the Send button is fully visible without horizontal scrolling.
+
+### Fix PolisStand headline kicker overflow on mobile (390px)
+PolisStand's intro kicker ("★ Your scorecard's ready · this part's optional") doesn't wrap and renders 379px wide inside its 310px container, pushing the whole page 29px past the 390px viewport and visibly clipping the end of the sentence.
+ACCEPTANCE: the kicker text wraps (or truncates gracefully) within its container at 390px width; no horizontal page overflow on the PolisStand screen at 390px.
+
+### Fix home hero scorecard-mockup graphic bleeding off mobile viewport
+The decorative "My Scorecard" preview graphic on the homepage (`.hp-sheet`) renders 19px wider than the 390px viewport, contributing to horizontal overflow on first load.
+ACCEPTANCE: no horizontal overflow on the home screen at 390px viewport width.
+
+### Restyle or retire the standalone /terms route
+Settings → "Terms of use" is the only link in the Settings panel that does a real browser navigation instead of an in-SPA stage switch, landing on `src/app/terms/page.tsx` — a page still styled with generic Tailwind defaults from before the redesign (no serif headline, no mono eyebrow, no footer branding), inconsistent with About/Privacy/Methodology.
+ACCEPTANCE: either (a) `/terms` is restyled to match the About/Privacy/Methodology visual treatment, or (b) Terms becomes an in-SPA stage (`navigate('terms')`) like its siblings so it no longer breaks out of the app.
+
+### Raise primary nav links to a 44px tap target app-wide
+The top nav's four links (About / Why now / How it works / Privacy) render at a consistent 40px tall (22px on ≥768px) across every page in the app — one shared CSS rule affecting the whole site's primary navigation.
+ACCEPTANCE: nav links measure at least 44×44px effective tap area at all viewports (padding/line-height adjustment is sufficient; visual size can stay the same).
+
+### Raise icon-only settings/help buttons to 44px
+The settings-gear button (34×34px, every page) and the homepage's address "?" tooltip button (17×17px) are icon-only controls under the 44px minimum tap target.
+ACCEPTANCE: both controls measure at least 44×44px effective tap area (invisible padding is fine; the visible icon can stay its current size).
+
+### Raise the micro-type floor for decision-relevant labels
+Several labels users need to actually read to know their own status render at 8.5–10px: the delegation overview's "Not yet decided" status chip, the "U.S. House · TX-37" seat identifier, the "n/a" show-thin-records label, jurisdiction tags ("FEDERAL"/"FEDERAL + STATE"), and — most notably — the printed scorecard's "votes matched you" caption, the only text explaining what the headline percentage means on the take-to-the-polls printout. Decorative kickers/carets (★, ▾, · separators) at similar sizes are NOT included — those read as an intentional part of the compact mono design language.
+ACCEPTANCE: audit each listed label against an 11px floor; anything carrying user-facing information (status, identity, data values) is raised to ≥11px, decorative-only glyphs are left as-is.
+
+### Raise secondary control tap targets to 44px
+A cluster of real (non-decorative) controls land under the 44px tap-height floor: PolisStand's "No thanks — back to my scorecard" dismiss link (23px), the issue-chip "rename"/"Remove" controls in the edit-issues modal (21px), the head-to-head candidate-toggle pills (40px), and the RepCard "Funders & influence" disclosure toggle (37px).
+ACCEPTANCE: each listed control measures at least 44px tap height at all viewports.
 
 **[P0] We need a deployment/test environment/server/branch?**
 - Don’t know how to do this, but essentially how do we test the app’s new features without deploying it to the live app?
@@ -86,6 +134,39 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - GROOMED: ready: WHY/TASK/verified-constraints/remaining-exec all present, no blocking unknown + 2026-07-07
 - PARKED: needs Muxin: /schedule cloud cron setup + subscription auth (external); drain already stopped by merged #177 2026-07-03
 <!-- card-id: c86714c6-d3d7-4019-a03d-4d4c6816f7e4 -->
+
+**[P1][Tooling] Parity gate PASS-side hardening: marker probes certify too little**
+- Confirmed 2026-07-10 (second false-pass incident): scenarios whose structural probe only
+  checks element-existence (05a: 2 markers; 06: 3 markers) pass while the rest of the page
+  doesn't match the canvas. Build quality tracked probe strength across all 8 pages of the
+  batch: literal class-diff (01) and content probes (07) produced faithful rebuilds;
+  marker-only probes produced narrow patches.
+- TASK: for every scenario relying on marker probes or visual-only, upgrade to layout-level
+  assertions (column/grid structure, section presence, key style markers e.g. CTA button
+  palette) or the already-approved SSIM escalation (e840c072 remediation plan, Option 2).
+- GOAL_CONDITION: no scenario can reach PASS with a whole page section absent or unstyled;
+  each upgraded probe demonstrably FAILS against the pre-fix app state (same honest-signal
+  rule as the marker probes had).
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+<!-- card-id: 1389de89-cf47-4ee7-80a3-6827503261bb -->
+
+**[P2][Tooling] Parity gate crops the ref but not the app screenshot on modal scenarios**
+- Confirmed independently by two builders 2026-07-10: for modal-overlay scenarios
+  (02d-results-allvotes-sheet, 09d-edit-issues) the gate auto-crops the canvas ref to the
+  modal card but diffs it against the full-page app screenshot, so the dimmed workspace
+  backdrop dominates the ratio regardless of modal fidelity (02d: 0.406, 09d: 0.302 —
+  both with eyeball-verified faithful modals). Same class of bug PR #261 fixed for the
+  ref side.
+- TASK: crop the app-side capture to the modal's own bounding box for overlay scenarios
+  before downscale+diff.
+- GOAL_CONDITION: 02d/09d ratios reflect the modal itself; a faithful modal scores under
+  threshold, a wrong one doesn't.
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+<!-- card-id: 4b357e17-120c-487c-8d1e-4f19ad9c480c -->
 
 ### General
 
@@ -490,98 +571,10 @@ STOP-SHIP first, validate it actually works, then these 8 FE/Keystone cards it g
 - BUILD+VALIDATE DONE, AWAITING SIGN-OFF (2026-07-10): 4 commits on the worktree branch above (c477adaf/71b432af/51ffe596/3665075f), working tree clean, nothing pushed, no PR opened, backlog file untouched by the branch (verified). Gate tally: 16/27 gated-pass before → 10/24 after (pass count dropped on purpose — 05a-candidates-parity/06-homehero/08d-tipjar now have a real structural probe and genuinely fail it; 10a-polis-entry/11a-fieldmoneygap/11b-scalestates flipped to not-automatable instead of silently passing against the wrong screen). typecheck/2725 vitest tests/lint all clean. Eyeball-audit of the 6 previously-unverified scenarios (05a/06/08d + 09a/09b/09c-intake, newly-passing and unaudited): 5 confirmed false-passes, 1 genuine borderline call (08d-tipjar — copy/structure match, palette + one emphasis state don't). Full report: `docs/operations/keystone-stopship-validation-2026-07-09.md` on that branch. Side-by-side visual evidence (both build-agent's report AND my own direct spot-check of 2 of the 6 image pairs, not taken on the report's word alone): https://claude.ai/code/artifact/09c3b10e-180f-42cb-ba69-19cad67d356c — same root cause across all 6: the live app still renders its civic palette, not the Bold Flag system the canvas specifies (matches the already-tracked Keystone redesign gap, not a new finding). Your call next — approve, reject, or flag specific scenarios (08d-tipjar especially). Nothing merges/flips to Done until you rule.
 - MUXIN'S RULING (2026-07-10): "I agree NONE of them passed. And no - the tip jar does NOT pass. The goal was to match the design. it did NOT match." All 6 confirmed genuine false-passes — she explicitly overruled the "borderline" framing on 08d-tipjar; it's a clean fail like the other 5, not a maybe. This IS the HUMAN VISUAL VALIDATION GATE sign-off: it confirms the rebuilt gate tooling's re-audit was accurate (if anything the tooling under-called 08d, it didn't over-call anything) — the gate-fix work itself is validated, not just claimed. STILL OUTSTANDING before this card can go STATUS: Done: (1) the tooling-fix branch (wt/stop-ship-fidelity-fix-e840c072) is committed but not pushed/PR'd/merged to main yet — asked Muxin whether to push+PR it now; (2) flipping parity-gate to "required" in GitHub branch protection is still Muxin's own action, repeatedly noted as pending across every prior progress note on this card, still not done. Do not treat the visual sign-off alone as satisfying the card's full GOAL_CONDITION — those two items remain.
 - TOOLING PR MERGED, ITEM (2) STILL HELD (2026-07-10): PR #250 (wt/stop-ship-fidelity-fix-e840c072 → main) pushed, CI checked, squash-merged. `test`/`e2e`/`mutation`/`review-gallery` all green; `parity-gate` itself reports fail on CI, but that's expected — it's the same 10/24 gated-pass tally the local report already predicted, driven entirely by real still-unfixed Keystone surfaces (not a regression from this PR's tooling-only diff, which was re-verified file-by-file before merge: gate script, scenarios file, CI workflow, docs/design-review/ + report only, zero product/FE source touched). Item (2) — flipping parity-gate to "required" in branch protection — explicitly NOT done yet: Muxin asked to understand the mechanism first; explained that "required" only mechanically blocks merging on a red check, it says nothing about whether the check's PASS verdict is trustworthy — tonight only validated the gate's FAIL-side accuracy (6/6 confirmed real false-passes by eyeball), never its PASS-side (no scenario has yet been genuinely fixed + re-confirmed PASS by eyeball). Recommended holding "required" until one true-positive exists. Muxin's response: build that true positive — she directed starting Stage B on 08d-tipjar specifically (subagent-built, HTML visual sign-off required same as tonight, not self-vet-only per `feedback_visual_selfvet_insufficient`). That work is being scoped as a new card/worktree now; this card stays STATUS: Review until she rules on the tip-jar fix and on item (2).
+- PROGRESS (2026-07-11): PASS-side hardening MERGED via PR #267 (squash 10bee381) — no-PASS-on-visual-only guard (gate-verdict.ts), marker probes upgraded to layout/computed-style checks with per-probe mutation validation, app-side modal crop (02d 0.408→0.056, 09d 0.303→0.100). Full hardened gate on the merged tree: 27/27 gated PASS. Item (2) parity-gate→required flipped in branch protection same day. Evidence artifact: https://claude.ai/code/artifact/611c0f86-8c14-40c7-853f-3bf3846cd7df
 - STATUS: Review
 - DECISION: SUPERSEDED IN PART — the "Stage A verified complete, proceed automatically into Stage B" clause below no longer holds; re-blocking Stage B mechanically (STATUS reverted from Done) per the standing rule Muxin gave this same session: nothing moves to Stage B with Stage A work still pending. Everything else in the original DECISION (the Stage A→B→C shape itself, Stage C as one unified review, the 5 held Keystone PRs needing her explicit review regardless of card status) still stands — only the "Stage A is done" premise is retracted. Original text preserved below for the historical record.
 <!-- card-id: e840c072-1bd9-4dc0-aebe-8a19867aed03 -->
-
-**[P1][Keystone] Polis "Where you stand" report redesign — BUILT, held for sign-off (PR #266)**
-- Built 2026-07-10 under Muxin's live direction — the "true positive" Stage-B build the STOP-SHIP card's 2026-07-10 note scoped, pointed at the Polis report surface instead of 08d-tipjar. Subagent-built, party-free (#116).
-- WHAT: editorial Bold-Flag chrome port of the "Where you stand" report (PolisClose.tsx) + a REAL pol.is opinion map (k-means + PCA 2-D projection, new src/lib/polis/pca.ts) → 3 scattered opinion clusters (Group A/B/C, gold "You") + per-group convergence dots/chips on every statement (converge on common ground, spread on the divides). KEY: the clusters are opinion groups by answer-similarity, NEVER D/R/I — reconciles with #116 (the canvas's own source calls the map pol.is answer-similarity groups, not party); this reverses the earlier single-cloud simplification per Muxin's "I don't see multiple cluster clouds like the Keystone design".
-- PR #266 (draft, HELD) — stacked on #265 (the p1-wire backend-data branch, card 840a9ed2); merge #265 first, GitHub retargets #266 to main. Branch wt/keystone-polis-report-redesign, commits 63e59c44→26052f1f→6dc9ee05.
-- VERIFY: npm check green (2828 tests incl. 18 PCA unit tests + party-free key-allowlist privacy tests); parity-gate 10c/10d PASS (0.052/0.046 ≤0.18; structural pre-waived for the #116 divergence — gate logic/waivers UNtouched, only 10c/10d capture fixtures updated).
-- Design-vs-build comparison artifact (canvas 10c/10d beside the built UI + honest delta ledger): https://claude.ai/code/artifact/b61afaec-465a-4383-a9b7-b333a233349e
-- SHIPS DARK until POLIS_VECTOR_COLLECTION_ENABLED flips on in prod (empty polis_response_vectors → honest single-cloud low-N fallback, no fabricated clusters). Screenshots use real assembleClusterMap output over a synthetic 3-archetype seed (scripts/dev/seed-polis-clusters.ts, prod-refusing, never run against a live DB).
-- FOLLOW-UP (flagged, not hidden): the map clusters the state-scoped population while the per-group chips cluster the national selection scope — two separate k-means runs in prod (labels/colors always match, membership may differ); align the scopes later.
-- SIGN-OFF: requires Muxin's side-by-side visual sign-off, not a self-vet (feedback_visual_selfvet_insufficient) — the mandatory human validation gate. Nothing merges until she rules AND STOP-SHIP (e840c072) clears.
-- ORIGIN: Muxin live direction 2026-07-10 ("build the design as instructed" → Polis redesign FE)
-- STATUS: Review
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-<!-- card-id: 5a28e880-e2c0-4cfc-9f33-d3d9bb68e523 -->
-
-**Polis blind-voting step (PolisStand): is this still an intended feature to build?**
-- GAP found via the copy-diff report (PR #233 section 10) + confirmed as Phase 4's one "not automatable" scenario (10b-polis-contribute, PR #234): the canvas's PolisStand - a blind agree/disagree/pass reaction step before the aggregate report - does not exist anywhere in the repo. Confirmed via full read of PolisClose.tsx + repo-wide grep for Agree/Disagree/Pass/PolisStand-style markup: zero matches. This is the single largest scope item among the Keystone proxy gaps - a real feature build, not a copy or styling fix. Full context + the exact open question: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 9.
-TASK: Muxin takes the open question to the Claude Design canvas session, then this card gets a DECISION before build - likely Large/planner+workflow given the scope (new UI surface + data model for blind per-statement votes).
-ORIGIN: Keystone parity-gallery proxy gap, PR #234 + PR #233 review, 2026-07-07
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §9) — BUILD. PolisStand (blind agree/disagree/pass, no running tally while voting) already exists in design-handoff/keystone-canvas/src/screens-polis.jsx (committed PR #231, artboard polis-stand). Genuinely does not exist in the repo yet - build as a new post-decision moment between the invite and the aggregate report. Likely Large: new UI surface + a data model for storing blind per-statement votes.
-- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
-<!-- card-id: fb77d0bb-74ee-43d6-9b72-cc14c90c8a1b -->
-
-**[P1] Scorecard print view: port the canvas's "Not on your ballot this year" section for non-2026 seats**
-- GAP found via the Keystone design-source recovery plan's Phase 6 residual-gaps list (docs/operations/keystone-design-source-plan-2026-07.md, §4 Phase 6: "Scorecard non-2026 rows") — confirmed against the recovered canvas source design-handoff/keystone-canvas/src/screens-scorecard.jsx.
-- Canvas's Scorecard artboard has a second section below "My decisions" labeled "Not on your ballot this year": each non-2026 seat renders as a `dec notup` row with a neutral `—` badge, a "Not up until <year>" verdict pill, and the note "Shown for context · no decision needed this election."
-- Repo's src/prototype/redesign/ScorecardPrintView.tsx (~line 41-46) instead FILTERS these seats out entirely before rendering: `scorecardSeats = seats.filter(s => s.nextElection?.onBallot2026 !== false)`, with a comment citing the prior product decision "reps not up for election in 2026 are excluded from the printed scorecard."
-- That exclusion traces to the (shipped, STATUS: Done) card "[P2] Distinguish + de-emphasize non-2026 representatives": "I would also not include them in the score card." The recovered Keystone canvas source reverses that call — it shows them, but confined to a clearly-labeled non-decision context section. This is a genuine content/structure conflict between the current implementation and the newer design source, not a novel idea.
-- Design-experience change that reverses a previously shipped, explicit-feedback-driven product decision — needs Muxin's review/sign-off before build; not auto-buildable as-is.
-- TASK (once approved): port the canvas's "Not on your ballot this year" section structure/classNames verbatim into ScorecardPrintView.tsx — render seats with `onBallot2026 === false` in a separate section below the decisions list, each with a neutral badge, a "Not up until <year>" pill, and context-only copy (no verdict/alignment score rendered for these rows).
-- PARENT: [P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline (Phase 6 residual-gaps list); also a member of [P1] EPIC: Match the Keystone design EXACTLY.
-- GOAL_CONDITION: Before: ScorecardPrintView.tsx filters out every seat with onBallot2026 === false so none render on the printed sheet. After: the printed scorecard additionally renders a "Not on your ballot this year" section listing those seats with a distinct non-decision badge/pill matching screens-scorecard.jsx's structure, gated on Muxin's sign-off to reverse the prior exclusion decision; tsc + existing ScorecardPrintView tests green.
-- PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
-- ORIGIN: proposed by propose-cards 2026-07-07 from epic [P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline (b7c7178d-a115-4adc-8c7b-3f09ebb94479)
-- STOP-SHIP AUDIT 2026-07-08: this card had NO mechanical dependency until now — was sitting in To Do, immediately pickable by claim_next_eligible despite the live STOP-SHIP. Fixed; see e840c072's progress notes for the full audit.
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- GROOMED: ready: clear file/section spec + stated GOAL_CONDITION; approval-worthy (reverses a shipped decision) routed to Vet 2026-07-07
-<!-- card-id: e5f379e2-cbb6-4128-af92-0ee3f541d247 -->
-
-**Fix duplicate "Privacy" link causing a Playwright strict-mode violation (08c static-privacy scenario)**
-- - Found while fixing the parity-gallery tool (PR #238, 2026-07-08): the 08c static-privacy scenario fails a strict-mode click because two elements both match the accessible name "Privacy" on the same page (likely one in the footer nav + one elsewhere, e.g. a static-pages sub-nav). Confirmed as genuine and pre-existing (fails identically on both the pre-fix and post-fix parity-gallery runs, unrelated to the IntakeLocked interstitial fix).
-TASK: find the duplicate "Privacy"-labelled link/element and disambiguate (unique aria-label, or scope the selector/test to one) so exactly one accessible "Privacy" target exists per page.
-GOAL_CONDITION: parity-gallery + e2e can target the Privacy link/page unambiguously; no strict-mode violation.
-ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
-- STOP-SHIP AUDIT 2026-07-08: this card had no dependency and was immediately pickable — found during the backlog-wide gate audit (see e840c072's progress notes). It's a markup fix on the exact page the parity gate's 08c scenario probes, so it's gated behind STOP-SHIP like every other Keystone/parity-gate-adjacent card, not left open for an unattended run to touch mid-fix.
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- GROOMED: ready: explicit GOAL_CONDITION + specific scenario named + 2026-07-08
-<!-- card-id: e373b3dc-f248-49bd-9b66-5085bcf860fe -->
-
-**[P1] Wire real Polis bridges/divided data instead of the permanent empty sentinel**
-- RESCOPED (Muxin, 2026-07-08): this was framed as "which of two backends to unify onto," but that's already decided — e2455f56 (approved 2026-07-07) picked population-level, party-free (no D/R/I breakdown). The actual reason Polis shows nothing today isn't an undecided product question, it's that no one wired the approved math to real data. Don't block displaying Polis on anything — this is the concrete unblock.
-- CURRENT STATE (verified 2026-07-08 against origin/main): the pieces mostly already exist — `polis_response_vectors` schema is live (migration 0012), and `collectPolisVector()` IS wired into `/api/counters` (gated on `POLIS_VECTOR_COLLECTION_ENABLED`, confirm it's flipped ON in prod — same ops-toggle pattern as `CHAT_USAGE_METRICS_ENABLED`; `src/lib/polis/collectVector.ts`'s own header comment saying "NOT WIRED" is stale, ignore it). `computeBridges`/`computeDivided` in `src/lib/server/polis/aggregates.ts` are written and unit-tested, but `/api/polis/bridges` and `/api/polis/compass` still hard-return the `no_bridges_yet`/`below_threshold` sentinel — they were never updated to query real data. A separate module (`src/lib/polis/clustering.ts` + `reportAssembly.ts`, from PR #146) already knows how to turn raw response vectors into per-statement agreement percentages, but computes per-k-means-cluster (60% each), not population-level (80%, no clusters) — don't wire that one in as-is; it doesn't match the approved design.
-- TASK: (1) confirm `POLIS_VECTOR_COLLECTION_ENABLED=true` in Vercel prod; (2) write a population-level aggregation (tally agree/disagree/pass per statement across ALL response vectors, no cluster split) over `polis_response_vectors` and feed it into `computeBridges`/`computeDivided`; (3) wire `/api/polis/bridges` and `/api/polis/compass` to call it instead of the hardcoded sentinel.
-- GOAL_CONDITION: with real rows in `polis_response_vectors` (e.g. via the synthetic-seed card 337ad25a locally), `/api/polis/bridges` and `/api/polis/compass` return actual bridge/divided statements instead of `no_bridges_yet`/`below_threshold`.
-- STOP-SHIP AUDIT 2026-07-08: this card had no dependency and was immediately pickable — found during the backlog-wide gate audit (see e840c072's progress notes). Wiring real data changes what the Polis report screen actually renders, and 10c/10d-polis-report-* are two of the exact scenarios the parity gate is being fixed to probe honestly right now — shipping this mid-fix would move the target. Gated behind STOP-SHIP like the other Keystone-surface cards (fb77d0bb, the local-only synthetic-seed card, is NOT gated — it never touches rendering or prod).
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- GROOMED: ready: rescoped from an undecided-backend question to a concrete wiring task — schema/collection/compute functions already exist, just need the population-level query + two routes wired + 2026-07-08
-<!-- card-id: 840a9ed2-20db-4876-9142-7caecb44a387 -->
-
-**Tidy stale MoneyGapH2H comment references left after dead-code removal**
-- One prose-comment mention of MoneyGapH2H remains after it was deleted as dead code -- harmless (not code/imports), just a stale doc reference. (A second mention, in peerComparison.ts, was already fixed by the card 0e87d755 code-review pass, 2026-07-08.)
-- File: scripts/design/parity-gallery-scenarios.ts:1151 -- a descriptive `note` string, e.g. "MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx"; still substantively true (the export no longer exists at all, vs. merely being unwired) but names a component that no longer exists. Left as an editorial call at review time rather than auto-fixed.
-- TASK: update or remove this comment mention so it no longer references a component that does not exist.
-- GOAL_CONDITION: grep -rn MoneyGapH2H scripts/design/parity-gallery-scenarios.ts returns no results.
-- ORIGIN: follow-up from card 0e87d755 (Remove MoneyGapH2H as dead code), 2026-07-08
-- CHAIN: 1
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- GROOMED: ready: exact grep-based GOAL_CONDITION on card, STOP-SHIP dep already linked + 2026-07-08
-<!-- card-id: 3cb46afd-e554-4d1f-90ef-cd7afb022ca7 -->
-
-**Keystone Phase 6: close the 10 gate-flagged design gaps + land PR #230 under the new parity gate**
-- - Traces to "[P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline" (b7c7178d), Phase 6: "resume PR #230 + the 4 residual gap cards under the new harness."
-- CONTEXT: the Phase 5 parity gate (npm run design:parity-gate) now exists and is verified. Running it --all against the current app surfaces 10 scenarios with genuine, real design divergence from the Keystone canvas source (not tooling bugs — spot-checked against the ref PNGs): 02d-results-allvotes-sheet, 04-scorecard, 07-whynow, 08a-about, 08b-howitworks, 08c-privacy, 09d-edit-issues, 10c/10d-polis-report-*, plus 01-orientation-activated failing its structural (missing design classNames) check specifically.
-- TASK: use the new gate's report as the authoritative punch list to finish PR #230 ("[P1] EPIC: Match the Keystone design EXACTLY", card d83cf5ec, currently open/draft/held for review) — close each genuine gap the gate flags, re-run the gate per surface, and treat a clean gate run as that surface's definition-of-done per the Phase 5 plan.
-- NEEDS MUXIN: PR #230 and several related design PRs (#236 intake-locked, #237 polis-entry, #240 polis-report-split) are already open and held for her design-experience review — this task should be sequenced with her rulings on those rather than run blind against a moving target. Flag for a decision on sequencing before building starts.
-- GOAL_CONDITION: PR #230 (or its successor) merges with  reporting 0 gate-failing scenarios (or every remaining failure explicitly documented as an accepted/out-of-scope divergence, not silently ignored).
-- PROGRESS (2026-07-08, STOP-SHIP Phase 4 re-audit): confirmed reproducible — this exact 10-scenario list fails identically across all 5 held PRs (#230/#236/#237/#240/#243), none of them the cause. Full severity/diff-ratio data + per-PR cross-reference: docs/operations/keystone-phase4-audit-2026-07-08.md. One correction: 10c/10d's failure on PR #240 is partly a stale test mock (false-fail, tracked separately), not pure design divergence — see that doc before treating 10c/10d as a straight design gap.
-- PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
-- CHAIN: 1
-- STATUS: To Do
-- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
-- GROOMED: ready: sequencing confirmed (Muxin, 2026-07-08) — standing Stage A->B->C flow already authorized on card e840c072, no per-PR check-in needed; STOP-SHIP dependency already holds it until Stage A finishes + 2026-07-08
-<!-- card-id: 466d6efb-0938-40e7-872a-b4529a9deb70 -->
 
 **Polis contribute-a-statement screen (10b-polis-contribute): is this still an intended feature to build?**
 - Traces to "[P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline" (b7c7178d) Phase 4 progress note: of the 28 parity-gallery scenarios, 7 became documented-proxy gap cards and 20 are fully automated — but scenario 10b-polis-contribute is called out separately as "genuinely not automatable ... feature doesn't exist" in the repo today, and it never appears in the later GAP RECONCILIATION pass (design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md, PR #235) that resolved the other flagged Polis gaps.
@@ -595,6 +588,13 @@ ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 - GROOMED: ready: decision-only ask, clear yes/no question, traces to named epic + sibling pattern, GOAL_CONDITION stated + 2026-07-08
 <!-- card-id: 65e655e9-a90e-4cd0-8c31-ce80d96f8995 -->
+
+**[P2][Keystone] Rulings: 3 open intent deltas from the 2026-07-11 parity landing**
+- From PR #267's intent-deltas ledger (full list + rationale: https://claude.ai/code/artifact/611c0f86-8c14-40c7-853f-3bf3846cd7df): (a) blind-card copy "Your U.S. Representative"+"Identity hidden · judge by record" vs canvas "This seat's incumbent"+"Name & party hidden — judge the record"; (b) single "Aligns with your issues" label vs canvas's VOTED-WITH-YOU/roll-call split; (c) PolisEntry decorative map preview keeps canvas red/blue/tan while the real map is party-free neutral.
+- Also follow-up candidate flagged not built: IssueRow boxed-row chrome (canvas boxes each row with ✎/✕ icons; app keeps open list + text buttons).
+- ORIGIN: Keystone parity landing close-out, 2026-07-11
+- STATUS: Backlog
+<!-- card-id: 4444092e-58d9-4f8d-b0aa-5bc6ed428255 -->
 
 **Resolve remaining NEEDS RULING/FLAG rows in the Keystone copy-diff report (Statics: Privacy/Tip-jar/Loading)**
 - Traces to the "[P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline" epic's Phase 3 progress note (2026-07-07): Muxin ruled on every row of design-handoff/keystone-canvas/COPY-DIFF-REPORT.md except the Statics section's Privacy/Tip-jar/Loading rows and a few structural-implication rows, which remain marked NEEDS RULING/FLAG inline.
@@ -779,6 +779,7 @@ ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
 - GOAL_CONDITION: a simulated 2-round tool-use chat turn records a recordChatUsage total (or per-round sum) equal to round1 + round2 tokens, not just round2 (unit test).
 - Originating card: Record chat usage incrementally per round (close the TOCTOU budget race fully) (9596413f-ebcb-49c0-a3e2-21bb3e3d5bff).
 - CHAIN: 1
+- DECISION (homepage headline voice, Muxin 2026-07-10): use the canvas hero as-is — "How well are your elected officials really representing you? Get the scorecard." is the final pick; no further down-select needed.
 - STATUS: Review
 - GROOMED: ready: explicit GOAL_CONDITION + fix approach on card + 2026-07-08
 - LANE: d
@@ -855,6 +856,8 @@ ORIGIN: Muxin, live conversation 2026-07-04 (supersedes/corrects the Bold Flag p
 - PARENT: [P1] EPIC: Match the Keystone design EXACTLY (canvas is the spec, not a moodboard)
 - CHAIN: 1
 - FOLLOW-UP from card d83cf5ec (Keystone exact-match) — split out of 61e728fb 2026-07-07 (bundled two different kinds of work: UI restructure vs. prompt-contract change)
+- UPDATE 2026-07-12: Muxin re-affirmed wanting this in the Round-3.1 integrated review ("helpful little quick replies right underneath" the issues card). Lane audit confirmed the gap end-to-end: buildThemeRefinementPrompt/parseThemeRefinement produce free prose only, nothing emits structured options; poleVocabulary.ts disambiguation.options is prompt-embedded text with no UI consumer.
+- Head start: the canvas .iq-quick/.iq-quick-lab/.iq-opts pill styles are already ported on PR #283's branch (feat/intake-parity-3) — only prompt-contract + parser + wiring remain. Keep distinct from the footer correction chips ("That's not quite right…"), which already exist; never relabel generic chips as AI options.
 - STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Match the Keystone design EXACTLY (canvas is the spec, not a moodboard)
 - GROOMED: ready: split out of 61e728fb, same evidence (canvas gap + exact files + #175 tie-in) already established + 2026-07-07
@@ -877,24 +880,6 @@ CARD TYPE: EPIC
 - GROOMED: ready: full phase-by-phase plan + goal conditions per phase (keystone-design-source-plan-2026-07.md) + 2026-07-07
 <!-- card-id: b7c7178d-a115-4adc-8c7b-3f09ebb94479 -->
 
-**Intake locked state: is IntakeLocked meant to ship as its own screen?**
-- GAP found reviewing the Keystone parity-gallery (PR #234) + copy-diff report (PR #233): the canvas's IntakeLocked is a distinct pre-lock confirmation state (green "your issues are set" banner, drag-to-rerank) that doesn't exist in the repo's intake flow - it goes straight from the conversational refinement loop onward. Full context + the exact open question: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 2.
-TASK: Muxin takes the open question to the Claude Design canvas session, then this card gets a DECISION before build.
-ORIGIN: Keystone parity-gallery proxy gap, PR #234 + PR #233 review, 2026-07-07
-- STATUS: Review
-- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §2) — BUILD, no new design needed. IntakeLocked already exists in design-handoff/keystone-canvas/src/screens-intake.jsx (committed PR #231, artboard iq-locked): a discrete pre-lock confirm state, intended to ship, NOT superseded by the conversational loop (the loop leads INTO it). Wire into IntakeView.tsx/IssueConversation.tsx as a distinct confirm step before lock.
-- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
-<!-- card-id: c1a43c39-2b51-4bd3-af6c-3e569f6f0695 -->
-
-**Polis entry screen: was the dedicated PolisEntry invite/preview screen meant to replace today's one-line link?**
-- GAP found reviewing the Keystone parity-gallery (PR #234): the canvas's PolisEntry is a dedicated invite screen with a preview scatter-plot teaser; the repo removed the equivalent entry point (confirmed via e2e/redesign-core.spec.ts's own comment) in favor of a single inline link. Full context + the exact open question: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 3.
-TASK: Muxin takes the open question to the Claude Design canvas session, then this card gets a DECISION before build.
-ORIGIN: Keystone parity-gallery proxy gap, PR #234 review, 2026-07-07
-- STATUS: Review
-- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §3) — BUILD the full invite, not the one-line link. PolisEntry already exists in design-handoff/keystone-canvas/src/screens-polis.jsx (committed PR #231, artboard polis-entry). Per decision #7: optional invite AFTER the scorecard/print, never gating the printout.
-- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
-<!-- card-id: 4936d17b-c6db-47f9-8bce-0beca648cbef -->
-
 **Polis report: should a "where it split" section (non-consensus statements) be added, and should the bridging threshold change?**
 - GAP found reviewing the Keystone parity-gallery (PR #234) + copy-diff report (PR #233): the canvas's PolisReport has a divided/split state honestly showing statements that DIDN'T reach consensus; PolisClose.tsx only ever surfaces statements that cleared the bar. Also: canvas's bridging threshold is 60%+ agreement within EACH party group (D/R/I) separately; the repo's is 80%+ of the overall population with no party breakdown (a deliberate party-free pivot, #116). Full context + the exact open questions: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 4.
 TASK: Muxin takes the open questions to the Claude Design canvas session, then this card gets a DECISION before build.
@@ -903,17 +888,6 @@ ORIGIN: Keystone parity-gallery proxy gap, PR #234 + PR #233 review, 2026-07-07
 - DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §4) — BUILD the divided/split branch in PolisClose.tsx from canvas artboard polis-divided (screens-polis.jsx, committed PR #231). Bridging threshold: RE-EXPRESS as population-level (no D/R/I breakdown) - KEEP the existing party-free product decision (#116); the design principle (common ground only where it clears a high bar, honest when it doesn't) is preserved without reintroducing party grouping.
 - GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
 <!-- card-id: e2455f56-6f5c-4aa4-89f5-34f84e5848ff -->
-
-**Candidates overview: build the 3-card alignment-score summary screen with click-through to the existing deep-dive view**
-- Muxin (2026-07-07, reviewing PR #233): "I'd want to use the canvas version [a 3-card overview, every seat with its own alignment score], but then when someone clicks into one of the candidates it ought to open up a deeper review into that person... it could be a bigger UI and UX change than I'm thinking off the bat."
-CONFIRMED by reading DelegationWorkspace.tsx: this flow does not exist. The repo only ever renders one seat (activeSeatId) at a time with a compact seat-strip rail - never all seats as scored summary cards. Building this means: (a) a new overview screen with CandidateParity-style cards + alignment scores per seat, (b) a click interaction opening the existing deep single-seat RepCard/DelegationWorkspace view, (c) deciding how the existing seat-strip rail relates to the new overview (redundant? kept as in-seat navigation? something else?).
-Full context + the exact open question for Claude Design: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 8.
-TASK: Muxin takes the open question to the Claude Design canvas session to confirm the click-through interaction, then this card gets a DECISION before build - likely Large/planner+workflow given the scope.
-ORIGIN: Muxin, live review of PR #233, 2026-07-07
-- STATUS: Review
-- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §8) — BUILD. Confirms Muxin's direction: the 3-card scored overview IS the entry point; clicking a card opens the EXISTING deep single-seat view UNCHANGED (no redesign). New design source: design-handoff/keystone-canvas/src/screens-delegation.jsx + delegation.css (committed PR #235) - DelegationOverview/SeatCard/SeatDeepView/SeatRail/DelegationFlow. Add a '<- All seats' back control; keep the seat-strip rail as in-context lateral nav. Wire into DelegationWorkspace.tsx as a navigation layer only. Likely Large given the new overview screen + verdict-sync wiring.
-- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
-<!-- card-id: 5192287a-c190-47f0-8d7b-00b013fc76f8 -->
 
 **Seed synthetic Polis response-vector data for local manual QA**
 - Muxin asked (2026-07-07, reviewing PR #234): "can we create data for Polis so we can test out the UI?" A fresh local dev DB shows the zero-participant StandingLocked state, not the populated consensus report/personalized-stat/zoom-toggle experience. TASK: write a script (scripts/dev/seed-polis-data.ts or similar) that inserts a realistic batch (~100-150) of synthetic polis_response_vectors rows spread across a few states, into the LOCAL dev DB by default, so the existing built Polis states can be clicked through manually with real-looking numbers.
@@ -995,6 +969,162 @@ CHAIN: 1
 - STATUS: To Do
 - DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
 <!-- card-id: 605c7695-8377-4607-9d17-874e90a8aa82 -->
+
+**[P2] Drilldown vote cards: show raw YEA/NAY cast alongside alignment**
+- Canvas VoteCard shows both a cast badge ("Voted YEA/NAY") and an alignment badge ("✓ With you"); our ContributingVote (src/lib/structured-blocks.ts:642) carries only the with/against alignment enum — needs ingestion plumbing for the raw cast field. Surfaced by the 2026-07-11 results-parity inventory (item 15); backend-touching, not a parity CSS fix.
+- UPDATE (Claude Design Round-3 audit, 2026-07-11): confirms + expands the spec. Data: alongside the raw cast, two more fields are needed — `vote.tally` (e.g. "Passed House 232–193") and `vote.status` (e.g. "Passed House · stalled in Senate").
+- UI (canvas spec): every vote row shows TWO independent badges — the raw procedural cast ("Voted YEA"/"Voted NAY") AND the alignment read ("✓ With you"/"✗ Against you") — in BOTH surfaces: ContributingVoteCard (drilldown) and AllVotesPanel rows. Same root cause, one fix applied twice.
+- The all-votes bill-detail expansion (av-detail) needs two new pairs — "Roll call" (tally) and "Status" — the markup slots are structurally absent today, so data plumbing alone won't close it.
+- STATUS: Backlog
+<!-- card-id: ee340d10-3768-4533-884b-813f1b4f5e52 -->
+
+**[P3] Seat strip: tenure line ("Your Representative · 4 terms")**
+- Canvas shows terms-in-office in the rep-card header strip; no terms-in-office field exists anywhere in the seat/candidate data model — new data field + ingest + display. Surfaced by the 2026-07-11 results-parity inventory (item 16). Do not fabricate tenure from partial data.
+- RULED (Muxin, 2026-07-11): do NOT show tenure in the blind seat-strip — tenure appears on reveal only (current post-reveal cv2-tenure placement is the right one). The canvas's blind-strip "· 4 terms" is an accepted divergence; flag to Claude Design in Round 4 so the canvas drops it.
+- STATUS: Backlog
+<!-- card-id: 91262bef-d5ac-48f3-ab7b-7bf473dc4aa9 -->
+
+**[P2] Retire/scope legacy src/styles/print.css (silent scorecard shadowing)**
+- Found 2026-07-12 (scorecard parity lane): src/styles/print.css is an older "Phase 7" print stylesheet, still globally imported in layout.tsx, that reuses ScorecardPrintView's class names (print-sheet/ballot-list/pick-name/ph-head/print-foot) and silently wins specificity — its `.print-sheet .ballot-list .pick-name { font-size: 18pt }` was the root cause of the "gigantic scorecard names" Muxin flagged (fixed with a 4-class override in PR #281, but the landmine remains).
+- Confirmed still shadowing .ph-head and .print-foot on the same component (grep-verified, untouched).
+- Fix: either delete the legacy file if nothing else uses it, or namespace its selectors away from the redesign print sheet. Audit what (if anything) still renders the legacy print path first.
+- STATUS: Backlog
+<!-- card-id: 3997c970-406f-42ed-9ec0-a0c49476639f -->
+
+**[P3] Scorecard reason line: challenger-alignment clause (data plumbing)**
+- Canvas's replace-decision reason line includes "challenger aligns 83% on your issues"; the shipped line (PR #281) omits that clause honestly — ApiSeatChallenger carries only {id, name, party, totalReceipts}; per-challenger alignment is computed only in the on-demand head-to-head duel fetch, nothing upstream of ScorecardPrintView has it.
+- To close: plumb a challenger alignment score to the scorecard data shape (or persist the duel result per decided seat), then add the clause. Honest-data rule: never show it without a real roll-call/web-research-scored basis.
+- STATUS: Backlog
+<!-- card-id: 1b0b3808-0197-479b-85b6-f9830217d0cc -->
+
+**Candidates overview: build the 3-card alignment-score summary screen with click-through to the existing deep-dive view**
+- Muxin (2026-07-07, reviewing PR #233): "I'd want to use the canvas version [a 3-card overview, every seat with its own alignment score], but then when someone clicks into one of the candidates it ought to open up a deeper review into that person... it could be a bigger UI and UX change than I'm thinking off the bat."
+CONFIRMED by reading DelegationWorkspace.tsx: this flow does not exist. The repo only ever renders one seat (activeSeatId) at a time with a compact seat-strip rail - never all seats as scored summary cards. Building this means: (a) a new overview screen with CandidateParity-style cards + alignment scores per seat, (b) a click interaction opening the existing deep single-seat RepCard/DelegationWorkspace view, (c) deciding how the existing seat-strip rail relates to the new overview (redundant? kept as in-seat navigation? something else?).
+Full context + the exact open question for Claude Design: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 8.
+TASK: Muxin takes the open question to the Claude Design canvas session to confirm the click-through interaction, then this card gets a DECISION before build - likely Large/planner+workflow given the scope.
+ORIGIN: Muxin, live review of PR #233, 2026-07-07
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §8) — BUILD. Confirms Muxin's direction: the 3-card scored overview IS the entry point; clicking a card opens the EXISTING deep single-seat view UNCHANGED (no redesign). New design source: design-handoff/keystone-canvas/src/screens-delegation.jsx + delegation.css (committed PR #235) - DelegationOverview/SeatCard/SeatDeepView/SeatRail/DelegationFlow. Add a '<- All seats' back control; keep the seat-strip rail as in-context lateral nav. Wire into DelegationWorkspace.tsx as a navigation layer only. Likely Large given the new overview screen + verdict-sync wiring.
+- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
+<!-- card-id: 5192287a-c190-47f0-8d7b-00b013fc76f8 -->
+
+**Intake locked state: is IntakeLocked meant to ship as its own screen?**
+- GAP found reviewing the Keystone parity-gallery (PR #234) + copy-diff report (PR #233): the canvas's IntakeLocked is a distinct pre-lock confirmation state (green "your issues are set" banner, drag-to-rerank) that doesn't exist in the repo's intake flow - it goes straight from the conversational refinement loop onward. Full context + the exact open question: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 2.
+TASK: Muxin takes the open question to the Claude Design canvas session, then this card gets a DECISION before build.
+ORIGIN: Keystone parity-gallery proxy gap, PR #234 + PR #233 review, 2026-07-07
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §2) — BUILD, no new design needed. IntakeLocked already exists in design-handoff/keystone-canvas/src/screens-intake.jsx (committed PR #231, artboard iq-locked): a discrete pre-lock confirm state, intended to ship, NOT superseded by the conversational loop (the loop leads INTO it). Wire into IntakeView.tsx/IssueConversation.tsx as a distinct confirm step before lock.
+- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
+<!-- card-id: c1a43c39-2b51-4bd3-af6c-3e569f6f0695 -->
+
+**Polis entry screen: was the dedicated PolisEntry invite/preview screen meant to replace today's one-line link?**
+- GAP found reviewing the Keystone parity-gallery (PR #234): the canvas's PolisEntry is a dedicated invite screen with a preview scatter-plot teaser; the repo removed the equivalent entry point (confirmed via e2e/redesign-core.spec.ts's own comment) in favor of a single inline link. Full context + the exact open question: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 3.
+TASK: Muxin takes the open question to the Claude Design canvas session, then this card gets a DECISION before build.
+ORIGIN: Keystone parity-gallery proxy gap, PR #234 review, 2026-07-07
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §3) — BUILD the full invite, not the one-line link. PolisEntry already exists in design-handoff/keystone-canvas/src/screens-polis.jsx (committed PR #231, artboard polis-entry). Per decision #7: optional invite AFTER the scorecard/print, never gating the printout.
+- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
+<!-- card-id: 4936d17b-c6db-47f9-8bce-0beca648cbef -->
+
+**Keystone Phase 6: close the 10 gate-flagged design gaps + land PR #230 under the new parity gate**
+- - Traces to "[P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline" (b7c7178d), Phase 6: "resume PR #230 + the 4 residual gap cards under the new harness."
+- CONTEXT: the Phase 5 parity gate (npm run design:parity-gate) now exists and is verified. Running it --all against the current app surfaces 10 scenarios with genuine, real design divergence from the Keystone canvas source (not tooling bugs — spot-checked against the ref PNGs): 02d-results-allvotes-sheet, 04-scorecard, 07-whynow, 08a-about, 08b-howitworks, 08c-privacy, 09d-edit-issues, 10c/10d-polis-report-*, plus 01-orientation-activated failing its structural (missing design classNames) check specifically.
+- TASK: use the new gate's report as the authoritative punch list to finish PR #230 ("[P1] EPIC: Match the Keystone design EXACTLY", card d83cf5ec, currently open/draft/held for review) — close each genuine gap the gate flags, re-run the gate per surface, and treat a clean gate run as that surface's definition-of-done per the Phase 5 plan.
+- NEEDS MUXIN: PR #230 and several related design PRs (#236 intake-locked, #237 polis-entry, #240 polis-report-split) are already open and held for her design-experience review — this task should be sequenced with her rulings on those rather than run blind against a moving target. Flag for a decision on sequencing before building starts.
+- GOAL_CONDITION: PR #230 (or its successor) merges with  reporting 0 gate-failing scenarios (or every remaining failure explicitly documented as an accepted/out-of-scope divergence, not silently ignored).
+- PROGRESS (2026-07-08, STOP-SHIP Phase 4 re-audit): confirmed reproducible — this exact 10-scenario list fails identically across all 5 held PRs (#230/#236/#237/#240/#243), none of them the cause. Full severity/diff-ratio data + per-PR cross-reference: docs/operations/keystone-phase4-audit-2026-07-08.md. One correction: 10c/10d's failure on PR #240 is partly a stale test mock (false-fail, tracked separately), not pure design divergence — see that doc before treating 10c/10d as a straight design gap.
+- PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
+- CHAIN: 1
+- DONE 2026-07-11 via PR #267 (10bee381) — #230 closed as superseded
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- GROOMED: ready: sequencing confirmed (Muxin, 2026-07-08) — standing Stage A->B->C flow already authorized on card e840c072, no per-PR check-in needed; STOP-SHIP dependency already holds it until Stage A finishes + 2026-07-08
+<!-- card-id: 466d6efb-0938-40e7-872a-b4529a9deb70 -->
+
+**[P1] Wire real Polis bridges/divided data instead of the permanent empty sentinel**
+- RESCOPED (Muxin, 2026-07-08): this was framed as "which of two backends to unify onto," but that's already decided — e2455f56 (approved 2026-07-07) picked population-level, party-free (no D/R/I breakdown). The actual reason Polis shows nothing today isn't an undecided product question, it's that no one wired the approved math to real data. Don't block displaying Polis on anything — this is the concrete unblock.
+- CURRENT STATE (verified 2026-07-08 against origin/main): the pieces mostly already exist — `polis_response_vectors` schema is live (migration 0012), and `collectPolisVector()` IS wired into `/api/counters` (gated on `POLIS_VECTOR_COLLECTION_ENABLED`, confirm it's flipped ON in prod — same ops-toggle pattern as `CHAT_USAGE_METRICS_ENABLED`; `src/lib/polis/collectVector.ts`'s own header comment saying "NOT WIRED" is stale, ignore it). `computeBridges`/`computeDivided` in `src/lib/server/polis/aggregates.ts` are written and unit-tested, but `/api/polis/bridges` and `/api/polis/compass` still hard-return the `no_bridges_yet`/`below_threshold` sentinel — they were never updated to query real data. A separate module (`src/lib/polis/clustering.ts` + `reportAssembly.ts`, from PR #146) already knows how to turn raw response vectors into per-statement agreement percentages, but computes per-k-means-cluster (60% each), not population-level (80%, no clusters) — don't wire that one in as-is; it doesn't match the approved design.
+- TASK: (1) confirm `POLIS_VECTOR_COLLECTION_ENABLED=true` in Vercel prod; (2) write a population-level aggregation (tally agree/disagree/pass per statement across ALL response vectors, no cluster split) over `polis_response_vectors` and feed it into `computeBridges`/`computeDivided`; (3) wire `/api/polis/bridges` and `/api/polis/compass` to call it instead of the hardcoded sentinel.
+- GOAL_CONDITION: with real rows in `polis_response_vectors` (e.g. via the synthetic-seed card 337ad25a locally), `/api/polis/bridges` and `/api/polis/compass` return actual bridge/divided statements instead of `no_bridges_yet`/`below_threshold`.
+- STOP-SHIP AUDIT 2026-07-08: this card had no dependency and was immediately pickable — found during the backlog-wide gate audit (see e840c072's progress notes). Wiring real data changes what the Polis report screen actually renders, and 10c/10d-polis-report-* are two of the exact scenarios the parity gate is being fixed to probe honestly right now — shipping this mid-fix would move the target. Gated behind STOP-SHIP like the other Keystone-surface cards (fb77d0bb, the local-only synthetic-seed card, is NOT gated — it never touches rendering or prod).
+- DONE 2026-07-11 via PR #267 (10bee381) — POLIS_VECTOR_COLLECTION_ENABLED still OFF in Vercel prod; report ships honest single-cloud fallback until Muxin flips it
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- GROOMED: ready: rescoped from an undecided-backend question to a concrete wiring task — schema/collection/compute functions already exist, just need the population-level query + two routes wired + 2026-07-08
+<!-- card-id: 840a9ed2-20db-4876-9142-7caecb44a387 -->
+
+**Tidy stale MoneyGapH2H comment references left after dead-code removal**
+- One prose-comment mention of MoneyGapH2H remains after it was deleted as dead code -- harmless (not code/imports), just a stale doc reference. (A second mention, in peerComparison.ts, was already fixed by the card 0e87d755 code-review pass, 2026-07-08.)
+- File: scripts/design/parity-gallery-scenarios.ts:1151 -- a descriptive `note` string, e.g. "MoneyGapH2H (exported from MoneyGap.tsx) is not wired into HeadToHead.tsx"; still substantively true (the export no longer exists at all, vs. merely being unwired) but names a component that no longer exists. Left as an editorial call at review time rather than auto-fixed.
+- TASK: update or remove this comment mention so it no longer references a component that does not exist.
+- GOAL_CONDITION: grep -rn MoneyGapH2H scripts/design/parity-gallery-scenarios.ts returns no results.
+- ORIGIN: follow-up from card 0e87d755 (Remove MoneyGapH2H as dead code), 2026-07-08
+- CHAIN: 1
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- GROOMED: ready: exact grep-based GOAL_CONDITION on card, STOP-SHIP dep already linked + 2026-07-08
+<!-- card-id: 3cb46afd-e554-4d1f-90ef-cd7afb022ca7 -->
+
+**Fix duplicate "Privacy" link causing a Playwright strict-mode violation (08c static-privacy scenario)**
+- - Found while fixing the parity-gallery tool (PR #238, 2026-07-08): the 08c static-privacy scenario fails a strict-mode click because two elements both match the accessible name "Privacy" on the same page (likely one in the footer nav + one elsewhere, e.g. a static-pages sub-nav). Confirmed as genuine and pre-existing (fails identically on both the pre-fix and post-fix parity-gallery runs, unrelated to the IntakeLocked interstitial fix).
+TASK: find the duplicate "Privacy"-labelled link/element and disambiguate (unique aria-label, or scope the selector/test to one) so exactly one accessible "Privacy" target exists per page.
+GOAL_CONDITION: parity-gallery + e2e can target the Privacy link/page unambiguously; no strict-mode violation.
+ORIGIN: parity-gallery fix verification, PR #238, 2026-07-08
+- STOP-SHIP AUDIT 2026-07-08: this card had no dependency and was immediately pickable — found during the backlog-wide gate audit (see e840c072's progress notes). It's a markup fix on the exact page the parity gate's 08c scenario probes, so it's gated behind STOP-SHIP like every other Keystone/parity-gate-adjacent card, not left open for an unattended run to touch mid-fix.
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- GROOMED: ready: explicit GOAL_CONDITION + specific scenario named + 2026-07-08
+<!-- card-id: e373b3dc-f248-49bd-9b66-5085bcf860fe -->
+
+**Polis blind-voting step (PolisStand): is this still an intended feature to build?**
+- GAP found via the copy-diff report (PR #233 section 10) + confirmed as Phase 4's one "not automatable" scenario (10b-polis-contribute, PR #234): the canvas's PolisStand - a blind agree/disagree/pass reaction step before the aggregate report - does not exist anywhere in the repo. Confirmed via full read of PolisClose.tsx + repo-wide grep for Agree/Disagree/Pass/PolisStand-style markup: zero matches. This is the single largest scope item among the Keystone proxy gaps - a real feature build, not a copy or styling fix. Full context + the exact open question: design-handoff/keystone-canvas/PROXY-GAPS-FOR-CLAUDE-DESIGN.md section 9.
+TASK: Muxin takes the open question to the Claude Design canvas session, then this card gets a DECISION before build - likely Large/planner+workflow given the scope (new UI surface + data model for blind per-statement votes).
+ORIGIN: Keystone parity-gallery proxy gap, PR #234 + PR #233 review, 2026-07-07
+- DONE 2026-07-11 via PR #267 (10bee381) — new POST /api/polis/respond writes through polis_response_vectors; chain = workspace → PolisEntry → PolisStand → report; 10b scenario automated 13/13
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- DECISION: approved (2026-07-07, Claude Design via design-handoff/keystone-canvas/GAPS-RECONCILED-FOR-CODE.md §9) — BUILD. PolisStand (blind agree/disagree/pass, no running tally while voting) already exists in design-handoff/keystone-canvas/src/screens-polis.jsx (committed PR #231, artboard polis-stand). Genuinely does not exist in the repo yet - build as a new post-decision moment between the invite and the aggregate report. Likely Large: new UI surface + a data model for storing blind per-statement votes.
+- GROOMED: ready: design fully specified by Claude Design, no open product question remains + 2026-07-07
+<!-- card-id: fb77d0bb-74ee-43d6-9b72-cc14c90c8a1b -->
+
+**[P1] Scorecard print view: port the canvas's "Not on your ballot this year" section for non-2026 seats**
+- GAP found via the Keystone design-source recovery plan's Phase 6 residual-gaps list (docs/operations/keystone-design-source-plan-2026-07.md, §4 Phase 6: "Scorecard non-2026 rows") — confirmed against the recovered canvas source design-handoff/keystone-canvas/src/screens-scorecard.jsx.
+- Canvas's Scorecard artboard has a second section below "My decisions" labeled "Not on your ballot this year": each non-2026 seat renders as a `dec notup` row with a neutral `—` badge, a "Not up until <year>" verdict pill, and the note "Shown for context · no decision needed this election."
+- Repo's src/prototype/redesign/ScorecardPrintView.tsx (~line 41-46) instead FILTERS these seats out entirely before rendering: `scorecardSeats = seats.filter(s => s.nextElection?.onBallot2026 !== false)`, with a comment citing the prior product decision "reps not up for election in 2026 are excluded from the printed scorecard."
+- That exclusion traces to the (shipped, STATUS: Done) card "[P2] Distinguish + de-emphasize non-2026 representatives": "I would also not include them in the score card." The recovered Keystone canvas source reverses that call — it shows them, but confined to a clearly-labeled non-decision context section. This is a genuine content/structure conflict between the current implementation and the newer design source, not a novel idea.
+- Design-experience change that reverses a previously shipped, explicit-feedback-driven product decision — needs Muxin's review/sign-off before build; not auto-buildable as-is.
+- TASK (once approved): port the canvas's "Not on your ballot this year" section structure/classNames verbatim into ScorecardPrintView.tsx — render seats with `onBallot2026 === false` in a separate section below the decisions list, each with a neutral badge, a "Not up until <year>" pill, and context-only copy (no verdict/alignment score rendered for these rows).
+- PARENT: [P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline (Phase 6 residual-gaps list); also a member of [P1] EPIC: Match the Keystone design EXACTLY.
+- GOAL_CONDITION: Before: ScorecardPrintView.tsx filters out every seat with onBallot2026 === false so none render on the printed sheet. After: the printed scorecard additionally renders a "Not on your ballot this year" section listing those seats with a distinct non-decision badge/pill matching screens-scorecard.jsx's structure, gated on Muxin's sign-off to reverse the prior exclusion decision; tsc + existing ScorecardPrintView tests green.
+- PARENT: b7c7178d-a115-4adc-8c7b-3f09ebb94479
+- ORIGIN: proposed by propose-cards 2026-07-07 from epic [P0] TOP PRIORITY: Recover the Keystone design source (canvas export) + stand up the parity pipeline (b7c7178d-a115-4adc-8c7b-3f09ebb94479)
+- STOP-SHIP AUDIT 2026-07-08: this card had NO mechanical dependency until now — was sitting in To Do, immediately pickable by claim_next_eligible despite the live STOP-SHIP. Fixed; see e840c072's progress notes for the full audit.
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+- DECISION: approved (Muxin 2026-07-10, live) — build the canvas's "Not on your ballot this year" context section; reverses the prior exclusion decision. Built into wt/keystone-integration phase-2 foundation pass.
+- GROOMED: ready: clear file/section spec + stated GOAL_CONDITION; approval-worthy (reverses a shipped decision) routed to Vet 2026-07-07
+<!-- card-id: e5f379e2-cbb6-4128-af92-0ee3f541d247 -->
+
+**[P1][Keystone] Polis "Where you stand" report redesign — BUILT, held for sign-off (PR #266)**
+- Built 2026-07-10 under Muxin's live direction — the "true positive" Stage-B build the STOP-SHIP card's 2026-07-10 note scoped, pointed at the Polis report surface instead of 08d-tipjar. Subagent-built, party-free (#116).
+- WHAT: editorial Bold-Flag chrome port of the "Where you stand" report (PolisClose.tsx) + a REAL pol.is opinion map (k-means + PCA 2-D projection, new src/lib/polis/pca.ts) → 3 scattered opinion clusters (Group A/B/C, gold "You") + per-group convergence dots/chips on every statement (converge on common ground, spread on the divides). KEY: the clusters are opinion groups by answer-similarity, NEVER D/R/I — reconciles with #116 (the canvas's own source calls the map pol.is answer-similarity groups, not party); this reverses the earlier single-cloud simplification per Muxin's "I don't see multiple cluster clouds like the Keystone design".
+- PR #266 (draft, HELD) — stacked on #265 (the p1-wire backend-data branch, card 840a9ed2); merge #265 first, GitHub retargets #266 to main. Branch wt/keystone-polis-report-redesign, commits 63e59c44→26052f1f→6dc9ee05.
+- VERIFY: npm check green (2828 tests incl. 18 PCA unit tests + party-free key-allowlist privacy tests); parity-gate 10c/10d PASS (0.052/0.046 ≤0.18; structural pre-waived for the #116 divergence — gate logic/waivers UNtouched, only 10c/10d capture fixtures updated).
+- Design-vs-build comparison artifact (canvas 10c/10d beside the built UI + honest delta ledger): https://claude.ai/code/artifact/b61afaec-465a-4383-a9b7-b333a233349e
+- SHIPS DARK until POLIS_VECTOR_COLLECTION_ENABLED flips on in prod (empty polis_response_vectors → honest single-cloud low-N fallback, no fabricated clusters). Screenshots use real assembleClusterMap output over a synthetic 3-archetype seed (scripts/dev/seed-polis-clusters.ts, prod-refusing, never run against a live DB).
+- FOLLOW-UP (flagged, not hidden): the map clusters the state-scoped population while the per-group chips cluster the national selection scope — two separate k-means runs in prod (labels/colors always match, membership may differ); align the scopes later.
+- SIGN-OFF: requires Muxin's side-by-side visual sign-off, not a self-vet (feedback_visual_selfvet_insufficient) — the mandatory human validation gate. Nothing merges until she rules AND STOP-SHIP (e840c072) clears.
+- ORIGIN: Muxin live direction 2026-07-10 ("build the design as instructed" → Polis redesign FE)
+- DONE 2026-07-11 via PR #267 (10bee381)
+- STATUS: Done
+- DEPENDS ON: [P0][GATE] STOP-SHIP: Fix the design-fidelity pipeline + rebuild the design-review artifact (no Keystone build/merge until Done)
+<!-- card-id: 5a28e880-e2c0-4cfc-9f33-d3d9bb68e523 -->
 
 **Investigate a stronger per-row idempotency key for stock transactions**
 - buildExternalId uses a composite string key (dataset+filing+ticker+description+date+type+amount+owner) — neither source carries a per-row id. Measure real collision rate after first live ingest; decide if parsing official PDFs for a row index is warranted.

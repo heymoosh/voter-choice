@@ -49,6 +49,7 @@ next-env.d.ts
 playwright-report.json
 test-results/
 .playwright-browsers/
+.playwright-cli/
 
 # AI Coding Practices local tool state
 .agentic-qe/
