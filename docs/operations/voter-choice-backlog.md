@@ -1234,23 +1234,6 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
 
-**[P0] F01 — Congressional official-source inventory contract and verifier**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- PLAN: docs/operations/nationwide-congressional-roster-plan.md
-- OUTCOME: Define and validate a versioned official-source record for every required jurisdiction and contest-source field, including authority, access constraints, parser mode, cadence, coverage state, and evidence.
-- IN SCOPE: Contract/types, fixture-backed validator, and the source-inventory verification command. The inventory must make missing, blocked, manual-import, and not-yet-published states explicit; it must never permit an unknown jurisdiction omission.
-- OUT OF SCOPE: Live national source collection, roster ingestion, database migrations, secrets, schedules, production mutation, or Ballotpedia scraping.
-- SOURCE RULE: Use the FEC state-election-office directory only as a starting directory; state election authorities remain the roster authority. Do not bypass access controls.
-- TESTS: Focused contract/validator tests; fixtures covering every coverage state and rejected incomplete/invalid records.
-- GOAL_CONDITION: Focused source-inventory tests and `npm run verify:congressional-source-inventory -- --fixtures` pass, followed by `npm run check`.
-- SHIP: auto-pending-merge
-- PR: https://github.com/heymoosh/voter-choice/pull/300
-- STATUS: Review
-- DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
-- GROOMED: ready: explicit scope, tests, and goal condition; independent Wave 1 foundation — 2026-07-13
-- LANE: roster-a
-<!-- card-id: 42152a2c-ab16-4590-a03b-19f8c05b365d -->
-
 **[P0] F02 — Mutable expected-congressional-contest calendar oracle**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - PLAN: docs/operations/nationwide-congressional-roster-plan.md
@@ -1262,11 +1245,28 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GOAL_CONDITION: Focused calendar tests and `npm run verify:congressional-calendar -- --year 2026 --fixture al-split` pass, followed by `npm run check`.
 - SHIP: auto-pending-merge
 - PR: https://github.com/heymoosh/voter-choice/pull/301
-- STATUS: Review
+- STATUS: Done
 - DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
 - GROOMED: ready: explicit scope, tests, and goal condition; parallel Wave 1 foundation — 2026-07-13
 - LANE: roster-b
 <!-- card-id: 852f0b20-69b8-4429-9ac5-6fbdb425132f -->
+
+**[P0] F01 — Congressional official-source inventory contract and verifier**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- PLAN: docs/operations/nationwide-congressional-roster-plan.md
+- OUTCOME: Define and validate a versioned official-source record for every required jurisdiction and contest-source field, including authority, access constraints, parser mode, cadence, coverage state, and evidence.
+- IN SCOPE: Contract/types, fixture-backed validator, and the source-inventory verification command. The inventory must make missing, blocked, manual-import, and not-yet-published states explicit; it must never permit an unknown jurisdiction omission.
+- OUT OF SCOPE: Live national source collection, roster ingestion, database migrations, secrets, schedules, production mutation, or Ballotpedia scraping.
+- SOURCE RULE: Use the FEC state-election-office directory only as a starting directory; state election authorities remain the roster authority. Do not bypass access controls.
+- TESTS: Focused contract/validator tests; fixtures covering every coverage state and rejected incomplete/invalid records.
+- GOAL_CONDITION: Focused source-inventory tests and `npm run verify:congressional-source-inventory -- --fixtures` pass, followed by `npm run check`.
+- SHIP: auto-pending-merge
+- PR: https://github.com/heymoosh/voter-choice/pull/300
+- STATUS: Done
+- DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
+- GROOMED: ready: explicit scope, tests, and goal condition; independent Wave 1 foundation — 2026-07-13
+- LANE: roster-a
+<!-- card-id: 42152a2c-ab16-4590-a03b-19f8c05b365d -->
 
 **[P3] President/VP blind-mode redaction uses a raw last-name split (ticket names)**
 - Surfaced 2026-06-30 reviewing PR #174. `RepCard.tsx:620,623` derive the blind-mode redacted last name via `cand.name?.split(" ").pop()`, which yields "Vance" not "Trump" for a President/VP ticket. PR #174 fixed the visible card header (`VoterChoiceApp.tsx`) but not these RepCard call sites.
