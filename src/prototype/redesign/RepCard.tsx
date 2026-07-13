@@ -434,21 +434,28 @@ export function ChallengersStrip({
    prose, key-vote context from can2026.org (Constitutional Accountability
    Now). DISPLAY ONLY: never feeds any score. Renders nothing until the CAN
    ingest has run; every block carries the structural attribution. ---- */
-const RATING_LABELS = {
-  toss_up: "Toss-up",
-  lean_d: "Lean D",
-  lean_r: "Lean R",
-  likely_d: "Likely D",
-  likely_r: "Likely R",
-  safe_d: "Safe D",
-  safe_r: "Safe R",
-};
+/** Race-rating display labels, keyed by the raw rating slug from CAN2026.
+ * A function (not a module-level const) because the labels are user-facing
+ * and must translate — same pattern as getPartyMeta2 above. */
+export function getRatingLabels(t) {
+  return {
+    toss_up: t("repCard.canRatingTossUp"),
+    lean_d: t("repCard.canRatingLeanD"),
+    lean_r: t("repCard.canRatingLeanR"),
+    likely_d: t("repCard.canRatingLikelyD"),
+    likely_r: t("repCard.canRatingLikelyR"),
+    safe_d: t("repCard.canRatingSafeD"),
+    safe_r: t("repCard.canRatingSafeR"),
+  };
+}
 
 export function CanContextSection({ canContext }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   if (!canContext) return null;
   const { ratings, donorTrail, keyVotes, attribution, snapshotDate } =
     canContext;
+  const ratingLabels = getRatingLabels(t);
   return (
     <div className={"cv2-disclose can-context " + (open ? "open" : "")}>
       <button
@@ -457,9 +464,11 @@ export function CanContextSection({ canContext }) {
         onClick={() => setOpen((v) => !v)}
       >
         <span className="cv2-disclose-lab">
-          <span className="cv2-disclose-eyebrow">Curated context</span>
+          <span className="cv2-disclose-eyebrow">
+            {t("repCard.canCuratedContext")}
+          </span>
           <span className="cv2-disclose-title">
-            Race ratings &amp; key votes
+            {t("repCard.canRaceRatingsKeyVotes")}
           </span>
           <span className="cv2-disclose-summary">
             {ratings.length > 0 && (
@@ -469,7 +478,7 @@ export function CanContextSection({ canContext }) {
                   .slice(0, 3)
                   .map(
                     (r) =>
-                      `${r.rater.replace(/_/g, " ")}: ${r.ratingRaw || RATING_LABELS[r.rating] || r.rating}`,
+                      `${r.rater.replace(/_/g, " ")}: ${r.ratingRaw || ratingLabels[r.rating] || r.rating}`,
                   )
                   .join(" · ") || null}
               </span>
@@ -479,11 +488,12 @@ export function CanContextSection({ canContext }) {
         <span className="cv2-disclose-chev" aria-hidden="true">
           {open ? (
             <>
-              Hide <span className="cv2-disclose-arrow">▴</span>
+              {t("repCard.hide")} <span className="cv2-disclose-arrow">▴</span>
             </>
           ) : (
             <>
-              Show details <span className="cv2-disclose-arrow">▾</span>
+              {t("repCard.showDetails")}{" "}
+              <span className="cv2-disclose-arrow">▾</span>
             </>
           )}
         </span>
@@ -494,16 +504,21 @@ export function CanContextSection({ canContext }) {
             <div className="cv2-vote">
               <div className="cv2-vote-head">
                 <div className="bill">
-                  <span className="num">DONOR TRAIL</span>
+                  <span className="num">{t("repCard.canDonorTrailLabel")}</span>
                   <span className="ttl">{donorTrail.cycleWindow}</span>
                 </div>
               </div>
               <p className="cv2-vote-narr">
                 {typeof donorTrail.totalRaised === "number" && (
                   <>
-                    Raised <b>{formatDollars(donorTrail.totalRaised)}</b>
+                    {t("repCard.canRaised")}{" "}
+                    <b>{formatDollars(donorTrail.totalRaised)}</b>
                     {typeof donorTrail.pacSharePct === "number" && (
-                      <> · ~{donorTrail.pacSharePct}% from PACs</>
+                      <>
+                        {t("repCard.canPacShareSuffix", {
+                          pct: donorTrail.pacSharePct,
+                        })}
+                      </>
                     )}
                     {donorTrail.note ? ". " : "."}
                   </>
