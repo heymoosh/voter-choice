@@ -116,6 +116,10 @@ import { parseBallotContent } from "../lib/parseBallotContent";
 import { deriveRaces } from "../lib/raceDeriver";
 import type { Race, ContestLike } from "../lib/raceDeriver";
 import { extractionToRaces } from "../lib/extractionToRaces";
+import {
+  rosterProvenanceForBallotSource,
+  userSuppliedRosterProvenance,
+} from "../lib/rosterProvenance";
 
 export interface BallotResult {
   races: Race[];
@@ -140,10 +144,20 @@ function parsedTextToContests(text: string): ContestLike[] {
   if (!trimmed) return [];
   const parsed = parseBallotContent(trimmed);
   const byOffice = new Map<string, ContestLike>();
+  const rosterProvenance = userSuppliedRosterProvenance({
+    sourceKind: "user_pasted_ballot",
+    election: parsed.header || "pasted ballot text",
+    retrievedAt: new Date().toISOString(),
+  });
   for (const r of parsed.races) {
     let contest = byOffice.get(r.office);
     if (!contest) {
-      contest = { office: r.office, district: "", candidates: [] };
+      contest = {
+        office: r.office,
+        district: "",
+        candidates: [],
+        rosterProvenance,
+      };
       byOffice.set(r.office, contest);
     }
     if (r.candidate) {
@@ -275,7 +289,19 @@ export async function fetchBallotFromAddress(
       // honest vote.gov fallback; district comes from the ballot extraction.
       applyLogisticsFromCivic(data as Record<string, unknown>);
       if (Array.isArray(contests) && contests.length > 0) {
-        return { races: deriveRaces({ contests }), stateCode };
+        const rosterProvenance = data?.source
+          ? rosterProvenanceForBallotSource(
+              data.source,
+              new Date().toISOString(),
+            )
+          : undefined;
+        const contestsWithProvenance = rosterProvenance
+          ? contests.map((contest: ContestLike) => ({
+              ...contest,
+              rosterProvenance,
+            }))
+          : contests;
+        return { races: deriveRaces({ contests: contestsWithProvenance }), stateCode };
       }
       return { races: [], stateCode };
     }

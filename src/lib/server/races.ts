@@ -19,6 +19,10 @@
 import { and, eq } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
+import {
+  fecFinanceOnlyProvenance,
+  type RosterProvenance,
+} from "../rosterProvenance";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -31,6 +35,12 @@ export interface SeatChallenger {
   party: string | null;
   /** Cycle receipts in USD; null when no FEC totals row exists. */
   totalReceipts: number | null;
+  /**
+   * Candidate rows from this module are FEC campaign-finance evidence only.
+   * They are preserved for fundraising context, but are not proof that the
+   * person is on a current ballot or selectable as a replacement.
+   */
+  rosterProvenance: RosterProvenance;
 }
 
 export interface SeatChallengers {
@@ -73,7 +83,13 @@ interface ChallengerRow {
  * Keep filers that raised ≥ $10k OR are top-2 by receipts within their
  * party; rank by receipts desc; cap at MAX_PER_SEAT.
  */
-export function applyViabilityFilter(rows: ChallengerRow[]): SeatChallenger[] {
+export function applyViabilityFilter(
+  rows: ChallengerRow[],
+  provenanceContext: { election: string | null; retrievedAt: string } = {
+    election: null,
+    retrievedAt: new Date().toISOString(),
+  },
+): SeatChallenger[] {
   const withReceipts = rows.map((r) => ({
     ...r,
     receipts: r.totalReceipts !== null ? Number(r.totalReceipts) : 0,
@@ -105,6 +121,7 @@ export function applyViabilityFilter(rows: ChallengerRow[]): SeatChallenger[] {
       name: r.fullName,
       party: partyName(r.party),
       totalReceipts: r.totalReceipts !== null ? r.receipts : null,
+      rosterProvenance: fecFinanceOnlyProvenance(provenanceContext),
     }));
 }
 
@@ -174,10 +191,14 @@ export async function lookupChallengers(
   const senateRows = rows.filter(
     (r) => r.office === "senate" && !isIncumbentFiler(r),
   );
+  const provenanceContext = {
+    election: `${electionYear} federal cycle`,
+    retrievedAt: new Date().toISOString(),
+  };
 
   return {
-    house: applyViabilityFilter(dedupeByName(houseRows)),
-    senate: applyViabilityFilter(dedupeByName(senateRows)),
+    house: applyViabilityFilter(dedupeByName(houseRows), provenanceContext),
+    senate: applyViabilityFilter(dedupeByName(senateRows), provenanceContext),
   };
 }
 

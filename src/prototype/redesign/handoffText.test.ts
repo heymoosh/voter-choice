@@ -38,8 +38,35 @@ function seats(): DelegationSeatVM[] {
           name: "Jane Doe",
           party: "Republican",
           totalReceipts: 120000,
+          rosterProvenance: {
+            sourceKind: "fec_campaign_finance",
+            election: "2026 federal cycle",
+            retrievedAt: "2026-07-13T12:00:00.000Z",
+            sourceLinks: [{ label: "FEC", url: "https://www.fec.gov/" }],
+            confidence: "finance_only",
+            ballotStatus: "finance_record_only",
+            selectableAsReplacement: false,
+          },
         },
-        { id: "ch2", name: "Sam Roe", party: "Democrat" },
+        {
+          id: "ch2",
+          name: "Sam Roe",
+          party: "Democrat",
+          rosterProvenance: {
+            sourceKind: "official_sample_ballot",
+            election: "2026 general",
+            retrievedAt: "2026-07-13T12:00:00.000Z",
+            sourceLinks: [
+              {
+                label: "County sample ballot",
+                url: "https://elections.example/sample",
+              },
+            ],
+            confidence: "verified_current_ballot",
+            ballotStatus: "verified_current_ballot",
+            selectableAsReplacement: true,
+          },
+        },
       ],
     },
     {
@@ -88,10 +115,14 @@ describe("buildScorecardHandoffPrompt", () => {
     );
   });
 
-  it("includes the seat's 2026 FEC filers with funds raised", () => {
-    expect(prompt).toContain("ON THE 2026 BALLOT");
-    expect(prompt).toContain("Jane Doe (Republican) — $120,000 raised");
+  it("separates verified roster candidates from finance-only FEC rows", () => {
+    expect(prompt).not.toContain("ON THE 2026 BALLOT");
+    expect(prompt).toContain("VERIFIED 2026 ROSTER CANDIDATES:");
     expect(prompt).toContain("Sam Roe (Democrat) — no funds reported");
+    expect(prompt).toContain(
+      "CAMPAIGN-FINANCE FILERS ONLY (not verified on the ballot):",
+    );
+    expect(prompt).toContain("Jane Doe (Republican) — $120,000 raised");
   });
 
   it("never contains an address and never resurrects the ballot CTA", () => {

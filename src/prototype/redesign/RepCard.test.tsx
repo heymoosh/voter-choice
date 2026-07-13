@@ -1,10 +1,10 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeAll } from "vitest";
+import { describe, it, expect, beforeAll, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { I18nProvider } from "../VoterChoiceApp";
-import { RepCard } from "./RepCard";
+import { ChallengersStrip, RepCard } from "./RepCard";
 import type { DelegationSeatVM, UserIssue } from "./delegationData";
 
 // RepCard's money-trail disclosure starts open on desktop widths — force
@@ -37,6 +37,28 @@ const peer = {
   multiple: 3.0,
   cycle: "2025–26",
   source: "FEC filings",
+};
+
+const verifiedRosterProvenance = {
+  sourceKind: "official_sample_ballot" as const,
+  election: "2026 general",
+  retrievedAt: "2026-07-13T12:00:00.000Z",
+  sourceLinks: [
+    { label: "County sample ballot", url: "https://elections.example/ballot" },
+  ],
+  confidence: "verified_current_ballot" as const,
+  ballotStatus: "verified_current_ballot" as const,
+  selectableAsReplacement: true,
+};
+
+const fecFinanceOnlyProvenance = {
+  sourceKind: "fec_campaign_finance" as const,
+  election: "2026 federal cycle",
+  retrievedAt: "2026-07-13T12:00:00.000Z",
+  sourceLinks: [{ label: "FEC", url: "https://www.fec.gov/" }],
+  confidence: "finance_only" as const,
+  ballotStatus: "finance_record_only" as const,
+  selectableAsReplacement: false,
 };
 
 function mkSeat(overrides: Partial<DelegationSeatVM> = {}): DelegationSeatVM {
@@ -102,6 +124,19 @@ function renderCard(
         onOpenDuel={() => {}}
         onShowBudgetOptions={() => {}}
         {...extra}
+      />
+    </I18nProvider>,
+  );
+}
+
+function renderStrip(seat: DelegationSeatVM) {
+  return render(
+    <I18nProvider>
+      <ChallengersStrip
+        seat={seat}
+        userIssues={userIssues}
+        stateCode="TX"
+        onShowBudgetOptions={() => {}}
       />
     </I18nProvider>,
   );
@@ -275,5 +310,81 @@ describe("RepCard not-up-for-2026 seats: reviewable, never decidable", () => {
       screen.getByRole("button", { name: /Worth keeping/ }),
     ).toBeInTheDocument();
     expect(screen.getByTestId("open-duel")).toBeInTheDocument();
+  });
+});
+
+describe("RepCard roster provenance containment", () => {
+  it("labels FEC-only challenger rows as finance evidence, not as running for the seat", () => {
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "fec-only",
+          name: "Finance Filer",
+          party: "Democrat",
+          totalReceipts: 50000,
+          rosterProvenance: fecFinanceOnlyProvenance,
+        },
+      ],
+    });
+
+    renderStrip(seat);
+
+    expect(
+      screen.queryByText("Running for this seat in 2026"),
+    ).not.toBeInTheDocument();
+    expect(screen.getByText("Campaign-finance evidence only")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "FEC filings preserved for finance history · not verified on the ballot",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("Finance Filer")).toBeInTheDocument();
+  });
+
+  it("does not open the replacement comparison for FEC finance-only rows", () => {
+    const onOpenDuel = vi.fn();
+    const onVerdict = vi.fn();
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "fec-only",
+          name: "Finance Filer",
+          party: "Democrat",
+          totalReceipts: 50000,
+          rosterProvenance: fecFinanceOnlyProvenance,
+        },
+      ],
+    });
+
+    renderCard(seat, { onOpenDuel, onVerdict });
+    screen.getByTestId("open-duel").click();
+
+    expect(onOpenDuel).not.toHaveBeenCalled();
+    expect(onVerdict).toHaveBeenCalledWith("replace");
+    expect(screen.getByTestId("roster-provenance-warning")).toHaveTextContent(
+      "Campaign-finance records are not ballot roster proof",
+    );
+  });
+
+  it("keeps the replacement comparison available for verified current-ballot roster rows", () => {
+    const onOpenDuel = vi.fn();
+    const onVerdict = vi.fn();
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "verified",
+          name: "Verified Challenger",
+          party: "Democrat",
+          totalReceipts: 50000,
+          rosterProvenance: verifiedRosterProvenance,
+        },
+      ],
+    });
+
+    renderCard(seat, { onOpenDuel, onVerdict });
+    screen.getByTestId("open-duel").click();
+
+    expect(onOpenDuel).toHaveBeenCalledWith(seat.id);
+    expect(onVerdict).not.toHaveBeenCalled();
   });
 });

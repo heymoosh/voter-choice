@@ -10,10 +10,11 @@
      - REP literal → seat.candidate + seat.alignmentEntry (roll-call) or
        seat.positions/research (researched executive — Phase-1 is Congress, so
        this path is the no-DB-record member fallback, never blended).
-     - CHS literal → seat.challengers (2026 FEC filers); per-challenger
-       alignment comes from on-demand getChallengerResearch() (web_search,
-       cited) — fired when a challenger is first selected, with the design's
-       loading / "no record" honest states.
+     - CHS literal → seat.challengers after verified ballot-roster filtering;
+       per-challenger alignment comes from on-demand getChallengerResearch()
+       (web_search, cited) — fired when a challenger is first selected, with
+       the design's loading / "no record" honest states. FEC filing data stays
+       separate as campaign-finance evidence.
      - The Δ ledger sources both sides from duelAlignment.buildLedger over the
        USER's issues; a side with no record renders "no record" (delta hidden),
        never a fabricated number.
@@ -25,6 +26,7 @@ import { formatDollars, useI18n } from "../VoterChoiceApp";
 import { getChallengerResearch, researchChallenger } from "./delegationData";
 import { buildLedger, overallAlignment } from "./duelAlignment";
 import { MoneyGapScale } from "./MoneyGap";
+import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 function cdTone(p) {
   return p == null ? "na" : p >= 67 ? "good" : p >= 34 ? "mid" : "bad";
@@ -74,11 +76,11 @@ function topFundingIndustries(donorCoalition, limit = 3) {
     .map((s) => s.label);
 }
 
-/** Whole-field money-gap rows — every other 2026 FEC filer for this seat
- * with a real filed total, highest first. Honest-data: a challenger with
- * no total_receipts row is omitted, never fabricated as $0. Mirrors
- * RepCard.tsx's moneyGapField mapping (that card is dropping these rows —
- * the full field now lives here, "Everyone running for this seat"). */
+/** Whole-field money-gap rows — verified roster candidates with real FEC
+ * finance totals, highest first. Honest-data: a challenger with no
+ * total_receipts row is omitted, never fabricated as $0. Mirrors RepCard.tsx's
+ * moneyGapField mapping (that card is dropping these rows — the full field now
+ * lives here). */
 function buildMoneyGapField(challengers, t) {
   return (challengers || [])
     .filter((c) => typeof c.totalReceipts === "number" && c.totalReceipts > 0)
@@ -106,7 +108,9 @@ export function HeadToHead({
 }) {
   const { t } = useI18n();
   const cand = seat.candidate;
-  const challengers = seat.challengers || [];
+  const challengers = (seat.challengers || []).filter((c) =>
+    isSelectableReplacement(c),
+  );
   const [sel, setSel] = useState(
     () =>
       (pickId && challengers.some((c) => c.id === pickId)
@@ -261,9 +265,9 @@ export function HeadToHead({
         {challengers.length === 0 ? (
           <div className="cmp-empty">
             <p>
-              No one has filed to run against this seat in our 2026 records yet
-              — we'd rather say so than invent a challenger. You can still mark
-              the seat below.
+              No verified replacement roster yet. FEC campaign-finance filings
+              are not ballot roster proof, so we won&apos;t present those filers
+              as selectable replacements.
             </p>
             <div className="cmp-actions">
               <button
@@ -541,15 +545,18 @@ export function HeadToHead({
                         {t("repCard.noFundsReported")}
                       </div>
                     )}
-                    <div className="cmp-money-src">FEC filing</div>
+                    <div className="cmp-money-src">
+                      {t("headToHead.financeEvidenceFec")}
+                    </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Whole-field scale — every 2026 FEC filer for this seat, not
-                just the one selected above (relocated from RepCard, which
-                now only shows subject-vs-median for the incumbent alone). */}
+            {/* Whole-field scale — verified roster candidates with separate
+                campaign-finance totals, not just the one selected above
+                (relocated from RepCard, which now only shows
+                subject-vs-median for the incumbent alone). */}
             {cand?.peerComparison != null &&
               typeof cand.totalRaised === "number" && (
                 <div className="cmp-field">

@@ -28,6 +28,28 @@ const peer = {
   source: "FEC filings",
 };
 
+const verifiedRosterProvenance = {
+  sourceKind: "official_sample_ballot" as const,
+  election: "2026 general",
+  retrievedAt: "2026-07-13T12:00:00.000Z",
+  sourceLinks: [
+    { label: "County sample ballot", url: "https://elections.example/ballot" },
+  ],
+  confidence: "verified_current_ballot" as const,
+  ballotStatus: "verified_current_ballot" as const,
+  selectableAsReplacement: true,
+};
+
+const fecFinanceOnlyProvenance = {
+  sourceKind: "fec_campaign_finance" as const,
+  election: "2026 federal cycle",
+  retrievedAt: "2026-07-13T12:00:00.000Z",
+  sourceLinks: [{ label: "FEC", url: "https://www.fec.gov/" }],
+  confidence: "finance_only" as const,
+  ballotStatus: "finance_record_only" as const,
+  selectableAsReplacement: false,
+};
+
 function mkSeat(overrides: Partial<DelegationSeatVM> = {}): DelegationSeatVM {
   return {
     id: "house-TX-21",
@@ -76,12 +98,14 @@ function mkSeat(overrides: Partial<DelegationSeatVM> = {}): DelegationSeatVM {
         name: "Elena Reyes",
         party: "Democrat",
         totalReceipts: 1_340_000,
+        rosterProvenance: verifiedRosterProvenance,
       },
       {
         id: "c3",
         name: "No Data Nick",
         party: "Republican",
         totalReceipts: null,
+        rosterProvenance: verifiedRosterProvenance,
       },
     ],
     canContext: null,
@@ -182,12 +206,46 @@ describe("HeadToHead — funding comparison section", () => {
           name: "No Funds Filer",
           party: "Independent",
           totalReceipts: null,
+          rosterProvenance: verifiedRosterProvenance,
         },
       ],
     });
     const { container } = renderDuel(seat);
     const chCol = container.querySelector(".cmp-money-col.ch");
     expect(chCol).toHaveTextContent("No funds reported");
+  });
+});
+
+describe("HeadToHead — roster provenance containment", () => {
+  it("labels selectable candidates as verified ballot-roster rows, not FEC filers", () => {
+    const { container } = renderDuel(mkSeat());
+    const challengerRole = container.querySelector(".cmp-col.ch .cmp-crole");
+    const money = container.querySelector(".cmp-money-col.ch");
+
+    expect(challengerRole).toHaveTextContent(
+      "Democrat · verified current ballot roster",
+    );
+    expect(challengerRole).not.toHaveTextContent("2026 FEC filer");
+    expect(money).toHaveTextContent("Campaign-finance evidence: FEC filing");
+  });
+
+  it("does not render FEC finance-only rows as selectable replacement tabs", () => {
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "fec-only",
+          name: "Finance Filer",
+          party: "Democrat",
+          totalReceipts: 1_000_000,
+          rosterProvenance: fecFinanceOnlyProvenance,
+        },
+      ],
+    });
+
+    const { container } = renderDuel(seat);
+    expect(container.querySelectorAll(".cmp-switch button")).toHaveLength(0);
+    expect(screen.queryByText("Finance Filer")).not.toBeInTheDocument();
+    expect(screen.getByText(/No verified replacement roster yet/)).toBeInTheDocument();
   });
 });
 

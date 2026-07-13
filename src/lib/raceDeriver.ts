@@ -8,6 +8,7 @@
  */
 
 import { normalizeRaceLabel } from "./normalizeRaceLabel";
+import type { RosterProvenance } from "./rosterProvenance";
 
 /** A single contest row from the Civic API or any equivalent source. */
 export interface ContestLike {
@@ -17,6 +18,8 @@ export interface ContestLike {
   candidates: { name: string; party: string }[];
   /** Seats to fill (vote-for-N); civic supplies this as numberElected. */
   voteForN?: number;
+  /** Provenance for the candidate roster supplied with this contest. */
+  rosterProvenance?: RosterProvenance;
 }
 
 /** Input shape: anything that may have a `contests` array. */
@@ -86,6 +89,8 @@ export interface Race {
    * no body text.
    */
   measureBody?: string;
+  /** Provenance for this race's candidate roster, when available. */
+  rosterProvenance?: RosterProvenance;
 }
 
 const SECTION_ORDER: RaceSection[] = [
@@ -284,6 +289,7 @@ export function deriveRaces(input: RaceDeriverInput | null): Race[] {
       candidates,
       voteForN:
         typeof c.voteForN === "number" && c.voteForN > 0 ? c.voteForN : 1,
+      ...(c.rosterProvenance ? { rosterProvenance: c.rosterProvenance } : {}),
     };
   });
 

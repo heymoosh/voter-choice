@@ -237,6 +237,17 @@ function njCamdenDemRepFixture(): BallotExtraction {
 }
 
 describe("extractionToRaces", () => {
+  it("marks uploaded/extracted ballot rosters as user-supplied and unverified", () => {
+    const races = extractionToRaces(harrisDemRunoffFixture(), "DEM-primary");
+
+    expect(races[0].rosterProvenance).toMatchObject({
+      sourceKind: "user_uploaded_ballot",
+      confidence: "unverified_user_supplied",
+      ballotStatus: "user_supplied_unverified",
+      selectableAsReplacement: false,
+    });
+  });
+
   describe("DEM primary voter (ballotTag: DEM-primary)", () => {
     it("includes all Democratic Primary races plus universal (null party_context) races", () => {
       const races = extractionToRaces(njCamdenDemRepFixture(), "DEM-primary");
