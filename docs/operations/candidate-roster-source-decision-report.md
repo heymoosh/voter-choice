@@ -87,23 +87,55 @@ Official reference links used for the staged policy:
 
 HTML evidence: `docs/operations/candidate-roster-correctness-evidence.html`.
 
-## Current-race comparison status
+## Verified current-race comparison
 
-The user-reported incident race is unresolved. No state, office, district,
-election, address/sample-ballot link, or official candidate-list link was
-provided with the card handoff. This report therefore does not claim that a
-current live race comparison was verified.
+The strongest repository-grounded match for the incident is the Texas
+statewide Senate race. PR #287's review record explicitly asks whether the UI
+is showing “Cornyn vs. Jasmine Crockett”; the earlier roster work also names a
+Texas voter and the redesign's live examples are Texas-first. This identifies
+the race context, but not the original voter's address.
 
-Where evidence is actually available in this staged PR, verification is limited
-to fixtures and official-source decision rules:
+| Field | Verified value |
+| --- | --- |
+| State | Texas (`TX`) |
+| Office | U.S. Senate |
+| District | Statewide |
+| Election | 2026 general election, November 3, 2026 |
+| Official roster entry point | Texas SOS Current Election Information → Candidate Listing Information: https://www.sos.texas.gov/elections/laws/2026-november-general-election.shtml |
+| Official independent filing record | Texas SOS 2026 independent declarations PDF: https://www.sos.texas.gov/elections/forms/2026-independent-declaration-tracking.pdf |
+| Comparison oracle | Ballotpedia's Texas U.S. Senate 2026 page, which cites the Texas SOS candidate/results source: https://ballotpedia.org/United_States_Senate_election_in_Texas%2C_2026 |
+
+The comparison oracle's current general-election table lists these candidates:
+
+- James Talarico (D)
+- Ken Paxton (R)
+- Ted Brown (L)
+- Joshua Cain (I)
+- Robert Coster (I)
+- Camencia Ford (I)
+- Johnathan Garza (I)
+- William Harper (I)
+- Jade Simmons (I)
+- Hans Truelson (I)
+
+The rows that explain the observed stale display are not current general-ballot
+rows: John Cornyn (R) lost the May 26 Republican runoff, and Jasmine Crockett
+(D) lost the March 3 Democratic primary. Ronald Evans (I) is listed as
+withdrawn or disqualified. Those rows may remain in finance history, but must
+be marked non-selectable and must not be described as “running for this seat”
+or “on the ballot.”
+
+This is the verified comparison for the best-supported incident race; it is
+not a claim that an address-specific county ballot has been verified. The
+production implementation still needs an address/election-tied official
+sample ballot before enabling a voter-specific selectable roster.
+
+Fixture interpretation:
 
 - FEC-only fixture: finance evidence is retained but not selectable.
-- Google Civic exact-official fixture: address/election-tied roster data is
-  selectable.
+- Official current-roster fixture: only the ten current general-election rows
+  above may be selectable for this statewide race.
+- Primary-loser/withdrawn rows: retain finance history, but map to an inactive
+  ballot state and keep `selectableAsReplacement=false`.
 - User-pasted/uploaded fixtures: roster candidates are useful for research but
-  unverified.
-
-Follow-up for production: collect the user-reported race’s state, office,
-district, election date/name, and official roster/sample-ballot link; compare
-each displayed candidate against that source; then mark active, withdrawn, or
-finance-only rows explicitly before any production roster migration.
+  remain unverified.
