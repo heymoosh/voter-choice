@@ -158,15 +158,11 @@ async function main() {
   const idHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-ID-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-ID-house'`)) as DbCandidate[];
   const idSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-ID-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-ID-senate'`)) as DbCandidate[];
 
   console.log(`[id] DB: house=${idHouse.length} senate=${idSenate.length}`);
 
@@ -186,9 +182,7 @@ async function main() {
   let rowsSkipped = 0;
 
   // Use latin-1 encoding to handle non-UTF-8 characters in the file
-  const stream = fs.createReadStream(filePath, {
-    encoding: "latin1" as BufferEncoding,
-  });
+  const stream = fs.createReadStream(filePath, { encoding: "latin1" as BufferEncoding });
   const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
 
   let headers: string[] | null = null;

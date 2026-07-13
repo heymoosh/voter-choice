@@ -55,8 +55,7 @@ import {
 const AL_BASE = "https://fcpa.alabamavotes.gov";
 const DEFAULT_CASH_FILE = "/tmp/AL_2024_cash.csv";
 const DEFAULT_INKIND_FILE = "/tmp/AL_2024_inkind.csv";
-const AL_UA =
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+const AL_UA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
 const SOURCE = "al_fcpa_bulk";
 const SOURCE_URL =
   "https://fcpa.alabamavotes.gov/page.request.do?page=page.acfPublicDownloadData";
@@ -124,29 +123,20 @@ function parseCsvLine(line: string): string[] {
 // Auto-download: visit public download page to get session cookie, then fetch CSVs
 // ---------------------------------------------------------------------------
 
-async function downloadAlFiles(
-  cashFile: string,
-  inkindFile: string,
-): Promise<void> {
+async function downloadAlFiles(cashFile: string, inkindFile: string): Promise<void> {
   console.log("[al-fcpa] Fetching session cookie from public download page...");
   const pageResp = await fetch(SOURCE_URL, {
-    headers: { "User-Agent": AL_UA, Accept: "text/html,*/*" },
+    headers: { "User-Agent": AL_UA, "Accept": "text/html,*/*" },
   });
-  const all: string[] =
-    (pageResp.headers as any).getSetCookie?.() ??
-    (pageResp.headers.get("set-cookie")
-      ? [pageResp.headers.get("set-cookie")!]
-      : []);
-  const cookieStr = all
-    .map((c: string) => c.split(";")[0])
-    .filter(Boolean)
-    .join("; ");
+  const all: string[] = (pageResp.headers as any).getSetCookie?.() ??
+    (pageResp.headers.get("set-cookie") ? [pageResp.headers.get("set-cookie")!] : []);
+  const cookieStr = all.map((c: string) => c.split(";")[0]).filter(Boolean).join("; ");
 
   const headers = {
     "User-Agent": AL_UA,
-    Cookie: cookieStr,
-    Referer: SOURCE_URL,
-    Accept: "text/csv,text/plain,*/*",
+    "Cookie": cookieStr,
+    "Referer": SOURCE_URL,
+    "Accept": "text/csv,text/plain,*/*",
   };
 
   for (const [id, outPath, label] of [
@@ -161,9 +151,7 @@ async function downloadAlFiles(
     }
     const text = await resp.text();
     fs.writeFileSync(outPath, text, "utf-8");
-    console.log(
-      `[al-fcpa] Downloaded ${label} → ${outPath} (${text.length} bytes)`,
-    );
+    console.log(`[al-fcpa] Downloaded ${label} → ${outPath} (${text.length} bytes)`);
   }
 }
 
@@ -225,10 +213,7 @@ async function processFile(
 
     // Match candidate by last name
     const lastName = extractLastName(candidateName);
-    if (!lastName) {
-      skipped++;
-      continue;
-    }
+    if (!lastName) { skipped++; continue; }
 
     const dbCandidates = lastNameIdx.get(lastName);
     if (!dbCandidates || dbCandidates.length === 0) {
@@ -242,9 +227,8 @@ async function processFile(
     } else {
       const firstInitial = extractFirstInitial(candidateName);
       dbMatch =
-        dbCandidates.find(
-          (c) => extractFirstInitial(c.fullName) === firstInitial,
-        ) ?? dbCandidates[0]!;
+        dbCandidates.find((c) => extractFirstInitial(c.fullName) === firstInitial) ??
+        dbCandidates[0]!;
     }
 
     // Classify into bucket
@@ -287,16 +271,9 @@ async function main() {
   const cashIdx = process.argv.indexOf("--cash-file");
   const inkindIdx = process.argv.indexOf("--inkind-file");
   const cycleIdx = process.argv.indexOf("--election-cycle");
-  const cashFile =
-    cashIdx !== -1
-      ? (process.argv[cashIdx + 1] ?? DEFAULT_CASH_FILE)
-      : DEFAULT_CASH_FILE;
-  const inkindFile =
-    inkindIdx !== -1
-      ? (process.argv[inkindIdx + 1] ?? DEFAULT_INKIND_FILE)
-      : DEFAULT_INKIND_FILE;
-  const ELECTION_CYCLE =
-    cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
+  const cashFile = cashIdx !== -1 ? (process.argv[cashIdx + 1] ?? DEFAULT_CASH_FILE) : DEFAULT_CASH_FILE;
+  const inkindFile = inkindIdx !== -1 ? (process.argv[inkindIdx + 1] ?? DEFAULT_INKIND_FILE) : DEFAULT_INKIND_FILE;
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   const db = requireDb();
 
@@ -308,24 +285,16 @@ async function main() {
   const alHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-AL-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-AL-house'`)) as DbCandidate[];
   const alSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-AL-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-AL-senate'`)) as DbCandidate[];
 
-  console.log(
-    `[al-fcpa] DB: house=${alHouse.length} senate=${alSenate.length}`,
-  );
+  console.log(`[al-fcpa] DB: house=${alHouse.length} senate=${alSenate.length}`);
 
   if (alHouse.length === 0 && alSenate.length === 0) {
-    console.error(
-      "[al-fcpa] No AL candidates in DB — check jurisdiction slugs",
-    );
+    console.error("[al-fcpa] No AL candidates in DB — check jurisdiction slugs");
     process.exitCode = 1;
     return;
   }
@@ -343,24 +312,13 @@ async function main() {
   const agg = new Map<string, number>();
   const candidateNames = new Map<string, string>();
 
-  for (const [label, filePath] of [
-    ["cash", cashFile],
-    ["inkind", inkindFile],
-  ] as const) {
+  for (const [label, filePath] of [["cash", cashFile], ["inkind", inkindFile]] as const) {
     if (!fs.existsSync(filePath)) {
       console.log(`[al-fcpa] skipping ${label} (file not found: ${filePath})`);
       continue;
     }
-    const result = await processFile(
-      filePath,
-      lastNameIdx,
-      agg,
-      candidateNames,
-      ELECTION_CYCLE,
-    );
-    console.log(
-      `[al-fcpa] ${label}: processed=${result.processed} skipped=${result.skipped}`,
-    );
+    const result = await processFile(filePath, lastNameIdx, agg, candidateNames, ELECTION_CYCLE);
+    console.log(`[al-fcpa] ${label}: processed=${result.processed} skipped=${result.skipped}`);
   }
 
   const matchedCandidates = new Set(

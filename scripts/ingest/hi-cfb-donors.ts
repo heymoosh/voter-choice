@@ -337,11 +337,7 @@ async function aggregateContributions(
       const commaIdx = trimmed.indexOf(",");
       let rawFirst = "";
       if (commaIdx !== -1) {
-        rawFirst =
-          trimmed
-            .substring(commaIdx + 1)
-            .trim()
-            .split(/\s+/u)[0] ?? "";
+        rawFirst = trimmed.substring(commaIdx + 1).trim().split(/\s+/u)[0] ?? "";
       }
       const normFirst = normalizeStr(rawFirst);
 
@@ -587,13 +583,13 @@ export async function ingestHiCfbDonors({
 
   // Step 2: Build last-name index
   const byLastName = buildLastNameIndex(dbCandidates);
-  console.log(`[hi-cfb-donors] unique_last_names_indexed=${byLastName.size}`);
+  console.log(
+    `[hi-cfb-donors] unique_last_names_indexed=${byLastName.size}`,
+  );
 
   // Step 3: Stream CSV and aggregate
-  const { agg, candidateMatchedNames, counters } = await aggregateContributions(
-    CSV_PATH,
-    byLastName,
-  );
+  const { agg, candidateMatchedNames, counters } =
+    await aggregateContributions(CSV_PATH, byLastName);
 
   console.log(
     `[hi-cfb-donors] total_rows_processed=${counters.processed} matched_contributions=${counters.filtered}`,

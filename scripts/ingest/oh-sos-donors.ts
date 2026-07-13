@@ -172,9 +172,7 @@ async function processFile(
     // Some OH senators' committees still report office="HOUSE" from prior service.
     const primaryIdx = office === "HOUSE" ? houseIdx : senateIdx;
     const fallbackIdx = office === "HOUSE" ? senateIdx : houseIdx;
-    const dbMatch =
-      findCandidate(candFirst, candLast, primaryIdx) ??
-      findCandidate(candFirst, candLast, fallbackIdx);
+    const dbMatch = findCandidate(candFirst, candLast, primaryIdx) ?? findCandidate(candFirst, candLast, fallbackIdx);
 
     if (!dbMatch) {
       skipped += 1;
@@ -214,7 +212,10 @@ async function processFile(
       agg.set(aggKey, newMap);
     }
 
-    candidateNames.set(dbMatch.id, `${candFirst} ${candLast}`.trim());
+    candidateNames.set(
+      dbMatch.id,
+      `${candFirst} ${candLast}`.trim(),
+    );
   }
 
   return { agg, candidateNames, skipped };
@@ -250,17 +251,14 @@ function parseCSVLine(line: string): string[] {
 async function main() {
   const isDryRun = process.argv.includes("--dry-run");
   const fileIdx = process.argv.indexOf("--file");
-  const filePath =
-    fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
+  const filePath = fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
 
   if (!fs.existsSync(filePath)) {
     console.error(`[oh-sos] file not found: ${filePath}`);
     console.error(
       "Download from: https://www6.ohiosos.gov/ords/f?p=CFDISCLOSURE:73:::NO:RP:P73_TYPE:CAN:",
     );
-    console.error(
-      "  → Click 'Candidate Contributions-2024' → save as " + DEFAULT_FILE,
-    );
+    console.error("  → Click 'Candidate Contributions-2024' → save as " + DEFAULT_FILE);
     process.exitCode = 1;
     return;
   }
@@ -271,15 +269,11 @@ async function main() {
   const ohHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-OH-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-OH-house'`)) as DbCandidate[];
   const ohSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-OH-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-OH-senate'`)) as DbCandidate[];
 
   console.log(
     `[oh-sos] DB: house=${ohHouse.length} senate=${ohSenate.length} candidates`,
@@ -295,7 +289,9 @@ async function main() {
     senateIdx,
   );
 
-  console.log(`[oh-sos] agg_keys=${agg.size} skipped_rows=${skipped}`);
+  console.log(
+    `[oh-sos] agg_keys=${agg.size} skipped_rows=${skipped}`,
+  );
 
   // Flatten agg into upsert rows
   let upserted = 0;

@@ -44,9 +44,7 @@ const ELECTION_CYCLE = "2024";
 // ---------------------------------------------------------------------------
 
 /** Parse "Last, First (ID)" → { first, last, azId } */
-function parseAzName(
-  raw: string,
-): { first: string; last: string; azId: string } | null {
+function parseAzName(raw: string): { first: string; last: string; azId: string } | null {
   // Format: "Last, First Middle (12345)" or "Last, First (12345)"
   const m = /^([^,]+),\s*(.+?)\s*\((\d+)\)$/.exec(raw.trim());
   if (!m) return null;
@@ -127,13 +125,7 @@ async function main() {
   // Aggregate per (azId, chamber) — sum income across duplicate filings
   const azMap = new Map<
     string,
-    {
-      name: string;
-      first: string;
-      last: string;
-      chamber: "house" | "senate";
-      totalIncome: number;
-    }
+    { name: string; first: string; last: string; chamber: "house" | "senate"; totalIncome: number }
   >();
 
   for (const line of lines.slice(1)) {
@@ -190,9 +182,7 @@ async function main() {
       if (c.jurisdiction !== jurisdiction) return false;
       // Normalize both sides with NFD so accented chars match ASCII equivalents
       const fullName = (c.fullName ?? "")
-        .normalize("NFD")
-        .replace(/[̀-ͯ]/gu, "")
-        .toLowerCase();
+        .normalize("NFD").replace(/[̀-ͯ]/gu, "").toLowerCase();
       const nameParts = fullName.split(/\s+/);
       const dbLast = nameParts[nameParts.length - 1] ?? "";
       const dbFirst = nameParts[0] ?? "";
@@ -255,10 +245,7 @@ function isCliExecution(): boolean {
 
 if (isCliExecution()) {
   main().catch((e) => {
-    console.error(
-      "[az-seethemoney] error:",
-      e instanceof Error ? e.message : e,
-    );
+    console.error("[az-seethemoney] error:", e instanceof Error ? e.message : e);
     process.exitCode = 1;
   });
 }

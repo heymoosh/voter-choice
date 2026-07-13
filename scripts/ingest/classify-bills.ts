@@ -88,11 +88,7 @@ Summary: ${summary}`;
 function parseAndValidateTags(
   rawJson: string,
   billId: string,
-): Array<{
-  canonical_issue: string;
-  stance_lens: StanceLens;
-  confidence: number;
-}> {
+): Array<{ canonical_issue: string; stance_lens: StanceLens; confidence: number }> {
   const fenceMatch = rawJson.match(/```(?:json)?\s*([\s\S]*?)```/);
   const cleaned = fenceMatch ? fenceMatch[1].trim() : rawJson;
 
@@ -111,21 +107,14 @@ function parseAndValidateTags(
 
   const validIssues = new Set(Object.keys(CANONICAL_ISSUES));
   const validStances = new Set(["in_favor", "opposed"]);
-  const valid: Array<{
-    canonical_issue: string;
-    stance_lens: StanceLens;
-    confidence: number;
-  }> = [];
+  const valid: Array<{ canonical_issue: string; stance_lens: StanceLens; confidence: number }> = [];
 
   for (const entry of parsed as any[]) {
     const canonicalIssue = entry.canonical_issue;
     const stanceLens = entry.stance_lens;
     const confidence = entry.confidence;
 
-    if (
-      typeof canonicalIssue !== "string" ||
-      !validIssues.has(canonicalIssue)
-    ) {
+    if (typeof canonicalIssue !== "string" || !validIssues.has(canonicalIssue)) {
       console.error(
         `[classify] drop bill=${billId} canonical_issue=${canonicalIssue} reason=unknown_canonical_issue`,
       );
@@ -180,8 +169,7 @@ async function classifyBatch(batchNumber: number): Promise<number> {
   const bills: BillInput[] = JSON.parse(fs.readFileSync(inputFile, "utf-8"));
   console.log(`[classify] batch=${batchNumber} bills=${bills.length}`);
 
-  const apiKey =
-    process.env.ANTHROPIC_VOTER_API || process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.ANTHROPIC_VOTER_API || process.env.ANTHROPIC_API_KEY;
   if (!apiKey) {
     throw new Error("ANTHROPIC_VOTER_API or ANTHROPIC_API_KEY not set");
   }

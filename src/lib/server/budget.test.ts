@@ -15,64 +15,16 @@ import {
   _setHandoffServedForTesting,
   _resetWriteFailureStatsForTesting,
 } from "./budget";
-import { _resetDurableStoreWarningForTesting } from "./durable-store";
 
 describe("budget", () => {
   beforeEach(() => {
     _resetForTesting();
     _resetWriteFailureStatsForTesting();
-    _resetDurableStoreWarningForTesting();
   });
 
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.restoreAllMocks();
-  });
-
-  describe("durable store unconfigured in production (fail closed)", () => {
-    // KV env deliberately left unset for this block.
-    it("getBudgetStatusAsync fails closed (treats budget as exhausted) in prod", async () => {
-      vi.stubEnv("NODE_ENV", "production");
-      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-      const status = await getBudgetStatusAsync();
-
-      // Blocked, NOT a silent $0 reset. Mirrors the Redis-error fail-closed path:
-      // percent 100, handoffServed=false → tier "handoff" (voter still gets the
-      // handoff completion) — but crucially not "normal"/0%.
-      expect(status.percent).toBe(100);
-      expect(status.estimatedSpendUSD).toBe(50);
-      expect(status.tier).toBe("handoff");
-      // A single loud structured warning is emitted.
-      expect(errSpy).toHaveBeenCalledTimes(1);
-      expect(String(errSpy.mock.calls[0][0])).toContain(
-        "durable_store_unconfigured",
-      );
-    });
-
-    it("recordUsageAsync does not populate per-instance memory in prod", async () => {
-      vi.stubEnv("NODE_ENV", "production");
-      vi.spyOn(console, "error").mockImplementation(() => {});
-      const fetchSpy = vi.spyOn(globalThis, "fetch");
-
-      await recordUsageAsync({ inputTokens: 1_000_000, outputTokens: 0 });
-
-      // No durable write attempted, and the sync in-memory path is not taken.
-      expect(fetchSpy).not.toHaveBeenCalled();
-      expect(getBudgetStatus().estimatedSpendUSD).toBe(0);
-    });
-
-    it("dev/test with unconfigured store keeps in-memory fallback (unchanged)", async () => {
-      // NODE_ENV is "test" here (not production) → no fail-closed.
-      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-      _setSpendForTesting(6);
-
-      const status = await getBudgetStatusAsync();
-
-      expect(status.estimatedSpendUSD).toBe(6);
-      expect(status.tier).toBe("normal");
-      expect(errSpy).not.toHaveBeenCalled();
-    });
   });
 
   describe("recordUsage", () => {

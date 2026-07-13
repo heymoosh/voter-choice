@@ -143,15 +143,11 @@ async function main() {
   const nhHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-NH-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-NH-house'`)) as DbCandidate[];
   const nhSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-NH-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-NH-senate'`)) as DbCandidate[];
 
   console.log(`[nh] DB: house=${nhHouse.length} senate=${nhSenate.length}`);
 
@@ -263,10 +259,7 @@ async function main() {
       bucket = "Small individual donors (under $200)";
     } else if (contribType === "Business/ Group / Organization") {
       bucket = mapEmployerToBucket(contribName || employer) ?? "Other";
-    } else if (
-      contribType === "Political Committee" ||
-      contribType === "Candidate Committee"
-    ) {
+    } else if (contribType === "Political Committee" || contribType === "Candidate Committee") {
       bucket = "Other";
     } else if (contribType === "Individual / Candidate") {
       const empBucket = mapEmployerToBucket(employer);

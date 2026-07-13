@@ -26,52 +26,19 @@ const ISSUE_KEYWORDS: Record<
   { keywords: string[]; opposedKeywords?: string[] }
 > = {
   healthcare_affordability: {
-    keywords: [
-      "healthcare",
-      "health care",
-      "medical",
-      "prescription",
-      "medicare",
-      "medicaid",
-      "insurance",
-      "hospital",
-    ],
+    keywords: ["healthcare", "health care", "medical", "prescription", "medicare", "medicaid", "insurance", "hospital"],
     opposedKeywords: ["cut", "reduce", "eliminate", "repeal"],
   },
   border_security: {
-    keywords: [
-      "border",
-      "immigration",
-      "customs",
-      "enforcement",
-      "illegal alien",
-      "undocumented",
-    ],
+    keywords: ["border", "immigration", "customs", "enforcement", "illegal alien", "undocumented"],
     opposedKeywords: [],
   },
   economy_jobs: {
-    keywords: [
-      "economy",
-      "job",
-      "employment",
-      "wage",
-      "labor",
-      "business",
-      "small business",
-      "tax",
-    ],
+    keywords: ["economy", "job", "employment", "wage", "labor", "business", "small business", "tax"],
     opposedKeywords: ["cut job", "job loss", "eliminate position"],
   },
   education_funding: {
-    keywords: [
-      "education",
-      "school",
-      "student",
-      "tuition",
-      "university",
-      "college",
-      "grant",
-    ],
+    keywords: ["education", "school", "student", "tuition", "university", "college", "grant"],
     opposedKeywords: ["cut", "reduce", "eliminate", "defund"],
   },
   public_safety: {
@@ -91,15 +58,7 @@ const ISSUE_KEYWORDS: Record<
     opposedKeywords: [],
   },
   energy_grid: {
-    keywords: [
-      "energy",
-      "power",
-      "grid",
-      "electricity",
-      "renewable",
-      "coal",
-      "natural gas",
-    ],
+    keywords: ["energy", "power", "grid", "electricity", "renewable", "coal", "natural gas"],
     opposedKeywords: [],
   },
   reproductive_rights: {
@@ -107,25 +66,11 @@ const ISSUE_KEYWORDS: Record<
     opposedKeywords: [],
   },
   gun_rights_safety: {
-    keywords: [
-      "gun",
-      "firearm",
-      "weapon",
-      "ammunition",
-      "concealed carry",
-      "second amendment",
-    ],
+    keywords: ["gun", "firearm", "weapon", "ammunition", "concealed carry", "second amendment"],
     opposedKeywords: [],
   },
   environment_climate: {
-    keywords: [
-      "environment",
-      "climate",
-      "global warming",
-      "pollution",
-      "conservation",
-      "carbon",
-    ],
+    keywords: ["environment", "climate", "global warming", "pollution", "conservation", "carbon"],
     opposedKeywords: [],
   },
   election_integrity: {
@@ -137,13 +82,7 @@ const ISSUE_KEYWORDS: Record<
     opposedKeywords: [],
   },
   housing_affordability: {
-    keywords: [
-      "housing",
-      "affordable housing",
-      "rent",
-      "mortgage",
-      "homelessness",
-    ],
+    keywords: ["housing", "affordable housing", "rent", "mortgage", "homelessness"],
     opposedKeywords: ["cut", "reduce", "eliminate"],
   },
 };
@@ -192,8 +131,8 @@ function classifyBill(bill: BillRow): TagInput[] {
 
   for (const [issue, patterns] of Object.entries(ISSUE_KEYWORDS)) {
     // Check if any keyword is present
-    const hasKeyword = patterns.keywords.some((kw) =>
-      text.includes(kw.toLowerCase()),
+    const hasKeyword = patterns.keywords.some(
+      (kw) => text.includes(kw.toLowerCase())
     );
 
     if (!hasKeyword) continue;
@@ -204,7 +143,7 @@ function classifyBill(bill: BillRow): TagInput[] {
 
     if (patterns.opposedKeywords && patterns.opposedKeywords.length > 0) {
       const hasOpposedKeyword = patterns.opposedKeywords.some((kw) =>
-        text.includes(kw.toLowerCase()),
+        text.includes(kw.toLowerCase())
       );
       if (hasOpposedKeyword) {
         stanceLens = "opposed";
@@ -237,14 +176,14 @@ async function main() {
 
   if (!inputPath || !outputPath) {
     console.error(
-      "Usage: npx tsx _classify-batch-heuristic.ts <input.json> <output.json>",
+      "Usage: npx tsx _classify-batch-heuristic.ts <input.json> <output.json>"
     );
     process.exit(1);
   }
 
   const bills: BillRow[] = JSON.parse(fs.readFileSync(inputPath, "utf-8"));
   console.log(
-    `[classify-heuristic] loaded ${bills.length} bills from ${inputPath}`,
+    `[classify-heuristic] loaded ${bills.length} bills from ${inputPath}`
   );
 
   const allTags: TagInput[] = [];
@@ -267,7 +206,7 @@ async function main() {
 
   fs.writeFileSync(outputPath, JSON.stringify(allTags, null, 2));
   console.log(
-    `[classify-heuristic] complete bills_processed=${billsProcessed} bills_tagged=${billsTagged} bills_skipped=${billsSkipped} total_tags=${allTags.length} output=${outputPath}`,
+    `[classify-heuristic] complete bills_processed=${billsProcessed} bills_tagged=${billsTagged} bills_skipped=${billsSkipped} total_tags=${allTags.length} output=${outputPath}`
   );
 }
 

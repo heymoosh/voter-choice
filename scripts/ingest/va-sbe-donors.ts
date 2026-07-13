@@ -48,18 +48,8 @@ const SOURCE = "va_sbe_bulk";
 const SOURCE_URL = "https://apps.elections.virginia.gov/SBE_CSV/CF/";
 const BASE_URL = "https://apps.elections.virginia.gov/SBE_CSV/CF/";
 const MONTHS = [
-  "01",
-  "02",
-  "03",
-  "04",
-  "05",
-  "06",
-  "07",
-  "08",
-  "09",
-  "10",
-  "11",
-  "12",
+  "01", "02", "03", "04", "05", "06",
+  "07", "08", "09", "10", "11", "12",
 ];
 
 const FETCH_HEADERS = {
@@ -218,7 +208,10 @@ async function streamCsvFile(
  * Download a URL to a local file path. Returns false if the server returns
  * a non-2xx status (e.g. 404 for months with no data), true on success.
  */
-async function downloadToFile(url: string, destPath: string): Promise<boolean> {
+async function downloadToFile(
+  url: string,
+  destPath: string,
+): Promise<boolean> {
   const resp = await fetch(url, { headers: FETCH_HEADERS });
 
   if (!resp.ok) {
@@ -424,9 +417,7 @@ async function buildReportIdMap(
     const url = `${BASE_URL}${year}_${month}/Report.csv`;
     const tmpPath = `/tmp/VA_${year}_${month}_Report.csv`;
 
-    console.log(
-      `[va-sbe-donors] downloading Report.csv month=${year}_${month} ...`,
-    );
+    console.log(`[va-sbe-donors] downloading Report.csv month=${year}_${month} ...`);
     const ok = await downloadToFile(url, tmpPath);
     if (!ok) continue;
 
@@ -524,8 +515,7 @@ async function aggregateScheduleA(
 
       // Classify into bucket
       const isIndividualRaw = row["IsIndividual"] ?? "";
-      const isIndividual =
-        isIndividualRaw === "True" || isIndividualRaw === "1";
+      const isIndividual = isIndividualRaw === "True" || isIndividualRaw === "1";
       const employer = row["NameOfEmployer"] ?? "";
       const occupation = row["OccupationOrTypeOfBusiness"] ?? "";
       const lastOrCompanyName = row["LastOrCompanyName"] ?? "";
@@ -543,9 +533,7 @@ async function aggregateScheduleA(
         }
       } else {
         // Organization / company
-        const orgBucket =
-          mapEmployerToBucket(lastOrCompanyName) ??
-          mapEmployerToBucket(employer);
+        const orgBucket = mapEmployerToBucket(lastOrCompanyName) ?? mapEmployerToBucket(employer);
         bucket = orgBucket ?? "Other";
       }
 
@@ -708,12 +696,12 @@ export async function ingestVaSbeDonors({
 
   // Step 2: Build last-name index
   const byLastName = buildLastNameIndex(dbCandidates);
-  console.log(`[va-sbe-donors] unique_last_names_indexed=${byLastName.size}`);
+  console.log(
+    `[va-sbe-donors] unique_last_names_indexed=${byLastName.size}`,
+  );
 
   // Step 3: Download Report.csv files and build ReportId → candidate map
-  console.log(
-    `[va-sbe-donors] downloading Report.csv files for ${config.year} ...`,
-  );
+  console.log(`[va-sbe-donors] downloading Report.csv files for ${config.year} ...`);
   const { reportIdToCandidate, candidateNameByReportId } =
     await buildReportIdMap(byLastName, config.year);
 
@@ -725,9 +713,7 @@ export async function ingestVaSbeDonors({
   );
 
   // Step 4: Download ScheduleA.csv files and aggregate contributions
-  console.log(
-    `[va-sbe-donors] downloading ScheduleA.csv files for ${config.year} ...`,
-  );
+  console.log(`[va-sbe-donors] downloading ScheduleA.csv files for ${config.year} ...`);
   const { agg, candidateMatchedNames, counters } = await aggregateScheduleA(
     reportIdToCandidate,
     candidateNameByReportId,

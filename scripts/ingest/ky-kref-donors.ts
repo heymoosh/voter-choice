@@ -49,8 +49,7 @@ import {
 const DEFAULT_HOUSE_FILE = "/tmp/KY_house_2024.csv";
 const DEFAULT_SENATE_FILE = "/tmp/KY_senate_2024.csv";
 const SOURCE = "ky_kref_bulk";
-const SOURCE_URL =
-  "https://secure.kentucky.gov/kref/publicsearch/ToCandidateSearch";
+const SOURCE_URL = "https://secure.kentucky.gov/kref/publicsearch/ToCandidateSearch";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -258,8 +257,7 @@ async function main() {
   const houseFileIdx = process.argv.indexOf("--house-file");
   const senateFileIdx = process.argv.indexOf("--senate-file");
   const cycleIdx = process.argv.indexOf("--election-cycle");
-  const ELECTION_CYCLE =
-    cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
   const houseFile =
     houseFileIdx !== -1
       ? (process.argv[houseFileIdx + 1] ?? DEFAULT_HOUSE_FILE)
@@ -269,10 +267,7 @@ async function main() {
       ? (process.argv[senateFileIdx + 1] ?? DEFAULT_SENATE_FILE)
       : DEFAULT_SENATE_FILE;
 
-  for (const [label, f] of [
-    ["house", houseFile],
-    ["senate", senateFile],
-  ] as const) {
+  for (const [label, f] of [["house", houseFile], ["senate", senateFile]] as const) {
     if (!fs.existsSync(f)) {
       console.error(`[ky-kref] missing ${label} file: ${f}`);
       process.exitCode = 1;
@@ -285,19 +280,13 @@ async function main() {
   const kyHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-KY-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-KY-house'`)) as DbCandidate[];
   const kySenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-KY-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-KY-senate'`)) as DbCandidate[];
 
-  console.log(
-    `[ky-kref] DB: house=${kyHouse.length} senate=${kySenate.length}`,
-  );
+  console.log(`[ky-kref] DB: house=${kyHouse.length} senate=${kySenate.length}`);
 
   // Build last-name index (combined)
   const lastNameIdx = new Map<string, DbCandidate[]>();
@@ -312,24 +301,12 @@ async function main() {
   const agg = new Map<string, number>();
   const candidateNames = new Map<string, string>();
 
-  const houseResult = await processFile(
-    houseFile,
-    lastNameIdx,
-    agg,
-    candidateNames,
-    ELECTION_CYCLE,
-  );
+  const houseResult = await processFile(houseFile, lastNameIdx, agg, candidateNames, ELECTION_CYCLE);
   console.log(
     `[ky-kref] house: processed=${houseResult.processed} skipped=${houseResult.skipped}`,
   );
 
-  const senateResult = await processFile(
-    senateFile,
-    lastNameIdx,
-    agg,
-    candidateNames,
-    ELECTION_CYCLE,
-  );
+  const senateResult = await processFile(senateFile, lastNameIdx, agg, candidateNames, ELECTION_CYCLE);
   console.log(
     `[ky-kref] senate: processed=${senateResult.processed} skipped=${senateResult.skipped}`,
   );

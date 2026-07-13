@@ -16,91 +16,39 @@ const TIER_INTRO = {
   "Washington — Federal": {
     place: "WASHINGTON",
     title: "Your seat at the national table",
-    what: () => (
-      <>
-        Three people who write <b>federal</b> law — and answer for it on
-        roll-call votes. Of your priorities, Washington decides{" "}
-        <b>
-          {issuesForLevel2("federal")
-            .filter((i) => i.level === "federal")
-            .map((i) => i.interpretation)
-            .join(" and ")}
-        </b>
-        .
-      </>
-    ),
+    what: () => <>Three people who write <b>federal</b> law — and answer for it on roll-call votes. Of your priorities, Washington decides <b>{issuesForLevel2("federal").filter(i => i.level === "federal").map(i => i.interpretation).join(" and ")}</b>.</>,
   },
   "Austin — State": {
     place: "AUSTIN",
     title: "Closer to home",
-    what: () => (
-      <>
-        Your state legislature decides what Washington doesn't — schools, the
-        grid, and <i>since 2022, abortion access</i>. Of your priorities, Austin
-        holds the pen on{" "}
-        <b>
-          {issuesForLevel2("state")
-            .filter((i) => i.level === "state")
-            .map((i) => i.interpretation)
-            .join(" and ")}
-        </b>
-        .
-      </>
-    ),
+    what: () => <>Your state legislature decides what Washington doesn't — schools, the grid, and <i>since 2022, abortion access</i>. Of your priorities, Austin holds the pen on <b>{issuesForLevel2("state").filter(i => i.level === "state").map(i => i.interpretation).join(" and ")}</b>.</>,
   },
   "Statewide — Executive": {
     place: "STATEWIDE",
     title: "Offices that don't take roll-call votes",
-    what: () => (
-      <>
-        A governor signs and vetoes — there's no voting record to score. So we
-        research positions and <b>show the receipts</b> instead of faking an
-        alignment number.
-      </>
-    ),
+    what: () => <>A governor signs and vetoes — there's no voting record to score. So we research positions and <b>show the receipts</b> instead of faking an alignment number.</>,
   },
 };
 
 function visibleSeats(scope) {
-  return scope === "fed"
-    ? DELEGATION.filter((s) => s.section === "Washington — Federal")
-    : DELEGATION;
+  return scope === "fed" ? DELEGATION.filter((s) => s.section === "Washington — Federal") : DELEGATION;
 }
 
 /* ---- Scorecard pane (BallotPaneInner evolved) ---- */
-function ScorecardPane({
-  seats,
-  verdicts,
-  activeSeatId,
-  address,
-  issues,
-  onSelectSeat,
-  onPrint,
-  onSaveProfile,
-  onContinueElsewhere,
-  onSeeStanding,
-}) {
-  const doneCount = Object.keys(verdicts).filter((id) =>
-    seats.some((s) => s.id === id),
-  ).length;
+function ScorecardPane({ seats, verdicts, activeSeatId, address, issues, onSelectSeat, onPrint, onSaveProfile, onContinueElsewhere, onSeeStanding }) {
+  const doneCount = Object.keys(verdicts).filter((id) => seats.some((s) => s.id === id)).length;
   const canPrint = doneCount > 0;
   const sections = {};
-  seats.forEach((s) => {
-    (sections[s.section] = sections[s.section] || []).push(s);
-  });
+  seats.forEach((s) => { (sections[s.section] = sections[s.section] || []).push(s); });
 
   return (
     <>
       <div className="b-head">
         <div className="row">
           <h3>Your scorecard</h3>
-          <span className="sub">
-            {doneCount}/{seats.length} · Draft
-          </span>
+          <span className="sub">{doneCount}/{seats.length} · Draft</span>
         </div>
-        <address>
-          {address || "—"} · Precinct {POLLING_INFO.precinct}
-        </address>
+        <address>{address || "—"} · Precinct {POLLING_INFO.precinct}</address>
       </div>
 
       <div className="b-issues-edit">
@@ -109,16 +57,8 @@ function ScorecardPane({
         </div>
         <ol className="b-issues-list">
           {issues.map((iss, i) => (
-            <li key={i}>
-              <span className="n">{i + 1}</span>
-              {iss.interpretation}
-              <span className={"lvl-tag " + iss.level}>
-                {iss.level === "federal"
-                  ? "FED"
-                  : iss.level === "state"
-                    ? "STATE"
-                    : "BOTH"}
-              </span>
+            <li key={i}><span className="n">{i + 1}</span>{iss.interpretation}
+              <span className={"lvl-tag " + iss.level}>{iss.level === "federal" ? "FED" : iss.level === "state" ? "STATE" : "BOTH"}</span>
             </li>
           ))}
         </ol>
@@ -127,49 +67,21 @@ function ScorecardPane({
       <div className="b-list">
         {Object.entries(sections).map(([section, ss]) => (
           <div key={section}>
-            <div
-              style={{
-                fontFamily: "var(--mono)",
-                fontSize: 11,
-                textTransform: "uppercase",
-                letterSpacing: "0.14em",
-                color: "var(--ink-3)",
-                padding: "14px 0 4px",
-              }}
-            >
-              {section}
-            </div>
+            <div style={{ fontFamily: "var(--mono)", fontSize: 11, textTransform: "uppercase", letterSpacing: "0.14em", color: "var(--ink-3)", padding: "14px 0 4px" }}>{section}</div>
             {ss.map((s) => {
               const v = verdicts[s.id];
               const isActive = s.id === activeSeatId;
               return (
-                <div
-                  key={s.id}
-                  className={
-                    "b-row " +
-                    (v ? "done " : "pending ") +
-                    (isActive ? "active " : "")
-                  }
-                  onClick={() => onSelectSeat(s.id)}
-                >
+                <div key={s.id}
+                  className={"b-row " + (v ? "done " : "pending ") + (isActive ? "active " : "")}
+                  onClick={() => onSelectSeat(s.id)}>
                   <div className="ck" />
                   <div>
-                    <div className="race">
-                      {s.office} · {s.districtLabel}
-                    </div>
+                    <div className="race">{s.office} · {s.districtLabel}</div>
                     <div className="pick">
-                      {v ? (
-                        <>
-                          {s.candidate.name} —{" "}
-                          <span className={"verdict-chip " + v}>
-                            {v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}
-                          </span>
-                        </>
-                      ) : isActive ? (
-                        "Reviewing now…"
-                      ) : (
-                        "Not yet reviewed"
-                      )}
+                      {v
+                        ? <>{s.candidate.name} — <span className={"verdict-chip " + v}>{v === "keep" ? "WORTH KEEPING" : "TIME TO REPLACE"}</span></>
+                        : (isActive ? "Reviewing now…" : "Not yet reviewed")}
                     </div>
                     {v && <div className="why">{s.nextElection.label}</div>}
                   </div>
@@ -190,31 +102,20 @@ function ScorecardPane({
           <i style={{ background: "var(--gold)" }}></i>
         </div>
         <h4>See where you stand</h4>
-        <p>
-          Your priorities, mapped against {POLIS2.scopes[0].sampleSize}{" "}
-          neighbors in {POLIS2.scopes[0].label} — grouped by what they care
-          about, not party. You overlap more than the noise suggests.
-        </p>
-        <button onClick={onSeeStanding}>
-          See where you stand <span aria-hidden="true">→</span>
-        </button>
+        <p>Your priorities, mapped against {POLIS2.scopes[0].sampleSize} neighbors in {POLIS2.scopes[0].label} — grouped by what they care about, not party. You overlap more than the noise suggests.</p>
+        <button onClick={onSeeStanding}>See where you stand <span aria-hidden="true">→</span></button>
       </div>
 
       <div className="b-foot">
         <button className="primary" disabled={!canPrint} onClick={onPrint}>
-          <span>Print my scorecard (PDF)</span>
-          <span className="arrow">→</span>
+          <span>Print my scorecard (PDF)</span><span className="arrow">→</span>
         </button>
         <button onClick={onSaveProfile}>
-          <span>Save my voting plan (.txt)</span>
-          <span className="arrow">↓</span>
+          <span>Save my voting plan (.txt)</span><span className="arrow">↓</span>
         </button>
-        <small className="b-foot-note">
-          Your issues and verdicts — no personal info collected.
-        </small>
+        <small className="b-foot-note">Your issues and verdicts — no personal info collected.</small>
         <button onClick={onContinueElsewhere}>
-          <span>Continue in another chatbot</span>
-          <span className="arrow">↗</span>
+          <span>Continue in another chatbot</span><span className="arrow">↗</span>
         </button>
       </div>
     </>
@@ -222,26 +123,11 @@ function ScorecardPane({
 }
 
 /* ---- Workspace ---- */
-function DelegationWorkspace({
-  address,
-  scope,
-  blindMode,
-  verdicts,
-  activeSeatId,
-  revealed,
-  onReveal,
-  onHide,
-  onVerdict,
-  onSelectSeat,
-  onPrint,
-  onSeeStanding,
-}) {
+function DelegationWorkspace({ address, scope, blindMode, verdicts, activeSeatId, revealed, onReveal, onHide, onVerdict, onSelectSeat, onPrint, onSeeStanding }) {
   const seats = visibleSeats(scope);
   const activeSeat = seats.find((s) => s.id === activeSeatId) || seats[0];
   const activeIdx = seats.findIndex((s) => s.id === activeSeat.id);
-  const doneCount = Object.keys(verdicts).filter((id) =>
-    seats.some((s) => s.id === id),
-  ).length;
+  const doneCount = Object.keys(verdicts).filter((id) => seats.some((s) => s.id === id)).length;
   const progressPct = Math.round((doneCount / seats.length) * 100);
   const intro = TIER_INTRO[activeSeat.section];
 
@@ -249,27 +135,21 @@ function DelegationWorkspace({
      is hidden <768px until a row is tapped, then opens as a fixed overlay
      with a back control. */
   const [mobileChatOpen, setMobileChatOpen] = useStateW(false);
-  useEffectW(() => {
-    setMobileChatOpen(false);
-  }, [scope]);
+  useEffectW(() => { setMobileChatOpen(false); }, [scope]);
   function selectAndOpen(seatId) {
     onSelectSeat(seatId);
     setTimeout(() => setMobileChatOpen(true), 0);
   }
 
   const sections = {};
-  seats.forEach((s) => {
-    (sections[s.section] = sections[s.section] || []).push(s);
-  });
+  seats.forEach((s) => { (sections[s.section] = sections[s.section] || []).push(s); });
 
   function commitVerdict(v) {
     onVerdict(activeSeat.id, v);
     if (!v) return;
     setMobileChatOpen(false);
     setTimeout(() => {
-      const next = seats.find(
-        (s, i) => i > activeIdx && !verdicts[s.id] && s.id !== activeSeat.id,
-      );
+      const next = seats.find((s, i) => i > activeIdx && !verdicts[s.id] && s.id !== activeSeat.id);
       if (next) onSelectSeat(next.id);
     }, 600);
   }
@@ -277,45 +157,23 @@ function DelegationWorkspace({
   return (
     <div className="ws-shell">
       <AppNav />
-      <PollingStatusBar
-        pollingInfo={POLLING_INFO}
-        stateData={STATE_ELECTION_DATA}
-        rows={getDeadlineRows()}
-      />
-      <div
-        className="ws-wrap"
-        data-mobile-chat={mobileChatOpen ? "open" : "closed"}
-      >
+      <PollingStatusBar pollingInfo={POLLING_INFO} stateData={STATE_ELECTION_DATA} rows={getDeadlineRows()} />
+      <div className="ws-wrap" data-mobile-chat={mobileChatOpen ? "open" : "closed"}>
+
         {/* LEFT RAIL */}
         <aside className="ws-rail">
           <div className="progress">
-            <div className="top">
-              <span>Progress</span>
-              <span>
-                {doneCount} / {seats.length}
-              </span>
-            </div>
+            <div className="top"><span>Progress</span><span>{doneCount} / {seats.length}</span></div>
             <div className="big">{progressPct}% reviewed</div>
-            <div className="bar">
-              <div className="fill" style={{ width: progressPct + "%" }}></div>
-            </div>
+            <div className="bar"><div className="fill" style={{ width: progressPct + "%" }}></div></div>
           </div>
 
           <div className="priorities">
-            <div className="top">
-              <span className="lab">Your issues</span>
-            </div>
+            <div className="top"><span className="lab">Your issues</span></div>
             <ol>
               {USER_ISSUES2.map((iss) => (
-                <li key={iss.canonicalIssue}>
-                  {iss.interpretation}
-                  <span className={"lvl-tag " + iss.level}>
-                    {iss.level === "federal"
-                      ? "FED"
-                      : iss.level === "state"
-                        ? "STATE"
-                        : "BOTH"}
-                  </span>
+                <li key={iss.canonicalIssue}>{iss.interpretation}
+                  <span className={"lvl-tag " + iss.level}>{iss.level === "federal" ? "FED" : iss.level === "state" ? "STATE" : "BOTH"}</span>
                 </li>
               ))}
             </ol>
@@ -326,22 +184,11 @@ function DelegationWorkspace({
               <div className="seclabel">{section}</div>
               <ul className="race-list">
                 {ss.map((s) => (
-                  <li
-                    key={s.id}
-                    className={
-                      (verdicts[s.id] ? "done " : "") +
-                      (s.id === activeSeat.id ? "active" : "")
-                    }
-                    onClick={() => selectAndOpen(s.id)}
-                  >
+                  <li key={s.id}
+                    className={(verdicts[s.id] ? "done " : "") + (s.id === activeSeat.id ? "active" : "")}
+                    onClick={() => selectAndOpen(s.id)}>
                     <span className="ind"></span>
-                    <span>
-                      {blindMode && !revealed.has(s.id)
-                        ? s.blindLabel.replace(/^Your /, "")
-                        : s.candidate.name.split(" ").pop() +
-                          " · " +
-                          s.office.replace(/^(U\.S\.|Texas)\s+/, "")}
-                    </span>
+                    <span>{blindMode && !revealed.has(s.id) ? s.blindLabel.replace(/^Your /, "") : s.candidate.name.split(" ").pop() + " · " + s.office.replace(/^(U\.S\.|Texas)\s+/, "")}</span>
                   </li>
                 ))}
               </ul>
@@ -356,12 +203,8 @@ function DelegationWorkspace({
               className="ws-mobile-back ws-mobile-back-hide-desktop"
               onClick={() => setMobileChatOpen(false)}
               aria-label="Back to scorecard"
-            >
-              ←
-            </button>
-            <span className="rep-center-head-lab">
-              {activeSeat.office} · {activeSeat.districtLabel}
-            </span>
+            >←</button>
+            <span className="rep-center-head-lab">{activeSeat.office} · {activeSeat.districtLabel}</span>
           </header>
           <div className="tier-intro">
             <span className="ti-place">{intro.place}</span>
@@ -385,9 +228,7 @@ function DelegationWorkspace({
           {doneCount === seats.length && (
             <div className="all-done">
               <b>That's your whole delegation.</b> One more thing worth seeing —
-              <button className="linklike" onClick={onSeeStanding}>
-                where you stand among your neighbors →
-              </button>
+              <button className="linklike" onClick={onSeeStanding}>where you stand among your neighbors →</button>
             </div>
           )}
         </section>
@@ -402,16 +243,8 @@ function DelegationWorkspace({
             issues={USER_ISSUES2}
             onSelectSeat={selectAndOpen}
             onPrint={onPrint}
-            onSaveProfile={() =>
-              alert(
-                "Stub: downloads your issues + verdicts as .txt (repo: downloadProfileAsText)",
-              )
-            }
-            onContinueElsewhere={() =>
-              alert(
-                "Stub: handoff prompt → Claude / ChatGPT / Gemini / Grok (repo: HandoffPackage)",
-              )
-            }
+            onSaveProfile={() => alert("Stub: downloads your issues + verdicts as .txt (repo: downloadProfileAsText)")}
+            onContinueElsewhere={() => alert("Stub: handoff prompt → Claude / ChatGPT / Gemini / Grok (repo: HandoffPackage)")}
             onSeeStanding={onSeeStanding}
           />
         </aside>

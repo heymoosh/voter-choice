@@ -14,21 +14,11 @@ import { readFileSync, writeFileSync, createWriteStream } from "node:fs";
 import { createInterface } from "node:readline";
 
 const DIR = "scripts/ingest/_pole-batches";
-const idset: Record<string, string> = JSON.parse(
-  readFileSync(`${DIR}/_summary-idset.json`, "utf8"),
-);
+const idset: Record<string, string> = JSON.parse(readFileSync(`${DIR}/_summary-idset.json`, "utf8"));
 const want = new Set(Object.keys(idset));
 
 // COPY text-format unescape (\n \r \t \\ and friends)
-const MAP: Record<string, string> = {
-  n: "\n",
-  r: "\r",
-  t: "\t",
-  "\\": "\\",
-  b: "\b",
-  f: "\f",
-  v: "\v",
-};
+const MAP: Record<string, string> = { n: "\n", r: "\r", t: "\t", "\\": "\\", b: "\b", f: "\f", v: "\v" };
 const unescape = (s: string) => s.replace(/\\(.)/g, (_, c) => MAP[c] ?? c);
 
 async function main() {
@@ -36,96 +26,47 @@ async function main() {
   const rl = createInterface({ input: process.stdin, crlfDelay: Infinity });
 
   let cols: string[] | null = null;
-  let iBill = -1,
-    iText = -1,
-    iErr = -1;
-  let scanned = 0,
-    matched = 0,
-    withText = 0,
-    errored = 0,
-    done = false;
+  let iBill = -1, iText = -1, iErr = -1;
+  let scanned = 0, matched = 0, withText = 0, errored = 0, done = false;
   const seen = new Set<string>();
-  const lenBuckets: Record<string, number> = {
-    "0": 0,
-    "<500": 0,
-    "500-2k": 0,
-    "2k-10k": 0,
-    "10k-50k": 0,
-    ">50k": 0,
-  };
+  const lenBuckets: Record<string, number> = { "0": 0, "<500": 0, "500-2k": 0, "2k-10k": 0, "10k-50k": 0, ">50k": 0 };
 
   for await (const line of rl) {
     if (done) continue;
     if (!cols) {
       // find: COPY public.opencivicdata_searchablebill (a, b, c, ...) FROM stdin;
-      const m = line.match(
-        /^COPY\s+public\.opencivicdata_searchablebill\s*\(([^)]+)\)\s+FROM stdin;/i,
-      );
+      const m = line.match(/^COPY\s+public\.opencivicdata_searchablebill\s*\(([^)]+)\)\s+FROM stdin;/i);
       if (m) {
         cols = m[1].split(",").map((c) => c.trim());
         iBill = cols.indexOf("bill_id");
         iText = cols.indexOf("raw_text");
         iErr = cols.indexOf("is_error");
-        process.stderr.write(
-          `[filter] columns parsed; bill_id@${iBill} raw_text@${iText} is_error@${iErr}\n`,
-        );
+        process.stderr.write(`[filter] columns parsed; bill_id@${iBill} raw_text@${iText} is_error@${iErr}\n`);
       }
       continue;
     }
-    if (line === "\\.") {
-      done = true;
-      continue;
-    }
+    if (line === "\\.") { done = true; continue; }
     scanned++;
-    if (scanned % 200000 === 0)
-      process.stderr.write(`[filter] scanned=${scanned} matched=${matched}\n`);
+    if (scanned % 200000 === 0) process.stderr.write(`[filter] scanned=${scanned} matched=${matched}\n`);
     const f = line.split("\t");
     const bill = f[iBill];
     if (!bill || !want.has(bill) || seen.has(bill)) continue;
     matched++;
     seen.add(bill);
-    if (f[iErr] === "t") {
-      errored++;
-      continue;
-    }
+    if (f[iErr] === "t") { errored++; continue; }
     const text = unescape(f[iText] ?? "");
     const len = text.trim().length;
-    if (len === 0) {
-      lenBuckets["0"]++;
-      continue;
-    }
+    if (len === 0) { lenBuckets["0"]++; continue; }
     withText++;
-    lenBuckets[
-      len < 500
-        ? "<500"
-        : len < 2000
-          ? "500-2k"
-          : len < 10000
-            ? "2k-10k"
-            : len < 50000
-              ? "10k-50k"
-              : ">50k"
-    ]++;
+    lenBuckets[len < 500 ? "<500" : len < 2000 ? "500-2k" : len < 10000 ? "2k-10k" : len < 50000 ? "10k-50k" : ">50k"]++;
     out.write(JSON.stringify({ id: idset[bill], ocd: bill, len, text }) + "\n");
   }
   await new Promise((r) => out.end(r));
 
-  const stats = {
-    total_target: want.size,
-    scanned,
-    matched,
-    withText,
-    errored,
-    emptyText: lenBuckets["0"],
-    lenBuckets,
-    yield_pct: Math.round((withText / want.size) * 100),
-  };
+  const stats = { total_target: want.size, scanned, matched, withText, errored, emptyText: lenBuckets["0"], lenBuckets, yield_pct: Math.round((withText / want.size) * 100) };
   writeFileSync(`${DIR}/_summary-yield.json`, JSON.stringify(stats, null, 2));
   console.log("\n=== SUMMARY-TEXT YIELD ===");
   console.log(JSON.stringify(stats, null, 2));
   console.log(`\nText → ${DIR}/_summary-text.jsonl`);
 }
-main().catch((e) => {
-  console.error("FILTER FAILED:", e.message);
-  process.exit(1);
-});
+main().catch((e) => { console.error("FILTER FAILED:", e.message); process.exit(1); });

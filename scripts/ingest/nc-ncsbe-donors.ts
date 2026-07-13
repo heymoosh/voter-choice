@@ -69,17 +69,17 @@ interface DbCandidate {
 }
 
 interface NcContrib {
-  a: number; // amount
-  sub: string; // TransSubTypeCode
+  a: number;         // amount
+  sub: string;       // TransSubTypeCode
   isOrg: string | null;
-  org: string; // OrgName
-  job: string; // ProfJobTitle
-  emp: string; // EmpSpecFld
+  org: string;       // OrgName
+  job: string;       // ProfJobTitle
+  emp: string;       // EmpSpecFld
 }
 
 interface NcCommittee {
   commName: string;
-  office: string; // "NSHS" | "NCSN"
+  office: string;    // "NSHS" | "NCSN"
   party: string;
   contribs: NcContrib[];
 }
@@ -201,19 +201,13 @@ async function main() {
   const ncHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-NC-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-NC-house'`)) as DbCandidate[];
   const ncSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-NC-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-NC-senate'`)) as DbCandidate[];
 
-  console.log(
-    `[nc-ncsbe] DB: house=${ncHouse.length} senate=${ncSenate.length}`,
-  );
+  console.log(`[nc-ncsbe] DB: house=${ncHouse.length} senate=${ncSenate.length}`);
 
   // Build last-name index by office
   const houseIdx = new Map<string, DbCandidate[]>();
@@ -279,9 +273,8 @@ async function main() {
       );
       const firstInitial = nameAfterPrefix[0] ?? "";
       dbMatch =
-        dbCandidates.find(
-          (c) => extractFirstInitialFromDbName(c.fullName) === firstInitial,
-        ) ?? dbCandidates[0]!;
+        dbCandidates.find((c) => extractFirstInitialFromDbName(c.fullName) === firstInitial) ??
+        dbCandidates[0]!;
     }
 
     committeesMatched++;
@@ -289,17 +282,11 @@ async function main() {
 
     // Process each contribution
     for (const c of committee.contribs) {
-      if (!c.a || c.a <= 0) {
-        contribsSkipped++;
-        continue;
-      }
-      if (SKIP_SUBTYPES.has(c.sub)) {
-        contribsSkipped++;
-        continue;
-      }
+      if (!c.a || c.a <= 0) { contribsSkipped++; continue; }
+      if (SKIP_SUBTYPES.has(c.sub)) { contribsSkipped++; continue; }
 
       let bucket: DonorBucketLabel;
-      const isOrg = c.isOrg === "1" || c.isOrg === (true as unknown);
+      const isOrg = c.isOrg === "1" || c.isOrg === true as unknown;
 
       if (c.sub === "PPTY") {
         bucket = "Party committees";

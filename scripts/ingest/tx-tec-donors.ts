@@ -125,10 +125,14 @@ function resolveConfig(argv: string[] = process.argv): IngestConfig {
 
 async function ensureExtracted(): Promise<void> {
   if (fs.existsSync(EXTRACT_DIR)) {
-    console.log(`[tx-tec-donors] using existing extraction at ${EXTRACT_DIR}`);
+    console.log(
+      `[tx-tec-donors] using existing extraction at ${EXTRACT_DIR}`,
+    );
     return;
   }
-  console.log(`[tx-tec-donors] extracting ${ZIP_PATH} → ${EXTRACT_DIR} ...`);
+  console.log(
+    `[tx-tec-donors] extracting ${ZIP_PATH} → ${EXTRACT_DIR} ...`,
+  );
   fs.mkdirSync(EXTRACT_DIR, { recursive: true });
   await extract(ZIP_PATH, { dir: EXTRACT_DIR });
   console.log(`[tx-tec-donors] extraction complete`);
@@ -271,8 +275,7 @@ async function loadTecFilers(): Promise<{
     const filerNameLast = row["filerNameLast"] ?? "";
     const filerName = row["filerName"] ?? "";
     // Use hold-office district when seek-office district is missing
-    const district =
-      row["ctaSeekOfficeDistrict"] || row["filerHoldOfficeDistrict"] || "";
+    const district = row["ctaSeekOfficeDistrict"] || row["filerHoldOfficeDistrict"] || "";
 
     const info: TecFilerInfo = {
       filerIdent,
@@ -333,18 +336,10 @@ function matchCandidatesToFilers(
 
     // When multiple DB candidates share a last name, filter filers by first-name initial.
     // "Jessica González" (J) should not steal "Mary Edna Gonzalez" (M) filer entries.
-    const dbFirstInitial =
-      normalizeName(candidate.fullName.split(/\s+/u)[0] ?? "")[0] ?? "";
+    const dbFirstInitial = normalizeName(candidate.fullName.split(/\s+/u)[0] ?? "")[0] ?? "";
     const filtered = filers.filter((f) => {
-      const filerFirstInitial =
-        normalizeName(
-          f.filerName.split(",")[1]?.trim().split(/\s+/u)[0] ?? "",
-        )[0] ?? "";
-      return (
-        !filerFirstInitial ||
-        !dbFirstInitial ||
-        filerFirstInitial === dbFirstInitial
-      );
+      const filerFirstInitial = normalizeName(f.filerName.split(",")[1]?.trim().split(/\s+/u)[0] ?? "")[0] ?? "";
+      return !filerFirstInitial || !dbFirstInitial || filerFirstInitial === dbFirstInitial;
     });
 
     if (filtered.length > 0) {
@@ -585,7 +580,9 @@ export async function ingestTecDonors({
   // Step 3: Load DB candidates (TX state only)
   console.log(`[tx-tec-donors] querying DB for TX state candidates ...`);
   const dbCandidates = await loadDbCandidates(db, config.limit);
-  console.log(`[tx-tec-donors] db_candidates_found=${dbCandidates.length}`);
+  console.log(
+    `[tx-tec-donors] db_candidates_found=${dbCandidates.length}`,
+  );
 
   // Step 4: Match candidates to filers by last name
   const candidateToFilers = matchCandidatesToFilers(dbCandidates, byLastName);
@@ -632,7 +629,8 @@ export async function ingestTecDonors({
       .filter((f) => /^contribs_\d+\.csv$/u.test(f)).length,
     contribsFiltered: rows.reduce(
       (sum, r) =>
-        sum + ((r.rawMetadata as { donorCount?: number }).donorCount ?? 0),
+        sum +
+        ((r.rawMetadata as { donorCount?: number }).donorCount ?? 0),
       0,
     ),
     rowsUpserted,

@@ -104,7 +104,9 @@
     "acceptedIds": [],
     "phonesAtPolls": "allowed",
     "phonesAtPollsDetail": "Phones are permitted at New Mexico polling places.",
-    "additionalRules": ["Voters without ID may vote by affidavit"]
+    "additionalRules": [
+      "Voters without ID may vote by affidavit"
+    ]
   },
   "runoffRules": {
     "hasRunoff": false,

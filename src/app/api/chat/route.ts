@@ -9,7 +9,6 @@ import {
   shouldTriggerHandoffAsync,
   markHandoffServed,
   type BudgetTier,
-  type UsageRecord,
 } from "../../../lib/server/budget";
 import {
   resolveCandidateId,
@@ -1252,12 +1251,6 @@ function createSSEStream(
     model,
   } = options;
   const encoder = new TextEncoder();
-  // NOTE: `usage` is overwritten (not accumulated) by handleMessageStart/
-  // handleMessageDelta on every round — each round is its own independent
-  // Anthropic API call with its own input/output/search counts. So
-  // `usage` at any moment holds only the CURRENT round's numbers, and each
-  // round's totals must be recorded (and summed via recordUsageAsync's
-  // additive HINCRBY) individually — see flushRoundUsage below.
   const usage: StreamUsage = {
     input: 0,
     output: 0,
@@ -1265,33 +1258,6 @@ function createSSEStream(
     cacheWrite: 0,
     searchCount: 0,
   };
-
-  // Record this round's own usage (already isolated by the overwrite
-  // semantics above) to the durable budget store immediately, rather than
-  // waiting for the whole turn to finish. This closes the TOCTOU window
-  // where the in-flight circuit-breaker's mid-run budget check — and any
-  // concurrent request's — could read a stale total that hasn't yet
-  // reflected this request's own earlier-round spend. It also fixes a
-  // latent under-count: previously a single end-of-turn call only ever saw
-  // the LAST round's numbers (overwritten by every later round), silently
-  // dropping every earlier round's real spend from the durable total.
-  async function flushRoundUsage(): Promise<void> {
-    const hasUsage =
-      usage.input > 0 ||
-      usage.output > 0 ||
-      usage.cachedInput > 0 ||
-      usage.cacheWrite > 0 ||
-      usage.searchCount > 0;
-    if (!hasUsage) return;
-    const record: UsageRecord = {
-      inputTokens: usage.input,
-      outputTokens: usage.output,
-      cachedInputTokens: usage.cachedInput,
-      cacheWriteTokens: usage.cacheWrite,
-      searchCount: usage.searchCount,
-    };
-    await recordUsageAsync(record);
-  }
 
   return new ReadableStream({
     async start(controller) {
@@ -1304,19 +1270,6 @@ function createSSEStream(
           rounds++;
           const searchBlocks = new Map<number, SearchBlockState>();
           const lookupBlocks = new Map<number, LookupToolBlock>();
-
-          // Reset to zero at the start of every round. input/output/
-          // cachedInput/cacheWrite are always overwritten by this round's
-          // own message_start/message_delta, but searchCount is only
-          // conditionally overwritten (extractSearchCount returns undefined
-          // when a round has no server_tool_use) — without this reset, a
-          // round with no search tool use would inherit and re-flush a
-          // stale, already-recorded count from an earlier round.
-          usage.input = 0;
-          usage.output = 0;
-          usage.cachedInput = 0;
-          usage.cacheWrite = 0;
-          usage.searchCount = 0;
 
           // Collect the full assistant response content for potential tool calls
           const assistantContent: Anthropic.ContentBlock[] = [];
@@ -1362,10 +1315,6 @@ function createSSEStream(
               stopReason = event.delta.stop_reason ?? null;
             }
           }
-
-          // Record this round's spend before deciding what happens next —
-          // every round flushes, whether it's about to break or continue.
-          await flushRoundUsage();
 
           // If the model stopped due to tool use, resolve lookup_alignment calls
           if (stopReason !== "tool_use") break;
@@ -1473,9 +1422,6 @@ function createSSEStream(
           );
         }
 
-        // Budget-store recording already happened per-round (flushRoundUsage
-        // above) — this final block only covers the anonymous per-request
-        // cost telemetry below, which stays one row per whole turn.
         if (
           usage.input > 0 ||
           usage.output > 0 ||
@@ -1483,6 +1429,13 @@ function createSSEStream(
           usage.cacheWrite > 0 ||
           usage.searchCount > 0
         ) {
+          await recordUsageAsync({
+            inputTokens: usage.input,
+            outputTokens: usage.output,
+            cachedInputTokens: usage.cachedInput,
+            cacheWriteTokens: usage.cacheWrite,
+            searchCount: usage.searchCount,
+          });
           // Anonymous per-request cost telemetry. Fail-soft — a metrics
           // write failure never affects the chat response. Stores NO
           // identifier (no session, no IP, no address, no prompt text).

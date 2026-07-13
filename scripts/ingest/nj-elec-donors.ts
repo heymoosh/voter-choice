@@ -16,47 +16,41 @@
 import { requireDb } from "../../db/client";
 import { candidates, donorAggregates } from "../../db/schema";
 import { sql } from "drizzle-orm";
-import {
-  mapEmployerToBucket,
-  bucketIndividualByAmount,
-  type DonorBucketLabel,
-} from "./_bucket-mapping";
+import { mapEmployerToBucket, bucketIndividualByAmount, type DonorBucketLabel } from "./_bucket-mapping";
 
 const SOURCE = "nj_elec_bulk";
-const SOURCE_URL =
-  "https://www.njelecefilesearch.com/SearchContributionToEntity";
+const SOURCE_URL = "https://www.njelecefilesearch.com/SearchContributionToEntity";
 const ELECTION_CYCLE = "2023";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
-const ELEC_API =
-  "https://www.njelecefilesearch.com/api/VWContributionDetail/DownlodDataCSV";
+const ELEC_API = "https://www.njelecefilesearch.com/api/VWContributionDetail/DownlodDataCSV";
 
 // Nickname → legal name first-letter
 const NICKNAME_FIRST_LETTERS: Record<string, string[]> = {
-  BILL: ["W"], // William
-  BOB: ["R"], // Robert
-  TONY: ["A"], // Anthony
-  JIM: ["J"], // James
-  JOE: ["J"], // Joseph
-  MIKE: ["M"], // Michael
-  CHRIS: ["C", "P"], // Christopher or Peter
-  JAY: ["J"], // Jay
-  NICK: ["N"], // Nicholas
-  DICK: ["R"], // Richard
-  HERB: ["H"], // Herbert
-  ROB: ["R"], // Robert
-  CRAIG: ["C"],
-  WILL: ["W"], // William
-  LOU: ["L"], // Louis
-  SEAN: ["S"],
-  VIN: ["V"],
-  PARKER: ["F", "P"], // F Parker Space
-  DECLAN: ["D"],
-  GREG: ["G"],
-  GABE: ["G"],
-  GARNET: ["G"],
-  TERESA: ["M", "T"], // M Teresa Ruiz
+  "BILL": ["W"],   // William
+  "BOB": ["R"],    // Robert
+  "TONY": ["A"],   // Anthony
+  "JIM": ["J"],    // James
+  "JOE": ["J"],    // Joseph
+  "MIKE": ["M"],   // Michael
+  "CHRIS": ["C", "P"],  // Christopher or Peter
+  "JAY": ["J"],    // Jay
+  "NICK": ["N"],   // Nicholas
+  "DICK": ["R"],   // Richard
+  "HERB": ["H"],   // Herbert
+  "ROB": ["R"],    // Robert
+  "CRAIG": ["C"],
+  "WILL": ["W"],   // William
+  "LOU": ["L"],    // Louis
+  "SEAN": ["S"],
+  "VIN": ["V"],
+  "PARKER": ["F", "P"], // F Parker Space
+  "DECLAN": ["D"],
+  "GREG": ["G"],
+  "GABE": ["G"],
+  "GARNET": ["G"],
+  "TERESA": ["M", "T"], // M Teresa Ruiz
 };
 
 function norm(s: string): string {
@@ -86,9 +80,7 @@ function dbFirstLetter(fullName: string): string {
 }
 
 // Parse "LASTNAME, FIRSTNAME..." from entity name
-function parseEntityName(
-  entity: string,
-): { last: string; firstLetter: string } | null {
+function parseEntityName(entity: string): { last: string; firstLetter: string } | null {
   const commaIdx = entity.indexOf(",");
   if (commaIdx < 0) return null;
   const rawLast = entity.substring(0, commaIdx).trim();
@@ -104,23 +96,16 @@ function parseEntityName(
 }
 
 // Build matcher: entity name → DB candidate fullName
-function buildMatcher(
-  dbCandidates: Array<{ id: string; fullName: string; jurisdiction: string }>,
-) {
+function buildMatcher(dbCandidates: Array<{ id: string; fullName: string; jurisdiction: string }>) {
   // Index by last name
-  const byLast = new Map<
-    string,
-    Array<{ id: string; fullName: string; firstLetter: string; first: string }>
-  >();
+  const byLast = new Map<string, Array<{ id: string; fullName: string; firstLetter: string; first: string }>>();
 
   for (const c of dbCandidates) {
     const last = dbLastName(c.fullName);
     const firstLetter = dbFirstLetter(c.fullName);
     const first = norm(c.fullName.split(" ")[0] ?? "");
     if (!byLast.has(last)) byLast.set(last, []);
-    byLast
-      .get(last)!
-      .push({ id: c.id, fullName: c.fullName, firstLetter, first });
+    byLast.get(last)!.push({ id: c.id, fullName: c.fullName, firstLetter, first });
   }
 
   // Also index compound last names ("PINTOR MARIN" → Eliana Pintor Marin)
@@ -152,13 +137,8 @@ function buildMatcher(
       const candidate = extraMap.get(last)!;
       // Verify first letter
       const dbFirst = norm(candidate.split(" ")[0] ?? "")[0] ?? "";
-      const dbNickLetters =
-        NICKNAME_FIRST_LETTERS[norm(candidate.split(" ")[0] ?? "")] ?? [];
-      if (
-        !firstLetter ||
-        firstLetter === dbFirst ||
-        dbNickLetters.includes(firstLetter)
-      ) {
+      const dbNickLetters = NICKNAME_FIRST_LETTERS[norm(candidate.split(" ")[0] ?? "")] ?? [];
+      if (!firstLetter || firstLetter === dbFirst || dbNickLetters.includes(firstLetter)) {
         return candidate;
       }
     }
@@ -168,11 +148,7 @@ function buildMatcher(
     if (!candidates || candidates.length === 0) return null;
 
     if (candidates.length === 1) {
-      const {
-        fullName,
-        firstLetter: dbFirstLetter,
-        first: dbFirst,
-      } = candidates[0];
+      const { fullName, firstLetter: dbFirstLetter, first: dbFirst } = candidates[0];
       // Get accepted first letters for this candidate (nickname mapping)
       const nickLetters = NICKNAME_FIRST_LETTERS[dbFirst] ?? [];
       const allAccepted = [dbFirstLetter, ...nickLetters];
@@ -183,11 +159,7 @@ function buildMatcher(
     }
 
     // Multiple candidates with same last name — require first letter match
-    for (const {
-      fullName,
-      firstLetter: dbFirstLetter,
-      first: dbFirst,
-    } of candidates) {
+    for (const { fullName, firstLetter: dbFirstLetter, first: dbFirst } of candidates) {
       const nickLetters = NICKNAME_FIRST_LETTERS[dbFirst] ?? [];
       const allAccepted = [dbFirstLetter, ...nickLetters];
       if (firstLetter && allAccepted.includes(firstLetter)) {
@@ -203,7 +175,7 @@ function classifyContributorType(
   contributorType: string,
   empName: string,
   occupationName: string,
-  amount: number,
+  amount: number
 ): DonorBucketLabel | null {
   const ct = contributorType.toUpperCase().trim();
 
@@ -231,13 +203,7 @@ function classifyContributorType(
   if (ct === "CANDIDATE COMMITTEE" || ct === "POLITICAL CMTE") {
     return "Other";
   }
-  if (
-    ct === "BUSINESS/CORP" ||
-    ct === "BUSINESS/ CORP ASSOC/ PAC" ||
-    ct === "TRADE ASSOCIATION PAC" ||
-    ct === "PROFESSIONAL PAC" ||
-    ct === "REGULATED INDUSTRIES PAC"
-  ) {
+  if (ct === "BUSINESS/CORP" || ct === "BUSINESS/ CORP ASSOC/ PAC" || ct === "TRADE ASSOCIATION PAC" || ct === "PROFESSIONAL PAC" || ct === "REGULATED INDUSTRIES PAC") {
     // Try industry matching
     const industryStr = (empName + " " + occupationName).trim();
     const bucket = industryStr ? mapEmployerToBucket(industryStr) : null;
@@ -254,28 +220,14 @@ function classifyContributorType(
 
 async function downloadCsv(officeCodes: string): Promise<string> {
   const body = {
-    ENTITY_S: "",
-    NONPACOnly: "false",
-    FirstName: "",
-    LastName: "",
-    NonIndName: "",
-    OfficeCodes: officeCodes,
-    PartyCodes: "",
-    LocationCodes: "",
-    ElectionTypeCodes: "",
-    ElectionYears: "",
-    ContributorFirstName: "",
-    ContributorLastName: "",
-    ContributorMI: "",
-    ContributorSuffix: "",
-    ContributorNonIndName: "",
-    ContributorTypeCodes: "",
-    EMP_NAME: "",
-    OccupationCodes: "",
-    DateFrom: "",
-    DateTo: "",
-    AmountFrom: "",
-    AmountTo: "",
+    ENTITY_S: "", NONPACOnly: "false",
+    FirstName: "", LastName: "", NonIndName: "",
+    OfficeCodes: officeCodes, PartyCodes: "", LocationCodes: "",
+    ElectionTypeCodes: "", ElectionYears: "",
+    ContributorFirstName: "", ContributorLastName: "",
+    ContributorMI: "", ContributorSuffix: "", ContributorNonIndName: "",
+    ContributorTypeCodes: "", EMP_NAME: "", OccupationCodes: "",
+    DateFrom: "", DateTo: "", AmountFrom: "", AmountTo: "",
   };
 
   const resp = await fetch(ELEC_API, {
@@ -286,9 +238,7 @@ async function downloadCsv(officeCodes: string): Promise<string> {
   if (!resp.ok) throw new Error(`ELEC API returned ${resp.status}`);
 
   const blobUrl = (await resp.json()) as string;
-  console.log(
-    `[nj-elec] downloading CSV from blob storage for OfficeCodes=${officeCodes}`,
-  );
+  console.log(`[nj-elec] downloading CSV from blob storage for OfficeCodes=${officeCodes}`);
 
   const csvResp = await fetch(blobUrl);
   if (!csvResp.ok) throw new Error(`Blob download returned ${csvResp.status}`);
@@ -303,17 +253,13 @@ function parseCsvRow(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (ch === '"') inQuotes = false;
+      if (ch === '"' && line[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
       else field += ch;
     } else {
       if (ch === '"') inQuotes = true;
-      else if (ch === ",") {
-        fields.push(field);
-        field = "";
-      } else field += ch;
+      else if (ch === ',') { fields.push(field); field = ""; }
+      else field += ch;
     }
   }
   fields.push(field);
@@ -343,11 +289,7 @@ async function main() {
 
   // Fetch NJ candidates from DB
   const dbCandidates = await db
-    .select({
-      id: candidates.id,
-      fullName: candidates.fullName,
-      jurisdiction: candidates.jurisdiction,
-    })
+    .select({ id: candidates.id, fullName: candidates.fullName, jurisdiction: candidates.jurisdiction })
     .from(candidates)
     .where(sql`jurisdiction LIKE 'state-NJ-%'`);
 
@@ -356,7 +298,7 @@ async function main() {
   const match = buildMatcher(dbCandidates);
 
   // Build candidate lookup by fullName
-  const candByName = new Map(dbCandidates.map((c) => [c.fullName, c.id]));
+  const candByName = new Map(dbCandidates.map(c => [c.fullName, c.id]));
 
   // Download both Senate (1) and Assembly (2) CSVs
   // Note: the download endpoint ignores office filter but we filter by year ourselves
@@ -370,19 +312,14 @@ async function main() {
   let rowsSkipped = 0;
 
   function processRows(csvText: string, label: string) {
-    const lines = csvText.split(/\r?\n/).filter((l) => l.trim());
-    if (lines.length < 2) {
-      console.log(`[nj-elec] ${label} empty`);
-      return;
-    }
+    const lines = csvText.split(/\r?\n/).filter(l => l.trim());
+    if (lines.length < 2) { console.log(`[nj-elec] ${label} empty`); return; }
     const headers = parseCsvRow(lines[0]);
     const rows: CsvRow[] = [];
     for (let i = 1; i < lines.length; i++) {
       const vals = parseCsvRow(lines[i]);
       const row: Record<string, string> = {};
-      headers.forEach((h, idx) => {
-        row[h] = vals[idx] ?? "";
-      });
+      headers.forEach((h, idx) => { row[h] = vals[idx] ?? ""; });
       rows.push(row as unknown as CsvRow);
     }
     console.log(`[nj-elec] ${label} total_rows=${rows.length}`);
@@ -399,27 +336,18 @@ async function main() {
       if (!entityName) continue;
 
       const fullName = match(entityName);
-      if (!fullName) {
-        rowsSkipped++;
-        continue;
-      }
+      if (!fullName) { rowsSkipped++; continue; }
 
       const candidateId = candByName.get(fullName);
-      if (!candidateId) {
-        rowsSkipped++;
-        continue;
-      }
+      if (!candidateId) { rowsSkipped++; continue; }
 
       const bucket = classifyContributorType(
         row.ContributorType,
         row.EmpName,
         row.OccupationName,
-        amount,
+        amount
       );
-      if (!bucket) {
-        rowsSkipped++;
-        continue;
-      }
+      if (!bucket) { rowsSkipped++; continue; }
 
       const key: BucketKey = `${candidateId}::${bucket}`;
       aggregates.set(key, (aggregates.get(key) ?? 0) + amount);
@@ -430,9 +358,7 @@ async function main() {
 
   processRows(csvSenate, "senate_csv");
 
-  console.log(
-    `[nj-elec] rows_scanned=${rowsScanned} rows_matched=${rowsMatched} rows_skipped=${rowsSkipped}`,
-  );
+  console.log(`[nj-elec] rows_scanned=${rowsScanned} rows_matched=${rowsMatched} rows_skipped=${rowsSkipped}`);
   console.log(`[nj-elec] candidates_matched=${candidateMatched.size}`);
 
   // Build upsert rows
@@ -452,13 +378,9 @@ async function main() {
 
   if (DRY_RUN || upsertRows.length === 0) {
     console.log(`[nj-elec] dry_run — skipping upsert`);
-    upsertRows.slice(0, 10).forEach((r) => {
-      const name =
-        dbCandidates.find((c) => c.id === r.candidateId)?.fullName ??
-        r.candidateId;
-      console.log(
-        `  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`,
-      );
+    upsertRows.slice(0, 10).forEach(r => {
+      const name = dbCandidates.find(c => c.id === r.candidateId)?.fullName ?? r.candidateId;
+      console.log(`  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`);
     });
     return;
   }
@@ -477,11 +399,7 @@ async function main() {
         insertedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [
-          donorAggregates.candidateId,
-          donorAggregates.electionCycle,
-          donorAggregates.bucketLabel,
-        ],
+        target: [donorAggregates.candidateId, donorAggregates.electionCycle, donorAggregates.bucketLabel],
         set: {
           amountTotal: sql`excluded.amount_total`,
           source: sql`excluded.source`,
@@ -492,12 +410,7 @@ async function main() {
     upserted++;
   }
 
-  console.log(
-    `[nj-elec] complete candidates_matched=${candidateMatched.size} rows_upserted=${upserted} dry_run=${DRY_RUN}`,
-  );
+  console.log(`[nj-elec] complete candidates_matched=${candidateMatched.size} rows_upserted=${upserted} dry_run=${DRY_RUN}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(err => { console.error(err); process.exit(1); });

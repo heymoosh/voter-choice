@@ -17,44 +17,29 @@ import * as readline from "node:readline";
 import { requireDb } from "../../db/client";
 import { candidates, donorAggregates } from "../../db/schema";
 import { sql } from "drizzle-orm";
-import {
-  mapEmployerToBucket,
-  bucketIndividualByAmount,
-  type DonorBucketLabel,
-} from "./_bucket-mapping";
+import { mapEmployerToBucket, bucketIndividualByAmount, type DonorBucketLabel } from "./_bucket-mapping";
 
 const SOURCE = "tn_camp_bulk";
 const SOURCE_URL = "https://apps.tn.gov/tncamp/public/cesearch.htm";
 const _tnCycleIdx = process.argv.indexOf("--election-cycle");
-const ELECTION_CYCLE =
-  _tnCycleIdx !== -1 ? (process.argv[_tnCycleIdx + 1] ?? "2024") : "2024";
+const ELECTION_CYCLE = _tnCycleIdx !== -1 ? (process.argv[_tnCycleIdx + 1] ?? "2024") : "2024";
 const _tnFileIdx = process.argv.indexOf("--file");
-const DATA_FILE =
-  _tnFileIdx !== -1
-    ? (process.argv[_tnFileIdx + 1] ?? "/tmp/tn_all.csv")
-    : "/tmp/tn_all.csv";
+const DATA_FILE = _tnFileIdx !== -1 ? (process.argv[_tnFileIdx + 1] ?? "/tmp/tn_all.csv") : "/tmp/tn_all.csv";
 
 const DRY_RUN = process.argv.includes("--dry-run");
 
 function norm(s: string): string {
-  return s
-    .toUpperCase()
-    .replace(/['']/g, "")
-    .replace(/[-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return s.toUpperCase().replace(/['']/g, "").replace(/[-]/g, " ").replace(/\s+/g, " ").trim();
 }
 
-function parseTnName(
-  recipientName: string,
-): { last: string; first: string } | null {
+function parseTnName(recipientName: string): { last: string; first: string } | null {
   const commaIdx = recipientName.indexOf(",");
   if (commaIdx < 0) return null;
   // Handle "LAST, JR., FIRST" → last = "LAST JR", first = "FIRST"
   const rawLast = recipientName.substring(0, commaIdx).trim();
   const rest = recipientName.substring(commaIdx + 1).trim();
   // Skip Jr/Sr/III suffixes in the middle
-  const parts = rest.split(",").map((s) => s.trim());
+  const parts = rest.split(",").map(s => s.trim());
   let first = parts[0] ?? "";
   let lastFull = rawLast;
   // If first part is a suffix like "JR." or "SR.", skip it
@@ -67,10 +52,7 @@ function parseTnName(
 
 // Build matcher: TN "LAST, FIRST" → DB fullName
 function buildMatcher(dbCandidates: Array<{ id: string; fullName: string }>) {
-  const byLast = new Map<
-    string,
-    Array<{ id: string; fullName: string; first: string }>
-  >();
+  const byLast = new Map<string, Array<{ id: string; fullName: string; first: string }>>();
 
   for (const c of dbCandidates) {
     const parts = norm(c.fullName).split(" ").filter(Boolean);
@@ -86,17 +68,11 @@ function buildMatcher(dbCandidates: Array<{ id: string; fullName: string }>) {
     if (cache.has(recipientName)) return cache.get(recipientName) ?? null;
 
     const parsed = parseTnName(recipientName);
-    if (!parsed) {
-      cache.set(recipientName, null);
-      return null;
-    }
+    if (!parsed) { cache.set(recipientName, null); return null; }
 
     const { last, first } = parsed;
     const candidates = byLast.get(last);
-    if (!candidates || candidates.length === 0) {
-      cache.set(recipientName, null);
-      return null;
-    }
+    if (!candidates || candidates.length === 0) { cache.set(recipientName, null); return null; }
 
     let match: string | null = null;
     if (candidates.length === 1) {
@@ -119,12 +95,7 @@ function buildMatcher(dbCandidates: Array<{ id: string; fullName: string }>) {
   };
 }
 
-function classifyContribution(
-  type: string,
-  occupation: string,
-  employer: string,
-  amount: number,
-): DonorBucketLabel | null {
+function classifyContribution(type: string, occupation: string, employer: string, amount: number): DonorBucketLabel | null {
   const t = (type || "").toUpperCase().trim();
   if (t === "INKIND" || t === "IN-KIND") return "Other";
 
@@ -144,17 +115,13 @@ function parseCsvLine(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (ch === '"') inQuotes = false;
+      if (ch === '"' && line[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
       else field += ch;
     } else {
       if (ch === '"') inQuotes = true;
-      else if (ch === ",") {
-        fields.push(field);
-        field = "";
-      } else field += ch;
+      else if (ch === ',') { fields.push(field); field = ""; }
+      else field += ch;
     }
   }
   fields.push(field);
@@ -178,7 +145,7 @@ async function main() {
   console.log(`[tn-camp] db_candidates=${dbCandidates.length}`);
 
   const match = buildMatcher(dbCandidates);
-  const candIdByName = new Map(dbCandidates.map((c) => [c.fullName, c.id]));
+  const candIdByName = new Map(dbCandidates.map(c => [c.fullName, c.id]));
 
   const aggregates = new Map<string, number>();
   const matched = new Set<string>();
@@ -186,25 +153,20 @@ async function main() {
   let rowsMatched = 0;
   let headers: string[] = [];
 
-  const rl = readline.createInterface({
-    input: fs.createReadStream(DATA_FILE),
-    crlfDelay: Infinity,
-  });
+  const rl = readline.createInterface({ input: fs.createReadStream(DATA_FILE), crlfDelay: Infinity });
 
   for await (const line of rl) {
     if (!line.trim()) continue;
     const vals = parseCsvLine(line);
 
     if (headers.length === 0) {
-      headers = vals.map((h) => h.trim());
+      headers = vals.map(h => h.trim());
       continue;
     }
 
     rowsScanned++;
     const row: Record<string, string> = {};
-    headers.forEach((h, i) => {
-      row[h] = (vals[i] ?? "").trim();
-    });
+    headers.forEach((h, i) => { row[h] = (vals[i] ?? "").trim(); });
 
     const recipientName = row["Recipient Name"] ?? "";
     const fullName = match(recipientName);
@@ -221,12 +183,7 @@ async function main() {
     const occupation = row["Contributor Occupation"] ?? "";
     const employer = row["Contributor Employer"] ?? "";
 
-    const bucket = classifyContribution(
-      contribType,
-      occupation,
-      employer,
-      amount,
-    );
+    const bucket = classifyContribution(contribType, occupation, employer, amount);
     if (!bucket) continue;
 
     const key = `${candidateId}::${bucket}`;
@@ -235,31 +192,21 @@ async function main() {
     rowsMatched++;
   }
 
-  console.log(
-    `[tn-camp] rows_scanned=${rowsScanned} rows_matched=${rowsMatched}`,
-  );
+  console.log(`[tn-camp] rows_scanned=${rowsScanned} rows_matched=${rowsMatched}`);
   console.log(`[tn-camp] candidates_matched=${matched.size}`);
 
   const upsertRows = Array.from(aggregates.entries()).map(([key, total]) => {
     const [candidateId, bucket] = key.split("::");
-    return {
-      candidateId,
-      bucketLabel: bucket as DonorBucketLabel,
-      amountTotal: total,
-    };
+    return { candidateId, bucketLabel: bucket as DonorBucketLabel, amountTotal: total };
   });
 
   console.log(`[tn-camp] rows_to_upsert=${upsertRows.length}`);
 
   if (DRY_RUN || upsertRows.length === 0) {
     console.log(`[tn-camp] dry_run — skipping upsert`);
-    upsertRows.slice(0, 10).forEach((r) => {
-      const name =
-        dbCandidates.find((c) => c.id === r.candidateId)?.fullName ??
-        r.candidateId;
-      console.log(
-        `  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`,
-      );
+    upsertRows.slice(0, 10).forEach(r => {
+      const name = dbCandidates.find(c => c.id === r.candidateId)?.fullName ?? r.candidateId;
+      console.log(`  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`);
     });
     return;
   }
@@ -278,11 +225,7 @@ async function main() {
         insertedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [
-          donorAggregates.candidateId,
-          donorAggregates.electionCycle,
-          donorAggregates.bucketLabel,
-        ],
+        target: [donorAggregates.candidateId, donorAggregates.electionCycle, donorAggregates.bucketLabel],
         set: {
           amountTotal: sql`excluded.amount_total`,
           source: sql`excluded.source`,
@@ -293,12 +236,7 @@ async function main() {
     upserted++;
   }
 
-  console.log(
-    `[tn-camp] complete candidates_matched=${matched.size} rows_upserted=${upserted} dry_run=${DRY_RUN}`,
-  );
+  console.log(`[tn-camp] complete candidates_matched=${matched.size} rows_upserted=${upserted} dry_run=${DRY_RUN}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(err => { console.error(err); process.exit(1); });

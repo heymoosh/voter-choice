@@ -19,11 +19,7 @@ function env(name: string): string {
     const t = line.trim();
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...rest] = t.split("=");
-    if (k.trim() === name)
-      return rest
-        .join("=")
-        .trim()
-        .replace(/^["']|["']$/g, "");
+    if (k.trim() === name) return rest.join("=").trim().replace(/^["']|["']$/g, "");
   }
   throw new Error(`${name} not found in .env.alignment`);
 }
@@ -43,27 +39,17 @@ async function getBill(ocdId: string, apiKey: string) {
   let capMs = 8000;
   for (let attempt = 0; attempt <= 6; attempt++) {
     const res = await fetch(url.href, {
-      headers: {
-        "user-agent": "voter-choice-summary-recovery",
-        "X-API-KEY": apiKey,
-      },
+      headers: { "user-agent": "voter-choice-summary-recovery", "X-API-KEY": apiKey },
     });
     if (res.status === 429) {
       const retryAfter = Number(res.headers.get("Retry-After")) || 0;
-      const waitMs = retryAfter
-        ? retryAfter * 1000
-        : Math.floor(Math.random() * capMs);
-      console.warn(
-        `  429 rate-limited; wait ${waitMs}ms (attempt ${attempt + 1})`,
-      );
+      const waitMs = retryAfter ? retryAfter * 1000 : Math.floor(Math.random() * capMs);
+      console.warn(`  429 rate-limited; wait ${waitMs}ms (attempt ${attempt + 1})`);
       await sleep(waitMs);
       capMs *= 2;
       continue;
     }
-    return {
-      status: res.status,
-      body: res.status === 200 ? await res.json() : await res.text(),
-    };
+    return { status: res.status, body: res.status === 200 ? await res.json() : await res.text() };
   }
   return { status: 429, body: "exhausted retries" };
 }
@@ -84,10 +70,7 @@ async function main() {
   console.log(`Pilot: ${bills.length} null-summary tagged openstates bills\n`);
   const results: any[] = [];
   const media: Record<string, number> = {};
-  let withVersion = 0,
-    http200 = 0,
-    errors = 0,
-    has429 = 0;
+  let withVersion = 0, http200 = 0, errors = 0, has429 = 0;
 
   for (const b of bills) {
     const ocd = toOcdId(b.id);
@@ -100,43 +83,26 @@ async function main() {
       continue;
     }
     http200++;
-    const versions = Array.isArray((body as any).versions)
-      ? (body as any).versions
-      : [];
-    const links = versions.flatMap((v: any) =>
-      Array.isArray(v.links) ? v.links : [],
-    );
+    const versions = Array.isArray((body as any).versions) ? (body as any).versions : [];
+    const links = versions.flatMap((v: any) => Array.isArray(v.links) ? v.links : []);
     if (links.length > 0) {
       withVersion++;
-      for (const l of links)
-        media[l.media_type ?? "unknown"] =
-          (media[l.media_type ?? "unknown"] ?? 0) + 1;
+      for (const l of links) media[l.media_type ?? "unknown"] = (media[l.media_type ?? "unknown"] ?? 0) + 1;
     }
-    const best =
-      links.find((l: any) => /html/.test(l.media_type ?? "")) ?? links[0];
+    const best = links.find((l: any) => /html/.test(l.media_type ?? "")) ?? links[0];
     results.push({
-      id: b.id,
-      status,
-      jurisdiction: b.jurisdiction,
-      n_versions: versions.length,
-      n_links: links.length,
+      id: b.id, status, jurisdiction: b.jurisdiction,
+      n_versions: versions.length, n_links: links.length,
       best: best ? { media_type: best.media_type, url: best.url } : null,
       title: b.title.slice(0, 70),
     });
     await sleep(250); // polite throttle
   }
 
-  writeFileSync(
-    "scripts/ingest/_pole-batches/_summary-pilot.json",
-    JSON.stringify(results, null, 2),
-  );
+  writeFileSync("scripts/ingest/_pole-batches/_summary-pilot.json", JSON.stringify(results, null, 2));
   console.log("\n=== PILOT RESULTS ===");
-  console.log(
-    `HTTP 200: ${http200}/${bills.length} · errors: ${errors} · had-429: ${has429}`,
-  );
-  console.log(
-    `With >=1 fetchable version: ${withVersion}/${http200} (${Math.round((withVersion / Math.max(http200, 1)) * 100)}% yield)`,
-  );
+  console.log(`HTTP 200: ${http200}/${bills.length} · errors: ${errors} · had-429: ${has429}`);
+  console.log(`With >=1 fetchable version: ${withVersion}/${http200} (${Math.round((withVersion / Math.max(http200, 1)) * 100)}% yield)`);
   console.log(`Media types:`, media);
   console.log(`\nFirst 6 with versions:`);
   for (const r of results.filter((r) => r.best).slice(0, 6))
@@ -144,7 +110,4 @@ async function main() {
   console.log(`\nDetails → scripts/ingest/_pole-batches/_summary-pilot.json`);
 }
 
-main().catch((e) => {
-  console.error("PILOT FAILED:", e.message);
-  process.exit(1);
-});
+main().catch((e) => { console.error("PILOT FAILED:", e.message); process.exit(1); });

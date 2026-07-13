@@ -51,8 +51,7 @@ const NE_BULK_URL =
   "https://nadc-e.nebraska.gov/PublicSite/Docs/BulkDataDownloads/2024_ContributionLoanExtract.csv.zip";
 const DEFAULT_CSV_PATH = "/tmp/NE_2024_contributions.zip";
 const _cycleIdx = process.argv.indexOf("--election-cycle");
-const ELECTION_CYCLE =
-  _cycleIdx !== -1 ? (process.argv[_cycleIdx + 1] ?? "2024") : "2024";
+const ELECTION_CYCLE = _cycleIdx !== -1 ? (process.argv[_cycleIdx + 1] ?? "2024") : "2024";
 const SOURCE = "ne_nadc_bulk";
 const SOURCE_URL = "https://nadc-e.nebraska.gov/PublicSite/DataDownload.aspx";
 
@@ -114,8 +113,7 @@ function resolveConfig(argv: string[] = process.argv): IngestConfig {
     if (Number.isInteger(parsed) && parsed > 0) limit = parsed;
   }
   const localFileIdx = argv.indexOf("--local-file");
-  const localFile =
-    localFileIdx !== -1 ? (argv[localFileIdx + 1] ?? null) : null;
+  const localFile = localFileIdx !== -1 ? (argv[localFileIdx + 1] ?? null) : null;
   return { dryRun, limit, localFile };
 }
 
@@ -243,7 +241,9 @@ function normalizeStr(name: string): string {
 const NAME_SUFFIXES = new Set(["JR", "SR", "II", "III", "IV"]);
 
 function extractLastNameFromCsvName(candidateName: string): string {
-  const tokens = normalizeStr(candidateName).split(/\s+/u).filter(Boolean);
+  const tokens = normalizeStr(candidateName)
+    .split(/\s+/u)
+    .filter(Boolean);
   if (tokens.length === 0) return "";
 
   // Walk backwards, skip known suffixes
@@ -640,13 +640,13 @@ export async function ingestNeNadcDonors({
 
   // Step 2: Build last-name index
   const byLastName = buildLastNameIndex(dbCandidates);
-  console.log(`[ne-nadc-donors] unique_last_names_indexed=${byLastName.size}`);
+  console.log(
+    `[ne-nadc-donors] unique_last_names_indexed=${byLastName.size}`,
+  );
 
   // Step 3: Stream ZIP CSV and aggregate
-  const { agg, candidateMatchedNames, counters } = await aggregateContributions(
-    csvPath,
-    byLastName,
-  );
+  const { agg, candidateMatchedNames, counters } =
+    await aggregateContributions(csvPath, byLastName);
 
   console.log(
     `[ne-nadc-donors] total_rows_processed=${counters.processed} matched_contributions=${counters.filtered}`,

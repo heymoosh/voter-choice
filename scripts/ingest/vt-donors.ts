@@ -171,7 +171,9 @@ async function main() {
       sql`${candidates.jurisdiction} = 'state-VT-senate'`,
     )) as DbCandidate[];
 
-  console.log(`[vt] DB: house=${vtHouse.length} senate=${vtSenate.length}`);
+  console.log(
+    `[vt] DB: house=${vtHouse.length} senate=${vtSenate.length}`,
+  );
 
   // Build last-name index
   const lastNameIdx = new Map<string, DbCandidate[]>();

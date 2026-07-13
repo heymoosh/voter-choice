@@ -147,19 +147,13 @@ async function main() {
   const akHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-AK-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-AK-house'`)) as DbCandidate[];
   const akSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-AK-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-AK-senate'`)) as DbCandidate[];
 
-  console.log(
-    `[ak-apoc] DB: house=${akHouse.length} senate=${akSenate.length}`,
-  );
+  console.log(`[ak-apoc] DB: house=${akHouse.length} senate=${akSenate.length}`);
 
   // Build last-name index per chamber
   const houseIdx = new Map<string, DbCandidate[]>();
@@ -190,16 +184,9 @@ async function main() {
   let headers: string[] | null = null;
 
   // Column indices (resolved after reading header)
-  let txTypeIdx = -1,
-    payTypeIdx = -1,
-    officeIdx = -1,
-    filerTypeIdx = -1;
-  let nameIdx = -1,
-    lastNameIdx = -1,
-    firstNameIdx = -1;
-  let occupationIdx = -1,
-    employerIdx = -1,
-    amountIdx = -1;
+  let txTypeIdx = -1, payTypeIdx = -1, officeIdx = -1, filerTypeIdx = -1;
+  let nameIdx = -1, lastNameIdx = -1, firstNameIdx = -1;
+  let occupationIdx = -1, employerIdx = -1, amountIdx = -1;
 
   for await (const line of rl) {
     const trimmed = line.trim();
@@ -223,58 +210,36 @@ async function main() {
     const cols = parseCsvLine(trimmed);
 
     // Only Candidate filers
-    if ((cols[filerTypeIdx] ?? "").trim() !== "Candidate") {
-      rowsSkipped++;
-      continue;
-    }
+    if ((cols[filerTypeIdx] ?? "").trim() !== "Candidate") { rowsSkipped++; continue; }
     // Only Income transactions
-    if ((cols[txTypeIdx] ?? "").trim() !== "Income") {
-      rowsSkipped++;
-      continue;
-    }
+    if ((cols[txTypeIdx] ?? "").trim() !== "Income") { rowsSkipped++; continue; }
     // Only House or Senate
     const office = (cols[officeIdx] ?? "").trim();
-    if (office !== "House" && office !== "Senate") {
-      rowsSkipped++;
-      continue;
-    }
+    if (office !== "House" && office !== "Senate") { rowsSkipped++; continue; }
 
     // Parse amount
     const amountStr = (cols[amountIdx] ?? "").replace(/[$,]/g, "");
     const amount = parseFloat(amountStr);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!Number.isFinite(amount) || amount <= 0) { rowsSkipped++; continue; }
 
     // Match candidate
     const candidateName = (cols[nameIdx] ?? "").trim();
-    if (!candidateName) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!candidateName) { rowsSkipped++; continue; }
     const lastName = extractLastName(candidateName);
     const firstInitial = extractFirstInitial(candidateName);
-    if (!lastName) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!lastName) { rowsSkipped++; continue; }
 
     const idx = office === "House" ? houseIdx : senateIdx;
     const dbCandidates = idx.get(lastName);
-    if (!dbCandidates || dbCandidates.length === 0) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!dbCandidates || dbCandidates.length === 0) { rowsSkipped++; continue; }
 
     let dbMatch: DbCandidate;
     if (dbCandidates.length === 1) {
       dbMatch = dbCandidates[0]!;
     } else {
       dbMatch =
-        dbCandidates.find(
-          (c) => extractFirstInitial(c.fullName) === firstInitial,
-        ) ?? dbCandidates[0]!;
+        dbCandidates.find((c) => extractFirstInitial(c.fullName) === firstInitial) ??
+        dbCandidates[0]!;
     }
 
     // Classify into bucket

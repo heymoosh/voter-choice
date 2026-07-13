@@ -5,12 +5,10 @@ import {
   releaseSession,
   _resetForTesting,
 } from "./rate-limit";
-import { _resetDurableStoreWarningForTesting } from "./durable-store";
 
 describe("rate-limit", () => {
   beforeEach(() => {
     _resetForTesting();
-    _resetDurableStoreWarningForTesting();
   });
 
   afterEach(() => {
@@ -166,35 +164,6 @@ describe("rate-limit", () => {
       const result = await checkRateLimitAsync("1.2.3.4", "sess-err", 1);
       expect(result.allowed).toBe(false);
       expect(result.code).toBe("RATE_LIMIT_UNAVAILABLE");
-    });
-  });
-
-  describe("durable store unconfigured in production (fail closed)", () => {
-    // KV env deliberately left unset for this block.
-    it("denies rather than falling back to per-instance memory in prod", async () => {
-      vi.stubEnv("NODE_ENV", "production");
-      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-      const result = await checkRateLimitAsync("1.2.3.4", "sess-1", 1);
-
-      expect(result.allowed).toBe(false);
-      expect(result.code).toBe("RATE_LIMIT_UNAVAILABLE");
-      // No fetch means no durable path; deny came from the unconfigured guard.
-      // A single loud structured warning is emitted.
-      expect(errSpy).toHaveBeenCalledTimes(1);
-      expect(String(errSpy.mock.calls[0][0])).toContain(
-        "durable_store_unconfigured",
-      );
-    });
-
-    it("dev/test with unconfigured store keeps in-memory fallback (allowed)", async () => {
-      // NODE_ENV is "test" here (not production) → no fail-closed.
-      const errSpy = vi.spyOn(console, "error").mockImplementation(() => {});
-
-      const result = await checkRateLimitAsync("1.2.3.4", "sess-1", 1);
-
-      expect(result.allowed).toBe(true);
-      expect(errSpy).not.toHaveBeenCalled();
     });
   });
 });

@@ -1400,7 +1400,8 @@
 
 /* party pip — the design's bare .pip (prototype.css scopes it to .cand-card) */
 .mgap .pip,
-.median-chip .pip {
+.median-chip .pip,
+.h2hm .pip {
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -1408,15 +1409,18 @@
   flex-shrink: 0;
 }
 .mgap .pip.dem,
-.median-chip .pip.dem {
+.median-chip .pip.dem,
+.h2hm .pip.dem {
   background: oklch(0.45 0.16 262);
 }
 .mgap .pip.rep,
-.median-chip .pip.rep {
+.median-chip .pip.rep,
+.h2hm .pip.rep {
   background: var(--vote-red);
 }
 .mgap .pip.ind,
-.median-chip .pip.ind {
+.median-chip .pip.ind,
+.h2hm .pip.ind {
   background: var(--gold);
 }
 
@@ -1719,6 +1723,179 @@
   left: 33%;
   width: 1.5px;
   background: var(--mg-line);
+}
+
+/* =========================================================
+   HEAD-TO-HEAD — the money gap, two-up (compare flow)
+   ========================================================= */
+.h2hm {
+  display: flex;
+  flex-direction: column;
+  background: var(--paper);
+}
+.h2hm-top {
+  padding: 17px 0 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.h2hm-top h2 {
+  font-family: var(--serif);
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+.h2hm-top .ctx {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+.h2hm-switch {
+  display: inline-flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.h2hm-switch button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  padding: 8px 13px;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.h2hm-switch button.on {
+  border-color: var(--civic);
+  background: var(--civic-soft);
+  color: var(--civic-2);
+  box-shadow: 0 0 0 2px var(--civic-soft);
+}
+.h2hm-switch button .p {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+}
+
+.h2hm-ratio {
+  margin-top: 20px;
+  padding: 18px 22px;
+  border-radius: 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.h2hm-ratio .big {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 46px;
+  line-height: 0.95;
+  color: var(--mg-overink);
+  letter-spacing: -0.02em;
+}
+.h2hm-ratio .big small {
+  font-size: 22px;
+  color: var(--ink-3);
+  font-weight: 500;
+}
+.h2hm-ratio .txt {
+  font-size: 14px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  flex: 1;
+  min-width: 240px;
+}
+.h2hm-ratio .txt b {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.h2hm-foot {
+  margin-top: 18px;
+  padding-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  border-top: 1px solid var(--rule-2);
+}
+.h2hm-pac {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  flex: 1;
+  min-width: 260px;
+}
+.h2hm-pac .blk {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.h2hm-pac .blk .v {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.h2hm-pac .blk .k {
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.h2hm-pac .vs {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+.h2hm-actions {
+  display: flex;
+  gap: 11px;
+}
+.h2hm-keepbtn {
+  min-height: 48px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  cursor: pointer;
+  border: 1.5px solid var(--rule);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.h2hm-repbtn {
+  min-height: 48px;
+  padding: 0 22px;
+  border-radius: 11px;
+  font-family: var(--sans);
+  font-weight: 700;
+  font-size: 14px;
+  cursor: pointer;
+  border: 1.5px solid var(--vote-red);
+  background: var(--vote-red);
+  color: var(--paper-2);
+  box-shadow: var(--shadow-soft);
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  white-space: nowrap;
 }
 
 /* stacked / compact form < ~560px (the responsive P0 in the spec §2a) */

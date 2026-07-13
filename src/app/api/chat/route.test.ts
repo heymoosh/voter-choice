@@ -98,10 +98,7 @@ vi.mock("@anthropic-ai/sdk", async () => {
 import { POST } from "./route";
 import { SAFETY_HEADER } from "../../../lib/prompts/safety-header";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
-import {
-  getBudgetStatusAsync,
-  recordUsageAsync,
-} from "../../../lib/server/budget";
+import { getBudgetStatusAsync } from "../../../lib/server/budget";
 import {
   resolveCandidateId,
   lookupAlignment,
@@ -1522,92 +1519,5 @@ describe("POST /api/chat — in-flight budget circuit-breaker", () => {
     // Exactly one research call ran — the flip aborted the loop before round 2
     // could spend any more budget.
     expect(runResearchSubAgent).toHaveBeenCalledTimes(1);
-  });
-});
-
-describe("POST /api/chat — per-round usage recording", () => {
-  it("records usage after each round individually, with each round's OWN tokens — not a single end-of-turn call carrying only the last round's numbers", async () => {
-    vi.stubEnv("PROMPT_FLEET_V2", "1");
-    vi.mocked(runResearchSubAgent).mockResolvedValue({
-      summary: "round 1 result",
-      usage: { input: 0, output: 0, searchCount: 0 },
-    });
-
-    // Round 1: a tool-use round (toolUseStream's own usage: input 20,
-    // output 8). Round 2: the final text round (simpleTextStream's own
-    // usage: input 10, output 5). Anthropic's per-round usage is NOT
-    // cumulative across calls, so these two rounds must be recorded
-    // separately, each with its own numbers.
-    queueStreams(
-      toolUseStream("research_candidate", "toolu_1", {
-        candidate_name: "First",
-        jurisdiction: "TX-governor",
-        topic: "background",
-      }),
-      simpleTextStream("done"),
-    );
-
-    const res = await POST(raceRequest() as never);
-    await drainResponseBody(res);
-
-    expect(recordUsageAsync).toHaveBeenCalledTimes(2);
-    expect(vi.mocked(recordUsageAsync).mock.calls[0][0]).toEqual({
-      inputTokens: 20,
-      outputTokens: 8,
-      cachedInputTokens: 0,
-      cacheWriteTokens: 0,
-      searchCount: 0,
-    });
-    expect(vi.mocked(recordUsageAsync).mock.calls[1][0]).toEqual({
-      inputTokens: 10,
-      outputTokens: 5,
-      cachedInputTokens: 0,
-      cacheWriteTokens: 0,
-      searchCount: 0,
-    });
-  });
-
-  it("does not carry a stale searchCount from an earlier round into a later round with no search tool use", async () => {
-    // Round 1 reports a server-side web search; round 2 (final) reports
-    // none. Without the per-round reset, round 2's flush would silently
-    // re-record round 1's stale search count.
-    const roundOneStream = toolUseStream("lookup_alignment", "toolu_1", {
-      candidate_name: "First",
-      jurisdiction: "TX-governor",
-      canonical_issue: "healthcare",
-      resolved_stance: "in_favor",
-    });
-    const roundOneEventsWithSearch = {
-      async *[Symbol.asyncIterator]() {
-        for await (const event of roundOneStream) {
-          if (event.type === "message_delta") {
-            yield {
-              ...event,
-              usage: {
-                ...(event as { usage?: object }).usage,
-                server_tool_use: { web_search_requests: 3 },
-              },
-            } as Anthropic.MessageStreamEvent;
-          } else {
-            yield event;
-          }
-        }
-      },
-    };
-
-    queueStreams(roundOneEventsWithSearch, simpleTextStream("done"));
-
-    const res = await POST(raceRequest() as never);
-    await drainResponseBody(res);
-
-    expect(recordUsageAsync).toHaveBeenCalledTimes(2);
-    expect(
-      (vi.mocked(recordUsageAsync).mock.calls[0][0] as { searchCount: number })
-        .searchCount,
-    ).toBe(3);
-    expect(
-      (vi.mocked(recordUsageAsync).mock.calls[1][0] as { searchCount: number })
-        .searchCount,
-    ).toBe(0);
   });
 });

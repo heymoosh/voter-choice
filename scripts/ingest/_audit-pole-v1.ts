@@ -20,10 +20,7 @@ function loadAlignmentUrl(): string {
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...rest] = t.split("=");
     if (k.trim() === "ALIGNMENT_DATABASE_URL") {
-      return rest
-        .join("=")
-        .trim()
-        .replace(/^["']|["']$/g, "");
+      return rest.join("=").trim().replace(/^["']|["']$/g, "");
     }
   }
   throw new Error("ALIGNMENT_DATABASE_URL not found in .env.alignment");
@@ -55,19 +52,14 @@ async function main() {
       ORDER BY 1, 2`;
     console.log("\n## issue_tags_pole_v1 by (canonical_issue, pole_stance):");
     for (const r of poleDist) {
-      console.log(
-        `  ${r.canonical_issue.padEnd(24)} ${String(r.pole_stance).padEnd(10)} ${r.n}`,
-      );
+      console.log(`  ${r.canonical_issue.padEnd(24)} ${String(r.pole_stance).padEnd(10)} ${r.n}`);
     }
-    const poleTotal =
-      await sql`SELECT count(*)::int AS n FROM issue_tags_pole_v1`;
+    const poleTotal = await sql`SELECT count(*)::int AS n FROM issue_tags_pole_v1`;
     console.log(`  -- pole_v1 TOTAL: ${poleTotal[0].n}`);
 
     const poleIssues = await sql`
       SELECT DISTINCT canonical_issue FROM issue_tags_pole_v1 ORDER BY 1`;
-    console.log(
-      `\n## Distinct issues re-tagged in pole_v1 (${poleIssues.length}):`,
-    );
+    console.log(`\n## Distinct issues re-tagged in pole_v1 (${poleIssues.length}):`);
     console.log("  " + poleIssues.map((r) => r.canonical_issue).join(", "));
   }
 
@@ -78,22 +70,17 @@ async function main() {
     GROUP BY 1
     ORDER BY 2 DESC`;
   const oldTotal = await sql`SELECT count(*)::int AS n FROM issue_tags`;
-  console.log(
-    `\n## issue_tags (old) by canonical_issue — TOTAL ${oldTotal[0].n} (expect 42,506):`,
-  );
+  console.log(`\n## issue_tags (old) by canonical_issue — TOTAL ${oldTotal[0].n} (expect 42,506):`);
   for (const r of oldDist) {
     console.log(`  ${r.canonical_issue.padEnd(28)} ${r.n}`);
   }
 
   // 3) energy_grid focus — the issue RETAG_PLAN lists but HANDOFF didn't account for.
-  const egOld =
-    await sql`SELECT count(*)::int AS n FROM issue_tags WHERE canonical_issue = 'energy_grid'`;
+  const egOld = await sql`SELECT count(*)::int AS n FROM issue_tags WHERE canonical_issue = 'energy_grid'`;
   const egNew = poleExists[0].exists
     ? await sql`SELECT count(*)::int AS n FROM issue_tags_pole_v1 WHERE canonical_issue = 'energy_grid'`
     : [{ n: 0 }];
-  console.log(
-    `\n## energy_grid: old issue_tags=${egOld[0].n}  pole_v1=${egNew[0].n}`,
-  );
+  console.log(`\n## energy_grid: old issue_tags=${egOld[0].n}  pole_v1=${egNew[0].n}`);
   console.log(
     egNew[0].n === 0 && egOld[0].n > 0
       ? "  -> NOT re-tagged. It is a 12th contested issue and joins Step 1."

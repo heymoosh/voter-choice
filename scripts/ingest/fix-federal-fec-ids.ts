@@ -39,9 +39,7 @@ function extractStateFromName(name: string): string {
 
 function extractLastName(fullName: string): string {
   // "Rep. Robert Aderholt [R-AL4]" → "Aderholt"
-  const stripped = fullName
-    .replace(/^(Rep\.|Sen\.)\s+/, "")
-    .replace(/\s*\[.*\]$/, "");
+  const stripped = fullName.replace(/^(Rep\.|Sen\.)\s+/, "").replace(/\s*\[.*\]$/, "");
   const parts = stripped.trim().split(/\s+/);
   return parts[parts.length - 1] ?? fullName;
 }
@@ -62,9 +60,7 @@ async function lookupFecId(
   const url = `${FEC_BASE}/candidates/?${params}`;
   const res = await fetch(url);
   if (!res.ok) return null;
-  const data = (await res.json()) as {
-    results?: Array<{ candidate_id: string; name: string }>;
-  };
+  const data = (await res.json()) as { results?: Array<{ candidate_id: string; name: string }> };
   const results = data.results ?? [];
   if (results.length === 0) return null;
   // Pick best match — first result ordered by receipts descending
@@ -109,9 +105,7 @@ async function main() {
     const lastName = extractLastName(row.fullName);
 
     if (!state) {
-      console.log(
-        `[fix-fec] no_state candidate=${row.id} name="${row.fullName}"`,
-      );
+      console.log(`[fix-fec] no_state candidate=${row.id} name="${row.fullName}"`);
       failed++;
       continue;
     }
@@ -120,9 +114,7 @@ async function main() {
 
     const fecId = await lookupFecId(lastName, state, office);
     if (!fecId) {
-      console.log(
-        `[fix-fec] not_found candidate=${row.id} name="${row.fullName}"`,
-      );
+      console.log(`[fix-fec] not_found candidate=${row.id} name="${row.fullName}"`);
       failed++;
       continue;
     }
@@ -130,10 +122,7 @@ async function main() {
     // Patch raw_metadata.fec.candidate_id
     const updated = {
       ...meta,
-      fec: {
-        ...((meta.fec as Record<string, unknown>) ?? {}),
-        candidate_id: fecId,
-      },
+      fec: { ...(meta.fec as Record<string, unknown> ?? {}), candidate_id: fecId },
     };
 
     await db

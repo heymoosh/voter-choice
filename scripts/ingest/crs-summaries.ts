@@ -176,7 +176,10 @@ function buildCacheKey(bill: CrsBillIdentity): string {
 const RETRYABLE = new Set([429, 502, 503, 504]);
 const MAX_RETRIES = 3;
 
-function buildSummariesUrl(bill: CrsBillIdentity, config: CrsConfig): string {
+function buildSummariesUrl(
+  bill: CrsBillIdentity,
+  config: CrsConfig,
+): string {
   const base = `${config.congressGovBaseUrl}/bill/${bill.congress}/${bill.type.toLowerCase()}/${bill.number}/summaries`;
   const parsed = new URL(base);
   parsed.searchParams.set("format", "json");

@@ -47,15 +47,12 @@ async function main() {
     process.exit(1);
   }
 
-  const countyKeys =
-    (await redisCommand<string[]>(["KEYS", COUNTY_PATTERN])) ?? [];
+  const countyKeys = (await redisCommand<string[]>(["KEYS", COUNTY_PATTERN])) ?? [];
   const stateKeysBefore =
     (await redisCommand<string[]>(["KEYS", STATE_PATTERN])) ?? [];
 
   console.log(`[purge] county keys matched : ${countyKeys.length}`);
-  console.log(
-    `[purge] state keys present  : ${stateKeysBefore.length} (must stay untouched)`,
-  );
+  console.log(`[purge] state keys present  : ${stateKeysBefore.length} (must stay untouched)`);
   if (countyKeys.length > 0) {
     console.log("[purge] sample county keys:");
     for (const k of countyKeys.slice(0, 10)) console.log(`         ${k}`);
@@ -88,31 +85,20 @@ async function main() {
   for (const batch of chunk(countyKeys, BATCH)) {
     const n = (await redisCommand<number>(["UNLINK", ...batch])) ?? 0;
     deleted += n;
-    console.log(
-      `[purge] unlinked batch of ${batch.length} (running total: ${deleted})`,
-    );
+    console.log(`[purge] unlinked batch of ${batch.length} (running total: ${deleted})`);
   }
 
   // Verify.
-  const countyAfter =
-    (await redisCommand<string[]>(["KEYS", COUNTY_PATTERN])) ?? [];
-  const stateAfter =
-    (await redisCommand<string[]>(["KEYS", STATE_PATTERN])) ?? [];
+  const countyAfter = (await redisCommand<string[]>(["KEYS", COUNTY_PATTERN])) ?? [];
+  const stateAfter = (await redisCommand<string[]>(["KEYS", STATE_PATTERN])) ?? [];
   console.log(`\n[purge] deleted            : ${deleted}`);
-  console.log(
-    `[purge] county keys remaining: ${countyAfter.length} (expect 0)`,
-  );
+  console.log(`[purge] county keys remaining: ${countyAfter.length} (expect 0)`);
   console.log(
     `[purge] state keys remaining : ${stateAfter.length} (expect ${stateKeysBefore.length}, unchanged)`,
   );
 
-  if (
-    countyAfter.length !== 0 ||
-    stateAfter.length !== stateKeysBefore.length
-  ) {
-    console.error(
-      "[purge] VERIFICATION FAILED — investigate before trusting the result.",
-    );
+  if (countyAfter.length !== 0 || stateAfter.length !== stateKeysBefore.length) {
+    console.error("[purge] VERIFICATION FAILED — investigate before trusting the result.");
     process.exit(1);
   }
   console.log("[purge] PASS — county counters removed; state counters intact.");

@@ -61,7 +61,9 @@ describe("upsertStockTransactionRows", () => {
     await upsertStockTransactionRows(db, [ROW]);
     expect(onConflictDoUpdateFn).toHaveBeenCalledTimes(1);
     const { set } = onConflictDoUpdateFn.mock.calls[0][0];
-    expect(Object.prototype.hasOwnProperty.call(set, "filingUrl")).toBe(false);
+    expect(Object.prototype.hasOwnProperty.call(set, "filingUrl")).toBe(
+      false,
+    );
   });
 
   it("returns 0 and does not call insert for an empty batch", async () => {

@@ -144,8 +144,7 @@ async function main() {
   const cycleIdx = process.argv.indexOf("--election-cycle");
   const filePath =
     fileIdx !== -1 ? (process.argv[fileIdx + 1] ?? DEFAULT_FILE) : DEFAULT_FILE;
-  const ELECTION_CYCLE =
-    cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
+  const ELECTION_CYCLE = cycleIdx !== -1 ? (process.argv[cycleIdx + 1] ?? "2024") : "2024";
 
   if (!fs.existsSync(filePath)) {
     console.error(`[ar-ethics] file not found: ${filePath}`);
@@ -162,19 +161,13 @@ async function main() {
   const arHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-AR-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-AR-house'`)) as DbCandidate[];
   const arSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-AR-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-AR-senate'`)) as DbCandidate[];
 
-  console.log(
-    `[ar-ethics] DB: house=${arHouse.length} senate=${arSenate.length}`,
-  );
+  console.log(`[ar-ethics] DB: house=${arHouse.length} senate=${arSenate.length}`);
 
   // Build last-name index
   const lastNameIdx = new Map<string, DbCandidate[]>();
@@ -212,62 +205,40 @@ async function main() {
 
     // Only candidate filers
     const filerType = (row["FilerType"] ?? "").trim();
-    if (filerType !== "Candidate") {
-      rowsSkipped++;
-      continue;
-    }
+    if (filerType !== "Candidate") { rowsSkipped++; continue; }
 
     // Only contributions (not loans, returns, etc.)
     const txType = (row["Transaction Type"] ?? "").trim();
-    if (txType !== "Contribution") {
-      rowsSkipped++;
-      continue;
-    }
+    if (txType !== "Contribution") { rowsSkipped++; continue; }
 
     // Only the target election year
     const electionYear = (row["Election Year"] ?? "").trim();
-    if (electionYear !== ELECTION_CYCLE) {
-      rowsSkipped++;
-      continue;
-    }
+    if (electionYear !== ELECTION_CYCLE) { rowsSkipped++; continue; }
 
     // Parse amount
     const amountStr = (row["Transaction Amount"] ?? "").replace(/[$,]/g, "");
     const amount = parseFloat(amountStr);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!Number.isFinite(amount) || amount <= 0) { rowsSkipped++; continue; }
 
     // Match candidate
     const entityName = (row["Entity Name"] ?? "").trim();
-    if (!entityName) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!entityName) { rowsSkipped++; continue; }
 
     const lastName = extractLastNameFromArEntity(entityName);
-    if (!lastName) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!lastName) { rowsSkipped++; continue; }
     const lastNameNorm = norm(lastName);
     const firstInitial = extractFirstInitialFromArEntity(entityName);
 
     const dbCandidates = lastNameIdx.get(lastNameNorm);
-    if (!dbCandidates || dbCandidates.length === 0) {
-      rowsSkipped++;
-      continue;
-    }
+    if (!dbCandidates || dbCandidates.length === 0) { rowsSkipped++; continue; }
 
     let dbMatch: DbCandidate;
     if (dbCandidates.length === 1) {
       dbMatch = dbCandidates[0]!;
     } else {
       dbMatch =
-        dbCandidates.find(
-          (c) => extractFirstInitial(c.fullName) === firstInitial,
-        ) ?? dbCandidates[0]!;
+        dbCandidates.find((c) => extractFirstInitial(c.fullName) === firstInitial) ??
+        dbCandidates[0]!;
     }
 
     // Classify into bucket

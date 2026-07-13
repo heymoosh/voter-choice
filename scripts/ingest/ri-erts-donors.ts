@@ -26,12 +26,7 @@ const DATA_FILE = "/tmp/ri_contributions.json";
 const DRY_RUN = process.argv.includes("--dry-run");
 
 function norm(s: string): string {
-  return s
-    .toUpperCase()
-    .replace(/['']/g, "")
-    .replace(/[-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return s.toUpperCase().replace(/['']/g, "").replace(/[-]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 async function main() {
@@ -44,10 +39,7 @@ async function main() {
     process.exit(1);
   }
 
-  const scraped = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8")) as Record<
-    string,
-    Record<string, number>
-  >;
+  const scraped = JSON.parse(fs.readFileSync(DATA_FILE, "utf-8")) as Record<string, Record<string, number>>;
   console.log(`[ri-erts] scraped_candidates=${Object.keys(scraped).length}`);
 
   const dbCandidates = await db
@@ -58,13 +50,9 @@ async function main() {
   console.log(`[ri-erts] db_candidates=${dbCandidates.length}`);
 
   // Match scraped names to DB by normalized full name
-  const candByNorm = new Map(dbCandidates.map((c) => [norm(c.fullName), c.id]));
+  const candByNorm = new Map(dbCandidates.map(c => [norm(c.fullName), c.id]));
 
-  const upsertRows: Array<{
-    candidateId: string;
-    bucketLabel: DonorBucketLabel;
-    amountTotal: number;
-  }> = [];
+  const upsertRows: Array<{ candidateId: string; bucketLabel: DonorBucketLabel; amountTotal: number }> = [];
   let matched = 0;
 
   for (const [scrapedName, buckets] of Object.entries(scraped)) {
@@ -84,19 +72,13 @@ async function main() {
     }
   }
 
-  console.log(
-    `[ri-erts] matched=${matched} rows_to_upsert=${upsertRows.length}`,
-  );
+  console.log(`[ri-erts] matched=${matched} rows_to_upsert=${upsertRows.length}`);
 
   if (DRY_RUN || upsertRows.length === 0) {
     console.log(`[ri-erts] dry_run — skipping upsert`);
-    upsertRows.slice(0, 10).forEach((r) => {
-      const name =
-        dbCandidates.find((c) => c.id === r.candidateId)?.fullName ??
-        r.candidateId;
-      console.log(
-        `  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`,
-      );
+    upsertRows.slice(0, 10).forEach(r => {
+      const name = dbCandidates.find(c => c.id === r.candidateId)?.fullName ?? r.candidateId;
+      console.log(`  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`);
     });
     return;
   }
@@ -115,11 +97,7 @@ async function main() {
         insertedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [
-          donorAggregates.candidateId,
-          donorAggregates.electionCycle,
-          donorAggregates.bucketLabel,
-        ],
+        target: [donorAggregates.candidateId, donorAggregates.electionCycle, donorAggregates.bucketLabel],
         set: {
           amountTotal: sql`excluded.amount_total`,
           source: sql`excluded.source`,
@@ -130,12 +108,7 @@ async function main() {
     upserted++;
   }
 
-  console.log(
-    `[ri-erts] complete matched=${matched} rows_upserted=${upserted} dry_run=${DRY_RUN}`,
-  );
+  console.log(`[ri-erts] complete matched=${matched} rows_upserted=${upserted} dry_run=${DRY_RUN}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(err => { console.error(err); process.exit(1); });

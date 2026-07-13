@@ -54,10 +54,7 @@ function loadUrl(): string {
     if (t.startsWith("#") || !t.includes("=")) continue;
     const [k, ...rest] = t.split("=");
     if (k.trim() === "ALIGNMENT_DATABASE_URL")
-      return rest
-        .join("=")
-        .trim()
-        .replace(/^["']|["']$/g, "");
+      return rest.join("=").trim().replace(/^["']|["']$/g, "");
   }
   throw new Error("ALIGNMENT_DATABASE_URL not found");
 }
@@ -76,16 +73,8 @@ async function main() {
   rmSync(absDir, { recursive: true, force: true });
   mkdirSync(`${absDir}/_results`, { recursive: true });
 
-  const manifest: Array<{
-    path: string;
-    issue: string;
-    batchId: string;
-    count: number;
-  }> = [];
-  const pvAside: Record<
-    string,
-    { pole_stance: string; confidence: string | null }
-  > = {};
+  const manifest: Array<{ path: string; issue: string; batchId: string; count: number }> = [];
+  const pvAside: Record<string, { pole_stance: string; confidence: string | null }> = {};
   let grand = 0;
 
   for (const issue of ISSUES) {
@@ -114,10 +103,7 @@ async function main() {
 
     // Record pole_v1 answers aside (held back from the oracle), then strip them.
     for (const b of picked) {
-      pvAside[`${b.bill_id}|${issue}`] = {
-        pole_stance: b.pv_stance,
-        confidence: b.pv_conf,
-      };
+      pvAside[`${b.bill_id}|${issue}`] = { pole_stance: b.pv_stance, confidence: b.pv_conf };
     }
 
     let n = 0;
@@ -130,10 +116,7 @@ async function main() {
       n++;
       const batchId = `${issue}-${String(n).padStart(3, "0")}`;
       const path = `${OUT_DIR}/${batchId}.json`;
-      writeFileSync(
-        `${absDir}/${batchId}.json`,
-        JSON.stringify({ issue, batchId, bills: slice }),
-      );
+      writeFileSync(`${absDir}/${batchId}.json`, JSON.stringify({ issue, batchId, bills: slice }));
       manifest.push({ path, issue, batchId, count: slice.length });
     }
     grand += picked.length;

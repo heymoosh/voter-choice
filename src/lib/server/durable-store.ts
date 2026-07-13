@@ -10,44 +10,6 @@ export function isDurableStoreConfigured(): boolean {
   return Boolean(getRedisConfig());
 }
 
-let unconfiguredWarned = false;
-
-/**
- * True when the durable store is UNCONFIGURED (missing/empty KV env) *and* we
- * are running in production — a misconfiguration that must fail closed rather
- * than silently fall back to per-instance in-memory state. On serverless, that
- * fallback lets every fresh instance believe $0 has been spent and 0 requests
- * made, silently defeating the shared budget and rate-limit caps. (An EMPTY
- * prod env var once darkened this app's whole DB layer for 42 days — silent
- * misconfig is the enemy.)
- *
- * Emits ONE loud structured error the first time it fires so the misconfig is
- * visible in logs. Non-production keeps the in-memory fallback unchanged. This
- * covers ONLY the unconfigured state; a configured-but-erroring store (a Redis
- * hiccup) keeps its existing per-call error semantics.
- */
-export function durableStoreUnconfiguredInProd(): boolean {
-  const failClosed =
-    process.env.NODE_ENV === "production" && !isDurableStoreConfigured();
-  if (failClosed && !unconfiguredWarned) {
-    unconfiguredWarned = true;
-    console.error(
-      JSON.stringify({
-        level: "error",
-        event: "durable_store_unconfigured",
-        message:
-          "Durable store (Redis/KV) is unconfigured in production. Failing closed: chat budget is treated as exhausted and rate limiting denies requests. Set KV_REST_API_URL and KV_REST_API_TOKEN (or UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN).",
-      }),
-    );
-  }
-  return failClosed;
-}
-
-/** Reset the one-shot unconfigured warning latch. Testing only. */
-export function _resetDurableStoreWarningForTesting(): void {
-  unconfiguredWarned = false;
-}
-
 function getRedisConfig(): { url: string; token: string } | null {
   const url =
     process.env.KV_REST_API_URL ?? process.env.UPSTASH_REDIS_REST_URL ?? "";

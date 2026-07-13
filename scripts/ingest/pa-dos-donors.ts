@@ -168,13 +168,8 @@ async function streamZipEntry(
   onRow: (row: Record<string, string>) => void,
 ): Promise<void> {
   return new Promise((resolve, reject) => {
-    const proc = spawn("unzip", ["-p", zipPath, entry], {
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    const rl = readline.createInterface({
-      input: proc.stdout,
-      crlfDelay: Infinity,
-    });
+    const proc = spawn("unzip", ["-p", zipPath, entry], { stdio: ["ignore", "pipe", "pipe"] });
+    const rl = readline.createInterface({ input: proc.stdout, crlfDelay: Infinity });
 
     let headers: string[] | null = null;
     let errOutput = "";
@@ -207,9 +202,7 @@ async function streamZipEntry(
     proc.on("error", reject);
     proc.on("close", (code) => {
       if (code !== 0 && code !== null) {
-        reject(
-          new Error(`unzip exited with code ${code}: ${errOutput.trim()}`),
-        );
+        reject(new Error(`unzip exited with code ${code}: ${errOutput.trim()}`));
       }
     });
   });
@@ -231,34 +224,10 @@ function normalizeName(name: string): string {
 
 // Words to skip when tokenizing PA committee names (generic non-name words)
 const COMMITTEE_SKIP_WORDS = new Set([
-  "friends",
-  "citizens",
-  "committee",
-  "for",
-  "of",
-  "to",
-  "elect",
-  "by",
-  "vote",
-  "pa",
-  "pennsylvania",
-  "state",
-  "senate",
-  "house",
-  "assembly",
-  "district",
-  "campaign",
-  "fund",
-  "pac",
-  "change",
-  "team",
-  "people",
-  "neighbors",
-  "be",
-  "the",
-  "and",
-  "freedom",
-  "families",
+  "friends", "citizens", "committee", "for", "of", "to", "elect", "by",
+  "vote", "pa", "pennsylvania", "state", "senate", "house", "assembly",
+  "district", "campaign", "fund", "pac", "change", "team", "people",
+  "neighbors", "be", "the", "and", "freedom", "families",
 ]);
 
 /**
@@ -318,10 +287,7 @@ async function loadPaFilers(): Promise<{
     const filerType = (row["FILERTYPE"] ?? "").replace(/^"|"$/g, "").trim();
     if (filerType !== COMMITTEE_FILERTYPE) return;
 
-    const office = (row["OFFICE"] ?? "")
-      .replace(/^"|"$/g, "")
-      .trim()
-      .toUpperCase();
+    const office = (row["OFFICE"] ?? "").replace(/^"|"$/g, "").trim().toUpperCase();
     if (!STATE_OFFICES.has(office)) return;
 
     const filerId = (row["FILERID"] ?? "").replace(/^"|"$/g, "").trim();

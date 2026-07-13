@@ -31,7 +31,7 @@ async function main() {
     )
     ORDER BY b.id
     LIMIT 500
-  `,
+  `
   );
 
   const billsData = result.rows as unknown[];

@@ -136,7 +136,9 @@ async function streamZipFile(
     proc.on("error", reject);
     proc.on("close", (code) => {
       if (code !== 0 && code !== null) {
-        reject(new Error(`unzip exited ${code} for ${fileName}: ${errOutput}`));
+        reject(
+          new Error(`unzip exited ${code} for ${fileName}: ${errOutput}`),
+        );
       }
     });
   });
@@ -164,17 +166,15 @@ async function main() {
   const miHouse = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-MI-house'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-MI-house'`)) as DbCandidate[];
   const miSenate = (await db
     .select()
     .from(candidates)
-    .where(
-      sql`${candidates.jurisdiction} = 'state-MI-senate'`,
-    )) as DbCandidate[];
+    .where(sql`${candidates.jurisdiction} = 'state-MI-senate'`)) as DbCandidate[];
 
-  console.log(`[mi-cfr] DB: house=${miHouse.length} senate=${miSenate.length}`);
+  console.log(
+    `[mi-cfr] DB: house=${miHouse.length} senate=${miSenate.length}`,
+  );
 
   // Build full-name index (FIRSTNAME LASTNAME → candidate)
   const nameIdx = new Map<string, DbCandidate>();

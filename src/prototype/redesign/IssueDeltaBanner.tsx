@@ -67,8 +67,7 @@ export function IssueDeltaBanner({ deltas, onRevisit, onDismiss }) {
               })}
             </div>
             <p className="ad-foot">
-              Only members whose alignment moved more than 5 points (or gained
-              or lost a scoreable record) get a REVISIT flag. Your verdicts are
+              Only members whose alignment moved more than 5 points (or gained or lost a scoreable record) get a REVISIT flag. Your verdicts are
               unchanged either way.
             </p>
           </>

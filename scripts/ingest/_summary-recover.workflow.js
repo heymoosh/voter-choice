@@ -1,37 +1,29 @@
 export const meta = {
-  name: "summary-recover",
-  description:
-    "Summarize recovered full bill text + (contested batches) assign pole_stance, on the Neon alignment branch (Sonnet)",
-  phases: [
-    {
-      title: "Recover",
-      detail:
-        "Sonnet agent per batch: summary (+pole_stance) from full text; writes in-repo result file",
-      model: "sonnet",
-    },
-  ],
-};
+  name: 'summary-recover',
+  description: 'Summarize recovered full bill text + (contested batches) assign pole_stance, on the Neon alignment branch (Sonnet)',
+  phases: [{ title: 'Recover', detail: 'Sonnet agent per batch: summary (+pole_stance) from full text; writes in-repo result file', model: 'sonnet' }],
+}
 
-const input = typeof args === "string" ? JSON.parse(args) : args;
-const baseDir = input.baseDir;
+const input = typeof args === 'string' ? JSON.parse(args) : args
+const baseDir = input.baseDir
 // Accept either an explicit `batches` list or a compact `groups` form
 // ([{ prefix, counts:[...] }]) that expands to batchId `${prefix}-${i+1}` with issue
 // derived from the prefix (null for the summary-only group).
-let batches = input.batches;
+let batches = input.batches
 if (!batches && input.groups) {
-  batches = [];
+  batches = []
   for (const g of input.groups) {
     g.counts.forEach((count, i) => {
       batches.push({
-        batchId: `${g.prefix}-${String(i + 1).padStart(3, "0")}`,
-        issue: g.prefix === "__summary_only__" ? null : g.prefix,
+        batchId: `${g.prefix}-${String(i + 1).padStart(3, '0')}`,
+        issue: g.prefix === '__summary_only__' ? null : g.prefix,
         count,
-      });
-    });
+      })
+    })
   }
 }
-const batchPath = (id) => `${baseDir}/${id}.json`;
-const resultPath = (id) => `${baseDir}/_results/${id}.json`;
+const batchPath = (id) => `${baseDir}/${id}.json`
+const resultPath = (id) => `${baseDir}/_results/${id}.json`
 
 // Compact (axis, pole) defs — A ≡ in_favor, B ≡ opposed. Orientation is fixed PER ISSUE.
 const POLES = {
@@ -47,33 +39,30 @@ const POLES = {
   education_funding: `A/in_favor = INCREASE public-education funding & access (public-school funding, Title I, loan relief, pre-K, teacher pay). B/opposed = SCHOOL CHOICE/limit federal spending (vouchers/ESA, cut Dept of Ed, block grants, oppose loan forgiveness). Charter bills → dominant mechanism.`,
   property_taxes: `A/in_favor = LOWER/cap property taxes (caps, homestead exemptions, rollbacks, assessment limits). B/opposed = MAINTAIN tax base for services (oppose caps, raise rates/assessments to fund schools/services).`,
   energy_grid: `A/in_favor = EXPAND FOSSIL/conventional production (oil/gas leasing, pipelines, LNG, block emissions rules; nuclear & carbon-capture → A). B/opposed = CLEAN-ENERGY transition/restrict fossil (renewables, emissions limits, block fossil leases, electrification). MEANS-TRAP: funding CLEAN energy advances B/opposed, NOT A.`,
-};
+}
 
 const RULES = `pole_stance = "in_favor" if a YEA vote advances Pole A; "opposed" if YEA advances Pole B; "no_score" if the bill doesn't clearly advance EITHER pole for THIS issue (off-topic, procedural, study-only, genuinely mixed). When in doubt → no_score (failing safe is correct).
 - REPEAL/"congressional disapproval"/nullification: score by NET EFFECT (what the underlying rule did, then the effect of repealing it).
 - Omnibus/mixed: tag by the DOMINANT provision for this issue; co-equal → no_score.
-- Judge by substance/effect, not the bill's marketing title.`;
+- Judge by substance/effect, not the bill's marketing title.`
 
 const SCHEMA = {
-  type: "object",
-  additionalProperties: false,
-  properties: { batchId: { type: "string" }, written: { type: "integer" } },
-  required: ["batchId", "written"],
-};
+  type: 'object', additionalProperties: false,
+  properties: { batchId: { type: 'string' }, written: { type: 'integer' } },
+  required: ['batchId', 'written'],
+}
 
 function buildPrompt(m) {
-  const issue = m.issue;
-  const taggingStep = issue
-    ? `
+  const issue = m.issue
+  const taggingStep = issue ? `
 2. Assign a pole_stance ∈ {in_favor, opposed, no_score} and confidence ∈ {high, medium, low} for the canonical issue "${issue}".
 POLES (${issue}): ${POLES[issue]}
-RULES: ${RULES}`
-    : `
-(This batch is summary-only — do NOT assign a pole_stance.)`;
+RULES: ${RULES}` : `
+(This batch is summary-only — do NOT assign a pole_stance.)`
 
   const resultShape = issue
     ? `{ "batchId": "${m.batchId}", "issue": "${issue}", "results": [ { "bill_id": "...", "summary": "...", "pole_stance": "...", "confidence": "..." }, ... ] }`
-    : `{ "batchId": "${m.batchId}", "issue": null, "results": [ { "bill_id": "...", "summary": "..." }, ... ] }`;
+    : `{ "batchId": "${m.batchId}", "issue": null, "results": [ { "bill_id": "...", "summary": "..." }, ... ] }`
 
   return `You are processing a batch of state bills, each with its FULL TEXT.
 
@@ -84,42 +73,29 @@ WRITE a JSON file to EXACTLY: ${resultPath(m.batchId)}
 shape: ${resultShape}
 — EXACTLY one entry per bill, all ${m.count} bill_ids (the "id" field) copied CHARACTER-FOR-CHARACTER. No extras/omissions.
 
-Then return { batchId: "${m.batchId}", written: <number written> }. The file is the source of truth.`;
+Then return { batchId: "${m.batchId}", written: <number written> }. The file is the source of truth.`
 }
 
-phase("Recover");
+phase('Recover')
 
 async function runOne(m) {
-  const r = await agent(buildPrompt(m), {
-    label: m.batchId,
-    phase: "Recover",
-    model: "sonnet",
-    schema: SCHEMA,
-  });
-  return {
-    ...m,
-    written: r && typeof r.written === "number" ? r.written : null,
-  };
+  const r = await agent(buildPrompt(m), { label: m.batchId, phase: 'Recover', model: 'sonnet', schema: SCHEMA })
+  return { ...m, written: r && typeof r.written === 'number' ? r.written : null }
 }
 
-let pending = batches;
-const done = [];
+let pending = batches
+const done = []
 for (let attempt = 1; attempt <= 3 && pending.length > 0; attempt++) {
-  log(
-    `Recover attempt ${attempt}: ${pending.length} batch(es), ${done.length} done`,
-  );
-  const res = await parallel(pending.map((m) => () => runOne(m)));
-  const retry = [];
+  log(`Recover attempt ${attempt}: ${pending.length} batch(es), ${done.length} done`)
+  const res = await parallel(pending.map((m) => () => runOne(m)))
+  const retry = []
   for (let i = 0; i < res.length; i++) {
-    const x = res[i];
-    if (x && x.written === x.count)
-      done.push({ batchId: x.batchId, issue: x.issue, written: x.written });
-    else retry.push(pending[i]);
+    const x = res[i]
+    if (x && x.written === x.count) done.push({ batchId: x.batchId, issue: x.issue, written: x.written })
+    else retry.push(pending[i])
   }
-  pending = retry;
+  pending = retry
 }
-const total = done.reduce((s, b) => s + b.written, 0);
-log(
-  `Recover complete: ${done.length} batches, ${total} entries; ${pending.length} still failing`,
-);
-return { done, stillFailing: pending.map((m) => m.batchId), total };
+const total = done.reduce((s, b) => s + b.written, 0)
+log(`Recover complete: ${done.length} batches, ${total} entries; ${pending.length} still failing`)
+return { done, stillFailing: pending.map((m) => m.batchId), total }

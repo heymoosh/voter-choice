@@ -384,11 +384,7 @@ async function aggregateContributions(
         // "Last, First [...]" → take first word after comma
         const afterComma = trimmed.substring(commaIdx + 1).trim();
         // Strip parenthetical nicknames: "David (Dave)" → "David"
-        rawFirst =
-          afterComma
-            .replace(/\([^)]*\)/gu, "")
-            .trim()
-            .split(/\s+/u)[0] ?? "";
+        rawFirst = afterComma.replace(/\([^)]*\)/gu, "").trim().split(/\s+/u)[0] ?? "";
       }
       const normFirst = normalizeStr(rawFirst);
 
@@ -465,8 +461,7 @@ async function aggregateContributions(
       // Non-individual: Business, Political committee/fund, Party Unit, etc.
       // Use contributor name or employer to classify
       const orgName = contributorName || employer;
-      const orgBucket =
-        mapEmployerToBucket(orgName) ?? mapEmployerToBucket(employer);
+      const orgBucket = mapEmployerToBucket(orgName) ?? mapEmployerToBucket(employer);
       bucket = orgBucket ?? "Other";
     }
 
@@ -624,13 +619,13 @@ export async function ingestMnCfbDonors({
 
   // Step 2: Build last-name index
   const byLastName = buildLastNameIndex(dbCandidates);
-  console.log(`[mn-cfb-donors] unique_last_names_indexed=${byLastName.size}`);
+  console.log(
+    `[mn-cfb-donors] unique_last_names_indexed=${byLastName.size}`,
+  );
 
   // Step 3: Stream CSV and aggregate
-  const { agg, candidateMatchedNames, counters } = await aggregateContributions(
-    CSV_PATH,
-    byLastName,
-  );
+  const { agg, candidateMatchedNames, counters } =
+    await aggregateContributions(CSV_PATH, byLastName);
 
   console.log(
     `[mn-cfb-donors] total_rows_processed=${counters.processed} matched_contributions=${counters.filtered}`,

@@ -21,11 +21,7 @@ import * as fs from "node:fs";
 import { requireDb } from "../../db/client";
 import { candidates, donorAggregates } from "../../db/schema";
 import { sql } from "drizzle-orm";
-import {
-  mapEmployerToBucket,
-  bucketIndividualByAmount,
-  type DonorBucketLabel,
-} from "./_bucket-mapping";
+import { mapEmployerToBucket, bucketIndividualByAmount, type DonorBucketLabel } from "./_bucket-mapping";
 
 const SOURCE = "nd_cfis_bulk";
 const SOURCE_URL = "https://cf.sos.nd.gov/search/cfsearch.aspx";
@@ -40,12 +36,7 @@ const CSV_FILES = [
 ];
 
 function norm(s: string): string {
-  return s
-    .toUpperCase()
-    .replace(/['']/g, "")
-    .replace(/[-]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return s.toUpperCase().replace(/['']/g, "").replace(/[-]/g, " ").replace(/\s+/g, " ").trim();
 }
 
 function dbLastName(fullName: string): string {
@@ -78,9 +69,7 @@ function buildMatcher(dbCandidates: Array<{ id: string; fullName: string }>) {
         const firstName = norm(fullName.split(" ")[0] ?? "");
         if (firstWord === firstName) return fullName;
         // Check if committee starts with "firstname lastname" pattern
-        const firstLast = norm(
-          fullName.split(" ")[0] + " " + fullName.split(" ").slice(-1)[0],
-        );
+        const firstLast = norm(fullName.split(" ")[0] + " " + fullName.split(" ").slice(-1)[0]);
         if (cn.includes(firstLast)) return fullName;
       }
       // Return first as fallback if word is clearly the last name
@@ -98,17 +87,13 @@ function parseCsvRow(line: string): string[] {
   for (let i = 0; i < line.length; i++) {
     const ch = line[i];
     if (inQuotes) {
-      if (ch === '"' && line[i + 1] === '"') {
-        field += '"';
-        i++;
-      } else if (ch === '"') inQuotes = false;
+      if (ch === '"' && line[i + 1] === '"') { field += '"'; i++; }
+      else if (ch === '"') inQuotes = false;
       else field += ch;
     } else {
       if (ch === '"') inQuotes = true;
-      else if (ch === ",") {
-        fields.push(field);
-        field = "";
-      } else field += ch;
+      else if (ch === ',') { fields.push(field); field = ""; }
+      else field += ch;
     }
   }
   fields.push(field);
@@ -126,25 +111,16 @@ interface NdRow {
   Contributor: string;
 }
 
-function classifyContributor(
-  contributor: string,
-  amount: number,
-): DonorBucketLabel {
+function classifyContributor(contributor: string, amount: number): DonorBucketLabel {
   const c = contributor.toUpperCase();
 
-  if (/\bREPUBLICAN\b|\bDEMOCRAT(IC)?\b|\bGOP\b|\bPARTY\b/.test(c))
-    return "Party committees";
+  if (/\bREPUBLICAN\b|\bDEMOCRAT(IC)?\b|\bGOP\b|\bPARTY\b/.test(c)) return "Party committees";
   if (/\bUNION\b|\bAFL\b|\bCIO\b|\bAFSCME\b|\bSEIU\b/.test(c)) {
-    if (/POLICE|FIRE|FIREFIGHTER|SHERIFF|FOP/.test(c))
-      return "Public safety unions";
+    if (/POLICE|FIRE|FIREFIGHTER|SHERIFF|FOP/.test(c)) return "Public safety unions";
     if (/TEACHER|NEA|AFT|EDUCATION/.test(c)) return "Education employees";
     return "Trade unions (non-public-safety)";
   }
-  if (
-    /\bPAC\b|\bPOLITICAL ACTION\b|\bCOMMITTEE\b|\bASSOCIATION\b|\bFUND\b/.test(
-      c,
-    )
-  ) {
+  if (/\bPAC\b|\bPOLITICAL ACTION\b|\bCOMMITTEE\b|\bASSOCIATION\b|\bFUND\b/.test(c)) {
     // Try industry matching on PAC name
     const bucket = mapEmployerToBucket(contributor);
     if (bucket && bucket !== "Other" && bucket !== "Self-funded") return bucket;
@@ -159,18 +135,14 @@ async function main() {
   console.log(`[nd-cfis] starting dryRun=${DRY_RUN}`);
 
   const dbCandidates = await db
-    .select({
-      id: candidates.id,
-      fullName: candidates.fullName,
-      jurisdiction: candidates.jurisdiction,
-    })
+    .select({ id: candidates.id, fullName: candidates.fullName, jurisdiction: candidates.jurisdiction })
     .from(candidates)
     .where(sql`jurisdiction LIKE 'state-ND-%'`);
 
   console.log(`[nd-cfis] db_candidates=${dbCandidates.length}`);
 
   const match = buildMatcher(dbCandidates);
-  const candIdByName = new Map(dbCandidates.map((c) => [c.fullName, c.id]));
+  const candIdByName = new Map(dbCandidates.map(c => [c.fullName, c.id]));
 
   const aggregates = new Map<string, number>(); // `candidateId::bucket` → total
   const matched = new Set<string>();
@@ -190,7 +162,7 @@ async function main() {
     }
 
     const text = fs.readFileSync(csvPath, "utf-8");
-    const lines = text.split(/\r?\n/).filter((l) => l.trim());
+    const lines = text.split(/\r?\n/).filter(l => l.trim());
     if (lines.length < 2) continue;
 
     const headers = parseCsvRow(lines[0]);
@@ -200,21 +172,13 @@ async function main() {
       rowsScanned++;
       const vals = parseCsvRow(lines[i]);
       const row: Record<string, string> = {};
-      headers.forEach((h, idx) => {
-        row[h.trim()] = (vals[idx] ?? "").trim();
-      });
+      headers.forEach((h, idx) => { row[h.trim()] = (vals[idx] ?? "").trim(); });
 
       const committee = row["Contributed To"]?.trim();
-      if (!committee) {
-        rowsSkipped++;
-        continue;
-      }
+      if (!committee) { rowsSkipped++; continue; }
 
       const amount = parseFloat(row["Amount"] || "0") || 0;
-      if (amount <= 0) {
-        rowsSkipped++;
-        continue;
-      }
+      if (amount <= 0) { rowsSkipped++; continue; }
 
       // Dedup by committee+date+amount+contributor
       const rowKey = `${committee}|${row["Date"]}|${amount}|${row["Contributor"]}`;
@@ -227,16 +191,10 @@ async function main() {
         fullName = match(committee) ?? undefined;
         committeeMatches.set(committee.toLowerCase(), fullName ?? "");
       }
-      if (!fullName) {
-        rowsSkipped++;
-        continue;
-      }
+      if (!fullName) { rowsSkipped++; continue; }
 
       const candidateId = candIdByName.get(fullName);
-      if (!candidateId) {
-        rowsSkipped++;
-        continue;
-      }
+      if (!candidateId) { rowsSkipped++; continue; }
 
       const bucket = classifyContributor(row["Contributor"] || "", amount);
       const aggKey = `${candidateId}::${bucket}`;
@@ -246,32 +204,21 @@ async function main() {
     }
   }
 
-  console.log(
-    `[nd-cfis] rows_scanned=${rowsScanned} rows_matched=${rowsMatched} rows_skipped=${rowsSkipped}`,
-  );
+  console.log(`[nd-cfis] rows_scanned=${rowsScanned} rows_matched=${rowsMatched} rows_skipped=${rowsSkipped}`);
   console.log(`[nd-cfis] candidates_matched=${matched.size}`);
 
   const upsertRows = Array.from(aggregates.entries()).map(([key, total]) => {
     const [candidateId, bucket] = key.split("::");
-    return {
-      candidateId,
-      electionCycle: ELECTION_CYCLE,
-      bucketLabel: bucket as DonorBucketLabel,
-      amountTotal: total,
-    };
+    return { candidateId, electionCycle: ELECTION_CYCLE, bucketLabel: bucket as DonorBucketLabel, amountTotal: total };
   });
 
   console.log(`[nd-cfis] rows_to_upsert=${upsertRows.length}`);
 
   if (DRY_RUN || upsertRows.length === 0) {
     console.log(`[nd-cfis] dry_run — skipping upsert`);
-    upsertRows.slice(0, 10).forEach((r) => {
-      const name =
-        dbCandidates.find((c) => c.id === r.candidateId)?.fullName ??
-        r.candidateId;
-      console.log(
-        `  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`,
-      );
+    upsertRows.slice(0, 10).forEach(r => {
+      const name = dbCandidates.find(c => c.id === r.candidateId)?.fullName ?? r.candidateId;
+      console.log(`  ${name} | ${r.bucketLabel} | $${r.amountTotal.toFixed(2)}`);
     });
     return;
   }
@@ -290,11 +237,7 @@ async function main() {
         insertedAt: new Date(),
       })
       .onConflictDoUpdate({
-        target: [
-          donorAggregates.candidateId,
-          donorAggregates.electionCycle,
-          donorAggregates.bucketLabel,
-        ],
+        target: [donorAggregates.candidateId, donorAggregates.electionCycle, donorAggregates.bucketLabel],
         set: {
           amountTotal: sql`excluded.amount_total`,
           source: sql`excluded.source`,
@@ -305,12 +248,7 @@ async function main() {
     upserted++;
   }
 
-  console.log(
-    `[nd-cfis] complete candidates_matched=${matched.size} rows_upserted=${upserted} dry_run=${DRY_RUN}`,
-  );
+  console.log(`[nd-cfis] complete candidates_matched=${matched.size} rows_upserted=${upserted} dry_run=${DRY_RUN}`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+main().catch(err => { console.error(err); process.exit(1); });

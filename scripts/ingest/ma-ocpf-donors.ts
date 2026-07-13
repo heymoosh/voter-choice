@@ -322,7 +322,9 @@ function buildNameIndices(dbCandidates: DbCandidate[]): {
 //   [26] Party Affiliation
 // ---------------------------------------------------------------------------
 
-async function loadFilers(byLastName: Map<string, DbCandidate[]>): Promise<{
+async function loadFilers(
+  byLastName: Map<string, DbCandidate[]>,
+): Promise<{
   cpfIdToCandidate: Map<string, DbCandidate>;
   filersLoaded: number;
 }> {
@@ -687,7 +689,9 @@ export async function ingestMaOcpfDonors({
 
   // Build name lookup indices
   const { byLastName } = buildNameIndices(dbCandidates);
-  console.log(`[ma-ocpf-donors] unique_last_names_indexed=${byLastName.size}`);
+  console.log(
+    `[ma-ocpf-donors] unique_last_names_indexed=${byLastName.size}`,
+  );
 
   // Step 2: Download filers and build CPF ID → DbCandidate map
   const { cpfIdToCandidate, filersLoaded } = await loadFilers(byLastName);

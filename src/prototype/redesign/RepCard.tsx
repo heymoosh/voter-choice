@@ -41,16 +41,11 @@ function topIndustries(donorCoalition, n = 3) {
     .map((d) => d.label);
 }
 
-/** Party display metadata, keyed by the raw party name from the data source.
- * A function (not a module-level const) because the display name needs
- * `t()` — party labels are user-facing and must translate. */
-export function getPartyMeta2(t) {
-  return {
-    Republican: { name: t("repCard.partyRepublican"), code: "R", pipClass: "rep" },
-    Democrat: { name: t("repCard.partyDemocrat"), code: "D", pipClass: "dem" },
-    Independent: { name: t("repCard.partyIndependent"), code: "I", pipClass: "ind" },
-  };
-}
+export const PARTY_META2 = {
+  Republican: { name: "Republican", code: "R", pipClass: "rep" },
+  Democrat: { name: "Democrat", code: "D", pipClass: "dem" },
+  Independent: { name: "Independent", code: "I", pipClass: "ind" },
+};
 
 /* ---- seat-strip helpers [Δ] item C — "{chamber} · {district}" badge +
    "Your Representative · N terms" + "UP {MON YEAR}". Pure presentational
@@ -525,7 +520,7 @@ function ChallengerRow({
   // row when the research promise settles.
   const [, setTick] = useState(0);
   const research = getChallengerResearch(challenger.id);
-  const party = getPartyMeta2(t)[challenger.party] || {
+  const party = PARTY_META2[challenger.party] || {
     name: challenger.party || t("repCard.partyUnknown"),
     code: "?",
     pipClass: "ind",
@@ -848,7 +843,7 @@ export function RepCard({
     (n, s) => n + (s?.contributingVotes?.length || 0),
     0,
   );
-  const party = getPartyMeta2(t)[seat.partyName] || {
+  const party = PARTY_META2[seat.partyName] || {
     name: seat.partyName,
     code: "?",
     pipClass: "ind",

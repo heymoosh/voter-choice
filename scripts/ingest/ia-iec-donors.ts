@@ -168,11 +168,7 @@ function extractCandidateTokens(committeeName: string): string[] {
 // API fetching (Socrata)
 // ---------------------------------------------------------------------------
 
-async function fetchPage(
-  offset: number,
-  pageSize: number,
-  whereClause: string,
-): Promise<IaRow[]> {
+async function fetchPage(offset: number, pageSize: number, whereClause: string): Promise<IaRow[]> {
   const url = `${SOURCE_URL}?$where=${whereClause}&$limit=${pageSize}&$offset=${offset}&$order=date+DESC`;
 
   const res = await fetch(url, {
@@ -293,9 +289,7 @@ export async function ingestIaIecDonors({
 
   const effectiveLimit = config.limit ?? Infinity;
 
-  console.log(
-    `[ia-iec-donors] fetching ${config.year} IA state legislature contributions ...`,
-  );
+  console.log(`[ia-iec-donors] fetching ${config.year} IA state legislature contributions ...`);
 
   while (contributionsFetched < effectiveLimit) {
     const rows = await fetchPage(
@@ -498,7 +492,9 @@ function isCliExecution(): boolean {
 if (isCliExecution()) {
   ingestIaIecDonors().catch((error: unknown) => {
     const msg =
-      error instanceof Error ? error.message.replace(/\s+/gu, " ") : "unknown";
+      error instanceof Error
+        ? error.message.replace(/\s+/gu, " ")
+        : "unknown";
     console.error("[ia-iec-donors] failed:", msg);
     process.exitCode = 1;
   });
