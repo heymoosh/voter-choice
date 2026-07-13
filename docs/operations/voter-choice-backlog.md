@@ -1243,7 +1243,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SOURCE RULE: Use the FEC state-election-office directory only as a starting directory; state election authorities remain the roster authority. Do not bypass access controls.
 - TESTS: Focused contract/validator tests; fixtures covering every coverage state and rejected incomplete/invalid records.
 - GOAL_CONDITION: Focused source-inventory tests and `npm run verify:congressional-source-inventory -- --fixtures` pass, followed by `npm run check`.
-- STATUS: In Progress
+- SHIP: auto-pending-merge
+- PR: https://github.com/heymoosh/voter-choice/pull/300
+- STATUS: Review
 - DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
 - GROOMED: ready: explicit scope, tests, and goal condition; independent Wave 1 foundation — 2026-07-13
 - LANE: roster-a
@@ -1258,7 +1260,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: FEC/state date conflicts must enter review and may never silently overwrite authoritative state evidence. State logistics JSON cannot be the contest oracle.
 - TESTS: Focused calendar tests for Alabama split, stable identity across revisions, FEC/state conflict, regular/special separation, and untriggered conditional runoffs.
 - GOAL_CONDITION: Focused calendar tests and `npm run verify:congressional-calendar -- --year 2026 --fixture al-split` pass, followed by `npm run check`.
-- STATUS: In Progress
+- SHIP: auto-pending-merge
+- PR: https://github.com/heymoosh/voter-choice/pull/301
+- STATUS: Review
 - DECISION: approved — non-visual, additive foundation work; no external provisioning or production mutation.
 - GROOMED: ready: explicit scope, tests, and goal condition; parallel Wave 1 foundation — 2026-07-13
 - LANE: roster-b
