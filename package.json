@@ -43,7 +43,8 @@
     "dup:check": "npx tsx scripts/quality/duplication-gate.ts",
     "dup:baseline": "npx tsx scripts/quality/duplication-gate.ts --update",
     "inventory:check": "npx tsx scripts/quality/component-inventory-gate.ts",
-    "verify:congressional-source-inventory": "npx tsx scripts/verify-congressional-source-inventory.ts"
+    "verify:congressional-source-inventory": "npx tsx scripts/verify-congressional-source-inventory.ts",
+    "verify:f03-congressional-source-inventory": "npx tsx scripts/verify-f03-congressional-source-inventory.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.39.0",

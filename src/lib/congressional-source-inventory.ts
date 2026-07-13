@@ -403,6 +403,84 @@ function validateRecord(
     : null;
 }
 
+/**
+ * Validate a deliberately bounded inventory slice. This is for rehearsal and
+ * rollout gates; the national validator below retains its all-jurisdiction
+ * contract for F01.
+ */
+export function validateCongressionalSourceInventoryScope(
+  inventory: unknown,
+  expectedJurisdictions: readonly CongressionalJurisdiction[],
+  options: {
+    missingPrefix?: string;
+    outOfScopePrefix?: string;
+  } = {},
+): CongressionalSourceInventoryValidation {
+  const errors: string[] = [];
+  const covered = new Set<CongressionalJurisdiction>();
+  const coverageStates = new Set<CoverageState>();
+  const missingPrefix =
+    options.missingPrefix ?? "Missing inventory record for jurisdiction";
+  const outOfScopePrefix =
+    options.outOfScopePrefix ?? "Inventory contains out-of-scope jurisdiction";
+
+  if (!isRecord(inventory)) {
+    return {
+      errors: ["Congressional source inventory must be an object."],
+      coveredJurisdictions: [],
+      coverageStates: [],
+    };
+  }
+  if (inventory.schemaVersion !== 1)
+    errors.push("Inventory schemaVersion must be 1.");
+  if (
+    typeof inventory.cycle !== "number" ||
+    !Number.isInteger(inventory.cycle) ||
+    inventory.cycle < 1
+  ) {
+    errors.push("Inventory cycle must be a positive integer.");
+  }
+  if (!Array.isArray(inventory.records)) {
+    return {
+      errors: [...errors, "Inventory records must be an array."],
+      coveredJurisdictions: [],
+      coverageStates: [],
+    };
+  }
+
+  inventory.records.forEach((record, index) => {
+    const jurisdiction = validateRecord(record, index, errors);
+    if (jurisdiction) {
+      if (!expectedJurisdictions.includes(jurisdiction)) {
+        errors.push(`${outOfScopePrefix} ${jurisdiction}.`);
+      } else if (covered.has(jurisdiction)) {
+        errors.push(
+          `Duplicate inventory record for jurisdiction ${jurisdiction}.`,
+        );
+      } else {
+        covered.add(jurisdiction);
+      }
+    }
+    if (isRecord(record) && hasValue(COVERAGE_STATES, record.coverageState))
+      coverageStates.add(record.coverageState);
+  });
+
+  for (const jurisdiction of expectedJurisdictions) {
+    if (!covered.has(jurisdiction))
+      errors.push(`${missingPrefix} ${jurisdiction}.`);
+  }
+
+  return {
+    errors,
+    coveredJurisdictions: expectedJurisdictions.filter((jurisdiction) =>
+      covered.has(jurisdiction),
+    ),
+    coverageStates: COVERAGE_STATES.filter((state) =>
+      coverageStates.has(state),
+    ),
+  };
+}
+
 export function validateCongressionalSourceInventory(
   inventory: unknown,
 ): CongressionalSourceInventoryValidation {
