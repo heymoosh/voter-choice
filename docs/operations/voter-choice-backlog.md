@@ -384,7 +384,7 @@ CLARIFICATION (Muxin, 2026-07-12): good question - so we do not go live until I 
 
 **[P0] Reset Polis count to 0 before launch**
 CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - all this means is, I've been doing tests on the app so it's counting my tests as actual voter info, but Polis should count real user's real issues and values. So the counter reset just makes sure my dirty test data doesn't muck up the Polis data.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
 - GROOMED: Ready/deferred: identify dirty-test Polis storage and prepare a reviewed one-command launch reset; no prod mutation overnight — 2026-07-12
@@ -410,7 +410,7 @@ CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - a
 - **Verification:** after redeploy, `vercel env ls` should NOT list `CHAT_DAILY_SESSION_LIMIT` for Production. The default `process.env.NODE_ENV === "production" ? 10 : 20` in `src/lib/server/rate-limit.ts:4-5` then applies. Env changes only take effect on a _fresh_ deployment.
 - **Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
 - **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
 - GROOMED: Ready: launch-time env removal, redeploy, and verification are explicit; attended/deferred, no overnight execution — 2026-07-12
@@ -435,7 +435,7 @@ CLARIFICATION (Muxin, 2026-07-12): I think I briefly mentioned this in the app: 
 - Not a code task in itself — it closes when the Phase 1 redesign UX/UI is locked.
 
 CLARIFICATION (Muxin, 2026-07-12): I'm currently working through this. We did a lot of big Keystone redesign, and I'm in the phase of debugging right now, but after it's actually done and I'm happy with it, then I would consider this closed.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED
 - GROOMED: Ready as attended milestone: close only after Keystone debugging is complete and Muxin is satisfied with UX/UI — 2026-07-12
 <!-- card-id: e18e65fd-faf8-4aaf-8c4f-cee2111725c6 -->
@@ -999,7 +999,7 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 
 **[P2] #146 empty k-means cluster silently suppresses all consensus statements**
 - Found 2026-06-30 reviewing held PR #146 (polis clustering). `findConsensusStatements` (`src/lib/polis/clustering.ts:342-345`) treats an empty cluster (size 0) as a hard consensus failure (`allClear=false; break`), so with `DEFAULT_K=3` any empty cluster silently suppresses ALL consensus statements — the report's headline feature. Inconsistent with `detectDividedState` (`clustering.ts:412`) which correctly filters `c.size > 0`. Inert today (surface unwired); fix BEFORE wiring the Polis report surface. (Also `reportAssembly.ts:194` emits size-0 phantom clusters.)
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready: empty-cluster consensus and phantom-cluster behavior are pinpointed and regression-testable — 2026-07-12
 <!-- card-id: 174c8798-b17b-4d40-b17f-a317810ab423 -->
 
@@ -1060,7 +1060,7 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 - DEFERRED to P3 (2026-06-30): re-evaluate AFTER the redesign lands — the inline steps + walkthrough may both change, so this de-dup may resolve itself. Parked in Backlog until then.
 
 CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there anything that's needed to hear?
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P2] Simplify the Registered Address entry box
 - GROOMED: Ready/resolved: redesigned HomeView no longer renders the standalone walkthrough; verify and close with no product change — 2026-07-12
 <!-- card-id: 8807920f-0f26-4430-878e-6c012f03835b -->
@@ -1083,7 +1083,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - Add `toHaveScreenshot()` baselines for the delegation workspace, rep card, scorecard, and home hero; gate by extending the existing e2e job in `.github/workflows/test.yml`.
 - Caveat: visual snapshots are maintenance-heavy and flaky across CI environments — keep scope tight. Lower value than the golden-address data smoke test above; sequence it after that by priority, not as a hard dependency.
 - GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready attended: four screenshot surfaces and non-required Ubuntu CI leg are specified; human baseline review remains required — 2026-07-12
 <!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
 
@@ -1092,7 +1092,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - Assert that a known real address/candidate returns NON-EMPTY alignment so a silent data-blank is caught even when the schema is technically present. Anchor: John Cornyn (TX Senator) + healthcare_affordability — lookupAlignment() should return { found: true, total >= 1, contributingVotes.length > 0 } (~18 healthcare votes observed at incident time). resolveCandidateId() already handles "Cornyn."
 - WHERE it runs — RESOLVED 2026-06-30: run against the **Neon test branch** in the new test-env (the "seeded test DB" option; that's why this card DEPENDS ON the test-env card). The heavier alternative (post-deploy prod smoke) is set aside. The drift check (PR #179) already covers the "prod behind a migration" class; this catches "schema present but data empty."
 - NEW infra, not a quick add.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: We need a deployment/test environment/server/branch?
 - GROOMED: Ready but blocked: seeded-Neon Cornyn healthcare assertion is explicit; waits on test environment — 2026-07-12
 <!-- card-id: 2baacd7e-901d-4407-8dcb-26ce56ed9fbc -->
@@ -1101,7 +1101,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - - `scripts/ops/check-schema-drift.ts` `splitStatements()` splits each migration on `;` BEFORE `stripSqlComments()` runs, so a semicolon inside a `-- comment` fragments the statement. This split `0012_add_polis_response_vectors.sql`'s `CREATE TABLE` at a comment's `;`, tripped the unparsed-DDL guard, and would fail the deploy-time drift check. Worked around in PR #146 by removing the semicolons from the migration's comment prose.
 - Fix: in `splitStatements`, strip comments FIRST, then split on `--> statement-breakpoint` and `;` (reorder the pipeline). Add a regression test: a migration whose `CREATE TABLE` body comment contains a `;` must parse to a complete statement.
 - Why it matters: a mis-parsed `CREATE TABLE` leaves that object out of the expected schema, so the drift guard FAILS OPEN on it — the exact prod-behind failure the guard exists to catch.
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready: parser reorder and semicolon-in-comment regression test define a concrete proof — 2026-07-12
 <!-- card-id: a06b360f-5017-45fc-b6c8-5ca67126b72d -->
 
@@ -1117,7 +1117,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - ATTENDED / not an AUTO build — board restructure needs product judgment on the mislabeled Phase 3 cards. Kept in Backlog.
 
 CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are mislabeled. Is that what this gating setup claims? Anyway, between all of these, this is just a way to make sure that the orchestrator doesn't accidentally start working on something that's not on the current roadmap. I want it to only focus on phase one cards, which is why there's this gait where we don't even want to touch phase two cards unless phase one is done. I think I also have to give it approval because I'm not ready to start working on anything in phase two, Even if phase one is done, I think I need some validation and market feedback to tell me whether or not this project is even worth additional investment into phase two, if that makes sense.
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready attended: gate current Phase 2/3 sections; Phase 2 opens only after validation and explicit Muxin approval — 2026-07-12
 <!-- card-id: 6970765b-bce5-4850-94a5-f0e7e662f77e -->
 
