@@ -28,6 +28,7 @@
     "db:smoke": "npx tsx scripts/ingest/_smoke.ts",
     "db:tag-bills": "npx tsx scripts/ingest/tag-bills.ts",
     "db:candidates-federal": "npx tsx scripts/ingest/federal-candidates.ts --year 2026",
+    "verify:congressional-calendar": "npx tsx scripts/ingest/congressional-calendar.ts",
     "db:donors-federal": "npx tsx scripts/ingest/federal-donors.ts",
     "db:donors-state": "npx tsx scripts/ingest/state-donors.ts",
     "db:member-stats": "npx tsx scripts/ingest/member-stats.ts",
