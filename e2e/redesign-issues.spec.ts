@@ -189,7 +189,10 @@ test.describe("edit issues from the workspace", () => {
     // Verdict the first seat so we can prove verdicts survive the re-score.
     await page.getByRole("button", { name: /Worth keeping/ }).click();
     await page.waitForTimeout(900);
-    await expect(page.locator(".ws-ballot")).toContainText("1/3");
+    // senate-TX-b isn't on the 2026 ballot, so the decided-count denominator
+    // is the 2 decidable seats only (Muxin, 2026-07-12: not-up seats are
+    // reviewable, never decidable — they never sit in this count).
+    await expect(page.locator(".ws-ballot")).toContainText("1/2");
 
     // EDIT now lives only in the right scorecard pane ([P1] removed the left
     // rail that previously carried the desktop Edit control).
@@ -213,7 +216,10 @@ test.describe("edit issues from the workspace", () => {
 
     // Verdict survived; the rail now carries three issues; the delta banner
     // reports honestly (mock data scores identically → nothing significant).
-    await expect(page.locator(".ws-ballot")).toContainText("1/3");
+    // senate-TX-b isn't on the 2026 ballot, so the decided-count denominator
+    // is the 2 decidable seats only (Muxin, 2026-07-12: not-up seats are
+    // reviewable, never decidable — they never sit in this count).
+    await expect(page.locator(".ws-ballot")).toContainText("1/2");
     await expect(page.locator(".verdict-chip").first()).toBeVisible();
     await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
     await expect(page.getByTestId("issue-delta-banner")).toContainText(

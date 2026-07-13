@@ -214,3 +214,41 @@ describe("RepCard money-gap field wiring", () => {
     expect(screen.queryByText("Theo Vance")).not.toBeInTheDocument();
   });
 });
+
+describe("RepCard not-up-for-2026 seats: reviewable, never decidable", () => {
+  it("renders no verdict buttons and shows the info band instead", () => {
+    const seat = mkSeat({
+      nextElection: { label: "next up 2030", onBallot2026: false },
+    });
+    const { container } = renderCard(seat);
+
+    expect(
+      screen.queryByRole("button", { name: /Worth keeping/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("button", { name: /Time to replace/ }),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("open-duel")).not.toBeInTheDocument();
+
+    // "Not up for election in 2026" also appears in the seat-strip badge —
+    // scope to the info band itself so this stays a real regression check.
+    expect(container.querySelector(".cv2-notup-eyebrow")).toHaveTextContent(
+      "Not up for election in 2026",
+    );
+    expect(
+      screen.getByText(/You can still review their record — next up 2030\./),
+    ).toBeInTheDocument();
+  });
+
+  it("still renders a decidable seat's verdict buttons unchanged (no regression)", () => {
+    const seat = mkSeat({
+      nextElection: { label: "Nov 2026", onBallot2026: true },
+    });
+    renderCard(seat);
+
+    expect(
+      screen.getByRole("button", { name: /Worth keeping/ }),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("open-duel")).toBeInTheDocument();
+  });
+});

@@ -161,6 +161,28 @@
   padding: 14px;
   border-radius: 6px;
 }
+
+/* RepCard's verdict block is replaced by this info band for a seat that
+   isn't on the 2026 ballot — same slot/padding as .cv2-actions so it drops
+   in without a layout shift. */
+.cv2-notup-band {
+  padding: 14px 20px 18px;
+  background: var(--paper);
+}
+.cv2-notup-eyebrow {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 6px;
+}
+.cv2-notup-text {
+  font-size: 13px;
+  color: var(--ink-2);
+  margin: 0;
+}
 .b-not-up {
   font-family: var(--mono);
   font-size: 9.5px;
@@ -3938,7 +3960,13 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-wrap: wrap;
   opacity: 0.85;
+  cursor: pointer;
+}
+.dg-excluded:hover {
+  opacity: 1;
+  border-color: var(--ink-3);
 }
 .dg-excluded .ri {
   width: 28px;
@@ -3968,6 +3996,18 @@
   font-size: 10px;
   letter-spacing: 0.04em;
   color: var(--ink-3);
+}
+.dg-excluded-open {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--civic);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.dg-excluded:hover .dg-excluded-open {
+  text-decoration: underline;
 }
 
 /* ---- deep-view affordances layered on the reused rail/verdict chrome ---- */

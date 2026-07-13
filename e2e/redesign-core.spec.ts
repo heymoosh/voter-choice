@@ -204,18 +204,19 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await page.locator(".cv2-reveal").first().click();
     await expect(page.locator(".cv2-name").first()).toHaveText("Alex Rivera");
 
-    // Verdict all three seats. The card auto-advances ~600ms after each
-    // verdict — wait it out so the next click lands on the NEXT seat.
+    // Verdict both decidable seats (house-TX-37, senate-TX-a) — senate-TX-b
+    // isn't on the 2026 ballot, so it carries no verdict UI to click (Muxin,
+    // 2026-07-12: not-up seats are reviewable, never decidable). The card
+    // auto-advances ~600ms after each verdict, skipping the not-up seat.
     await page.getByRole("button", { name: /Worth keeping/ }).click();
     await page.waitForTimeout(900);
-    for (let i = 0; i < 2; i++) {
-      await page
-        .getByRole("button", { name: "Time to replace", exact: true })
-        .click();
-      await page.waitForTimeout(900);
-    }
+    await page
+      .getByRole("button", { name: "Time to replace", exact: true })
+      .click();
+    await page.waitForTimeout(900);
 
-    await expect(page.locator(".ws-ballot")).toContainText("3/3");
+    // "2/2 decided" — the not-up seat never sits in the denominator.
+    await expect(page.locator(".ws-ballot")).toContainText("2/2");
     await expect(page.locator(".verdict-chip").first()).toBeVisible();
     await expect(
       page.getByRole("button", { name: /Print my scorecard/ }),
@@ -226,13 +227,18 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     expect(counters.calls[0].picks).toEqual([]);
     expect(counters.calls[0].primary).toBe("GENERAL");
 
-    // Print sheet renders the verdicts + districts line.
+    // Print sheet renders the verdicts + districts line. The not-up seat
+    // still appears (reviewable) but in its own "shown for context, no
+    // decision needed" group — never scored as a keep/replace decision.
     await page.getByRole("button", { name: /Print my scorecard/ }).click();
     await expect(page.locator(".print-sheet")).toContainText("Alex Rivera");
     await expect(page.locator(".print-sheet")).toContainText(
       "U.S. House TX-37",
     );
     await expect(page.locator(".verdict-print").first()).toContainText("KEEP");
+    const notupRow = page.locator(".br.notup");
+    await expect(notupRow).toContainText("Jordan Okafor");
+    await expect(notupRow.locator(".verdict-print")).toHaveClass(/notup/);
   });
 
   test("no-DB-record member renders the web_search card in the same surface", async ({
