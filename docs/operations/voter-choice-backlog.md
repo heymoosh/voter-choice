@@ -643,9 +643,11 @@ tags, mirroring the realtime path; add `billsSkipReasonWritten` to the batch cou
 - Research and recommend the production source strategy: official state/county election authority or voter-specific official sample ballot is the standard for ballot status; compare provider coverage, freshness, terms, and withdrawal handling before selecting or buying any third-party source. Ballotpedia may be a comparison oracle, not assumed production authority.
 - Verification: add fixtures proving that a stale FEC filer is never labeled as a current ballot candidate; that the known user-reported race (once its link/state/office is re-supplied) matches an official roster; and that source refreshes can deactivate/remove withdrawn rows without erasing financial-history evidence.
 - GOAL_CONDITION: a staged PR contains the containment behavior, provenance model, regression tests, and a source-decision report with a verified current-race comparison; no production roster migration, provider contract, merge, or deploy occurs overnight.
-- STATUS: To Do
+- SHIP: held
+- STATUS: Review
 - DECISION: stage — Urgent accuracy work: implement safety containment and an evidence report only. Treat FEC as campaign-finance evidence, never current-ballot proof; include before/after HTML for unsafe, unverified, and verified-roster states; no merge or deploy without Muxin’s review of the verified-race comparison.
 - GROOMED: Ready — P0 containment, source audit, and verifiable fixtures are explicit; staged review only — 2026-07-12
+- PARKED: staged roster-containment work complete; final independent gate parked at routing token ceiling; awaiting Muxin review
 <!-- card-id: c5a813bb-9223-4dc1-95aa-65637eb6940b -->
 
 **[P1] Alignment 2b — in-chat pole disambiguation (not a theme-card)**
