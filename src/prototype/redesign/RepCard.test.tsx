@@ -107,17 +107,16 @@ function renderCard(
   );
 }
 
-describe("RepCard money-gap field wiring", () => {
-  it("renders one field row per funded challenger, sorted highest-raised first, alongside the subject", () => {
+// [Δ Round-4] The incumbent's card is about the incumbent: MoneyGapScale here
+// renders the subject-vs-median axis ONLY, never other FEC filers for the
+// seat — that whole-field comparison moved to the head-to-head duel
+// ("Everyone running for this seat"). These tests used to assert one field
+// row per funded challenger on RepCard itself; they now assert the opposite
+// (challengers present in seat data must NOT produce field rows here).
+describe("RepCard money-gap scale — subject vs. median only", () => {
+  it("renders only the subject row, even when the seat has funded challengers", () => {
     const seat = mkSeat({
       challengers: [
-        // deliberately out of order — the component must sort
-        {
-          id: "c3",
-          name: "Sam Whitfield",
-          party: "Independent",
-          totalReceipts: 95_000,
-        },
         {
           id: "c1",
           name: "Elena Reyes",
@@ -135,69 +134,15 @@ describe("RepCard money-gap field wiring", () => {
     const { container } = renderCard(seat);
 
     const rows = container.querySelectorAll(".mgap-row");
-    // subject + 3 funded challengers
-    expect(rows).toHaveLength(4);
-    const names = Array.from(rows).map(
-      (r) => r.querySelector(".mgap-nm")?.textContent,
-    );
-    expect(names[0]).toContain("Theo Vance");
-    expect(names.slice(1)).toEqual([
-      "Elena Reyes",
-      "Garrett Dunne",
-      "Sam Whitfield",
-    ]);
-
-    // tag copy matches the artboard's "Challenger · <party>" convention
-    expect(screen.getByText(/Challenger · Democrat/)).toBeInTheDocument();
-    expect(screen.getByText(/Challenger · Republican/)).toBeInTheDocument();
-    expect(screen.getByText(/Challenger · Independent/)).toBeInTheDocument();
-  });
-
-  it("honest-data: omits a challenger with no filed total instead of fabricating a $0 row", () => {
-    const seat = mkSeat({
-      challengers: [
-        {
-          id: "c1",
-          name: "Elena Reyes",
-          party: "Democrat",
-          totalReceipts: 1_300_000,
-        },
-        {
-          id: "c4",
-          name: "No Data Nick",
-          party: "Republican",
-          totalReceipts: null,
-        },
-      ],
-    });
-    const { container } = renderCard(seat);
-
-    const rows = container.querySelectorAll(".mgap-row");
-    expect(rows).toHaveLength(2); // subject + the one funded challenger
-    expect(screen.queryByText("No Data Nick")).not.toBeInTheDocument();
-  });
-
-  it("no regression: renders only the subject row when no challenger has funding data", () => {
-    const seat = mkSeat({
-      challengers: [
-        {
-          id: "c4",
-          name: "No Data Nick",
-          party: "Republican",
-          totalReceipts: null,
-        },
-      ],
-    });
-    const { container } = renderCard(seat);
-
-    const rows = container.querySelectorAll(".mgap-row");
     expect(rows).toHaveLength(1);
     expect(rows[0].querySelector(".mgap-nm")?.textContent).toContain(
       "Theo Vance",
     );
+    expect(screen.queryByText("Elena Reyes")).not.toBeInTheDocument();
+    expect(screen.queryByText("Garrett Dunne")).not.toBeInTheDocument();
   });
 
-  it("blind mode: the subject uses the blind label but challenger names stay unblinded (they're different, public FEC filers)", () => {
+  it("blind mode: the subject row uses the blind label", () => {
     const seat = mkSeat({
       challengers: [
         {
@@ -208,10 +153,90 @@ describe("RepCard money-gap field wiring", () => {
         },
       ],
     });
-    renderCard(seat, { blindMode: true, isRevealed: false });
+    const { container } = renderCard(seat, {
+      blindMode: true,
+      isRevealed: false,
+    });
 
-    expect(screen.getByText("Elena Reyes")).toBeInTheDocument();
+    const rows = container.querySelectorAll(".mgap-row");
+    expect(rows).toHaveLength(1);
     expect(screen.queryByText("Theo Vance")).not.toBeInTheDocument();
+    expect(container.querySelector(".mgap-nm")?.textContent).not.toContain(
+      "Theo Vance",
+    );
+  });
+});
+
+describe("RepCard evidence hierarchy (Round-4)", () => {
+  it("shows the compact legend under the collapsed money glance", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: null,
+        peerComparison: peer,
+      },
+    });
+    const { container } = renderCard(seat);
+
+    const legend = container.querySelector(".rc-money-legend");
+    expect(legend).not.toBeNull();
+    expect(legend?.textContent).toContain("15%");
+    expect(legend?.textContent).toContain("39%");
+    expect(legend?.textContent).toContain("46%");
+  });
+
+  it("moves 'see all votes' inside the align-band and drops the detached card-evidence row", () => {
+    const seat = mkSeat({
+      alignmentEntry: {
+        candidateId: "federal-TEST1",
+        scores: [
+          {
+            ...vote("healthcare_affordability", 3, 4),
+            contributingVotes: [{}, {}, {}],
+          },
+        ],
+      },
+    });
+    const { container } = renderCard(seat);
+
+    // The CTA lives inside .cv2-issues (the align-band), not a separate
+    // .card-evidence row — that class no longer renders anywhere.
+    expect(container.querySelector(".card-evidence")).toBeNull();
+    const cta = screen.getByTestId("see-full-record");
+    expect(container.querySelector(".cv2-issues")?.contains(cta)).toBe(true);
+    expect(cta.closest(".cv2-see-all")).not.toBeNull();
+  });
+
+  it("the whole money glance is a clickable disclosure trigger with the FUNDERS & INFLUENCE affordance", () => {
+    const seat = mkSeat();
+    const { container } = renderCard(seat);
+
+    const glance = container.querySelector("button.rc-money-glance");
+    expect(glance).not.toBeNull();
+    expect(glance).toHaveAttribute("aria-expanded");
+    expect(container.querySelector(".rc-money-disclose")).not.toBeNull();
+  });
+
+  it("median chip reads worded context, not a bare multiple", () => {
+    const seat = mkSeat();
+    const { container } = renderCard(seat);
+
+    const chip = container.querySelector(".rc-money-median .median-chip");
+    expect(chip?.textContent).toContain("≈3×");
+    expect(chip?.textContent).toContain("the typical U.S. House campaign");
+  });
+
+  it("verdict buttons are unaffected by the evidence-hierarchy changes", () => {
+    renderCard(mkSeat());
+
+    expect(screen.getByText(/Worth keeping/)).toBeInTheDocument();
+    expect(screen.getByText("Time to replace")).toBeInTheDocument();
   });
 });
 

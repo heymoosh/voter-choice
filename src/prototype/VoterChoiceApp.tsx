@@ -523,6 +523,14 @@ const TRANSLATIONS = {
       showDetails: 'Show details',
       fundersAndInfluence: 'Funders & influence',
       hideFunders: 'Hide funders',
+      // Money-glance compact legend (dot + % + word) — a Round-4 deviation
+      // beyond canvas, readable from the collapsed glance without opening it.
+      moneyLegendSmall: 'small',
+      moneyLegendLarge: 'large',
+      moneyLegendPacs: 'PACs',
+      // Median chip worded context (canvas's .fp-peer pattern) — replaces
+      // the bare "N× median" with what the multiple is measured against.
+      medianChipContext: 'the typical {office} campaign',
       keyVotesLabel: 'key votes',
       worthKeepingUndo: 'Worth keeping — undo',
       worthKeeping: 'Worth keeping',
@@ -1089,6 +1097,10 @@ const TRANSLATIONS = {
       showDetails: 'Ver detalles',
       fundersAndInfluence: 'Financiadores e influencia',
       hideFunders: 'Ocultar financiadores',
+      moneyLegendSmall: 'pequeños',
+      moneyLegendLarge: 'grandes',
+      moneyLegendPacs: 'PACs',
+      medianChipContext: 'la campaña típica de {office}',
       keyVotesLabel: 'votos clave',
       worthKeepingUndo: 'Vale la pena mantener — deshacer',
       worthKeeping: 'Vale la pena mantener',
@@ -2021,7 +2033,7 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
        %; see AlignmentIssueRow below). Kept as an opt-in prop rather than a
        global reshape so the legacy ballot card (still covered by
        prototype-core.spec.ts) renders byte-identical. */
-function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research, rowVariant = 'legacy' }) {
+function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research, rowVariant = 'legacy', onSeeAllVotes, totalVotes }) {
   const { t } = useI18n();
   // ── Pillar 2: research_pending + web_search scores rendering ─────────────
   // Three cases for no-record candidates:
@@ -2179,6 +2191,26 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           rowVariant={rowVariant}
         />
       ))}
+
+      {/* "See all votes" lives WITH its data — inside the align-band,
+          not in a detached row nobody scrolls to (Round-4 ask). Canvas
+          authored the .see-all/.see-all-btn shape (screens.css:506-507)
+          but never wired it into screens-results.jsx's own JSX (that still
+          uses the old card-evidence row) — we wire it here. */}
+      {rowVariant === 'canvas' && totalVotes > 0 && onSeeAllVotes && (
+        <div className="cv2-see-all">
+          <button
+            className="cv2-see-all-btn"
+            onClick={onSeeAllVotes}
+            data-testid="see-full-record"
+          >
+            {t('repCard.seeFullRecord', {
+              n: totalVotes,
+              votes: t(totalVotes === 1 ? 'repCard.vote' : 'repCard.votes'),
+            })}
+          </button>
+        </div>
+      )}
     </div>
   );
 }
@@ -2361,7 +2393,11 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
           <div className="cv2-bar"><div className={"fill " + canvasTone} style={{ width: (pct || 0) + '%' }} /></div>
           <span className="cv2-iss-frac">
             {fraction || <small>n/a</small>}
-            {hasVotes && <span className="chev">{isOpen ? '▴' : '▾'}</span>}
+            {hasVotes && (
+              <span className={"chev" + (isOpen ? "" : " dim")}>
+                {isOpen ? "▾" : "▸"}
+              </span>
+            )}
           </span>
         </button>
 
@@ -2774,16 +2810,81 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
           <div className="cv2-money-legend">
             <div><span className="sw small" /> <b>{fundingMix.small}%</b> {t('funderBars.smallDonorsLabel')} <small>{t('funderBars.smallDonorsThreshold')}</small></div>
             <div><span className="sw large" /> <b>{fundingMix.large}%</b> {t('funderBars.largeDonorsLabel')} <small>{t('funderBars.largeDonorsThreshold')}</small></div>
-            <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
+            {variant === 'canvas' ? (
+              /* [Δ] canvas-parity — the PAC definition moves from an
+                 always-visible paragraph (below) to a tooltip on the "PACs"
+                 legend term itself (screens.css .pac-term/.pac-tip), same
+                 keyboard-focusable pattern canvas uses. */
+              <div>
+                <span className="sw pac" /> <b>{fundingMix.pac}%</b>{' '}
+                <span className="pac-term" tabIndex={0}>
+                  {t('funderBars.pacsLabel')}
+                  <span className="pac-tip" role="tooltip">
+                    <b>PAC</b>{t('funderBars.pacGlossDefinition')}
+                  </span>
+                </span>{' '}
+                <small>{t('funderBars.pacsThreshold')}</small>
+              </div>
+            ) : (
+              <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
+            )}
           </div>
-          <p className="cv2-pac-gloss">
-            <b>PAC</b>{t('funderBars.pacGlossDefinition')}
-          </p>
+          {variant !== 'canvas' && (
+            <p className="cv2-pac-gloss">
+              <b>PAC</b>{t('funderBars.pacGlossDefinition')}
+            </p>
+          )}
         </div>
       )}
 
-      {/* Named issue-PACs. Subtitle clarifies what this section is. */}
-      {issuePACs.length > 0 && (
+      {/* Named issue-PACs. Subtitle clarifies what this section is.
+          [Δ] canvas-parity (variant='canvas', RepCard only) — each PAC
+          renders as a compact pill (screens.css .fp-pacs/.fp-pac) instead
+          of the legacy stacked card (full legal name + advocates line +
+          boxed conflict flag). Muxin: keep the content — this repo's
+          named-issue-PAC callout is more thorough than canvas, which
+          doesn't have one at all — just shrink the form to one pill + one
+          compact line. Two fully separate branches (not a shared map) so
+          the legacy ballot CandidateCard's DOM stays byte-identical. */}
+      {issuePACs.length > 0 && variant === 'canvas' ? (
+        <div className="cv2-named-pacs cv2-named-pacs--canvas">
+          <div className="lab">
+            {t('funderBars.namedIssuePacs')}
+            <small className="cv2-sub-lab">{t('funderBars.namedIssuePacsSub')}</small>
+          </div>
+          <div className="fp-pacs">
+            {issuePACs.map((p, i) => {
+              const relevantIssue = p.alignsWith || p.relevantToIssue;
+              const userIssue = (userIssues || []).find(
+                iss => iss.canonicalIssue === relevantIssue
+              );
+              const derivedPacStance = userIssue?.stance && p.issuePacStance
+                ? (p.issuePacStance === userIssue.stance ? 'with' : 'against')
+                : p.pacStance;
+              const showAlignment = !!userIssue && !!derivedPacStance;
+              const conflictsWithUser = showAlignment && derivedPacStance === 'against';
+              return (
+                <div className="fp-pac-wrap" key={i}>
+                  <span className="fp-pac">
+                    <span className="sw" style={{ background: issuePACSwatch(relevantIssue) }} />
+                    <b>{formatDollars(p.amount)}</b> {p.label}
+                  </span>
+                  {showAlignment && (
+                    <div className={"fp-pac-flag " + (conflictsWithUser ? 'conflict' : 'align')}>
+                      <span className="ic">{conflictsWithUser ? '⚠' : '✓'}</span>
+                      <span className="msg">
+                        {conflictsWithUser
+                          ? <>{t('funderBars.conflictsWithPriority')}<b>{userIssue.interpretation}</b></>
+                          : <>{t('funderBars.alignsWithPriority')}<b>{userIssue.interpretation}</b></>}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ) : issuePACs.length > 0 ? (
         <div className="cv2-named-pacs">
           <div className="lab">
             {t('funderBars.namedIssuePacs')}
@@ -2826,7 +2927,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
             );
           })}
         </div>
-      )}
+      ) : null}
 
       {/* [Δ] PAC coverage callout — moved BELOW the named PACs so readers
           first see what we DO have, then learn about what we don't. */}
