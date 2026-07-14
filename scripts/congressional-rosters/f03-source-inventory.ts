@@ -31,6 +31,32 @@ type SourceObservation =
   | "challenge_or_error"
   | "access_blocked";
 type RetrievalResult = "success" | "technical_failure" | "legal_challenge";
+type SourceFormat =
+  | "csv"
+  | "xlsx"
+  | "json"
+  | "xml"
+  | "html"
+  | "pdf"
+  | "portal"
+  | "manual";
+type ParserFamily =
+  | "csv"
+  | "xlsx"
+  | "json"
+  | "xml"
+  | "html_table"
+  | "text_pdf"
+  | "rendered_portal"
+  | "manual_official_import"
+  | "not_applicable";
+type SourceRole =
+  | "calendar_seed"
+  | "calendar_authority"
+  | "filing_list"
+  | "qualified_or_certified_roster"
+  | "sample_ballot"
+  | "secondary_check";
 
 export interface F03ManualImportControls {
   /** Retained official artifact that controls the attended import. */
@@ -671,6 +697,14 @@ export function validateF03CongressionalSourceInventory(
         );
       }
     }
+
+    validateSemanticCombinationInvariants(
+      record,
+      observation,
+      availability,
+      label,
+      result.errors,
+    );
   }
 
   return toF03Validation(result);
@@ -710,6 +744,34 @@ const RETRIEVAL_RESULTS: RetrievalResult[] = [
   "legal_challenge",
 ];
 
+/**
+ * F07 semantic-combination invariants. These enforce which parser family a
+ * source format may use, and which source roles/coverage states/observations
+ * may never combine, per the F04 rehearsal review's blocking finding #3
+ * (docs/operations/f04-seven-jurisdiction-rehearsal-review-2026-07-13.md).
+ */
+const SUPPORTED_FORMAT_PARSERS: Record<SourceFormat, ParserFamily[]> = {
+  csv: ["csv"],
+  xlsx: ["xlsx"],
+  json: ["json"],
+  xml: ["xml"],
+  html: ["html_table"],
+  pdf: ["text_pdf"],
+  portal: ["rendered_portal", "manual_official_import"],
+  manual: ["manual_official_import"],
+};
+
+/**
+ * A calendar-only or filing-only source role can never itself be the basis
+ * for a qualified/certified roster claim, regardless of what any other field
+ * on the record says.
+ */
+const CALENDAR_OR_FILING_ROLES: SourceRole[] = [
+  "calendar_seed",
+  "calendar_authority",
+  "filing_list",
+];
+
 function validateManualImportControls(
   controls: unknown,
   label: string,
@@ -734,6 +796,99 @@ function validateManualImportControls(
     errors.push(
       `${label}: manual import officialArtifactValidated must be a boolean.`,
     );
+}
+
+/**
+ * F07: enforce valid source-role, format, parser-family, observation,
+ * availability, and coverage-state combinations. Filing and calendar-only
+ * evidence can never establish qualified/certified availability through any
+ * field combination, and manual/not-yet-published coverage states must keep
+ * their evidence honest and explicit rather than silently promotable.
+ */
+function validateSemanticCombinationInvariants(
+  record: Record<string, unknown>,
+  observation: unknown,
+  availability: unknown,
+  label: string,
+  errors: string[],
+): void {
+  const sourceRole = record.sourceRole;
+  const sourceFormat = record.sourceFormat;
+  const parserFamily = record.parserFamily;
+  const coverageState = record.coverageState;
+
+  if (parserFamily === "not_applicable") {
+    if (
+      coverageState !== "official_roster_not_yet_published" &&
+      coverageState !== "blocked"
+    ) {
+      errors.push(
+        `${label}: a not_applicable parserFamily requires official_roster_not_yet_published or blocked coverage.`,
+      );
+    }
+  } else if (
+    isNonEmptyString(sourceFormat) &&
+    isNonEmptyString(parserFamily) &&
+    Object.prototype.hasOwnProperty.call(SUPPORTED_FORMAT_PARSERS, sourceFormat)
+  ) {
+    const allowed =
+      SUPPORTED_FORMAT_PARSERS[
+        sourceFormat as keyof typeof SUPPORTED_FORMAT_PARSERS
+      ];
+    if (!allowed.includes(parserFamily as ParserFamily)) {
+      errors.push(
+        `${label}: sourceFormat ${sourceFormat} cannot use parserFamily ${parserFamily}.`,
+      );
+    }
+  }
+
+  if (
+    isNonEmptyString(sourceRole) &&
+    CALENDAR_OR_FILING_ROLES.includes(sourceRole as SourceRole)
+  ) {
+    if (coverageState === "automatable") {
+      errors.push(
+        `${label}: a calendar-only or filing sourceRole (${sourceRole}) can never establish automatable coverage.`,
+      );
+    }
+    if (availability === "qualified_or_certified") {
+      errors.push(
+        `${label}: a calendar-only or filing sourceRole (${sourceRole}) can never establish qualified_or_certified availability.`,
+      );
+    }
+    if (observation === "qualified_or_certified_roster") {
+      errors.push(
+        `${label}: a calendar-only or filing sourceRole (${sourceRole}) can never claim a qualified_or_certified_roster observation.`,
+      );
+    }
+  }
+
+  if (
+    sourceRole === "filing_list" &&
+    coverageState === "official_roster_not_yet_published"
+  ) {
+    errors.push(
+      `${label}: a filing_list source has already retrieved a filing and cannot claim official_roster_not_yet_published.`,
+    );
+  }
+
+  if (
+    coverageState === "manual_official_import" &&
+    availability !== "manual_review_required"
+  ) {
+    errors.push(
+      `${label}: manual_official_import coverage must keep candidateAvailability manual_review_required.`,
+    );
+  }
+
+  if (
+    coverageState === "official_roster_not_yet_published" &&
+    availability !== "not_published"
+  ) {
+    errors.push(
+      `${label}: official_roster_not_yet_published coverage must keep candidateAvailability not_published.`,
+    );
+  }
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

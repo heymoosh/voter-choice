@@ -262,3 +262,177 @@ describe("F03 official-source inventory rehearsal", () => {
     );
   });
 });
+
+describe("F07 official-source semantic combination invariants", () => {
+  function withRecord(
+    jurisdiction: (typeof f03CongressionalSourceInventory.records)[number]["jurisdiction"],
+    patch: Partial<(typeof f03CongressionalSourceInventory.records)[number]>,
+  ) {
+    return {
+      ...f03CongressionalSourceInventory,
+      records: f03CongressionalSourceInventory.records.map((record) =>
+        record.jurisdiction === jurisdiction ? { ...record, ...patch } : record,
+      ),
+    };
+  }
+
+  it("rejects an unsupported sourceFormat/parserFamily pair", () => {
+    const wrongParserForHtml = withRecord("AL", {
+      parserFamily: "text_pdf" as never,
+    });
+    const wrongParserForPortal = withRecord("TX", {
+      parserFamily: "csv" as never,
+    });
+
+    expect(
+      validateF03CongressionalSourceInventory(wrongParserForHtml).errors,
+    ).toContain("AL: sourceFormat html cannot use parserFamily text_pdf.");
+    expect(
+      validateF03CongressionalSourceInventory(wrongParserForPortal).errors,
+    ).toContain("TX: sourceFormat portal cannot use parserFamily csv.");
+  });
+
+  it("rejects a not_applicable parserFamily outside official_roster_not_yet_published or blocked coverage", () => {
+    const liveSourceClaimsNothingToParse = withRecord("AL", {
+      parserFamily: "not_applicable" as never,
+    });
+
+    expect(
+      validateF03CongressionalSourceInventory(liveSourceClaimsNothingToParse)
+        .errors,
+    ).toContain(
+      "AL: a not_applicable parserFamily requires official_roster_not_yet_published or blocked coverage.",
+    );
+  });
+
+  it("rejects a calendar-only or filing sourceRole presented as an automatable qualified roster", () => {
+    const filingListAsAutomatable = withRecord("TX", {
+      coverageState: "automatable" as never,
+    });
+    const calendarAuthorityAsAutomatable = withRecord("LA", {
+      coverageState: "automatable" as never,
+    });
+
+    expect(
+      validateF03CongressionalSourceInventory(filingListAsAutomatable).errors,
+    ).toContain(
+      "TX: a calendar-only or filing sourceRole (filing_list) can never establish automatable coverage.",
+    );
+    expect(
+      validateF03CongressionalSourceInventory(calendarAuthorityAsAutomatable)
+        .errors,
+    ).toContain(
+      "LA: a calendar-only or filing sourceRole (calendar_authority) can never establish automatable coverage.",
+    );
+  });
+
+  it("rejects a filing sourceRole claiming qualified_or_certified availability through the availability field alone", () => {
+    const unsafeTexas = {
+      ...f03CongressionalSourceInventory,
+      records: f03CongressionalSourceInventory.records.map((record) =>
+        record.jurisdiction === "TX"
+          ? {
+              ...record,
+              evidence: {
+                ...record.evidence,
+                candidateAvailability: "qualified_or_certified" as const,
+              },
+            }
+          : record,
+      ),
+    };
+
+    expect(
+      validateF03CongressionalSourceInventory(unsafeTexas).errors,
+    ).toContain(
+      "TX: a calendar-only or filing sourceRole (filing_list) can never establish qualified_or_certified availability.",
+    );
+  });
+
+  it("rejects a calendar-only or filing sourceRole claiming a qualified_or_certified_roster observation", () => {
+    const unsafeLouisiana = {
+      ...f03CongressionalSourceInventory,
+      records: f03CongressionalSourceInventory.records.map((record) =>
+        record.jurisdiction === "LA"
+          ? {
+              ...record,
+              evidence: {
+                ...record.evidence,
+                sourceObservation: "qualified_or_certified_roster" as const,
+              },
+            }
+          : record,
+      ),
+    };
+
+    expect(
+      validateF03CongressionalSourceInventory(unsafeLouisiana).errors,
+    ).toContain(
+      "LA: a calendar-only or filing sourceRole (calendar_authority) can never claim a qualified_or_certified_roster observation.",
+    );
+  });
+
+  it("rejects a filing_list source claiming official_roster_not_yet_published coverage", () => {
+    const filingClaimsUnpublished = withRecord("TX", {
+      coverageState: "official_roster_not_yet_published" as never,
+    });
+
+    expect(
+      validateF03CongressionalSourceInventory(filingClaimsUnpublished).errors,
+    ).toContain(
+      "TX: a filing_list source has already retrieved a filing and cannot claim official_roster_not_yet_published.",
+    );
+  });
+
+  it("keeps manual_official_import coverage an explicit review-required state", () => {
+    const unsafeDc = {
+      ...f03CongressionalSourceInventory,
+      records: f03CongressionalSourceInventory.records.map((record) =>
+        record.jurisdiction === "DC"
+          ? {
+              ...record,
+              evidence: {
+                ...record.evidence,
+                candidateAvailability: "qualified_or_certified" as const,
+              },
+            }
+          : record,
+      ),
+    };
+
+    expect(validateF03CongressionalSourceInventory(unsafeDc).errors).toContain(
+      "DC: manual_official_import coverage must keep candidateAvailability manual_review_required.",
+    );
+  });
+
+  it("keeps official_roster_not_yet_published coverage an explicit not_published state", () => {
+    const unsafeLouisiana = {
+      ...f03CongressionalSourceInventory,
+      records: f03CongressionalSourceInventory.records.map((record) =>
+        record.jurisdiction === "LA"
+          ? {
+              ...record,
+              evidence: {
+                ...record.evidence,
+                candidateAvailability: "qualified_or_certified" as const,
+              },
+            }
+          : record,
+      ),
+    };
+
+    expect(
+      validateF03CongressionalSourceInventory(unsafeLouisiana).errors,
+    ).toContain(
+      "LA: official_roster_not_yet_published coverage must keep candidateAvailability not_published.",
+    );
+  });
+
+  it("retains every valid official-source record with zero semantic-combination errors", () => {
+    const result = validateF03CongressionalSourceInventory(
+      f03CongressionalSourceInventory,
+    );
+
+    expect(result.errors).toEqual([]);
+  });
+});
