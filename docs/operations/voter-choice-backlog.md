@@ -977,27 +977,6 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS: Backlog
 <!-- card-id: 4d7a6f37-e18f-4c41-8db8-20e79920db81 -->
 
-**[P0] F02 — Mutable expected-contest/calendar oracle**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- PLAN: docs/operations/nationwide-congressional-roster-plan.md
-- SCOPE: Implement effective-dated expected federal contests and calendar revisions for exact jurisdiction, office, district, date, regular/special flag, and stage. Make Alabama’s district-date split a permanent regression fixture. State logistics JSON may provide context but must never serve as the expected-contest oracle. Do not ingest live rosters, provision external services, or change the public candidate-selection path.
-- GOAL_CONDITION: Focused calendar tests and `npm run verify:congressional-calendar -- --year 2026 --fixture al-split` pass, followed by `npm run check`.
-- STATUS: To Do
-- DECISION: approved — Wave 1 implementation authorized by Muxin on 2026-07-13; non-visual code card, AUTO-eligible after green verification.
-- GROOMED: Ready: exact effective-dated calendar model, Alabama split fixture, verifier command, scope boundary, and GOAL_CONDITION are explicit — 2026-07-13
-<!-- card-id: b4328646-264b-4e3b-be3c-a84817029e61 -->
-
-**[P0] F01 — Congressional official-source inventory contract and verifier**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- PLAN: docs/operations/nationwide-congressional-roster-plan.md
-- SCOPE: Implement the versioned official-source record schema and fixture-backed verifier for every required source field and coverage state (`automatable`, `manual_official_import`, `official_roster_not_yet_published`, `blocked`). Preserve access constraints, authority URLs, fallback/manual-import procedure, last verification/reviewer, and coverage state. The verifier must fail on missing or invalid required fields; it must not scrape Ballotpedia, ingest live statewide rosters, provision storage, or alter the public roster path.
-- GOAL_CONDITION: Focused source-inventory tests and `npm run verify:congressional-source-inventory -- --fixtures` pass, followed by `npm run check`.
-- STATUS: Done
-- DECISION: approved — Wave 1 implementation authorized by Muxin on 2026-07-13; non-visual code card, AUTO-eligible after green verification.
-- GROOMED: Ready: exact source-record contract, fixtures, verifier command, scope boundary, and GOAL_CONDITION are explicit — 2026-07-13
-- LANE: roster-a
-<!-- card-id: 7b8bf87e-899f-4f4a-b89f-46409aaa317d -->
-
 **[P0] F04 — Seven-jurisdiction rehearsal review and contract correction gate**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - PLAN: docs/operations/nationwide-congressional-roster-plan.md
