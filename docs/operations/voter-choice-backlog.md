@@ -1005,11 +1005,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MT, NE, NV, NH, NJ, NM, NY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- LANE: roster-b
+- LANE: roster-a
 <!-- card-id: 60ee4055-48c7-45cd-ae63-cad0f75c5394 -->
 
 **[P0] I09 — National source inventory: NC, ND, OH, OK, OR, PA, RI**
