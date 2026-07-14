@@ -945,18 +945,6 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
 
-**[P0] F06 — Reproducible official-source evidence and manual-import controls**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: F04 seven-jurisdiction rehearsal correction.
-- OUTCOME: Make official-source evidence reproducible and manual coverage operationally complete.
-- IN SCOPE: captured artifact/reference, checksum, retrieval result/time, publication/effective time, distinct technical-failure/legal-challenge states, and manual controlling-artifact/owner/due-date/calendar-trigger/non-filing replacement path.
-- SAFETY: not-published requires a successful configured-channel check; source failure never becomes not-published; manual coverage never counts complete or promotable before its official artifact validates.
-- GOAL_CONDITION: Focused tests reject a not-published claim without successful evidence and any manual/filing-only path lacking its required official replacement controls; npm run check passes.
-SHIP: auto-pending-merge
-- STATUS: Review
-- GROOMED: ready: explicit evidence/manual-control outcome, fail-closed safeguards, and focused test predicate — 2026-07-13
-<!-- card-id: 09af9aa2-d34f-4d02-a8d9-7682f397ad78 -->
-
 **[P0] F07 — Official-source semantic combination invariants**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - ORIGIN: F04 seven-jurisdiction rehearsal correction.
@@ -966,6 +954,18 @@ SHIP: auto-pending-merge
 - GOAL_CONDITION: Focused negative tests reject every invalid semantic combination identified in F04 and retain valid official-source records; npm run check passes.
 - STATUS: Backlog
 <!-- card-id: 4d7a6f37-e18f-4c41-8db8-20e79920db81 -->
+
+**[P0] F06 — Reproducible official-source evidence and manual-import controls**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: F04 seven-jurisdiction rehearsal correction.
+- OUTCOME: Make official-source evidence reproducible and manual coverage operationally complete.
+- IN SCOPE: captured artifact/reference, checksum, retrieval result/time, publication/effective time, distinct technical-failure/legal-challenge states, and manual controlling-artifact/owner/due-date/calendar-trigger/non-filing replacement path.
+- SAFETY: not-published requires a successful configured-channel check; source failure never becomes not-published; manual coverage never counts complete or promotable before its official artifact validates.
+- GOAL_CONDITION: Focused tests reject a not-published claim without successful evidence and any manual/filing-only path lacking its required official replacement controls; npm run check passes.
+SHIP: auto-pending-merge
+- STATUS: Done
+- GROOMED: ready: explicit evidence/manual-control outcome, fail-closed safeguards, and focused test predicate — 2026-07-13
+<!-- card-id: 09af9aa2-d34f-4d02-a8d9-7682f397ad78 -->
 
 **[P0] F05 — Exact contest-to-official-source coverage contract**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
