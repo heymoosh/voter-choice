@@ -405,7 +405,7 @@ CLARIFICATION (Muxin, 2026-07-12): good question - so we do not go live until I 
 
 **[P0] Reset Polis count to 0 before launch**
 CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - all this means is, I've been doing tests on the app so it's counting my tests as actual voter info, but Polis should count real user's real issues and values. So the counter reset just makes sure my dirty test data doesn't muck up the Polis data.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
 - GROOMED: Ready/deferred: identify dirty-test Polis storage and prepare a reviewed one-command launch reset; no prod mutation overnight — 2026-07-12
@@ -432,7 +432,7 @@ CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - a
 - **Verification:** after redeploy, `vercel env ls` should NOT list `CHAT_DAILY_SESSION_LIMIT` for Production. The default `process.env.NODE_ENV === "production" ? 10 : 20` in `src/lib/server/rate-limit.ts:4-5` then applies. Env changes only take effect on a _fresh_ deployment.
 - **Why we raised it temporarily:** PR #45 fixed a sessionId regeneration bug (each page reload was consuming a fresh session slot). With that fix landed, a single user's session correctly counts as 1. But during the launch ramp it was practical to give dogfooders headroom rather than tune the cap precisely.
 - **Caveat (noted 2026-05-28, updated same day):** the durable rate-limiter still fails _closed_ on ANY Upstash Redis error (`src/lib/server/rate-limit.ts:256-269`), so a Redis blip denies the request — but it now reports `code: "RATE_LIMIT_UNAVAILABLE"` (not `DAILY_LIMIT`), which the continuity overlay renders as a distinct "temporarily unavailable — try again" message instead of the misleading "Budget exhausted" copy. Raising `CHAT_DAILY_SESSION_LIMIT` won't help a Redis failure: if chat denies while the budget tier is still `normal`, suspect a Redis blip, not the cap.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
 - GROOMED: Ready: launch-time env removal, redeploy, and verification are explicit; attended/deferred, no overnight execution — 2026-07-12
@@ -459,7 +459,7 @@ CLARIFICATION (Muxin, 2026-07-12): I think I briefly mentioned this in the app: 
 - Not a code task in itself — it closes when the Phase 1 redesign UX/UI is locked.
 
 CLARIFICATION (Muxin, 2026-07-12): I'm currently working through this. We did a lot of big Keystone redesign, and I'm in the phase of debugging right now, but after it's actually done and I'm happy with it, then I would consider this closed.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED
 - GROOMED: Ready as attended milestone: close only after Keystone debugging is complete and Muxin is satisfied with UX/UI — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
@@ -784,7 +784,7 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 
 **[P2] #146 empty k-means cluster silently suppresses all consensus statements**
 - Found 2026-06-30 reviewing held PR #146 (polis clustering). `findConsensusStatements` (`src/lib/polis/clustering.ts:342-345`) treats an empty cluster (size 0) as a hard consensus failure (`allClear=false; break`), so with `DEFAULT_K=3` any empty cluster silently suppresses ALL consensus statements — the report's headline feature. Inconsistent with `detectDividedState` (`clustering.ts:412`) which correctly filters `c.size > 0`. Inert today (surface unwired); fix BEFORE wiring the Polis report surface. (Also `reportAssembly.ts:194` emits size-0 phantom clusters.)
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready: empty-cluster consensus and phantom-cluster behavior are pinpointed and regression-testable — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: 174c8798-b17b-4d40-b17f-a317810ab423 -->
@@ -850,7 +850,7 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 - DEFERRED to P3 (2026-06-30): re-evaluate AFTER the redesign lands — the inline steps + walkthrough may both change, so this de-dup may resolve itself. Parked in Backlog until then.
 
 CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there anything that's needed to hear?
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P2] Simplify the Registered Address entry box
 - GROOMED: Ready/resolved: redesigned HomeView no longer renders the standalone walkthrough; verify and close with no product change — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
@@ -879,7 +879,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - GROOMED (2026-07-01): parked in Backlog — attended by nature (first-generated baselines need a human to eyeball) and the e2e job is a REQUIRED status check, so flaky visual specs would deadlock PRs (add as a NON-required leg; generate baselines in the Ubuntu CI runner). Honors the card's own "after the golden-address smoke" ordering (that card is Backlog, blocked on the test-env).
  - STATUS: To Do
  - DECISION: stage — Build a review-only before/after HTML/contact-sheet harness. Visual differences inform human batch review only; do not make broad pixel diffs a merge blocker.
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready attended: four screenshot surfaces and non-required Ubuntu CI leg are specified; human baseline review remains required — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
@@ -889,7 +889,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - Assert that a known real address/candidate returns NON-EMPTY alignment so a silent data-blank is caught even when the schema is technically present. Anchor: John Cornyn (TX Senator) + healthcare_affordability — lookupAlignment() should return { found: true, total >= 1, contributingVotes.length > 0 } (~18 healthcare votes observed at incident time). resolveCandidateId() already handles "Cornyn."
 - WHERE it runs — RESOLVED 2026-06-30: run against the **Neon test branch** in the new test-env (the "seeded test DB" option; that's why this card DEPENDS ON the test-env card). The heavier alternative (post-deploy prod smoke) is set aside. The drift check (PR #179) already covers the "prod behind a migration" class; this catches "schema present but data empty."
 - NEW infra, not a quick add.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: We need a deployment/test environment/server/branch?
 - GROOMED: Ready but blocked: seeded-Neon Cornyn healthcare assertion is explicit; waits on test environment — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
@@ -899,7 +899,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - - `scripts/ops/check-schema-drift.ts` `splitStatements()` splits each migration on `;` BEFORE `stripSqlComments()` runs, so a semicolon inside a `-- comment` fragments the statement. This split `0012_add_polis_response_vectors.sql`'s `CREATE TABLE` at a comment's `;`, tripped the unparsed-DDL guard, and would fail the deploy-time drift check. Worked around in PR #146 by removing the semicolons from the migration's comment prose.
 - Fix: in `splitStatements`, strip comments FIRST, then split on `--> statement-breakpoint` and `;` (reorder the pipeline). Add a regression test: a migration whose `CREATE TABLE` body comment contains a `;` must parse to a complete statement.
 - Why it matters: a mis-parsed `CREATE TABLE` leaves that object out of the expected schema, so the drift guard FAILS OPEN on it — the exact prod-behind failure the guard exists to catch.
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready: parser reorder and semicolon-in-comment regression test define a concrete proof — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: a06b360f-5017-45fc-b6c8-5ca67126b72d -->
@@ -916,7 +916,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - ATTENDED / not an AUTO build — board restructure needs product judgment on the mislabeled Phase 3 cards. Kept in Backlog.
 
 CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are mislabeled. Is that what this gating setup claims? Anyway, between all of these, this is just a way to make sure that the orchestrator doesn't accidentally start working on something that's not on the current roadmap. I want it to only focus on phase one cards, which is why there's this gait where we don't even want to touch phase two cards unless phase one is done. I think I also have to give it approval because I'm not ready to start working on anything in phase two, Even if phase one is done, I think I need some validation and market feedback to tell me whether or not this project is even worth additional investment into phase two, if that makes sense.
-- STATUS: Backlog
+- STATUS: To Do
 - GROOMED: Ready attended: gate current Phase 2/3 sections; Phase 2 opens only after validation and explicit Muxin approval — 2026-07-12
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: 6970765b-bce5-4850-94a5-f0e7e662f77e -->
@@ -947,6 +947,208 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
 
+**[P0] MANUAL SANITY-TEST GATE — app-vs-official-source accuracy check before roster fan-out/cutover**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Muxin, 2026-07-14 — hard checkpoint requested before the nationwide roster data is trusted or shown to real users.
+- TYPE: ATTENDED MANUAL GATE — this is NOT a code card. The conductor must STOP here and surface it to Muxin; it never auto-runs, never auto-merges, and is never self-vetted as complete.
+- WHEN IT FIRES: Before A25 (pilot UI flow behind the flag) merges, and before ANY national fan-out (N21+) or production cutover (C29). A25 and every fan-out/cutover card MUST be created with `DEPENDS ON` this gate.
+- WHAT TO TEST: Run the REAL app (preview/staging build) for 2–3 golden public addresses across at least TX, AL, and CA. For each resolved upcoming contest, compare the candidates the app displays against an INDEPENDENT reliable source — the state Secretary of State / election-authority official candidate list, plus a Ballotpedia spot-check. Confirm, per contest: no missing qualified candidate, no extra/withdrawn/defeated/filing-only candidate shown, correct ballot name / party / office / district / election stage, and an honest "roster not yet published/certified" state where the authority has not certified. Alabama is the high-volume stress case (do not hardcode a candidate count); Texas Senate is the standing regression.
+- PASS CONDITION: Muxin confirms the app's displayed roster matches the official source for every tested contest (or the app honestly shows the not-yet-published state). Only then may fan-out/cutout cards proceed.
+- FAIL HANDLING: File exact correction cards; do not advance to fan-out/cutover until re-tested clean.
+- NOTE: This is the earlier, informal instance of what the plan later formalizes as Q27 (national Ballotpedia sample QA). Keep it — it gates the FIRST app-visible data, well before national QA.
+- STATUS: Backlog
+- DECISION: attended manual gate — do NOT auto-run or auto-merge; conductor stops and surfaces to Muxin for the app-vs-source comparison.
+<!-- card-id: 041eddfa-9c44-4a02-8945-e7acb8052a14 -->
+
+**[P0] I05 — National source inventory: AZ, AR, CO, CT, DE, FL, GA**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for AZ, AR, CO, CT, DE, FL, and GA; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove AZ, AR, CO, CT, DE, FL, GA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 96f404ab-3bba-4812-b020-85a40a17c2dc -->
+
+**[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for HI, ID, IL, IN, IA, KS, and KY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove HI, ID, IL, IN, IA, KS, KY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-b
+<!-- card-id: 7f780d4d-0a85-4850-8257-557913409063 -->
+
+**[P0] I07 — National source inventory: ME, MD, MA, MI, MN, MS, MO**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for ME, MD, MA, MI, MN, MS, and MO; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 10c84215-b264-4d23-a03c-84ed0f519142 -->
+
+**[P0] I08 — National source inventory: MT, NE, NV, NH, NJ, NM, NY**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for MT, NE, NV, NH, NJ, NM, and NY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove MT, NE, NV, NH, NJ, NM, NY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-b
+<!-- card-id: 60ee4055-48c7-45cd-ae63-cad0f75c5394 -->
+
+**[P0] I09 — National source inventory: NC, ND, OH, OK, OR, PA, RI**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for NC, ND, OH, OK, OR, PA, and RI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove NC, ND, OH, OK, OR, PA, RI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 1c7e4a73-43ca-4f9b-bc7e-e6a7ee3f7d42 -->
+
+**[P0] I10 — National source inventory: SC, SD, TN, UT, VT, VA, WA**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for SC, SD, TN, UT, VT, VA, and WA; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove SC, SD, TN, UT, VT, VA, WA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-b
+<!-- card-id: aa06eb1b-9ce0-4037-856d-fcc2431fd4a6 -->
+
+**[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for WV, WI, WY, and the territorial delegate/resident-commissioner jurisdictions AS, GU, MP, and VI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission. Do not silently omit any territorial delegate contest.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract; explicit handling for territorial delegate/resident-commissioner offices.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage; territorial delegate contests must not be dropped.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest (including territorial delegate seats) maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove WV, WI, WY, AS, GU, MP, VI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope (incl. territorial delegates), fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 3a4eb627-7fec-403b-961b-1a24e5fbb29c -->
+
+**[P0] I12 — National inventory consolidation and semantic gate**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 fan-in of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "I12 — National inventory consolidation and semantic gate"); pre-created 2026-07-14 to carry the unattended run from Wave 3 into Wave 4.
+- PRECONDITION (fan-in): ALL of I05, I06, I07, I08, I09, I10, I11 must be Done before this card starts. The board parser honors only ONE DEPENDS ON per card (first-wins), so this card names I11 (last roster-a group) but its TRUE blocker is all seven I-groups. Confirm every I05–I11 is Done on the Step-0.5 readiness re-check before starting.
+- OUTCOME: One consolidated national inventory proving all 56 jurisdictions are accounted for; every expected 2026 contest maps to an official-source path or evidenced explicit state; parser families and access constraints frozen; non-sensitive public golden addresses selected for later app testing; no placeholder/unknown adapter promoted.
+- IN SCOPE: Fan-in of the seven I-group inventories into one validated national record; cross-group reconciliation against the F02 exact-contest oracle; freeze of parser-family classes and access constraints; selection of public golden addresses; EMIT the exact pilot and adapter cards (P16 Texas, P17 Alabama, P18 California, and one P19 card per still-unproven source/semantic class) as new Backlog cards — each born decided (stamp its DECISION from the plan's "Pre-authorized execution decisions" pilots clause: official-source reads only per the NON-NEGOTIABLE SOURCE DECISION, writes only to isolated staging, fail-closed) and pre-GROOMED so the run continues without a drip-feed approval.
+- OUT OF SCOPE: Candidate ingestion, schema migration (M13), promotion engine (M14), staging provisioning (M15), the pilots themselves, production mutation, scheduled refreshes.
+- SAFETY: Fail-closed if any I-group is incomplete or any jurisdiction lacks an official-source path/evidenced state — never consolidate a partial national inventory; no placeholder/unknown adapter card may be promoted; a filing list or calendar-only source can never be recorded as a qualified/certified roster.
+- TESTS: A national consolidation verifier proves all 56 jurisdictions present, every F02 expected contest mapped, no unknown/placeholder adapter, and parser-family/access-constraint freeze internally consistent; it fails if any group is missing.
+- GOAL_CONDITION: The national inventory verifier passes for all 56 jurisdictions with no silent omission and no placeholder adapter; the emitted pilot/adapter cards exist as Backlog cards; npm run check passes.
+- SHIP: auto-pending-merge
+- NOTE (2026-07-14): Left un-GROOMED deliberately — the I05–I11 fan-in is a single-dep parser limitation, so the conductor's Step-0.5 re-groom confirms all seven are Done before stamping GROOMED. This matches the plan's "after all seven are Done, create I12" intent while keeping the run unattended.
+- STATUS: Backlog
+- DEPENDS ON: I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI
+- DECISION: authorized — consolidation/verification over the already-saved I05–I11 evidence plus card emission only; any incidental re-fetch limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (no Ballotpedia, no access-control bypass). No candidate ingestion, migrations, or production mutation.
+- LANE: roster-a
+<!-- card-id: 98f2c3d4-ef46-4e72-85bc-02b2c4bec612 -->
+
+**[P0] M13 — Canonical roster schema and migration (code only, no production)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M13 — Canonical roster schema and migration"); pre-groomed 2026-07-14.
+- OUTCOME: Migration code adding the exact-election, contest, identity, appearance, snapshot, promotion, and finance-link structures from the plan's canonical data model.
+- IN SCOPE: Migration files and the corresponding schema types for the canonical roster model, plus unit-level schema tests. Migration code only.
+- OUT OF SCOPE: Running the migration against any production or staging database; candidate ingestion; the promotion engine (M14); staging provisioning (M15); any production mutation.
+- SAFETY: No migration is applied to a live database by this card; additive/non-destructive definitions only; no production data is read or written.
+- TESTS: Schema/migration unit tests prove the new structures and their constraints compile and validate against fixtures.
+- GOAL_CONDITION: The canonical schema and migration files exist with passing schema tests and no database application; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: I12 — National inventory consolidation and semantic gate
+- DECISION: authorized — writes migration files, schema types, and tests only; NO database connection, NO production/staging application, NO external service. Pure code; additive and reversible.
+- GROOMED: ready: explicit code-only schema/migration scope, no-DB-application safeguard, and schema-test goal condition — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 694e21ad-e864-44b1-a65b-dfc32f40a4e2 -->
+
+**[P0] M14 — Private artifact abstraction and fail-closed promotion engine (TDD, fakes only)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M14 — Private artifact abstraction and fail-closed promotion engine"); pre-groomed 2026-07-14.
+- OUTCOME: A private-artifact storage abstraction and a fail-closed promotion engine proven, by TDD against fake Blob/database implementations, to retain the prior promoted snapshot in every failure case.
+- IN SCOPE: The artifact-store interface plus a fake implementation; the promotion engine and its state machine; exhaustive failure-case tests (fetch failure, validation failure, partial/blocked coverage, calendar conflict) each proving the previously promoted snapshot is retained.
+- OUT OF SCOPE: Real Blob/database wiring; staging/production resources (M15); scheduled ingestion; candidate ingestion; any production mutation.
+- SAFETY: Every failure path is fail-closed — a failed acquisition/validation NEVER promotes and NEVER downgrades the last good snapshot; no real external service is contacted; all I/O goes through the fakes.
+- TESTS: A TDD suite drives the engine entirely through fake Blob/database implementations; every enumerated failure case asserts prior-snapshot retention and no promotion.
+- GOAL_CONDITION: The promotion engine passes its full fail-closed TDD suite against fakes with prior-snapshot retention proven for every failure case; npm run check passes.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: M13 — Canonical roster schema and migration
+- DECISION: authorized — implementation and TDD against fake Blob/database only; NO real storage/database credentials, NO external service, NO production mutation. Pure code plus tests.
+- GROOMED: ready: explicit fake-only TDD scope, fail-closed retention safeguard, and full-failure-case goal condition — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 7e3b05a0-9c40-4eec-a3b0-67a4ab259411 -->
+
+**[P0] M15 — Isolated staging wire-up and canary (consumes pre-provisioned secrets)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M15 — Isolated staging resources" + "Pre-authorized execution decisions"); pre-groomed 2026-07-14 as an auto wire-up that consumes secrets Muxin provisions out of band.
+- PRECONDITION (secrets): Muxin provisions the private Blob store and an isolated Neon staging branch OUT OF BAND and sets `ROSTER_STAGING_BLOB_TOKEN` and `ROSTER_STAGING_DATABASE_URL`. If EITHER secret is absent/empty, this card stops with an honest "staging not provisioned" state — it does NOT provision anything.
+- OUTCOME: The roster artifact-store and promotion engine (M14) are wired to the pre-provisioned private Blob + isolated Neon staging branch, and a canary run proves connectivity and fail-closed behavior against staging only.
+- IN SCOPE: Reading the two pre-set staging secrets; wiring M14's artifact-store/promotion abstraction to them; a canary that writes/reads a throwaway staging artifact and verifies fail-closed retention; applying M13's additive migration to the ISOLATED staging Neon branch only.
+- OUT OF SCOPE: Provisioning or creating any cloud resource; writing/rotating secrets; ANY production database or Blob; pilots; live candidate data.
+- SAFETY: Never provisions cloud resources and never writes secrets — it only consumes pre-set ones. Refuses to run against any URL that is not the isolated staging branch; production is never touched. Missing/empty secret → honest stop, never a guess or a provision.
+- TESTS: Canary asserts staging connectivity via the two secrets, a round-trip artifact write/read against staging Blob, staging migration applied additively, and fail-closed retention on a simulated failure; no production endpoint is contacted.
+- GOAL_CONDITION: Both staging secrets present → the canary proves staging wire-up + additive staging migration + fail-closed retention against staging only, and npm run check passes (Done). If EITHER secret is absent, the card does NOT complete and is NOT marked Done — it surfaces "staging not provisioned — set ROSTER_STAGING_BLOB_TOKEN + ROSTER_STAGING_DATABASE_URL" and holds for Muxin, so nothing downstream (pilots) runs without real staging.
+- SHIP: auto-pending-merge
+- STATUS: To Do
+- DEPENDS ON: M14 — Private artifact abstraction and fail-closed promotion engine
+- DECISION: authorized (pre-authorized per the plan's "Pre-authorized execution decisions", M15 clause) — CONSUMES pre-provisioned staging secrets and wires/canaries staging only; NEVER provisions cloud resources, NEVER writes secrets, NEVER touches production; missing secret → honest stop. Muxin sets `ROSTER_STAGING_BLOB_TOKEN` + `ROSTER_STAGING_DATABASE_URL` out of band.
+- GROOMED: ready: consumes pre-set staging secrets, wires + canaries staging only, fail-closed on missing secret or any production reference — 2026-07-14
+- LANE: roster-a
+<!-- card-id: 93fb2bcb-4d2d-489e-9ef2-b13e6aad821c -->
+
 **[P0] F07 — Official-source semantic combination invariants**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - ORIGIN: F04 seven-jurisdiction rehearsal correction.
@@ -955,11 +1157,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: filing list and calendar-only evidence can never establish qualified/certified availability; manual states remain explicit review-required states.
 - GOAL_CONDITION: Focused negative tests reject every invalid semantic combination identified in F04 and retain valid official-source records; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
-- LANE: roster-a
+- NOTE (2026-07-14): Next roster card after Codex's F06 (PR #312, merged). This is the last F04 correction card; Wave-3 national inventory fan-out (I05–I11) DEPENDS ON it.
+- STATUS: Done
 - DECISION: authorized — code + tests only, enforcing the F04 semantic-combination invariants; no external service, no migration, no production mutation.
 - GROOMED: ready: explicit semantic-invariant scope, fail-closed safeguards, and focused negative-test predicate; code+tests only, no external service or migration — 2026-07-14
-- NOTE (2026-07-14): Next roster card after Codex's F06 (PR #312, merged). This is the last F04 correction card; Wave-3 national inventory fan-out (I05–I11) DEPENDS ON it.
+- LANE: roster-a
 <!-- card-id: 4d7a6f37-e18f-4c41-8db8-20e79920db81 -->
 
 **[P0] F06 — Reproducible official-source evidence and manual-import controls**
@@ -1017,193 +1219,3 @@ SHIP: auto-pending-merge
 - STATUS: Done
 - GROOMED: ready: explicit seven-jurisdiction scope, safeguards, tests, and goal condition — 2026-07-13
 <!-- card-id: 06577f2c-82f3-4656-94d5-89f931dfa5a3 -->
-
-**[P0] MANUAL SANITY-TEST GATE — app-vs-official-source accuracy check before roster fan-out/cutover**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Muxin, 2026-07-14 — hard checkpoint requested before the nationwide roster data is trusted or shown to real users.
-- TYPE: ATTENDED MANUAL GATE — this is NOT a code card. The conductor must STOP here and surface it to Muxin; it never auto-runs, never auto-merges, and is never self-vetted as complete.
-- WHEN IT FIRES: Before A25 (pilot UI flow behind the flag) merges, and before ANY national fan-out (N21+) or production cutover (C29). A25 and every fan-out/cutover card MUST be created with `DEPENDS ON` this gate.
-- WHAT TO TEST: Run the REAL app (preview/staging build) for 2–3 golden public addresses across at least TX, AL, and CA. For each resolved upcoming contest, compare the candidates the app displays against an INDEPENDENT reliable source — the state Secretary of State / election-authority official candidate list, plus a Ballotpedia spot-check. Confirm, per contest: no missing qualified candidate, no extra/withdrawn/defeated/filing-only candidate shown, correct ballot name / party / office / district / election stage, and an honest "roster not yet published/certified" state where the authority has not certified. Alabama is the high-volume stress case (do not hardcode a candidate count); Texas Senate is the standing regression.
-- PASS CONDITION: Muxin confirms the app's displayed roster matches the official source for every tested contest (or the app honestly shows the not-yet-published state). Only then may fan-out/cutout cards proceed.
-- FAIL HANDLING: File exact correction cards; do not advance to fan-out/cutover until re-tested clean.
-- NOTE: This is the earlier, informal instance of what the plan later formalizes as Q27 (national Ballotpedia sample QA). Keep it — it gates the FIRST app-visible data, well before national QA.
-- STATUS: Backlog
-- DECISION: attended manual gate — do NOT auto-run or auto-merge; conductor stops and surfaces to Muxin for the app-vs-source comparison.
-
-**[P0] I05 — National source inventory: AZ, AR, CO, CT, DE, FL, GA**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for AZ, AR, CO, CT, DE, FL, and GA; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove AZ, AR, CO, CT, DE, FL, GA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for HI, ID, IL, IN, IA, KS, and KY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove HI, ID, IL, IN, IA, KS, KY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-b
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I07 — National source inventory: ME, MD, MA, MI, MN, MS, MO**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for ME, MD, MA, MI, MN, MS, and MO; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I08 — National source inventory: MT, NE, NV, NH, NJ, NM, NY**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for MT, NE, NV, NH, NJ, NM, and NY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove MT, NE, NV, NH, NJ, NM, NY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-b
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I09 — National source inventory: NC, ND, OH, OK, OR, PA, RI**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for NC, ND, OH, OK, OR, PA, and RI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove NC, ND, OH, OK, OR, PA, RI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I10 — National source inventory: SC, SD, TN, UT, VT, VA, WA**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for SC, SD, TN, UT, VT, VA, and WA; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove SC, SD, TN, UT, VT, VA, WA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-b
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for WV, WI, WY, and the territorial delegate/resident-commissioner jurisdictions AS, GU, MP, and VI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission. Do not silently omit any territorial delegate contest.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract; explicit handling for territorial delegate/resident-commissioner offices.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage; territorial delegate contests must not be dropped.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest (including territorial delegate seats) maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove WV, WI, WY, AS, GU, MP, VI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope (incl. territorial delegates), fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-
-**[P0] I12 — National inventory consolidation and semantic gate**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 fan-in of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "I12 — National inventory consolidation and semantic gate"); pre-created 2026-07-14 to carry the unattended run from Wave 3 into Wave 4.
-- PRECONDITION (fan-in): ALL of I05, I06, I07, I08, I09, I10, I11 must be Done before this card starts. The board parser honors only ONE DEPENDS ON per card (first-wins), so this card names I11 (last roster-a group) but its TRUE blocker is all seven I-groups. Confirm every I05–I11 is Done on the Step-0.5 readiness re-check before starting.
-- OUTCOME: One consolidated national inventory proving all 56 jurisdictions are accounted for; every expected 2026 contest maps to an official-source path or evidenced explicit state; parser families and access constraints frozen; non-sensitive public golden addresses selected for later app testing; no placeholder/unknown adapter promoted.
-- IN SCOPE: Fan-in of the seven I-group inventories into one validated national record; cross-group reconciliation against the F02 exact-contest oracle; freeze of parser-family classes and access constraints; selection of public golden addresses; EMIT the exact pilot and adapter cards (P16 Texas, P17 Alabama, P18 California, and one P19 card per still-unproven source/semantic class) as new Backlog cards — each born decided (stamp its DECISION from the plan's "Pre-authorized execution decisions" pilots clause: official-source reads only per the NON-NEGOTIABLE SOURCE DECISION, writes only to isolated staging, fail-closed) and pre-GROOMED so the run continues without a drip-feed approval.
-- OUT OF SCOPE: Candidate ingestion, schema migration (M13), promotion engine (M14), staging provisioning (M15), the pilots themselves, production mutation, scheduled refreshes.
-- SAFETY: Fail-closed if any I-group is incomplete or any jurisdiction lacks an official-source path/evidenced state — never consolidate a partial national inventory; no placeholder/unknown adapter card may be promoted; a filing list or calendar-only source can never be recorded as a qualified/certified roster.
-- TESTS: A national consolidation verifier proves all 56 jurisdictions present, every F02 expected contest mapped, no unknown/placeholder adapter, and parser-family/access-constraint freeze internally consistent; it fails if any group is missing.
-- GOAL_CONDITION: The national inventory verifier passes for all 56 jurisdictions with no silent omission and no placeholder adapter; the emitted pilot/adapter cards exist as Backlog cards; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — consolidation/verification over the already-saved I05–I11 evidence plus card emission only; any incidental re-fetch limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (no Ballotpedia, no access-control bypass). No candidate ingestion, migrations, or production mutation.
-- NOTE (2026-07-14): Left un-GROOMED deliberately — the I05–I11 fan-in is a single-dep parser limitation, so the conductor's Step-0.5 re-groom confirms all seven are Done before stamping GROOMED. This matches the plan's "after all seven are Done, create I12" intent while keeping the run unattended.
-
-**[P0] M13 — Canonical roster schema and migration (code only, no production)**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M13 — Canonical roster schema and migration"); pre-groomed 2026-07-14.
-- OUTCOME: Migration code adding the exact-election, contest, identity, appearance, snapshot, promotion, and finance-link structures from the plan's canonical data model.
-- IN SCOPE: Migration files and the corresponding schema types for the canonical roster model, plus unit-level schema tests. Migration code only.
-- OUT OF SCOPE: Running the migration against any production or staging database; candidate ingestion; the promotion engine (M14); staging provisioning (M15); any production mutation.
-- SAFETY: No migration is applied to a live database by this card; additive/non-destructive definitions only; no production data is read or written.
-- TESTS: Schema/migration unit tests prove the new structures and their constraints compile and validate against fixtures.
-- GOAL_CONDITION: The canonical schema and migration files exist with passing schema tests and no database application; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: I12 — National inventory consolidation and semantic gate
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — writes migration files, schema types, and tests only; NO database connection, NO production/staging application, NO external service. Pure code; additive and reversible.
-- GROOMED: ready: explicit code-only schema/migration scope, no-DB-application safeguard, and schema-test goal condition — 2026-07-14
-
-**[P0] M14 — Private artifact abstraction and fail-closed promotion engine (TDD, fakes only)**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M14 — Private artifact abstraction and fail-closed promotion engine"); pre-groomed 2026-07-14.
-- OUTCOME: A private-artifact storage abstraction and a fail-closed promotion engine proven, by TDD against fake Blob/database implementations, to retain the prior promoted snapshot in every failure case.
-- IN SCOPE: The artifact-store interface plus a fake implementation; the promotion engine and its state machine; exhaustive failure-case tests (fetch failure, validation failure, partial/blocked coverage, calendar conflict) each proving the previously promoted snapshot is retained.
-- OUT OF SCOPE: Real Blob/database wiring; staging/production resources (M15); scheduled ingestion; candidate ingestion; any production mutation.
-- SAFETY: Every failure path is fail-closed — a failed acquisition/validation NEVER promotes and NEVER downgrades the last good snapshot; no real external service is contacted; all I/O goes through the fakes.
-- TESTS: A TDD suite drives the engine entirely through fake Blob/database implementations; every enumerated failure case asserts prior-snapshot retention and no promotion.
-- GOAL_CONDITION: The promotion engine passes its full fail-closed TDD suite against fakes with prior-snapshot retention proven for every failure case; npm run check passes.
-- SHIP: auto-pending-merge
-- DEPENDS ON: M13 — Canonical roster schema and migration
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized — implementation and TDD against fake Blob/database only; NO real storage/database credentials, NO external service, NO production mutation. Pure code plus tests.
-- GROOMED: ready: explicit fake-only TDD scope, fail-closed retention safeguard, and full-failure-case goal condition — 2026-07-14
-
-**[P0] M15 — Isolated staging wire-up and canary (consumes pre-provisioned secrets)**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M15 — Isolated staging resources" + "Pre-authorized execution decisions"); pre-groomed 2026-07-14 as an auto wire-up that consumes secrets Muxin provisions out of band.
-- PRECONDITION (secrets): Muxin provisions the private Blob store and an isolated Neon staging branch OUT OF BAND and sets `ROSTER_STAGING_BLOB_TOKEN` and `ROSTER_STAGING_DATABASE_URL`. If EITHER secret is absent/empty, this card stops with an honest "staging not provisioned" state — it does NOT provision anything.
-- OUTCOME: The roster artifact-store and promotion engine (M14) are wired to the pre-provisioned private Blob + isolated Neon staging branch, and a canary run proves connectivity and fail-closed behavior against staging only.
-- IN SCOPE: Reading the two pre-set staging secrets; wiring M14's artifact-store/promotion abstraction to them; a canary that writes/reads a throwaway staging artifact and verifies fail-closed retention; applying M13's additive migration to the ISOLATED staging Neon branch only.
-- OUT OF SCOPE: Provisioning or creating any cloud resource; writing/rotating secrets; ANY production database or Blob; pilots; live candidate data.
-- SAFETY: Never provisions cloud resources and never writes secrets — it only consumes pre-set ones. Refuses to run against any URL that is not the isolated staging branch; production is never touched. Missing/empty secret → honest stop, never a guess or a provision.
-- TESTS: Canary asserts staging connectivity via the two secrets, a round-trip artifact write/read against staging Blob, staging migration applied additively, and fail-closed retention on a simulated failure; no production endpoint is contacted.
-- GOAL_CONDITION: Both staging secrets present → the canary proves staging wire-up + additive staging migration + fail-closed retention against staging only, and npm run check passes (Done). If EITHER secret is absent, the card does NOT complete and is NOT marked Done — it surfaces "staging not provisioned — set ROSTER_STAGING_BLOB_TOKEN + ROSTER_STAGING_DATABASE_URL" and holds for Muxin, so nothing downstream (pilots) runs without real staging.
-- SHIP: auto-pending-merge
-- DEPENDS ON: M14 — Private artifact abstraction and fail-closed promotion engine
-- LANE: roster-a
-- STATUS: Backlog
-- DECISION: authorized (pre-authorized per the plan's "Pre-authorized execution decisions", M15 clause) — CONSUMES pre-provisioned staging secrets and wires/canaries staging only; NEVER provisions cloud resources, NEVER writes secrets, NEVER touches production; missing secret → honest stop. Muxin sets `ROSTER_STAGING_BLOB_TOKEN` + `ROSTER_STAGING_DATABASE_URL` out of band.
-- GROOMED: ready: consumes pre-set staging secrets, wires + canaries staging only, fail-closed on missing secret or any production reference — 2026-07-14
