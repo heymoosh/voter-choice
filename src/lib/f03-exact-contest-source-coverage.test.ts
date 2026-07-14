@@ -187,6 +187,19 @@ describe("F05 exact F03 contest-to-source coverage", () => {
     );
   });
 
+  it("does not promote a manual path before its controlling official artifact validates", async () => {
+    const coverage = completeCoverage();
+    coverage.records.find(
+      (record) => record.sourceId === "tx-house-07-dem-primary-official-source",
+    )!.promotionState = "exact_official_source_path";
+
+    await expectError(
+      rehearsalOracle(),
+      coverage,
+      "manual official evidence cannot be promoted before its controlling artifact validates",
+    );
+  });
+
   it("requires every non-review F03 contest to have a path or explicit non-promotable state", async () => {
     const incomplete = completeCoverage();
     incomplete.records = incomplete.records.filter(
