@@ -954,7 +954,8 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GOAL_CONDITION: Focused tests fail for missing/incorrect district, seat, kind, date, stage, or party lane and pass only when every F03 expected contest has an exact official-source path or explicit evidenced state; npm run check passes.
 - STATUS: In Progress
 - GROOMED: ready: exact contract scope, safeguards, tests, and goal condition — 2026-07-13
-- PARKED: boundary handoff: In Progress card had no recoverable worktree; restart as a fresh F05 execution after the next session begins — 2026-07-13
+- PARKED: F05 execution workers exceeded the two-attempt handoff cap without returning test evidence; partial files are preserved in roster-a worktree for a fresh recovery — 2026-07-13
+- LANE: roster-a
 <!-- card-id: d4446600-b85d-47f1-9e9e-048ca118df9f -->
 
 **[P0] F06 — Reproducible official-source evidence and manual-import controls**
