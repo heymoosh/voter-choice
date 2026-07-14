@@ -295,6 +295,17 @@ export function validateF03ExactContestSourceCoverage(
         );
         return;
       }
+      const manualEvidence = inventoryRecord.evidence.manualImport;
+      if (
+        promotionState === "exact_official_source_path" &&
+        manualEvidence &&
+        manualEvidence.officialArtifactValidated !== true
+      ) {
+        errors.push(
+          `${label}: manual official evidence cannot be promoted before its controlling artifact validates.`,
+        );
+        return;
+      }
       const duplicateKey = `${sourceId}|${scopeKey(scope)}`;
       if (seenSourceScopes.has(duplicateKey)) {
         errors.push(`${label}: duplicate sourceId and exact contest scope.`);

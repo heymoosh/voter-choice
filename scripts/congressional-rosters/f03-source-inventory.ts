@@ -30,13 +30,40 @@ type SourceObservation =
   | "not_published"
   | "challenge_or_error"
   | "access_blocked";
+type RetrievalResult = "success" | "technical_failure" | "legal_challenge";
+
+export interface F03ManualImportControls {
+  /** Retained official artifact that controls the attended import. */
+  controllingArtifactRef: string;
+  /** Named operational owner for the attended queue item. */
+  manualOwner: string;
+  /** Timestamp by which the next attended check is due. */
+  manualDueAt: string;
+  /** Calendar or publication event that causes the next check. */
+  calendarTrigger: string;
+  /** Official non-filing artifact that may replace the filing-only source. */
+  nonFilingReplacementArtifact: string;
+  /** Only a validated official artifact may make a manual path promotable. */
+  officialArtifactValidated: boolean;
+}
 
 export interface F03SourceEvidence {
   sourceObservation: SourceObservation;
   candidateAvailability: CandidateAvailability;
+  /** Capture outcome, deliberately separate from legal challenge evidence. */
+  retrievalResult: RetrievalResult;
+  /** The configured official publication channel was checked successfully. */
+  successfulConfiguredChannelCheck: boolean;
+  /** Immutable retained artifact/reference used to reproduce this observation. */
+  artifactReference: string;
+  checksum: string;
+  retrievedAt: string;
+  publishedAt: string;
+  effectiveAt: string;
   verifiedAt: string;
   evidenceUrl: string;
   evidenceSummary: string;
+  manualImport?: F03ManualImportControls;
 }
 
 export interface F03CongressionalSourceInventoryRecord
@@ -105,6 +132,15 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "qualified_or_certified_roster",
           candidateAvailability: "qualified_or_certified",
+          retrievalResult: "success",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/AL/al-2026-election-information.html",
+          checksum:
+            "sha256:895954430d72a4f0f2ad6062c4650973b052611ada71554c5bde00dd2d27736a",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl:
             "https://www.sos.alabama.gov/alabama-votes/voter/election-information/2026",
@@ -148,11 +184,30 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "filing_list_only",
           candidateAvailability: "manual_review_required",
+          retrievalResult: "success",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/TX/tx-2026-march-primary-listing.html",
+          checksum:
+            "sha256:c1e9912b42c4133602bccf7dfcc7aebc378064c134910153f544f342961519eb",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl:
             "https://www.sos.texas.gov/elections/laws/2026marchprimaryelection332026.shtml",
           evidenceSummary:
             "The state page labels the linked record as Candidate Listing Information; this rehearsal intentionally treats that filing-stage listing as insufficient for qualified/certified availability.",
+          manualImport: {
+            controllingArtifactRef:
+              "private://official-artifacts/2026/TX/tx-primary-controlling-roster.pdf",
+            manualOwner: "congressional-roster-operations",
+            manualDueAt: "2026-07-20T00:00:00.000Z",
+            calendarTrigger: "state certification or sample-ballot publication",
+            nonFilingReplacementArtifact:
+              "Texas Secretary of State certified ballot or official sample ballot",
+            officialArtifactValidated: false,
+          },
         },
       },
       {
@@ -191,11 +246,30 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "filing_list_only",
           candidateAvailability: "manual_review_required",
+          retrievalResult: "success",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/CA/ca-2026-primary-congress-notice.pdf",
+          checksum:
+            "sha256:3c82f31af98ae2595938e6b516e199c0d2762ecae5f92ab8122aee20beeb9f69",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl:
             "https://elections.cdn.sos.ca.gov/statewide-elections/2026-primary/congress.pdf",
           evidenceSummary:
             "The state-hosted PDF is a Notice to Candidates for the June primary, so it cannot establish a qualified/certified upcoming-contest roster.",
+          manualImport: {
+            controllingArtifactRef:
+              "private://official-artifacts/2026/CA/ca-primary-controlling-roster.pdf",
+            manualOwner: "congressional-roster-operations",
+            manualDueAt: "2026-07-20T00:00:00.000Z",
+            calendarTrigger: "certified list or sample-ballot publication",
+            nonFilingReplacementArtifact:
+              "California Secretary of State certified list or official sample ballot",
+            officialArtifactValidated: false,
+          },
         },
       },
       {
@@ -233,10 +307,29 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "manual_official_import",
           candidateAvailability: "manual_review_required",
+          retrievalResult: "success",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/DC/dc-2026-elections-landing.html",
+          checksum:
+            "sha256:949876f30022242d86e47c00143b0b65aae1ca4caa5f0b7a130ee2953102014a",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl: "https://www.dcboe.org/elections/2026-elections",
           evidenceSummary:
             "DCBOE's official April notice says the June primary includes Delegate and directs readers to the 2026 elections page for the current candidate list; this record remains manual until that exact artifact is captured.",
+          manualImport: {
+            controllingArtifactRef:
+              "private://official-artifacts/2026/DC/dc-delegate-controlling-roster.pdf",
+            manualOwner: "congressional-roster-operations",
+            manualDueAt: "2026-07-20T00:00:00.000Z",
+            calendarTrigger: "DCBOE Delegate candidate-list publication",
+            nonFilingReplacementArtifact:
+              "DCBOE Delegate candidate list or official sample ballot",
+            officialArtifactValidated: false,
+          },
         },
       },
       {
@@ -273,11 +366,30 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "challenge_or_error",
           candidateAvailability: "manual_review_required",
+          retrievalResult: "legal_challenge",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/AK/ak-final-determination-6.15.2026.pdf",
+          checksum:
+            "sha256:f9d803da3533518793dc571447b6e6217346ab6ce80dd23f119c6f0e51f84a91",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl:
             "https://www.elections.alaska.gov/wp-content/uploads/2026/06/Final-Determination-6.15.2026-DOE.pdf",
           evidenceSummary:
             "The Division's June 15 final determination documents a ballot-eligibility dispute; availability remains review-required even though the candidate page labels its list final.",
+          manualImport: {
+            controllingArtifactRef:
+              "private://official-artifacts/2026/AK/ak-controlling-challenge-resolution.pdf",
+            manualOwner: "congressional-roster-operations",
+            manualDueAt: "2026-07-20T00:00:00.000Z",
+            calendarTrigger: "ballot-eligibility challenge resolution",
+            nonFilingReplacementArtifact:
+              "Alaska Division of Elections final controlling candidate list",
+            officialArtifactValidated: false,
+          },
         },
       },
       {
@@ -316,6 +428,15 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "not_published",
           candidateAvailability: "not_published",
+          retrievalResult: "success",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/LA/la-2026-candidate-inquiry.html",
+          checksum:
+            "sha256:492e8c0f20c65e5b3ecaf4276a6a8ebe3652e7680ffa0fc45d75d1def15637e0",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl:
             "https://voterportal.sos.la.gov/CandidateInquiry?electionDate=20261103",
@@ -356,6 +477,15 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         evidence: {
           sourceObservation: "not_published",
           candidateAvailability: "not_published",
+          retrievalResult: "success",
+          successfulConfiguredChannelCheck: true,
+          artifactReference:
+            "private://official-artifacts/2026/PR/pr-2028-cee-landing.html",
+          checksum:
+            "sha256:58bcf8487625a8cd578a40cb8e7631cc38eb12e181e7c9c2278a6a35d51309ef",
+          retrievedAt: reviewedAt,
+          publishedAt: reviewedAt,
+          effectiveAt: reviewedAt,
           verifiedAt: reviewedAt,
           evidenceUrl: "https://ww2.ceepur.org/",
           evidenceSummary:
@@ -391,6 +521,7 @@ export function validateF03CongressionalSourceInventory(
     }
     const observation = evidence.sourceObservation;
     const availability = evidence.candidateAvailability;
+    const retrievalResult = evidence.retrievalResult;
     if (!SOURCE_OBSERVATIONS.includes(observation as SourceObservation)) {
       result.errors.push(
         `${label}: evidence.sourceObservation is invalid; unknown is not allowed.`,
@@ -402,6 +533,32 @@ export function validateF03CongressionalSourceInventory(
       result.errors.push(
         `${label}: evidence.candidateAvailability is invalid; unknown is not allowed.`,
       );
+    }
+    if (!RETRIEVAL_RESULTS.includes(retrievalResult as RetrievalResult)) {
+      result.errors.push(
+        `${label}: evidence.retrievalResult must distinguish success, technical_failure, or legal_challenge.`,
+      );
+    }
+    if (typeof evidence.successfulConfiguredChannelCheck !== "boolean") {
+      result.errors.push(
+        `${label}: evidence.successfulConfiguredChannelCheck must be a boolean.`,
+      );
+    }
+    if (!isNonEmptyString(evidence.artifactReference))
+      result.errors.push(`${label}: evidence.artifactReference is required.`);
+    if (!isSha256Checksum(evidence.checksum))
+      result.errors.push(
+        `${label}: evidence.checksum must be a SHA-256 checksum.`,
+      );
+    for (const field of [
+      "retrievedAt",
+      "publishedAt",
+      "effectiveAt",
+    ] as const) {
+      if (!isIsoTimestamp(evidence[field]))
+        result.errors.push(
+          `${label}: evidence.${field} must be an ISO timestamp.`,
+        );
     }
     if (!isHttpsUrl(evidence.evidenceUrl))
       result.errors.push(
@@ -439,6 +596,14 @@ export function validateF03CongressionalSourceInventory(
       );
     }
     if (
+      observation === "challenge_or_error" &&
+      retrievalResult !== "legal_challenge"
+    ) {
+      result.errors.push(
+        `${label}: challenge_or_error evidence requires a legal_challenge retrieval result.`,
+      );
+    }
+    if (
       observation === "not_published" &&
       (record.coverageState !== "official_roster_not_yet_published" ||
         availability !== "not_published")
@@ -446,6 +611,27 @@ export function validateF03CongressionalSourceInventory(
       result.errors.push(
         `${label}: not_published evidence requires official_roster_not_yet_published coverage and not_published availability.`,
       );
+    }
+    if (
+      observation === "not_published" &&
+      (retrievalResult !== "success" ||
+        evidence.successfulConfiguredChannelCheck !== true)
+    ) {
+      result.errors.push(
+        `${label}: not_published evidence requires a successful configured-channel check.`,
+      );
+    }
+    if (retrievalResult === "technical_failure") {
+      if (observation === "not_published") {
+        result.errors.push(
+          `${label}: a technical source failure can never become not_published.`,
+        );
+      }
+      if (record.coverageState !== "blocked" || availability !== "blocked") {
+        result.errors.push(
+          `${label}: technical_failure requires blocked coverage and blocked availability.`,
+        );
+      }
     }
     if (
       observation === "access_blocked" &&
@@ -465,6 +651,25 @@ export function validateF03CongressionalSourceInventory(
       result.errors.push(
         `${label}: automatable coverage requires an official qualified/certified roster or sample ballot.`,
       );
+    }
+
+    const requiresManualControls =
+      record.coverageState === "manual_official_import" ||
+      observation === "filing_list_only" ||
+      observation === "manual_official_import" ||
+      observation === "challenge_or_error";
+    if (requiresManualControls) {
+      validateManualImportControls(evidence.manualImport, label, result.errors);
+      if (
+        isRecord(evidence.manualImport) &&
+        evidence.manualImport.officialArtifactValidated !== true &&
+        (record.coverageState === "automatable" ||
+          availability === "qualified_or_certified")
+      ) {
+        result.errors.push(
+          `${label}: manual evidence cannot be complete or promotable until its official artifact validates.`,
+        );
+      }
     }
   }
 
@@ -499,6 +704,37 @@ const CANDIDATE_AVAILABILITY: CandidateAvailability[] = [
   "not_published",
   "blocked",
 ];
+const RETRIEVAL_RESULTS: RetrievalResult[] = [
+  "success",
+  "technical_failure",
+  "legal_challenge",
+];
+
+function validateManualImportControls(
+  controls: unknown,
+  label: string,
+  errors: string[],
+): void {
+  if (!isRecord(controls)) {
+    errors.push(`${label}: manual import controls are required.`);
+    return;
+  }
+  for (const field of [
+    "controllingArtifactRef",
+    "manualOwner",
+    "calendarTrigger",
+    "nonFilingReplacementArtifact",
+  ] as const) {
+    if (!isNonEmptyString(controls[field]))
+      errors.push(`${label}: manual import ${field} is required.`);
+  }
+  if (!isIsoTimestamp(controls.manualDueAt))
+    errors.push(`${label}: manual import manualDueAt is required.`);
+  if (typeof controls.officialArtifactValidated !== "boolean")
+    errors.push(
+      `${label}: manual import officialArtifactValidated must be a boolean.`,
+    );
+}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -523,4 +759,8 @@ function isIsoTimestamp(value: unknown): value is string {
     /^\d{4}-\d{2}-\d{2}T.*(?:Z|[+-]\d{2}:?\d{2})$/.test(value) &&
     !Number.isNaN(Date.parse(value))
   );
+}
+
+function isSha256Checksum(value: unknown): value is string {
+  return isNonEmptyString(value) && /^sha256:[a-f0-9]{64}$/i.test(value);
 }
