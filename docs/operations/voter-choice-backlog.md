@@ -1139,3 +1139,66 @@ SHIP: auto-pending-merge
 - STATUS: Backlog
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope (incl. territorial delegates), fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+
+**[P0] I12 — National inventory consolidation and semantic gate**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 fan-in of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "I12 — National inventory consolidation and semantic gate"); pre-created 2026-07-14 to carry the unattended run from Wave 3 into Wave 4.
+- PRECONDITION (fan-in): ALL of I05, I06, I07, I08, I09, I10, I11 must be Done before this card starts. The board parser honors only ONE DEPENDS ON per card (first-wins), so this card names I11 (last roster-a group) but its TRUE blocker is all seven I-groups. Confirm every I05–I11 is Done on the Step-0.5 readiness re-check before starting.
+- OUTCOME: One consolidated national inventory proving all 56 jurisdictions are accounted for; every expected 2026 contest maps to an official-source path or evidenced explicit state; parser families and access constraints frozen; non-sensitive public golden addresses selected for later app testing; no placeholder/unknown adapter promoted.
+- IN SCOPE: Fan-in of the seven I-group inventories into one validated national record; cross-group reconciliation against the F02 exact-contest oracle; freeze of parser-family classes and access constraints; selection of public golden addresses; EMIT the exact pilot and adapter cards (P16 Texas, P17 Alabama, P18 California, and one P19 card per still-unproven source/semantic class) as new Backlog cards.
+- OUT OF SCOPE: Candidate ingestion, schema migration (M13), promotion engine (M14), staging provisioning (M15), the pilots themselves, production mutation, scheduled refreshes.
+- SAFETY: Fail-closed if any I-group is incomplete or any jurisdiction lacks an official-source path/evidenced state — never consolidate a partial national inventory; no placeholder/unknown adapter card may be promoted; a filing list or calendar-only source can never be recorded as a qualified/certified roster.
+- TESTS: A national consolidation verifier proves all 56 jurisdictions present, every F02 expected contest mapped, no unknown/placeholder adapter, and parser-family/access-constraint freeze internally consistent; it fails if any group is missing.
+- GOAL_CONDITION: The national inventory verifier passes for all 56 jurisdictions with no silent omission and no placeholder adapter; the emitted pilot/adapter cards exist as Backlog cards; npm run check passes.
+- SHIP: auto-pending-merge
+- DEPENDS ON: I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI
+- LANE: roster-a
+- STATUS: Backlog
+- DECISION: authorized — consolidation/verification over the already-saved I05–I11 evidence plus card emission only; any incidental re-fetch limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (no Ballotpedia, no access-control bypass). No candidate ingestion, migrations, or production mutation.
+- NOTE (2026-07-14): Left un-GROOMED deliberately — the I05–I11 fan-in is a single-dep parser limitation, so the conductor's Step-0.5 re-groom confirms all seven are Done before stamping GROOMED. This matches the plan's "after all seven are Done, create I12" intent while keeping the run unattended.
+
+**[P0] M13 — Canonical roster schema and migration (code only, no production)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M13 — Canonical roster schema and migration"); pre-groomed 2026-07-14.
+- OUTCOME: Migration code adding the exact-election, contest, identity, appearance, snapshot, promotion, and finance-link structures from the plan's canonical data model.
+- IN SCOPE: Migration files and the corresponding schema types for the canonical roster model, plus unit-level schema tests. Migration code only.
+- OUT OF SCOPE: Running the migration against any production or staging database; candidate ingestion; the promotion engine (M14); staging provisioning (M15); any production mutation.
+- SAFETY: No migration is applied to a live database by this card; additive/non-destructive definitions only; no production data is read or written.
+- TESTS: Schema/migration unit tests prove the new structures and their constraints compile and validate against fixtures.
+- GOAL_CONDITION: The canonical schema and migration files exist with passing schema tests and no database application; npm run check passes.
+- SHIP: auto-pending-merge
+- DEPENDS ON: I12 — National inventory consolidation and semantic gate
+- LANE: roster-a
+- STATUS: Backlog
+- DECISION: authorized — writes migration files, schema types, and tests only; NO database connection, NO production/staging application, NO external service. Pure code; additive and reversible.
+- GROOMED: ready: explicit code-only schema/migration scope, no-DB-application safeguard, and schema-test goal condition — 2026-07-14
+
+**[P0] M14 — Private artifact abstraction and fail-closed promotion engine (TDD, fakes only)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M14 — Private artifact abstraction and fail-closed promotion engine"); pre-groomed 2026-07-14.
+- OUTCOME: A private-artifact storage abstraction and a fail-closed promotion engine proven, by TDD against fake Blob/database implementations, to retain the prior promoted snapshot in every failure case.
+- IN SCOPE: The artifact-store interface plus a fake implementation; the promotion engine and its state machine; exhaustive failure-case tests (fetch failure, validation failure, partial/blocked coverage, calendar conflict) each proving the previously promoted snapshot is retained.
+- OUT OF SCOPE: Real Blob/database wiring; staging/production resources (M15); scheduled ingestion; candidate ingestion; any production mutation.
+- SAFETY: Every failure path is fail-closed — a failed acquisition/validation NEVER promotes and NEVER downgrades the last good snapshot; no real external service is contacted; all I/O goes through the fakes.
+- TESTS: A TDD suite drives the engine entirely through fake Blob/database implementations; every enumerated failure case asserts prior-snapshot retention and no promotion.
+- GOAL_CONDITION: The promotion engine passes its full fail-closed TDD suite against fakes with prior-snapshot retention proven for every failure case; npm run check passes.
+- SHIP: auto-pending-merge
+- DEPENDS ON: M13 — Canonical roster schema and migration
+- LANE: roster-a
+- STATUS: Backlog
+- DECISION: authorized — implementation and TDD against fake Blob/database only; NO real storage/database credentials, NO external service, NO production mutation. Pure code plus tests.
+- GROOMED: ready: explicit fake-only TDD scope, fail-closed retention safeguard, and full-failure-case goal condition — 2026-07-14
+
+**[P0] M15 — Isolated staging resources (ATTENDED — unattended-run STOP)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 4 of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "M15 — Isolated staging resources"); added 2026-07-14 as the explicit first attended checkpoint after the pre-groomed I12 → M13 → M14 stretch.
+- TYPE: ATTENDED PROVISIONING GATE — this is where an unattended orchestrate-all run is expected to STOP. Do not auto-start and do not auto-groom.
+- OUTCOME: Provision a private Blob store and an isolated Neon staging branch as a canary only; no production data.
+- IN SCOPE: Attended creation of private Blob and isolated Neon staging resources plus their secrets/wiring; canary verification.
+- OUT OF SCOPE: Any automated/unattended provisioning; production data; the pilots.
+- SAFETY: Resource provisioning and secrets are attended-only; never auto-provision cloud resources or write secrets from an unattended run.
+- DEPENDS ON: M14 — Private artifact abstraction and fail-closed promotion engine
+- STATUS: Backlog
+- DECISION: HOLD — attended provisioning of cloud resources and secrets; the conductor must NOT auto-start or auto-groom this card. Surface it in the morning/checkpoint summary and stop. Muxin provisions, then grooms the pilots (P16–P19 emitted by I12).
+- PARKED: attended provisioning gate — unattended-run STOP; prior_status=Backlog; cleared by Muxin when staging is provisioned
+- NOTE (2026-07-14): Intentionally un-GROOMED with DECISION=HOLD and a PARKED backstop so the unattended run halts here deterministically. This is the planned checkpoint after F07 → I05–I11 → I12 → M13 → M14.
