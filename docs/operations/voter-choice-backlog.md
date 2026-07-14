@@ -970,29 +970,13 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove AZ, AR, CO, CT, DE, FL, GA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- PARKED: cold-start: Step-3 zero-commit retry cap reached (2 relaunches produced no commits) - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 96f404ab-3bba-4812-b020-85a40a17c2dc -->
-
-**[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for HI, ID, IL, IN, IA, KS, and KY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove HI, ID, IL, IN, IA, KS, KY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- STATUS: To Do
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- LANE: roster-b
-<!-- card-id: 7f780d4d-0a85-4850-8257-557913409063 -->
 
 **[P0] I07 — National source inventory: ME, MD, MA, MI, MN, MS, MO**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
@@ -1004,11 +988,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- LANE: roster-a
+- LANE: roster-b
 <!-- card-id: 10c84215-b264-4d23-a03c-84ed0f519142 -->
 
 **[P0] I08 — National source inventory: MT, NE, NV, NH, NJ, NM, NY**
@@ -1148,6 +1132,24 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GROOMED: ready: consumes pre-set staging secrets, wires + canaries staging only, fail-closed on missing secret or any production reference — 2026-07-14
 - LANE: roster-a
 <!-- card-id: 93fb2bcb-4d2d-489e-9ef2-b13e6aad821c -->
+
+**[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for HI, ID, IL, IN, IA, KS, and KY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove HI, ID, IL, IN, IA, KS, KY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- RELAUNCH: 1
+- STATUS: Done
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-b
+<!-- card-id: 7f780d4d-0a85-4850-8257-557913409063 -->
 
 **[P0] F07 — Official-source semantic combination invariants**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
