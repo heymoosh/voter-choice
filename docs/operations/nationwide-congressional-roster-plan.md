@@ -834,7 +834,58 @@ quarantined at execution start to their recorded prior statuses.
 
 External provisioning, applying migrations, secrets/schedule activation,
 manual Ballotpedia review, public cutover, and queue restoration are attended
-and cannot be auto-approved by a build card.
+and cannot be auto-approved by a build card — EXCEPT as pre-authorized in the
+next subsection.
+
+### Pre-authorized execution decisions (Muxin, 2026-07-14)
+
+Muxin has pre-authorized every downstream gate EXCEPT the two human stops below,
+so an unattended run does not drip-feed approvals. These override the "attended"
+defaults in the paragraph above for the named gates only. The conductor stamps
+each downstream card it creates or emits with the matching DECISION from this
+section (born decided), and applies one fail-closed rule uniformly: any
+reconciliation discrepancy, verifier failure, missing secret, or official-source
+mismatch STOPS the run and surfaces it — it never guesses, never exposes roster
+data to real users, and never mutates production.
+
+TWO HUMAN STOPS (never auto):
+
+- A25 — the app-vs-official-source manual accuracy test (TX/AL/CA). No roster
+  data is shown to real users before Muxin signs off. This is the incident
+  backstop; keep it human.
+- C29 — the public nationwide cutover to `official` mode. The only actor that
+  flips live data for real users is Muxin.
+
+PRE-AUTHORIZED (auto, fail-closed):
+
+- M15 — isolated staging wire-up. Muxin provisions the private Blob store and an
+  isolated Neon staging branch OUT OF BAND and sets the secrets
+  `ROSTER_STAGING_BLOB_TOKEN` and `ROSTER_STAGING_DATABASE_URL`. The M15 card
+  only consumes those pre-set secrets and runs a canary; it NEVER provisions
+  cloud resources itself and NEVER points at production. If either secret is
+  absent, M15 stops with an honest "staging not provisioned" state.
+- Staging migrations — applying M13's migrations to the ISOLATED staging Neon
+  branch only (additive, reversible, canary) is pre-authorized. Production
+  migration application remains part of C29 (human).
+- N23 — scheduled staging ingestion. Building the GitHub Actions workflow and
+  enabling its schedule is pre-authorized once V26 is green. It reads only
+  official public sources at low frequency with an identifying user agent and
+  writes only to staging.
+- P20 — pilot contract freeze. Auto-freeze the shared contract ONLY if every
+  completed pilot has zero reconciliation discrepancies and its required
+  Ballotpedia samples exact-match the official source. ANY discrepancy instead
+  emits blocking correction cards and stops — never freeze over a discrepancy.
+- V26 / S28 — the national verifier and the multi-day shadow soak + rollback
+  rehearsal run automatically against staging; a failure or unexplained coverage
+  loss stops the run and holds for review.
+- Q27 — national Ballotpedia sample QA. Auto-generate the sampled report; zero
+  discrepancies passes automatically, any discrepancy stops for adjudication.
+- X30 — epic closeout / queue restoration runs automatically once every P0 child
+  is Done and both human stops (A25, C29) have been cleared.
+
+Hard boundary: nothing in this section authorizes exposing roster data to real
+users or mutating production. Those two actions occur only at A25 (sign-off) and
+C29 (cutover), both human.
 
 ## Codex model tiers
 
