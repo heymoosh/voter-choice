@@ -1009,6 +1009,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=83 tokens=232414) - session killed mid-card by the watchdog safety valve before Step 2 (create_worktree) completed, never resumed - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 60ee4055-48c7-45cd-ae63-cad0f75c5394 -->
 
@@ -1132,6 +1133,21 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GROOMED: ready: consumes pre-set staging secrets, wires + canaries staging only, fail-closed on missing secret or any production reference — 2026-07-14
 - LANE: roster-a
 <!-- card-id: 93fb2bcb-4d2d-489e-9ef2-b13e6aad821c -->
+
+**[P0] Resume I08 — National source inventory: MT, NE, NV, NH, NJ, NM, NY**
+- - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- - ORIGIN: Follow-up to parked card 60ee4055-48c7-45cd-ae63-cad0f75c5394 (I08), which was claimed on lane roster-a and then killed mid-card by the watchdog hard context/turn ceiling (turns=83 tokens=232414) before Step 2 (create_worktree) ever ran - no worktree exists to recover.
+- - OUTCOME: Validator-clean, evidence-backed official-source inventory records for MT, NE, NV, NH, NJ, NM, and NY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- - IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- - OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- - SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- - GOAL_CONDITION: Focused tests prove MT, NE, NV, NH, NJ, NM, NY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- - GROOMED: ready: same scope as parked 60ee4055 (I08), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+<!-- card-id: 19ce9e35-279a-497a-9fb0-caba9aa0237e -->
 
 **[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
