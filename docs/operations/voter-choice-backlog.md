@@ -952,7 +952,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - IN SCOPE: captured artifact/reference, checksum, retrieval result/time, publication/effective time, distinct technical-failure/legal-challenge states, and manual controlling-artifact/owner/due-date/calendar-trigger/non-filing replacement path.
 - SAFETY: not-published requires a successful configured-channel check; source failure never becomes not-published; manual coverage never counts complete or promotable before its official artifact validates.
 - GOAL_CONDITION: Focused tests reject a not-published claim without successful evidence and any manual/filing-only path lacking its required official replacement controls; npm run check passes.
-- STATUS: Backlog
+SHIP: auto-pending-merge
+- STATUS: Review
+- GROOMED: ready: explicit evidence/manual-control outcome, fail-closed safeguards, and focused test predicate — 2026-07-13
 <!-- card-id: 09af9aa2-d34f-4d02-a8d9-7682f397ad78 -->
 
 **[P0] F07 — Official-source semantic combination invariants**
