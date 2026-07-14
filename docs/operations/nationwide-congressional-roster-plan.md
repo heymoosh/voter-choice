@@ -753,6 +753,22 @@ enrichment without using finance as eligibility.
 Golden public addresses show every qualified candidate and honest unavailable
 states. Genuine visual changes remain held for attended preview review.
 
+**HARD MANUAL SANITY-TEST GATE (Muxin, 2026-07-14) — blocks A25 merge and all
+fan-out/cutover.** Before A25 merges, and before ANY of N21 fan-out or C29
+cutover proceeds, STOP for an attended manual accuracy test: run the real app
+(preview/staging) for golden public addresses across at least TX, AL, and CA and
+compare the candidates the app displays against an INDEPENDENT reliable source —
+the state Secretary of State / election-authority official candidate list plus a
+Ballotpedia spot-check. Confirm per contest: no missing qualified candidate, no
+extra/withdrawn/defeated/filing-only candidate, correct ballot name/party/office/
+district/stage, and an honest not-yet-published state where uncertified. Alabama
+is the high-volume stress case (do not hardcode a candidate count); Texas Senate
+is the standing regression. When A25 and the N21/C29 cards are created, each MUST
+carry `DEPENDS ON` the backlog card "[P0] MANUAL SANITY-TEST GATE —
+app-vs-official-source accuracy check before roster fan-out/cutover". This is the
+earlier informal instance of Q27's national QA and gates the FIRST app-visible
+roster data. Do not present roster data to real users until Muxin signs off.
+
 ### Wave 6 — national verification and release
 
 #### V26 — National official-source verifier
