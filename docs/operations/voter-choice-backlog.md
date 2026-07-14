@@ -952,7 +952,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - IN SCOPE: district/seat, regular/special, date-stage-party lane identity; multiple sources per jurisdiction; duplicate source-scope rejection; seven-jurisdiction matrix including Alabama split, LA runoff semantics, CA/AK/DC/PR scope.
 - SAFETY: A record cannot claim a contest not in the F02 oracle; no aggregate offices/dates/stages representation may count as exact coverage.
 - GOAL_CONDITION: Focused tests fail for missing/incorrect district, seat, kind, date, stage, or party lane and pass only when every F03 expected contest has an exact official-source path or explicit evidenced state; npm run check passes.
-- STATUS: In Progress
+- STATUS: Review
 - GROOMED: ready: exact contract scope, safeguards, tests, and goal condition — 2026-07-13
 - LANE: roster-a
 <!-- card-id: d4446600-b85d-47f1-9e9e-048ca118df9f -->
