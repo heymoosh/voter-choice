@@ -945,18 +945,6 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
 <!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
 
-**[P0] F05 — Exact contest-to-official-source coverage contract**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: F04 seven-jurisdiction rehearsal correction.
-- OUTCOME: Model source paths against F02 exact contest identities, not aggregate jurisdiction records.
-- IN SCOPE: district/seat, regular/special, date-stage-party lane identity; multiple sources per jurisdiction; duplicate source-scope rejection; seven-jurisdiction matrix including Alabama split, LA runoff semantics, CA/AK/DC/PR scope.
-- SAFETY: A record cannot claim a contest not in the F02 oracle; no aggregate offices/dates/stages representation may count as exact coverage.
-- GOAL_CONDITION: Focused tests fail for missing/incorrect district, seat, kind, date, stage, or party lane and pass only when every F03 expected contest has an exact official-source path or explicit evidenced state; npm run check passes.
-- STATUS: Review
-- GROOMED: ready: exact contract scope, safeguards, tests, and goal condition — 2026-07-13
-- LANE: roster-a
-<!-- card-id: d4446600-b85d-47f1-9e9e-048ca118df9f -->
-
 **[P0] F06 — Reproducible official-source evidence and manual-import controls**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - ORIGIN: F04 seven-jurisdiction rehearsal correction.
@@ -976,6 +964,18 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GOAL_CONDITION: Focused negative tests reject every invalid semantic combination identified in F04 and retain valid official-source records; npm run check passes.
 - STATUS: Backlog
 <!-- card-id: 4d7a6f37-e18f-4c41-8db8-20e79920db81 -->
+
+**[P0] F05 — Exact contest-to-official-source coverage contract**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: F04 seven-jurisdiction rehearsal correction.
+- OUTCOME: Model source paths against F02 exact contest identities, not aggregate jurisdiction records.
+- IN SCOPE: district/seat, regular/special, date-stage-party lane identity; multiple sources per jurisdiction; duplicate source-scope rejection; seven-jurisdiction matrix including Alabama split, LA runoff semantics, CA/AK/DC/PR scope.
+- SAFETY: A record cannot claim a contest not in the F02 oracle; no aggregate offices/dates/stages representation may count as exact coverage.
+- GOAL_CONDITION: Focused tests fail for missing/incorrect district, seat, kind, date, stage, or party lane and pass only when every F03 expected contest has an exact official-source path or explicit evidenced state; npm run check passes.
+- STATUS: Done
+- GROOMED: ready: exact contract scope, safeguards, tests, and goal condition — 2026-07-13
+- LANE: roster-a
+<!-- card-id: d4446600-b85d-47f1-9e9e-048ca118df9f -->
 
 **[P0] F04 — Seven-jurisdiction rehearsal review and contract correction gate**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
