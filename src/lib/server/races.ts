@@ -77,6 +77,9 @@ const PARTY_NAMES: Record<string, string> = {
   // State-recognized minor party, seen in Arizona's official roster (AZ
   // vertical slice) — a distinct party under AZ law, not generic "IND".
   AIP: "Arizona Independent Party",
+  // State-recognized minor party, seen in Alaska's official roster (AK
+  // vertical slice) — a distinct party under AK law, not generic "IND".
+  AKP: "Alaskan Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name
