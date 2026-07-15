@@ -1150,8 +1150,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - - GOAL_CONDITION: Focused tests prove MT, NE, NV, NH, NJ, NM, NY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - - GROOMED: ready: same scope as parked 60ee4055 (I08), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
+- LANE: roster-a
 <!-- card-id: 19ce9e35-279a-497a-9fb0-caba9aa0237e -->
 
 **[P0] Resume I07 — National source inventory: ME, MD, MA, MI, MN, MS, MO**
