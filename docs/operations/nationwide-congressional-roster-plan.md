@@ -86,14 +86,35 @@ JS-portal state (TX) needed completely different mechanics, and this section
 is what lets a future session skip re-discovering them from scratch. If the
 state's official source runs Civix-vended software specifically, also check
 (and add to) the "Civix portal operational playbook" subsection immediately
-below rather than duplicating that write-up per-state.
+below rather than duplicating that write-up per-state;
+(e) **every still-governing calendar date** for that state's roster, pulled
+from the state's own official election calendar (not just checked for —
+recorded, with the source date and what resolves on it) — added 2026-07-15
+after the Colorado build surfaced the gap: the existing "check for any
+still-undetermined nomination" requirement below (from the Oklahoma build)
+only covers *pending primaries/runoffs*, but a roster can still be
+incomplete for other calendar-bound reasons even when every major-party
+nomination is already determined — an unaffiliated/minor-party
+petition-signature sufficiency deadline, a nomination-vacancy-fill deadline,
+or (the one date every state has) the state's own ballot-content
+certification deadline, after which the roster for that cycle is fully
+locked. List every such date found, in the same absolute-and-explicit style
+as (a)-(c) (e.g. "July 30, 2026 — deadline for the county DEO to issue a
+sufficiency/insufficiency notice on the 5 pending UAF House petitions;
+September 4, 2026 — ballot-content certification, after which no further
+change is possible this cycle"), so a human or a future session knows
+exactly when a re-check is warranted without re-deriving the state's
+election calendar from scratch. If the state's official election calendar
+document/page was already fetched for other reasons during the build, no
+extra source-hunting is required — just extract the relevant dates from it.
 
-Plain chat/text output does not satisfy (a)-(c) — Muxin cannot click or
-navigate a truncated path or a description of a URL; the literal string is
-required every time. So Muxin can independently verify against the official
-source herself, every time, the same way she did for AZ. Any per-state
-backlog card created for this track should carry this requirement explicitly
-(see the Texas card as the template); it is not optional polish.
+Plain chat/text output does not satisfy (a)-(c) or (e) — Muxin cannot click
+or navigate a truncated path, a description of a URL, or a vague "sometime
+before the election" — the literal string/date is required every time. So
+Muxin can independently verify against the official source herself, every
+time, the same way she did for AZ. Any per-state backlog card created for
+this track should carry this requirement explicitly (see the Texas card as
+the template); it is not optional polish.
 
 ### Civix portal operational playbook (Muxin, 2026-07-15)
 
@@ -225,7 +246,14 @@ and deliberately deferred:**
    `runoff_pending` ballotStatus + `SeatChallenger.isRunoffPending` + RepCard's
    "Runoff pending" tag/CTA — all state-agnostic already, no new code needed
    per state. See the epic card's own "STANDING REQUIREMENT" bullet
-   (`c5a813bb`) for the backlog-level statement of this rule.
+   (`c5a813bb`) for the backlog-level statement of this rule. **Extended
+   2026-07-15 after the Colorado build:** this check is narrower than it
+   looks — it catches an undetermined *nomination*, but not a determined
+   roster that can still change for other calendar-bound reasons (a pending
+   petition-signature deadline, a ballot-certification cutoff). See the
+   "Standing verification-deliverable requirement" section's new item (e)
+   above, which now requires recording every such governing date, not just
+   checking for undetermined nominations.
 2. **Bigger and deliberately deferred — a cross-year design pass, not needed
    to satisfy #1 above:** every state's in-progress elections should be
    tracked this way **every year going forward**, not just 2026 — concrete
