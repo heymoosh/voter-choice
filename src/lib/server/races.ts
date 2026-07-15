@@ -80,6 +80,13 @@ const PARTY_NAMES: Record<string, string> = {
   // State-recognized minor party, seen in Alaska's official roster (AK
   // vertical slice) — a distinct party under AK law, not generic "IND".
   AKP: "Alaskan Party",
+  // California's "No Party Preference" ballot designation (California
+  // vertical slice) — a distinct legal registration status, not generic
+  // "IND".
+  NPP: "No Party Preference",
+  // California's Peace and Freedom Party (California vertical slice) — a
+  // real state-recognized minor party, not generic "IND".
+  PF: "Peace and Freedom",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

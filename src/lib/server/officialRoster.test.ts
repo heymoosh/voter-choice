@@ -79,6 +79,13 @@ import {
   CO_SENATE_SOURCE_URLS,
   CO_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/co-official-roster-2026";
+import {
+  CA_HOUSE_ROSTER_2026,
+  CA_STATE,
+  CA_ELECTION_YEAR,
+  CA_HOUSE_SOURCE_URLS,
+  CA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ca-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -275,6 +282,24 @@ const CO_INCUMBENT_SAMPLE: Record<string, string> = {
   "07": "Brittany Pettersen",
   "08": "Gabe Evans",
 };
+
+/** Same shape as `dbRow`, but for CA entries — house-only fixture, no
+ * Senate contest in California's 2026 cycle. */
+function caDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `ca-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house",
+    district: entry.district,
+    sourceUrl: CA_HOUSE_SOURCE_URLS[0],
+    retrievedAt: CA_RETRIEVED_AT,
+  };
+}
+
+const CA_HOUSE_DB_ROWS = CA_HOUSE_ROSTER_2026.map(caDbRow);
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -1483,6 +1508,7 @@ describe("lookupChallengers — AK wiring (at-large house + senate both covered)
     ).toBe("No Party Affiliation");
   });
 });
+
 // ---------------------------------------------------------------------------
 // Colorado — fifth state built through this pipeline. CO's June 30, 2026
 // primary had already occurred at transcription time, so this is a
@@ -1619,6 +1645,137 @@ describe("isIncumbentSeekingReelection — CO", () => {
   });
 });
 
+// ---------------------------------------------------------------------------
+// California — the nonpartisan top-two "jungle primary" (all 52 House
+// districts, house-only fixture — no Senate contest this cycle). The June 2,
+// 2026 primary is fully certified, so every row is either
+// qualified_for_general_ballot (top-two) or qualified_for_primary_ballot
+// (ran, didn't advance); runoff_pending never applies. See
+// docs/operations/california-vertical-slice-data-check.md for the full
+// build, including the CD-40 vote-total correction and the redistricting
+// cross-check findings.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — CA narrowing", () => {
+  it("returns all CA-01 rows, none for a bogus district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      CA_STATE,
+      "house",
+      "01",
+      CA_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [
+        "Audrey Denney",
+        "James Gallagher",
+        "Janice Karrman",
+        "Mike McGuire",
+        "Richard T. Minner",
+        "Timothy Sean Kelly",
+      ].sort(),
+    );
+
+    const wrongDistrict = await getOfficialRoster(
+      CA_STATE,
+      "house",
+      "53",
+      CA_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+
+  it("returns none for (senate, null) — California has no Senate contest this cycle", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      CA_STATE,
+      "senate",
+      null,
+      CA_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+
+  it("every CA row is either qualified_for_general_ballot or qualified_for_primary_ballot — never runoff_pending", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      CA_STATE,
+      "house",
+      "40",
+      CA_ELECTION_YEAR,
+    );
+    expect(
+      out.every(
+        (r) =>
+          r.ballotStatus === "qualified_for_general_ballot" ||
+          r.ballotStatus === "qualified_for_primary_ballot",
+      ),
+    ).toBe(true);
+  });
+
+  it("CD-40 correction: Calvert and Kim (both REP) are the general-ballot rows; Kim-Varet (DEM) is primary-only", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      CA_STATE,
+      "house",
+      "40",
+      CA_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Ken Calvert")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "Young Kim")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "Esther Kim-Varet")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — CA", () => {
+  it("returns true for CD-01 — Gallagher (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        CA_STATE,
+        "house",
+        "01",
+        CA_ELECTION_YEAR,
+        "James Gallagher",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns false for open seats — CD-11 (Pelosi), CD-26 (Brownley), CD-38, CD-48 (Issa)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    for (const district of ["11", "26", "38", "48"]) {
+      expect(
+        await isIncumbentSeekingReelection(
+          CA_STATE,
+          "house",
+          district,
+          CA_ELECTION_YEAR,
+          "Placeholder Name",
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("returns true for CD-40 — two incumbents (Calvert, Kim) both filed in the same redrawn seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CA_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        CA_STATE,
+        "house",
+        "40",
+        CA_ELECTION_YEAR,
+        "Ken Calvert",
+      ),
+    ).toBe(true);
+  });
+});
+
 describe("lookupChallengers — CO wiring (house + senate both covered)", () => {
   it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
     vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
@@ -1668,6 +1825,86 @@ describe("lookupChallengers — CO wiring (house + senate both covered)", () => 
     expect(out.senate.map((c) => c.name)).toEqual(["Mark Baisley"]);
     expect(out.senate.find((c) => c.name === "Mark Baisley")?.party).toBe(
       "Republican",
+    );
+  });
+});
+
+describe("lookupChallengers — CA wiring (house-only, all 52 districts covered)", () => {
+  it("CD-01: incumbent Gallagher excluded from challengers; 5 remain", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => caDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (CA has 0 senate contests in 2026), FEC fallback (senate uncovered,
+    // house already resolved) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("CA", 1, 2026);
+
+    expect(out.house).toHaveLength(5);
+    expect(out.house.some((c) => c.name === "James Gallagher")).toBe(false);
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("CD-40: both incumbents (Calvert, Kim) excluded from challengers; the corrected 3rd-place Kim-Varet renders as a challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "40",
+    ).map((e, i) => caDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("CA", 40, 2026);
+
+    expect(out.house.some((c) => c.name === "Ken Calvert")).toBe(false);
+    expect(out.house.some((c) => c.name === "Young Kim")).toBe(false);
+    expect(out.house.find((c) => c.name === "Esther Kim-Varet")?.party).toBe(
+      "Democrat",
+    );
+    expect(out.house).toHaveLength(6);
+  });
+
+  it("CD-11: open seat (Pelosi) — no incumbent excluded, all 11 candidates render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "11",
+    ).map((e, i) => caDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("CA", 11, 2026);
+
+    expect(out.house).toHaveLength(11);
+  });
+
+  it("new CA-specific party codes render mapped display names: NPP -> 'No Party Preference', PF -> 'Peace and Freedom', GRE (CA's GRN) -> 'Green'", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const cd01 = CA_HOUSE_ROSTER_2026.filter((e) => e.district === "01").map(
+      (e, i) => caDbRow(e, i),
+    );
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([cd01, [], []]));
+    const out01 = await lookupChallengers("CA", 1, 2026);
+    expect(
+      out01.house.find((c) => c.name === "Timothy Sean Kelly")?.party,
+    ).toBe("No Party Preference");
+
+    const cd24 = CA_HOUSE_ROSTER_2026.filter((e) => e.district === "24").map(
+      (e, i) => caDbRow(e, i),
+    );
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([cd24, [], []]));
+    const out24 = await lookupChallengers("CA", 24, 2026);
+    expect(
+      out24.house.find((c) => c.name === "Helena Pasquarella")?.party,
+    ).toBe("Peace and Freedom");
+
+    const cd03 = CA_HOUSE_ROSTER_2026.filter((e) => e.district === "03").map(
+      (e, i) => caDbRow(e, i),
+    );
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([cd03, [], []]));
+    const out03 = await lookupChallengers("CA", 3, 2026);
+    expect(out03.house.find((c) => c.name === "Chris Richardson")?.party).toBe(
+      "Green",
     );
   });
 });
