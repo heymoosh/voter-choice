@@ -70,6 +70,15 @@ import {
   AK_SENATE_SOURCE_URLS,
   AK_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ak-official-roster-2026";
+import {
+  CO_HOUSE_ROSTER_2026,
+  CO_SENATE_ROSTER_2026,
+  CO_STATE,
+  CO_ELECTION_YEAR,
+  CO_HOUSE_SOURCE_URLS,
+  CO_SENATE_SOURCE_URLS,
+  CO_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/co-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -226,6 +235,46 @@ const AK_HOUSE_DB_ROWS = AK_HOUSE_ROSTER_2026.map((e, i) =>
 const AK_SENATE_DB_ROWS = AK_SENATE_ROSTER_2026.map((e, i) =>
   akDbRow(e, i, "senate"),
 );
+
+/** Same shape as `akDbRow`, but for CO entries. */
+function coDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `co-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? CO_HOUSE_SOURCE_URLS[0] : CO_SENATE_SOURCE_URLS[0],
+    retrievedAt: CO_RETRIEVED_AT,
+  };
+}
+
+const CO_HOUSE_DB_ROWS = CO_HOUSE_ROSTER_2026.map((e, i) =>
+  coDbRow(e, i, "house"),
+);
+const CO_SENATE_DB_ROWS = CO_SENATE_ROSTER_2026.map((e, i) =>
+  coDbRow(e, i, "senate"),
+);
+
+// CO-1 is the only open seat (sitting incumbent Diana DeGette lost her
+// primary); every other district's winning nominee is the sitting
+// incumbent per house.gov.
+const CO_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "Joe Neguse",
+  "03": "Jeff Hurd",
+  "04": "Lauren Boebert",
+  "05": "Jeff Crank",
+  "06": "Jason Crow",
+  "07": "Brittany Pettersen",
+  "08": "Gabe Evans",
+};
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -1432,5 +1481,193 @@ describe("lookupChallengers — AK wiring (at-large house + senate both covered)
     expect(
       out.house.find((c) => c.name === 'MATTHEW "BRONCO" WILLIAMS')?.party,
     ).toBe("No Party Affiliation");
+  });
+});
+// ---------------------------------------------------------------------------
+// Colorado — fifth state built through this pipeline. CO's June 30, 2026
+// primary had already occurred at transcription time, so this is a
+// general-ballot state: every major-party nominee is
+// "qualified_for_general_ballot" (determined via certified primary results),
+// while CO-1's, CO-3's, CO-4's, CO-6's, and CO-7's unaffiliated (UAF)
+// petition candidates carry "declared_general_ballot_intent" (signature
+// verification still pending at retrieval — same preliminary-filing status
+// TX's independent track uses, not "runoff_pending"). CO-1's sitting
+// incumbent, Diana DeGette, lost her Democratic primary to Melat Kiros, so
+// CO-1 is the one district with no incumbent among the general nominees. See
+// docs/operations/colorado-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — CO narrowing", () => {
+  it("narrows house rows to the exact district for every CO district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07", "08"]) {
+      const out = await getOfficialRoster(
+        CO_STATE,
+        "house",
+        district,
+        CO_ELECTION_YEAR,
+      );
+      const expectedNames = CO_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 2 CO senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      CO_STATE,
+      "senate",
+      null,
+      CO_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(CO_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...CO_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      CO_STATE,
+      "house",
+      "01",
+      CO_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("CO-1: no incumbent among the general nominees — DeGette lost her primary; Kiros (D), Peterson (R), and Blau (declared UAF) all render, none flagged incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      CO_STATE,
+      "house",
+      "01",
+      CO_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Melat Kiros", "Christy Peterson", "Shimon Blau"].sort(),
+    );
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    expect(out.find((r) => r.name === "Shimon Blau")?.ballotStatus).toBe(
+      "declared_general_ballot_intent",
+    );
+    expect(out.find((r) => r.name === "Melat Kiros")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+
+  it("senate: both CO nominees are determined, Hickenlooper carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      CO_STATE,
+      "senate",
+      null,
+      CO_ELECTION_YEAR,
+    );
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "John Hickenlooper")?.isIncumbent).toBe(
+      true,
+    );
+    expect(out.find((r) => r.name === "Mark Baisley")?.isIncumbent).toBe(false);
+  });
+});
+
+describe("isIncumbentSeekingReelection — CO", () => {
+  it("returns true for CO-2, CO-3, CO-4, CO-5, CO-6, CO-7, CO-8 — the winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      CO_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          CO_STATE,
+          "house",
+          district,
+          CO_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for CO-1 — DeGette (sitting rep) lost her primary, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        CO_STATE,
+        "house",
+        "01",
+        CO_ELECTION_YEAR,
+        "Diana DeGette",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the US Senate seat — Hickenlooper (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CO_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        CO_STATE,
+        "senate",
+        null,
+        CO_ELECTION_YEAR,
+        "John Hickenlooper",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — CO wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CO_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => coDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, CO_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("CO", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Neguse excluded; the Republican nominee renders as the sole
+    // challenger.
+    expect(out.house.map((c) => c.name)).toEqual(["Kelley Anne Dennison"]);
+  });
+
+  it("CO-1 (open seat, DeGette lost her primary): both major-party nominees and the declared UAF filer render as challengers, none excluded as incumbent, none flagged runoff-pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CO_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => coDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, CO_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("CO", 1, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Christy Peterson", "Melat Kiros", "Shimon Blau"].sort(),
+    );
+    expect(out.house.every((c) => c.isRunoffPending === false)).toBe(true);
+  });
+
+  it("senate: incumbent Hickenlooper excluded; Baisley renders as the sole challenger with mapped party name", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CO_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => coDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, CO_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("CO", 2, 2026);
+
+    expect(out.senate.some((c) => c.name === "John Hickenlooper")).toBe(false);
+    expect(out.senate.map((c) => c.name)).toEqual(["Mark Baisley"]);
+    expect(out.senate.find((c) => c.name === "Mark Baisley")?.party).toBe(
+      "Republican",
+    );
   });
 });

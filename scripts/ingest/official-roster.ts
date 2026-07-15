@@ -72,6 +72,16 @@ import {
   AK_HOUSE_ROSTER_2026,
   AK_SENATE_ROSTER_2026,
 } from "../congressional-rosters/ak-official-roster-2026";
+import {
+  CO_STATE,
+  CO_ELECTION_YEAR,
+  CO_STAGE,
+  CO_HOUSE_SOURCE_URLS,
+  CO_SENATE_SOURCE_URLS,
+  CO_RETRIEVED_AT,
+  CO_HOUSE_ROSTER_2026,
+  CO_SENATE_ROSTER_2026,
+} from "../congressional-rosters/co-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -173,6 +183,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: AK_SENATE_SOURCE_URLS[0],
       retrievedAt: AK_RETRIEVED_AT,
       entries: AK_SENATE_ROSTER_2026,
+    },
+  ],
+  CO: [
+    {
+      state: CO_STATE,
+      office: "house",
+      electionYear: CO_ELECTION_YEAR,
+      stage: CO_STAGE,
+      sourceUrl: CO_HOUSE_SOURCE_URLS[0],
+      retrievedAt: CO_RETRIEVED_AT,
+      entries: CO_HOUSE_ROSTER_2026,
+    },
+    {
+      state: CO_STATE,
+      office: "senate",
+      electionYear: CO_ELECTION_YEAR,
+      stage: CO_STAGE,
+      sourceUrl: CO_SENATE_SOURCE_URLS[0],
+      retrievedAt: CO_RETRIEVED_AT,
+      entries: CO_SENATE_ROSTER_2026,
     },
   ],
 };
