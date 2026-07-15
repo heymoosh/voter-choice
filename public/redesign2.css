@@ -146,6 +146,19 @@
   padding: 3px 8px;
   border-radius: 5px;
 }
+/* A challenger whose party nomination is still pending a primary runoff —
+   unlike .seat-not-up (de-emphasized, settled), this is an active CTA: the
+   reader can still influence who ends up on their November ballot. */
+.runoff-pending-tag {
+  margin-left: 6px;
+  background: var(--gold);
+  color: var(--ink);
+}
+.runoff-pending-note {
+  color: var(--ink-2);
+  font-style: italic;
+}
+
 /* Grey the whole rep card + its seat strip for a seat not on the 2026 ballot. */
 .rep-card.not-up-2026 {
   background: var(--tag-bg);

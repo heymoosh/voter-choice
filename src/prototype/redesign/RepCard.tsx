@@ -421,10 +421,20 @@ function ChallengerRow({
           <div className="name">
             <span className={"pip " + party.pipClass} aria-hidden="true" />{" "}
             {challenger.name}
+            {challenger.isRunoffPending && (
+              <span className="seat-not-up runoff-pending-tag">
+                {t("repCard.runoffPendingTag")}
+              </span>
+            )}
           </div>
           <div className="meta">
             {t("repCard.fecFiling", { party: party.name, raised })}
           </div>
+          {challenger.isRunoffPending && (
+            <div className="meta runoff-pending-note">
+              {t("repCard.runoffPendingNote")}
+            </div>
+          )}
         </div>
         {!research || research.status === "unavailable" ? (
           <button

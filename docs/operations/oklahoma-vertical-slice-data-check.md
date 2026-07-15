@@ -40,6 +40,29 @@ recorded and render, correctly, without either being promoted to a guessed
 winner. No database migration was needed for this — `ballot_status` is a
 plain `text` column with no CHECK constraint.
 
+**Update (2026-07-15, after Muxin's review): a distinct UI treatment now
+ships with this card.** Muxin's read on the initial "renders like any other
+challenger" behavior: a runoff-pending nomination is fundamentally different
+from a settled one — the nominee for that seat isn't decided, and the reader
+still has real agency over the outcome (Oklahoma's low-turnout runoff means
+a single vote goes further than in the general). `SeatChallenger` gained an
+`isRunoffPending` boolean (races.ts / officialRoster.ts), and `RepCard.tsx`
+now renders a "Runoff pending" tag plus a CTA note — *"This party's nominee
+isn't decided yet — a primary runoff will settle it. Your vote in that
+runoff can still decide who appears on your November ballot."* — for any
+challenger carrying that flag, in both EN and ES. Verified three ways: (1)
+two new `RepCard.test.tsx` cases assert the tag/note render only for
+`isRunoffPending: true`; (2) a direct `pg`-confirmed staging import; (3) the
+live `/api/delegation` endpoint, called directly against a local dev server
+pointed at staging with the flag on, for a real Tulsa (OK-1) address —
+returned `MARK TEDFORD`/`JACKSON LAHMEYER` both with `"isRunoffPending":true`
+and `JOHN CROISANT` with `"isRunoffPending":false`, exactly as expected. (The
+chat/issue-interpretation step of the live UI 500'd on an unrelated missing
+API key in that ad hoc dev run — unconnected to this change, not chased
+further.) This was intentionally scoped to Oklahoma's two pending races, not
+built as a generic per-state runoff-date system — see "A bigger idea" below
+for the standing, cross-year capability Muxin wants planned separately.
+
 **A real, non-obvious incumbency finding surfaced during the official
 cross-check:** the sitting US Senator for the seat on this year's ballot is
 **Alan Armstrong**, appointed 2026-03-24 to fill Markwayne Mullin's
@@ -103,6 +126,40 @@ ORIGIN note (which described the seat as "Markwayne Mullin's seat," a
 plausible but, per the official record, out-of-date description — see "A
 cross-check finding" below).
 
+**FAQ — "why isn't [X] in the roster? I see them in the filing PDF":** the
+filing PDF lists every candidate who *filed*, not the general-ballot
+nominees — a party can have several April filers and only one survives to
+November. This tripped Muxin's own review: the April PDF lists five
+Republican Senate filers (Hern, Buckner, Ragain, Hankins, England), and only
+Hern (69.76% of the primary vote, an outright majority) appears in the
+fixture. Buckner/Ragain/Hankins/England aren't a data gap — they lost the
+June 16 primary, confirmed from the results portal's full vote breakdown,
+so Oklahoma's own election law says they're not on the November ballot. The
+April PDF's date is expected and correct for its actual purpose (a snapshot
+of who filed, compiled at 5pm April 3 — "used as the official proof for
+printing state ballots" per its own header, i.e. the primary ballot, not the
+general): it was never meant to reflect the June primary's outcome, which is
+exactly why this build separately pulled the results portal to derive
+nominees rather than reading the filing PDF as if it were a final list.
+
+**Tooling note — a CSV/XML export exists on the results portal, worth
+revisiting.** Muxin flagged `results.okelections.gov`'s "Export" menu, which
+offers race/county/precinct-level CSV and XML downloads — a structurally
+better source than parsing rendered HTML text. Network inspection found the
+real endpoint (`https://results.okelections.gov/OKERS/enrapi/GetExtract/CSV/20260616`),
+but a direct `fetch()` to it 401s ("Authorization has been denied for this
+request") even after replicating the click that succeeded in the browser
+(confirmed via `read_network_requests` that the real UI click got a 200 on
+the identical URL) — the page's own JS evidently attaches some
+short-lived/one-time auth token or header this session didn't reverse-engineer
+via `fetch`/XHR hooking. The `get_page_text` HTML pull used instead is a
+complete, single-shot read of every race (not partial or virtualized), so
+this build's numbers aren't in doubt, but a future session with time to
+inspect the real request via DevTools (not prototype-patched `fetch`) could
+likely get the CSV working and make any OK-like non-Civix state easier to
+parse. Flagged as an open tooling lead, same posture as TX's own
+unexplored-shortcut note about its `findQualifiedCandidates` API.
+
 ## A cross-check finding this build made (not a bug — a real, non-obvious
 incumbency fact caught by the independent-source rule)
 
@@ -161,21 +218,36 @@ array-shaped `FIXTURES` map.
   the file's own header docblock.
 - `scripts/ingest/official-roster.ts` — registered `OK` in `FIXTURES` with
   separate house/senate entries, exactly like TX's two-entry pattern.
-- `src/lib/server/officialRoster.test.ts` — 10 new tests: `getOfficialRoster`
+- `src/lib/server/officialRoster.test.ts` — 11 new tests: `getOfficialRoster`
   narrowing across all 5 OK districts + the Senate contest, explicit
   `runoff_pending` coverage for both the OK-1 House race and the Senate
   race (both finalists returned with the exact status, the determined
   nominees are not), `isIncumbentSeekingReelection` for the 4
   incumbent-defended districts + the OK-1 open seat + the open Senate seat,
-  and `lookupChallengers` wiring (both chambers covered, FEC query
-  skipped — 2 calls not 3; the runoff-pending OK-1 race renders all three
-  candidates as challengers, none excluded as incumbent).
+  `lookupChallengers` wiring (both chambers covered, FEC query skipped — 2
+  calls not 3; the runoff-pending OK-1 race renders all three candidates as
+  challengers, none excluded as incumbent, each carrying the correct
+  `isRunoffPending` value end to end), and `officialRosterRowToSeatChallenger`
+  mapping `ballotStatus: "runoff_pending"` to `isRunoffPending: true`.
+- `src/lib/server/races.ts` — `SeatChallenger` gained an optional
+  `isRunoffPending` boolean, undefined/false for the FEC path.
+- `src/lib/server/officialRoster.ts` — `officialRosterRowToSeatChallenger`
+  sets `isRunoffPending: row.ballotStatus === "runoff_pending"`.
+- `src/prototype/redesign/RepCard.tsx` + `RepCard.test.tsx` — a "Runoff
+  pending" tag and CTA note render on any challenger row carrying
+  `isRunoffPending`; 2 new tests assert the tag/note render only when the
+  flag is set.
+- `src/prototype/VoterChoiceApp.tsx` — 2 new i18n keys (EN + ES):
+  `runoffPendingTag`, `runoffPendingNote`.
+- `public/redesign2.css` — `.runoff-pending-tag` (gold accent — an active
+  CTA, deliberately not the muted grey `.seat-not-up` treatment, which
+  reads as "this doesn't matter") and `.runoff-pending-note` styles.
 
 ## Verification performed
 
 - `npm run check` (lint + `tsc --noEmit` + full vitest suite): clean.
-  162 test files, 3069 tests passing, 5 pre-existing `todo` (no failures),
-  3074 total.
+  162 test files, 3072 tests passing, 5 pre-existing `todo` (no failures),
+  3077 total.
 - Confirmed via a direct `pg` connection that staging already has migration
   `0016`'s `NULLS NOT DISTINCT` fix applied to
   `official_roster_candidates_seat_name_uidx` (from the TX build) — no new
@@ -227,14 +299,10 @@ array-shaped `FIXTURES` map.
 
   Every returned challenger carried `rosterProvenance.sourceKind ===
   "official_state_roster"`. The two runoff-pending contests render **both**
-  finalists as ordinary challengers, with no special UI treatment or label
-  distinguishing them from a determined nominee — `officialRosterRowToSeatChallenger`
-  doesn't filter or brand by `ballotStatus` today (confirmed by reading the
-  function; it maps every row through regardless of status, same as it
-  already does for write-in rows). This is worth a product call: is
-  "renders like any other challenger" sufficient for a runoff-pending seat,
-  or does the UI need an explicit "runoff pending" label? Flagged for
-  Muxin, not decided here.
+  finalists as challengers, now with the "Runoff pending" tag + CTA note
+  described above (`isRunoffPending: true`), distinguishing them from a
+  determined nominee — confirmed live via a direct `/api/delegation` call
+  against staging for a Tulsa (OK-1) address, see the update note above.
 
 - Prod database untouched throughout. `OFFICIAL_ROSTER_ENABLED` was only
   ever set inline for the verification commands above; it is not set
@@ -255,9 +323,18 @@ array-shaped `FIXTURES` map.
   one Libertarian (Sevier White) filed for US Senate, unopposed in that
   party's primary. No Green Party filings were found anywhere in the
   official congressional filing list — verified absent, not omitted.
-- **The `runoff_pending` render behavior is a live, unresolved product
-  question** — see "Verification performed" above. Both finalists show up
-  as ordinary challengers today; no distinguishing UI treatment exists yet.
+- **The results-portal CSV/XML export isn't wired up** (401s on a plain
+  `fetch`, unresolved this session) — see the tooling note above. The HTML
+  pull used instead is complete and not in doubt, but the CSV would be more
+  robust for a future build.
+- **The base delegation resolver (GovTrack-derived `candidates` table)
+  doesn't know Armstrong replaced Mullin either** — a live check via
+  `/api/delegation` for a Tulsa address returned `candidate: null` for both
+  OK Senate seat slots, so this app's own sitting-member data is stale on
+  the exact same fact the official-roster cross-check caught. This is a
+  separate ingestion pipeline (GovTrack, not this card's official-roster
+  feature) and out of scope here, but corroborates the Armstrong finding
+  and is worth a look whenever that pipeline is next touched.
 - Names are recorded as they appear in the official filing list / results
   portal; not independently re-verified against a third document.
 
@@ -281,22 +358,81 @@ array-shaped `FIXTURES` map.
     `https://bioguide.congress.gov/search/bio/A000383` (Senate incumbency
     cross-check only — the source of the Armstrong/Mullin finding above)
 
+## A bigger idea, deliberately not built here (Muxin, 2026-07-15)
+
+Reviewing this build, Muxin's read on the runoff-pending CTA above was that
+it shouldn't be a one-off for Oklahoma's two races: **every state's
+in-progress elections (primary pending, runoff pending, etc.) should be
+tracked this way, every year going forward** — not just during this initial
+50-state buildout. The product case: (1) it's genuinely valuable voting
+information — a reader in a low-turnout runoff can have outsized influence
+and should be told so; (2) it gives the app a concrete, honest CTA instead
+of a dead end; (3) it lets the app later assess "how did the person you
+voted for in the runoff actually vote" as a follow-through loop.
+
+This is a standing, cross-year capability, not a scoped fix — it needs its
+own design pass (a per-state, per-year election-calendar input beyond the
+2026-only snapshots in `src/data/states/*.json`; a roster-schema concept for
+"which contest, which date resolves it" beyond a single `ballotStatus`
+enum value; a recurring re-check as dates arrive). Deliberately **not**
+designed or built as part of this OK card — captured as a new epic-level
+backlog item for `c5a813bb` instead, per Muxin's request during review, so
+it gets a real scoping pass rather than being bolted onto a single state's
+build. Also written up in the plan doc's own revision log
+(`docs/operations/nationwide-congressional-roster-plan.md`).
+
+**Paste-ready backlog card draft** (Muxin's to place — per this repo's
+practice, the backlog stays hers to edit during interactive review; this is
+handed over, not written to `voter-choice-backlog.md` directly):
+
+```
+**[P1] EPIC: Track in-progress elections across every state, every year**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-15, Muxin's direct request while reviewing the Oklahoma
+  vertical slice (card d9b1ef86) — generalizes OK's scoped runoff-pending
+  status/CTA (ballotStatus: "runoff_pending", RepCard's "Runoff pending" tag)
+  into a standing capability, not a one-off for OK's two 2026 races.
+- OUTCOME: Any state's in-progress election (primary pending, runoff
+  pending, or an equivalent not-yet-decided stage) is tracked and surfaced
+  to readers with an honest status + a concrete voting CTA, for every future
+  election cycle, not just 2026 — reusing (not duplicating) the OK pattern.
+- IN SCOPE: (1) design a per-state, per-year election-calendar input (the
+  current src/data/states/*.json snapshots are 2026-only); (2) design a
+  roster-schema concept for "which contest, which date resolves it,"
+  generalizing beyond a single ballotStatus enum value scoped to one cycle;
+  (3) decide the re-check mechanism (scheduled job vs. build/import-time
+  refresh) as resolution dates arrive; (4) decide whether OK's static
+  tag+note UI generalizes as-is or needs the actual resolution date once the
+  schema supports it.
+- OUT OF SCOPE: implementation before the design pass below is reviewed;
+  any specific state's fixture data.
+- SAFETY: same posture as the rest of this epic — never guess an
+  undetermined outcome; explicit "pending" states, not silent omission.
+- DECISION: needs a design/plan pass (not a build) before any implementation
+  — recommend running this through plan mode or the `planner` skill given
+  its cross-cutting schema implications, rather than starting directly.
+- STATUS: Backlog
+- DEPENDS ON: none (can be scoped independently of the remaining manual
+  per-state builds)
+```
+
 ## GO/NO-GO verdict
 
 **GO on the approach for a third state — the manual track generalizes
-beyond Civix, and the new `runoff_pending` status is proven live. NO-GO on
-proceeding to more states or real users without further sign-off.**
+beyond Civix, and the new `runoff_pending` status (with its own CTA
+treatment) is proven live. NO-GO on proceeding to more states or real users
+without further sign-off.**
 
 What remains before this reaches real users or additional states:
 
 1. **Flag flip (prod cutover for AZ, TX, and/or OK)** — human sign-off
    required, same as AZ and TX. Nothing in this build enables
    `OFFICIAL_ROSTER_ENABLED` anywhere.
-2. **Muxin's call on the `runoff_pending` render question above** — is
-   "renders like any other challenger" the right behavior, or does the UI
-   need a distinguishing label for a still-undetermined nomination?
-3. **A follow-up update to this fixture is needed after August 25, 2026**,
+2. **A follow-up update to this fixture is needed after August 25, 2026**,
    once the OK Senate Democratic and OK-1 Republican runoffs are certified.
+3. **The standing "track pending elections everywhere, every year" idea**
+   above needs its own scoping pass before any implementation — captured as
+   a backlog item, not started here.
 4. **Next states** — per the plan's 2026-07-15 revision, continue the
    manual track. This build's operational-navigation section above should
    materially speed up any future state whose official source is neither

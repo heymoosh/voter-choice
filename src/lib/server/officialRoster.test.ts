@@ -419,6 +419,33 @@ describe("officialRosterRowToSeatChallenger", () => {
     expect(out.party).toBeNull();
     expect(out.rosterProvenance.selectableAsReplacement).toBe(true);
   });
+
+  it("stamps isRunoffPending: true for a runoff_pending row, false/undefined for a determined row", () => {
+    const pending: OfficialRosterRow = {
+      id: "ok-01-0",
+      name: "MARK TEDFORD",
+      party: "REP",
+      isIncumbent: false,
+      ballotStatus: "runoff_pending",
+      sourceUrl: AZ_SOURCE_URLS[0],
+      retrievedAt: AZ_RETRIEVED_AT,
+    };
+    const determined: OfficialRosterRow = {
+      id: "ok-02-0",
+      name: "JOSH BRECHEEN",
+      party: "REP",
+      isIncumbent: true,
+      ballotStatus: "qualified_for_general_ballot",
+      sourceUrl: AZ_SOURCE_URLS[0],
+      retrievedAt: AZ_RETRIEVED_AT,
+    };
+    expect(
+      officialRosterRowToSeatChallenger(pending, ctx).isRunoffPending,
+    ).toBe(true);
+    expect(
+      officialRosterRowToSeatChallenger(determined, ctx).isRunoffPending,
+    ).toBe(false);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -857,6 +884,17 @@ describe("lookupChallengers — OK wiring (house + senate both covered)", () => 
     expect(out.house.map((c) => c.name).sort()).toEqual(
       ["JACKSON LAHMEYER", "JOHN CROISANT", "MARK TEDFORD"].sort(),
     );
+    // Both Republican finalists carry isRunoffPending; the uncontested
+    // Democratic nominee does not.
+    expect(
+      out.house.find((c) => c.name === "MARK TEDFORD")?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.house.find((c) => c.name === "JACKSON LAHMEYER")?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.house.find((c) => c.name === "JOHN CROISANT")?.isRunoffPending,
+    ).toBe(false);
   });
 
   it("senate (open seat, Democratic runoff pending): both Senate runoff finalists render as challengers alongside the determined nominees", async () => {
@@ -879,5 +917,17 @@ describe("lookupChallengers — OK wiring (house + senate both covered)", () => 
     expect(out.senate.find((c) => c.name === "CURTIS STINNETT")?.party).toBe(
       "Independent",
     );
+    // Both Democratic runoff finalists carry isRunoffPending; the determined
+    // Republican and Libertarian nominees do not.
+    expect(
+      out.senate.find((c) => c.name === "N'KIYLA JASMINE THOMAS")
+        ?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.senate.find((c) => c.name === "JIM PRIEST")?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.senate.find((c) => c.name === "KEVIN HERN")?.isRunoffPending,
+    ).toBe(false);
   });
 });

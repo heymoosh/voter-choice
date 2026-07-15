@@ -511,6 +511,9 @@ const TRANSLATIONS = {
       notUp2026: 'Not up for election in 2026',
       notUp2026BandSentence: 'You can still review their record — {label}.',
       notSeekingReelection2026: 'Not on the 2026 ballot',
+      runoffPendingTag: 'Runoff pending',
+      runoffPendingNote:
+        "This party's nominee isn't decided yet — a primary runoff will settle it. Your vote in that runoff can still decide who appears on your November ballot.",
       rosterNotVerifiedEyebrow:
         'Campaign-finance records are not ballot roster proof',
       rosterNotVerifiedSentence:
@@ -1106,6 +1109,9 @@ const TRANSLATIONS = {
       notUp2026: 'No está en la boleta en 2026',
       notUp2026BandSentence: 'Aún puedes revisar su historial — {label}.',
       notSeekingReelection2026: 'No está en la boleta de 2026',
+      runoffPendingTag: 'Segunda vuelta pendiente',
+      runoffPendingNote:
+        'La candidatura de este partido aún no está decidida — una segunda vuelta primaria lo definirá. Tu voto en esa segunda vuelta todavía puede decidir quién aparece en tu boleta de noviembre.',
       rosterNotVerifiedEyebrow:
         'Los registros de financiamiento no prueban la boleta',
       rosterNotVerifiedSentence:

@@ -187,6 +187,68 @@ not inside Civix at all. This is a *declaration*-stage document (petition-
 signature verification pending) — record it as such, don't over-claim
 `qualified_for_general_ballot` for filers sourced from it.
 
+## Revision — Oklahoma build: non-Civix pattern, runoff-pending status, and a
+new standing idea (2026-07-15)
+
+Oklahoma's build (card `d9b1ef86`, report at
+`docs/operations/oklahoma-vertical-slice-data-check.md`) is the third state
+through the manual track, and the first whose official source runs neither a
+static-PDF-only pattern (AZ) nor Civix (TX) — a real, materially different
+non-Civix results portal, whose operational mechanics are recorded in OK's
+own report doc rather than duplicated here (the Civix playbook above stays
+Civix-specific, per its own instruction not to duplicate per-state).
+
+**A new `OfficialBallotStatus` value, `runoff_pending`,** was added to
+`scripts/congressional-rosters/types.ts` for a seat whose party nominee is
+undecided pending a still-future runoff — both finalists get a row with this
+status, neither is promoted to `qualified_for_general_ballot` before the
+runoff is certified. No DB migration was needed (`ballot_status` is plain
+`text`, no CHECK constraint).
+
+**A distinct UI treatment ships with this value**: `SeatChallenger` gained an
+`isRunoffPending` boolean, and `RepCard.tsx` renders a "Runoff pending" tag +
+a CTA note ("your vote in that runoff can still decide who appears on your
+November ballot") for any challenger carrying it — Muxin's call, made while
+reviewing this build: a runoff-pending nomination is fundamentally different
+from a settled one, and the reader has real agency over the outcome
+(low-turnout runoffs mean a single vote goes further).
+
+**A new standing idea, deliberately not designed or built here (Muxin,
+2026-07-15):** every state's in-progress elections (primary pending, runoff
+pending, etc.) should be tracked this way **every year going forward**, not
+just during this initial buildout — concrete voter value (a reader in a
+pending runoff can be told they still have outsized influence), a real CTA
+instead of a dead end, and it sets up a later follow-through loop ("how did
+the person you voted for in the runoff actually vote"). This is a genuinely
+standing, cross-year capability — not a one-off status value — and needs its
+own design pass before any implementation:
+
+- A per-state, per-year election-calendar input, not just the 2026-only
+  snapshots in `src/data/states/*.json` today.
+- A roster-schema concept for "which contest, which date resolves it,"
+  beyond a single `ballotStatus` enum value scoped to one cycle.
+- A recurring re-check as dates arrive (does this need a scheduled job, or
+  is a build-time/import-time refresh sufficient?).
+- Whether the UI treatment built for OK (a static tag + note) generalizes,
+  or needs the actual resolution date once the schema supports it.
+
+Captured as a new epic-level backlog item under `c5a813bb`, to be scoped
+properly rather than bolted onto a single state's card — see OK's report doc
+for the paste-ready draft.
+
+**Repo-hygiene note (resolved 2026-07-15):** this build discovered that
+`docs/operations/nationwide-congressional-roster-plan.md` had diverged across
+two unmerged local branches after the TX build — the Standing
+verification-deliverable requirement + Civix portal operational playbook
+content above (originally added by commit `2281b745` on a sibling branch)
+was missing from the branch this OK build was cut from
+(`feat/tx-official-roster-vertical-slice`), even though TX's own report doc
+references it as already written. AZ, TX, and OK have since all been merged
+to `main` in sequence (Muxin's explicit sign-off, 2026-07-15) specifically to
+stop this divergence from compounding further — each state now builds on a
+single shared history instead of stacking on the previous state's unmerged
+branch.
+
 ## Executive decision
 
 Build a cycle-generic, federated ingestion system that treats the legally
