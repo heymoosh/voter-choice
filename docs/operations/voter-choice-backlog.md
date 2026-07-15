@@ -992,7 +992,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- PARKED: hard context/turn ceiling exceeded (turns=10 tokens=68140) — session killed mid-card by the watchdog safety valve for a THIRD time on this already-parked card (previously turns=120 tokens=156655, then turns=126 tokens=163921); fresh follow-up (Resume I07, card 32f57ded-7143-4591-8f8d-6ef6ef27778f) already filed for the same scope and remains To Do, unclaimed — not re-filing a duplicate — never resumed - 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=? tokens=?) — session killed mid-card by the watchdog safety valve for a FOURTH time on this already-parked card (previously turns=120 tokens=156655, then turns=126 tokens=163921, then turns=10 tokens=68140); fresh follow-up (Resume I07, card 32f57ded-7143-4591-8f8d-6ef6ef27778f) already filed for the same scope and remains To Do, unclaimed — not re-filing a duplicate — never resumed - 2026-07-14
 - LANE: roster-b
 <!-- card-id: 10c84215-b264-4d23-a03c-84ed0f519142 -->
 
@@ -1051,24 +1051,6 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - LANE: roster-a
 <!-- card-id: aa06eb1b-9ce0-4037-856d-fcc2431fd4a6 -->
 
-**[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
-- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory records for WV, WI, WY, and the territorial delegate/resident-commissioner jurisdictions AS, GU, MP, and VI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission. Do not silently omit any territorial delegate contest.
-- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract; explicit handling for territorial delegate/resident-commissioner offices.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage; territorial delegate contests must not be dropped.
-- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest (including territorial delegate seats) maps to an exact official-source path or evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove WV, WI, WY, AS, GU, MP, VI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- RETRY: 1
-- STATUS: In Progress
-- DEPENDS ON: F07 — Official-source semantic combination invariants
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: explicit seven-jurisdiction inventory scope (incl. territorial delegates), fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- LANE: roster-b
-<!-- card-id: 3a4eb627-7fec-403b-961b-1a24e5fbb29c -->
-
 **[P0] I12 — National inventory consolidation and semantic gate**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - ORIGIN: Wave 3 fan-in of the nationwide official-source congressional roster plan (docs/operations/nationwide-congressional-roster-plan.md, "I12 — National inventory consolidation and semantic gate"); pre-created 2026-07-14 to carry the unattended run from Wave 3 into Wave 4.
@@ -1082,7 +1064,6 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SHIP: auto-pending-merge
 - NOTE (2026-07-14): Left un-GROOMED deliberately — the I05–I11 fan-in is a single-dep parser limitation, so the conductor's Step-0.5 re-groom confirms all seven are Done before stamping GROOMED. This matches the plan's "after all seven are Done, create I12" intent while keeping the run unattended.
 - STATUS: Backlog
-- DEPENDS ON: I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI
 - DECISION: authorized — consolidation/verification over the already-saved I05–I11 evidence plus card emission only; any incidental re-fetch limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (no Ballotpedia, no access-control bypass). No candidate ingestion, migrations, or production mutation.
 - LANE: roster-a
 <!-- card-id: 98f2c3d4-ef46-4e72-85bc-02b2c4bec612 -->
@@ -1152,6 +1133,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - - GROOMED: ready: same scope as parked 60ee4055 (I08), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
 - STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
+- PARKED: hard context/turn ceiling exceeded (turns=282 tokens=112568) - session killed mid-card by the watchdog safety valve before Step 2 (create_worktree) completed, never resumed - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 19ce9e35-279a-497a-9fb0-caba9aa0237e -->
 
@@ -1216,6 +1198,39 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GROOMED: ready: same scope as parked aa06eb1b (I10), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
 - LANE: roster-a
 <!-- card-id: ec977674-f95a-4373-ba93-a0fc9aadf4ee -->
+
+**[P0] Resume I08 (2) - National source inventory: MT, NE, NV, NH, NJ, NM, NY**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Follow-up to parked card 19ce9e35-279a-497a-9fb0-caba9aa0237e (Resume I08), which was claimed on lane roster-a and then killed mid-card by the watchdog hard context/turn ceiling (turns=282 tokens=112568) before Step 2 (create_worktree) ever ran - no worktree exists to recover.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for MT, NE, NV, NH, NJ, NM, and NY; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove MT, NE, NV, NH, NJ, NM, NY each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- STATUS: To Do
+- DEPENDS ON: F07 - Official-source semantic combination invariants
+- DECISION: authorized - external reads limited to official state election-authority sources per the epics NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: same scope as parked 19ce9e35 (Resume I08), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+<!-- card-id: 8d33fd73-ac6c-4372-884a-a651c06809c9 -->
+
+**[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for WV, WI, WY, and the territorial delegate/resident-commissioner jurisdictions AS, GU, MP, and VI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission. Do not silently omit any territorial delegate contest.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01–F07 shared contract; explicit handling for territorial delegate/resident-commissioner offices.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage; territorial delegate contests must not be dropped.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest (including territorial delegate seats) maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove WV, WI, WY, AS, GU, MP, VI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- SHIP: auto-pending-merge
+- RETRY: 1
+- STATUS: Done
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: explicit seven-jurisdiction inventory scope (incl. territorial delegates), fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-b
+<!-- card-id: 3a4eb627-7fec-403b-961b-1a24e5fbb29c -->
 
 **[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
