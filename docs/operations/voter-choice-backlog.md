@@ -1010,6 +1010,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: [P0] Import + verify official roster: Texas (TX) (continue the manual state-by-state track; TX is the most recently proven build, including the shared migration-0016 fix and the strengthened deliverable-requirement pattern this card follows)
 - DECISION: attended manual gate — same authorized scope as 637c2583/8530a468, extended to one additional state. No production mutation, no flag flip, no fan-out beyond the chosen state.
 - GROOMED: ready: pattern proven twice (AZ, TX); Civix-playbook + strengthened deliverable-requirement infrastructure already in place — 2026-07-15
+<!-- card-id: d9b1ef86-d6e8-4d7a-9a12-bcbfefc6b9ee -->
 
 **[P0] Source inventory: Arkansas (AR)**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
