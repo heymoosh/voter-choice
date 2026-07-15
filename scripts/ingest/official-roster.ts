@@ -42,6 +42,16 @@ import {
   TX_HOUSE_ROSTER_2026,
   TX_SENATE_ROSTER_2026,
 } from "../congressional-rosters/tx-official-roster-2026";
+import {
+  OK_STATE,
+  OK_ELECTION_YEAR,
+  OK_STAGE,
+  OK_HOUSE_SOURCE_URLS,
+  OK_SENATE_SOURCE_URLS,
+  OK_RETRIEVED_AT,
+  OK_HOUSE_ROSTER_2026,
+  OK_SENATE_ROSTER_2026,
+} from "../congressional-rosters/ok-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -83,6 +93,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: TX_SENATE_SOURCE_URLS[0],
       retrievedAt: TX_RETRIEVED_AT,
       entries: TX_SENATE_ROSTER_2026,
+    },
+  ],
+  OK: [
+    {
+      state: OK_STATE,
+      office: "house",
+      electionYear: OK_ELECTION_YEAR,
+      stage: OK_STAGE,
+      sourceUrl: OK_HOUSE_SOURCE_URLS[0],
+      retrievedAt: OK_RETRIEVED_AT,
+      entries: OK_HOUSE_ROSTER_2026,
+    },
+    {
+      state: OK_STATE,
+      office: "senate",
+      electionYear: OK_ELECTION_YEAR,
+      stage: OK_STAGE,
+      sourceUrl: OK_SENATE_SOURCE_URLS[0],
+      retrievedAt: OK_RETRIEVED_AT,
+      entries: OK_SENATE_ROSTER_2026,
     },
   ],
 };

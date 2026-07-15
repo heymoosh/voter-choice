@@ -18,7 +18,15 @@ export type OfficialBallotStatus =
   // the SoS's independent-declaration tracking document — a preliminary
   // filing stage that precedes final petition-signature verification, not
   // yet a general-ballot certification.
-  | "declared_general_ballot_intent";
+  | "declared_general_ballot_intent"
+  // One of the two finalists advancing to a still-pending primary runoff —
+  // the party's nominee is NOT yet determined (added building Oklahoma's
+  // roster, card d9b1ef86: OK's Aug 25, 2026 runoff was still in the future
+  // at transcription time). Both finalists get a row with this status;
+  // never promote either to qualified_for_general_ballot before the runoff
+  // is certified — see the plan doc's SAFETY rule against inferring a
+  // nominee from primary-round standings alone.
+  | "runoff_pending";
 
 export interface OfficialRosterEntry {
   district: string | null; // zero-padded House district, "01".."38"; null = statewide Senate contest
