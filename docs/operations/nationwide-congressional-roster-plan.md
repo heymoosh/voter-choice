@@ -63,18 +63,129 @@ long-term target if/when automation is warranted; the AZ build's lighter
 schema is an intentionally interim, additive, non-blocking alternative for the
 manual track.
 
-**Standing verification-deliverable requirement (Muxin, 2026-07-15) — applies
-to every state built through this manual track, not just one:** the final
-report/summary for each state MUST state the full file path(s) to (a) the doc
-holding the app's output/comparison for that state (one per state, following
-the pattern of `docs/operations/arizona-vertical-slice-data-check.md`), (b)
-the fixture file holding the transcribed data
-(`scripts/congressional-rosters/<state>-official-roster-<year>.ts`), and (c)
-the exact official state-authority source URL(s) used — so Muxin can
-independently verify against the official source herself, every time, the
-same way she did for AZ. Any per-state backlog card created for this track
-should carry this requirement explicitly (see the Texas card as the template);
-it is not optional polish.
+**Standing verification-deliverable requirement (Muxin, 2026-07-15, strengthened
+2026-07-15 after the TX build) — applies to every state built through this
+manual track, not just one:** the final report/summary for each state MUST
+state, in full, not abbreviated or repo-relative:
+
+(a) the **full absolute file path** to the doc holding the app's
+output/comparison for that state (one per state, following the pattern of
+`docs/operations/arizona-vertical-slice-data-check.md`);
+(b) the **full absolute file path** to the fixture file holding the
+transcribed data
+(`scripts/congressional-rosters/<state>-official-roster-<year>.ts`);
+(c) the **exact, full, untruncated official state-authority source URL(s)**
+used;
+(d) a written **operational-navigation section** — even a short one for an
+easy state — describing how the official source was actually navigated:
+what the site/portal structure looked like, any filter sequence or
+non-obvious steps needed, which signals on the site turned out reliable vs.
+unreliable, and any tooling used to pull the data. **There is no universal
+approach across states** (Muxin, 2026-07-15) — a static-PDF state (AZ) and a
+JS-portal state (TX) needed completely different mechanics, and this section
+is what lets a future session skip re-discovering them from scratch. If the
+state's official source runs Civix-vended software specifically, also check
+(and add to) the "Civix portal operational playbook" subsection immediately
+below rather than duplicating that write-up per-state.
+
+Plain chat/text output does not satisfy (a)-(c) — Muxin cannot click or
+navigate a truncated path or a description of a URL; the literal string is
+required every time. So Muxin can independently verify against the official
+source herself, every time, the same way she did for AZ. Any per-state
+backlog card created for this track should carry this requirement explicitly
+(see the Texas card as the template); it is not optional polish.
+
+### Civix portal operational playbook (Muxin, 2026-07-15)
+
+AZ's official source was two static PDFs — straightforward to fetch and read.
+Texas's build (card `8530a468`, report at
+`docs/operations/texas-vertical-slice-data-check.md`) hit a materially harder
+case: a JS single-page-app candidate portal (`goelect.txelections.civixapps.com`,
+vended by Civix — `f03-source-inventory.ts` had already flagged this as
+`sourceFormat: "portal"`, `parserFamily: "rendered_portal"`, so the *category*
+of problem was pre-logged, but not the fine-grained navigation mechanics
+needed to actually work through it). **Civix serves multiple states' election
+systems**, so this playbook is written for reuse the next time a state's
+official source turns out to run the same software, not just for Texas.
+
+**How to recognize a Civix-vended portal:** URL pattern
+`<subdomain>.<state>elections.civixapps.com`, page titles like "IvisCbpUi" or
+"::Civix Election Night Results::", footer text "© 20XX Civix. All rights
+reserved. POWERED BY gocivix.com".
+
+**Mechanics that cost the most time, in the order they bite:**
+
+1. **The portal 403s on any non-browser fetch** (`WebFetch`, curl, a Wayback
+   Machine snapshot of the rendered page) — it's a JS app that needs an
+   actual rendered browser session, not an access-control wall. Use
+   `mcp__claude-in-chrome__*` (navigate, click, read_page/find) to drive it
+   like a human would; there is no shortcut around this without browser
+   automation.
+2. **The "Candidate Information" filter form's `Office Name` field is a
+   required single-select** — leaving it blank and submitting returns "No
+   records found" every time, even when Year/Election/Office Type are
+   correctly set. There is no "all districts" query; each district (or
+   statewide office) must be queried individually, or scripted.
+3. **Neither of the portal's own incumbency signals are reliable.** The
+   Election Night Results page's `(I)` superscript and Candidate
+   Information's explicit `INCUMBENT: YES/NO` field both failed to flag a
+   real sitting member (Al Green, TX-9) because he happened to run in a
+   *different* district that cycle — the field just wasn't populated
+   correctly for that case, not a parsing bug on our end. **Cross-check
+   incumbency against the U.S. House's own official member directory**
+   (`https://www.house.gov/representatives`, "By State and District" tab,
+   long single page with per-state `<caption id="state-XXX">` anchors —
+   lazy-loads on scroll, so anchor-only navigation doesn't populate the DOM
+   until you actually scroll near it) matched by district number + surname.
+   **Never fall back to this app's own FEC-derived `candidates` table for
+   this cross-check** — that data source is exactly the kind of
+   stale/inaccurate roster this whole feature exists to route around.
+4. **A general-election candidate bucket may not exist yet.** As of Texas's
+   build (mid-July, general election in November), the portal's `Election`
+   dropdown had no "GENERAL ELECTION" entry at all — only
+   primary/runoff/special election filing records. The general-ballot
+   nominee per seat had to be *derived*: query the Election Night Results
+   sub-app (a different URL path, `ivis-enr-ui/races` vs. the Candidate
+   Information app's `ivis-cbp-ui`) for certified primary/runoff vote
+   totals, and take the winner. Check whether the state's primary/runoff
+   calendar has already passed (`src/data/states/<state>.json`) before
+   assuming this derivation step is even necessary — a state with an
+   upcoming primary (like AZ's was) may not need it.
+5. **The Election Night Results race list is a virtualized scroll** (Angular
+   CDK `cdk-virtual-scroll-viewport`) — only ~3-4 races render into the DOM
+   at once regardless of how the page is scrolled, so page-reading tools
+   (`get_page_text`, `read_page`) only ever see a few races per call.
+   Manually scrolling and re-reading to cover 30+ races is slow and easy to
+   get wrong (silently miss a race). **Once the navigation mechanics are
+   understood, switch to a scripted Playwright pass** (`chromium.launch()`,
+   direct DOM queries against `mat-card` / `tr` elements — NOT the
+   accessibility-tree tools — with an incremental `scrollBy` + collect loop,
+   deduping by race title) rather than continuing by hand. Two structural
+   traps when writing that script: (a) `document.querySelectorAll("mat-card")`
+   returns both individual race cards AND outer wrapper cards that contain
+   several races each — filter to leaf cards only (`card.querySelectorAll("mat-card").length === 0`)
+   or you'll get one race's title attached to every other race's rows too;
+   (b) table cell text has no inherent whitespace between adjacent
+   cells' `textContent` — parse from `<tr>`/cell DOM structure directly,
+   never regex against the concatenated card text.
+6. **A public JSON API exists underneath the SPA**
+   (`POST /api-ivis-cbp/api/cbp/findQualifiedCandidates` was observed via
+   `read_network_requests`) but its request-body schema wasn't reverse-
+   engineered this session (blind guesses 500'd, and patching `fetch`/`XHR`
+   from outside the Angular zone.js context didn't reliably intercept the
+   real call). If a future session has time to invest, capturing a real
+   request body via actual DevTools (not prototype-patching) could let a
+   script call this endpoint directly instead of driving the UI at all —
+   flagged here as an unexplored shortcut, not a dead end.
+
+**Independent/write-in candidates:** look for an official
+"Declarations of Intent" or similar SoS-published PDF/list *separate* from
+the Civix portal — Texas's independents (all offices, not just federal) were
+in one PDF at a stable-looking SoS URL
+(`sos.texas.gov/elections/forms/<year>-independent-declaration-tracking.pdf`),
+not inside Civix at all. This is a *declaration*-stage document (petition-
+signature verification pending) — record it as such, don't over-claim
+`qualified_for_general_ballot` for filers sourced from it.
 
 ## Executive decision
 
