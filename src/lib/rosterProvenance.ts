@@ -8,6 +8,7 @@ export interface RosterSourceLink {
 export type RosterSourceKind =
   | "official_sample_ballot"
   | "state_county_official_list"
+  | "official_state_roster"
   | "google_civic"
   | "user_pasted_ballot"
   | "user_uploaded_ballot"
@@ -59,6 +60,28 @@ export function fecFinanceOnlyProvenance(params: {
     confidence: "finance_only",
     ballotStatus: "finance_record_only",
     selectableAsReplacement: false,
+  };
+}
+
+/**
+ * State Secretary-of-State candidate roster (e.g. azsos.gov's
+ * qualified-for-primary PDF) — an official, ballot-qualification-tied source.
+ * Promotes into the "verified" render bucket (isSelectableReplacement) with
+ * no RepCard changes needed.
+ */
+export function officialStateRosterProvenance(params: {
+  election: string | null;
+  retrievedAt: string;
+  sourceUrl: string;
+}): RosterProvenance {
+  return {
+    sourceKind: "official_state_roster",
+    election: params.election,
+    retrievedAt: params.retrievedAt,
+    sourceLinks: [{ label: "Official state roster", url: params.sourceUrl }],
+    confidence: "official_address_election_tied",
+    ballotStatus: "verified_current_ballot",
+    selectableAsReplacement: true,
   };
 }
 

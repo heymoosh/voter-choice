@@ -32,6 +32,15 @@ export interface DelegationCandidate {
   party: "Democrat" | "Republican" | "Independent" | null;
   /** e.g. "U.S. Senator since 2015"; null when no office rows exist. */
   priorRole: string | null;
+  /**
+   * False when an official state roster confirms the sitting member did NOT
+   * file for this seat in `electionYear` (e.g. AZ-01/AZ-05 2026 — the
+   * incumbent filed for Governor instead). Undefined/null everywhere else —
+   * this is only ever set by the route when OFFICIAL_ROSTER_ENABLED covers
+   * this seat. Attached by /api/delegation (src/app/api/delegation/route.ts)
+   * via officialRoster.ts's isIncumbentSeekingReelection.
+   */
+  seekingReelection2026?: boolean | null;
 }
 
 export interface DelegationSeat {

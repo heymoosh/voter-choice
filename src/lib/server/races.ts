@@ -23,6 +23,11 @@ import {
   fecFinanceOnlyProvenance,
   type RosterProvenance,
 } from "../rosterProvenance";
+import { isOfficialRosterEnabled } from "./officialRosterFlag";
+import {
+  getOfficialRoster,
+  officialRosterRowToSeatChallenger,
+} from "./officialRoster";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,9 +66,14 @@ const PARTY_NAMES: Record<string, string> = {
   NPA: "No Party Affiliation",
   UNK: "Unknown",
   W: "Write-in",
+  // State-recognized minor party, seen in Arizona's official roster (AZ
+  // vertical slice) — a distinct party under AZ law, not generic "IND".
+  AIP: "Arizona Independent Party",
 };
 
-function partyName(code: string | null): string | null {
+/** Exported so officialRoster.ts's mapper can apply the same display-name
+ * mapping the FEC path uses, for consistent rendering across both sources. */
+export function partyName(code: string | null): string | null {
   if (!code) return null;
   return PARTY_NAMES[code.toUpperCase()] ?? code;
 }
@@ -147,6 +157,60 @@ export async function lookupChallengers(
   if (db === DB_NOT_CONFIGURED) return { house: [], senate: [] };
 
   const st = stateCode.toUpperCase();
+  const districtKey =
+    district !== null ? String(district).padStart(2, "0") : null;
+  const provenanceContext = {
+    election: `${electionYear} federal cycle`,
+    retrievedAt: new Date().toISOString(),
+  };
+
+  // Official-state-roster path (flag-gated, additive): when rows exist for
+  // this exact (state, office, district, electionYear), they ARE the
+  // candidate set for that seat — full set, no viability filtering, the
+  // incumbent's own row excluded (already shown as the seat's own card —
+  // same contract as the FEC path's isIncumbentFiler exclusion below).
+  // Falls through to the unchanged FEC-only path when the flag is off or no
+  // official rows cover this exact contest.
+  let houseFromOfficialRoster: SeatChallenger[] | null = null;
+  let senateFromOfficialRoster: SeatChallenger[] | null = null;
+  if (isOfficialRosterEnabled()) {
+    if (districtKey !== null) {
+      const officialHouseRows = await getOfficialRoster(
+        st,
+        "house",
+        districtKey,
+        electionYear,
+      );
+      if (officialHouseRows.length > 0) {
+        houseFromOfficialRoster = officialHouseRows
+          .filter((r) => !r.isIncumbent)
+          .map((r) => ({
+            ...officialRosterRowToSeatChallenger(r, provenanceContext),
+            party: partyName(r.party),
+          }));
+      }
+    }
+    const officialSenateRows = await getOfficialRoster(
+      st,
+      "senate",
+      null,
+      electionYear,
+    );
+    if (officialSenateRows.length > 0) {
+      senateFromOfficialRoster = officialSenateRows
+        .filter((r) => !r.isIncumbent)
+        .map((r) => ({
+          ...officialRosterRowToSeatChallenger(r, provenanceContext),
+          party: partyName(r.party),
+        }));
+    }
+  }
+
+  // Both seats covered by the official roster — the FEC query result would
+  // go unused, so skip it.
+  if (houseFromOfficialRoster !== null && senateFromOfficialRoster !== null) {
+    return { house: houseFromOfficialRoster, senate: senateFromOfficialRoster };
+  }
 
   const rows = await db
     .select({
@@ -166,9 +230,6 @@ export async function lookupChallengers(
         eq(schema.candidates.isIncumbent, false),
       ),
     );
-
-  const districtKey =
-    district !== null ? String(district).padStart(2, "0") : null;
 
   // The FEC roster includes the sitting incumbent as a filer for their own
   // seat (incumbent_challenge === "I"). Those whose name didn't match our
@@ -191,14 +252,14 @@ export async function lookupChallengers(
   const senateRows = rows.filter(
     (r) => r.office === "senate" && !isIncumbentFiler(r),
   );
-  const provenanceContext = {
-    election: `${electionYear} federal cycle`,
-    retrievedAt: new Date().toISOString(),
-  };
 
   return {
-    house: applyViabilityFilter(dedupeByName(houseRows), provenanceContext),
-    senate: applyViabilityFilter(dedupeByName(senateRows), provenanceContext),
+    house:
+      houseFromOfficialRoster ??
+      applyViabilityFilter(dedupeByName(houseRows), provenanceContext),
+    senate:
+      senateFromOfficialRoster ??
+      applyViabilityFilter(dedupeByName(senateRows), provenanceContext),
   };
 }
 
