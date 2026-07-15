@@ -1645,6 +1645,20 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS: Backlog
 <!-- card-id: 70cdf2b3-66f5-442a-a1c8-ec8e5b00af9c -->
 
+**[P0] Source inventory: Arizona (AZ) — retry after ceiling kill**
+- - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- - ORIGIN: cold-start CEILING recovery for parked card 637c2583-0a74-4eb4-af2c-7980d6e9f735 ("[P0] Source inventory: Arizona (AZ)") — that card's roster-a session hit the watchdog hard context/turn ceiling (turns=733 tokens=232737) and was killed before producing any commits; never resumed, per policy.
+- - OUTCOME: Same as the parked card — validator-clean, evidence-backed official-source inventory record for Arizona (AZ); the jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- - IN SCOPE: AZ's official election-authority landing page(s), election calendar, candidate-publication source, format, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence — built on the F01–F07 shared contract.
+- - OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any jurisdiction other than AZ.
+- - SAFETY: A filing list cannot be represented as a qualified/certified roster; a failed/blocked/not-yet-published official source stays explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- - TESTS: Inventory verifier scoped to AZ rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 AZ contest maps to an exact official-source path or an evidenced explicit state.
+- - GOAL_CONDITION: Focused tests prove AZ has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation. (Carried forward from parked card 637c2583 — same authorized scope, fresh attempt.)
+- - GROOMED: ready — same scope as its parked predecessor, single-jurisdiction inventory, fail-closed safeguards, scoped verifier tests, and goal condition already vetted 2026-07-14; the mid-flight worktree at voter-choice-worktrees/roster-a/wt-p0-source-inventory-arizona-az-637c2583 has zero commits and is left in place (not cleaned up), so this is a clean fresh start, not a resume.
+- STATUS: Backlog
+<!-- card-id: dc6903f1-a7fd-4056-af8b-caa5e3447003 -->
+
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
