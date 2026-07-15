@@ -1042,12 +1042,13 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove SC, SD, TN, UT, VT, VA, WA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
+- RETRY: 2
 - STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=275 tokens=107839) - session killed mid-card by the watchdog safety valve, never resumed - 2026-07-14
 - LANE: roster-a
-- RETRY: 1
 <!-- card-id: aa06eb1b-9ce0-4037-856d-fcc2431fd4a6 -->
 
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
@@ -1060,12 +1061,12 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest (including territorial delegate seats) maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove WV, WI, WY, AS, GU, MP, VI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
+- RETRY: 1
 - STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope (incl. territorial delegates), fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
 - LANE: roster-b
-- RETRY: 1
 <!-- card-id: 3a4eb627-7fec-403b-961b-1a24e5fbb29c -->
 
 **[P0] I12 — National inventory consolidation and semantic gate**
@@ -1198,6 +1199,22 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GROOMED: ready: same scope as parked 96f404ab (I05), refiled fresh after zero-commit retry cap park so it can be picked cleanly - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 25d6d797-63c0-4ac6-904b-fd15e0df0a49 -->
+
+**[P0] Resume I10 — National source inventory: SC, SD, TN, UT, VT, VA, WA**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Follow-up to parked card aa06eb1b-9ce0-4037-856d-fcc2431fd4a6 (I10), which was claimed on lane roster-a, relaunched twice via the Step-3 zero-commit retry cap (RETRY:2), then killed mid-card by the watchdog hard context/turn ceiling (turns=275 tokens=107839) before producing any commits. Its worktree (voter-choice-worktrees/roster-a/wt-i10-source-inventory, branch wt/roster-a/i10-source-inventory) survived the kill but carries zero commits ahead of origin/main - left in place, not cleaned up, for reference only.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for SC, SD, TN, UT, VT, VA, and WA; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove SC, SD, TN, UT, VT, VA, WA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized - external reads limited to official state election-authority sources per the epics NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: same scope as parked aa06eb1b (I10), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+- LANE: roster-a
+<!-- card-id: ec977674-f95a-4373-ba93-a0fc9aadf4ee -->
 
 **[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
