@@ -60,6 +60,16 @@ import {
   AL_SENATE_SOURCE_URLS,
   AL_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/al-official-roster-2026";
+import {
+  AK_HOUSE_ROSTER_2026,
+  AK_SENATE_ROSTER_2026,
+  AK_STATE,
+  AK_ELECTION_YEAR,
+  AK_HOUSE_DISTRICT,
+  AK_HOUSE_SOURCE_URLS,
+  AK_SENATE_SOURCE_URLS,
+  AK_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ak-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -188,6 +198,34 @@ const AL_INCUMBENT_SAMPLE: Record<string, string> = {
   "05": "Dale W. Strong",
   "07": "Terri A. Sewell",
 };
+
+/** Same shape as `okDbRow`, but for AK entries — the House side uses
+ * district "00" (at-large), never null (see the AK fixture's docblock). */
+function akDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ak-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? AK_HOUSE_SOURCE_URLS[0] : AK_SENATE_SOURCE_URLS[0],
+    retrievedAt: AK_RETRIEVED_AT,
+  };
+}
+
+const AK_HOUSE_DB_ROWS = AK_HOUSE_ROSTER_2026.map((e, i) =>
+  akDbRow(e, i, "house"),
+);
+const AK_SENATE_DB_ROWS = AK_SENATE_ROSTER_2026.map((e, i) =>
+  akDbRow(e, i, "senate"),
+);
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -982,6 +1020,7 @@ describe("lookupChallengers — OK wiring (house + senate both covered)", () => 
 });
 
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
 // Alabama — fourth state through this pipeline (card at
 // docs/operations/voter-choice-backlog.md, "Import + verify official
 // roster: Alabama (AL)"). Not Civix-vended; exercises a mid-decade
@@ -1235,5 +1274,163 @@ describe("lookupChallengers — AL wiring (house + senate both covered)", () => 
     expect(
       out.senate.find((c) => c.name === "Everett Wess")?.isRunoffPending,
     ).toBe(false);
+  });
+});
+// ---------------------------------------------------------------------------
+// Alaska — fourth state built through this pipeline. At-large House seat
+// (district "00", not null — see the fixture's docblock for why a null
+// district would silently never match races.ts's lookupChallengers); every
+// row is "qualified_for_primary_ballot" since Alaska's Aug 18, 2026
+// top-four nonpartisan primary had not yet occurred at transcription time,
+// so no runoff_pending rows exist here. See
+// docs/operations/alaska-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — AK narrowing", () => {
+  it("returns all AK house rows for the at-large district key ('00'), none for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AK_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      AK_STATE,
+      "house",
+      AK_HOUSE_DISTRICT,
+      AK_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [...AK_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const wrongDistrict = await getOfficialRoster(
+      AK_STATE,
+      "house",
+      "01",
+      AK_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+
+  it("returns all AK senate rows for (senate, null), none for the house district key in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AK_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      AK_STATE,
+      "senate",
+      null,
+      AK_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(AK_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...AK_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      AK_STATE,
+      "house",
+      AK_HOUSE_DISTRICT,
+      AK_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every AK row is qualified_for_primary_ballot — the Aug 18, 2026 top-four primary had not yet happened at transcription time", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AK_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      AK_STATE,
+      "house",
+      AK_HOUSE_DISTRICT,
+      AK_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(AK_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      AK_STATE,
+      "senate",
+      null,
+      AK_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — AK", () => {
+  it("returns true for the House seat — Begich (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AK_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        AK_STATE,
+        "house",
+        AK_HOUSE_DISTRICT,
+        AK_ELECTION_YEAR,
+        "Nick Begich",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns true for the Senate seat — Sullivan (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AK_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        AK_STATE,
+        "senate",
+        null,
+        AK_ELECTION_YEAR,
+        "Dan Sullivan",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — AK wiring (at-large house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3); a numeric district of 0 resolves the at-large seat", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const dbMock = makeSequencedDbMock([AK_HOUSE_DB_ROWS, AK_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("AK", 0, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Begich excluded from the house challenger list
+    expect(out.house.some((c) => c.name === "NICK BEGICH")).toBe(false);
+    expect(out.house.length).toBe(AK_HOUSE_ROSTER_2026.length - 1);
+  });
+
+  it("senate: incumbent Sullivan excluded; the same-name litigated filer and the Alaskan Party filer both render as challengers with mapped party names", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([AK_HOUSE_DB_ROWS, AK_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AK", 0, 2026);
+
+    expect(out.senate.some((c) => c.name === "DAN S. SULLIVAN")).toBe(false);
+    expect(out.senate.length).toBe(AK_SENATE_ROSTER_2026.length - 1);
+    expect(
+      out.senate.find((c) => c.name === "DANIEL J. SULLIVAN JR.")?.party,
+    ).toBe("Republican");
+    expect(
+      out.senate.find((c) => c.name === 'EARL D. "SKIP" SOUTHWORTH')?.party,
+    ).toBe("Alaskan Party");
+    expect(out.senate.find((c) => c.name === "MARY PELTOLA")?.party).toBe(
+      "Democrat",
+    );
+  });
+
+  it("house: NPA-coded filers (Nonpartisan/Undeclared) render with mapped party 'No Party Affiliation'", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([AK_HOUSE_DB_ROWS, AK_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AK", 0, 2026);
+
+    expect(out.house.find((c) => c.name === "DAVID R. AMBROSE II")?.party).toBe(
+      "No Party Affiliation",
+    );
+    expect(
+      out.house.find((c) => c.name === 'MATTHEW "BRONCO" WILLIAMS')?.party,
+    ).toBe("No Party Affiliation");
   });
 });

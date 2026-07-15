@@ -29,9 +29,31 @@ export type OfficialBallotStatus =
   | "runoff_pending";
 
 export interface OfficialRosterEntry {
-  district: string | null; // zero-padded House district, "01".."38"; null = statewide Senate contest
+  // Zero-padded House district ("01".."38"), OR "00" for an at-large House
+  // seat (Alaska — see races.ts's lookupChallengers, which zero-pads a
+  // numeric district of 0 to "00"; a null district here would never match
+  // that lookup). null = statewide Senate contest only.
+  district: string | null;
   name: string;
-  party: "DEM" | "REP" | "LIB" | "GRE" | "AIP" | "IND" | null;
+  party:
+    | "DEM"
+    | "REP"
+    | "LIB"
+    | "GRE"
+    | "AIP"
+    | "IND"
+    // "No Party Affiliation" — Alaska's Division of Elections lists filers
+    // as "Nonpartisan" or "Undeclared" (distinct voter-registration
+    // statuses, not a declared-independent candidacy like TX/OK's "IND");
+    // both collapse to this existing FEC-side code (added building Alaska,
+    // card... AK vertical slice) since the app has no separate concept for
+    // the nuance and races.ts's PARTY_NAMES already maps NPA for FEC data.
+    | "NPA"
+    // Alaska's "Registered Alaskan Party" — a real state-recognized minor
+    // party under Alaska law, distinct from generic IND (added building
+    // Alaska, mirroring how AIP was added for Arizona's own state party).
+    | "AKP"
+    | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
   office?: "house" | "senate"; // per-entry override, for a fixture covering both chambers
