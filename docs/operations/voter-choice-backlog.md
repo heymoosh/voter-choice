@@ -970,10 +970,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to AZ rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 AZ contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove AZ has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
+- LANE: roster-a
 <!-- card-id: 637c2583-0a74-4eb4-af2c-7980d6e9f735 -->
 
 **[P0] Source inventory: Arkansas (AR)**
@@ -986,10 +987,12 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to AR rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 AR contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove AR has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=716 tokens=213153) — session killed mid-card by the watchdog safety valve, never resumed
+- LANE: roster-b
 <!-- card-id: 5b46ac88-0aa2-4448-a8b4-f488ac8ae081 -->
 
 **[P0] Source inventory: Colorado (CO)**
@@ -1610,6 +1613,20 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GOAL_CONDITION: a short manual eval (N sample logistics questions run through the live chat) either confirms current behavior is already safe (card closes as not-needed) or a prompt change ships that verifiably redirects logistics questions rather than answering them from the model's own general knowledge.
 - STATUS: Backlog
 <!-- card-id: 0467f878-9c34-41b2-80be-0c8add7cb246 -->
+
+**[P0] Source inventory: Arkansas (AR) — retry after ceiling kill**
+- - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- - ORIGIN: cold-start CEILING recovery for parked card 5b46ac88-0aa2-4448-a8b4-f488ac8ae081 ("[P0] Source inventory: Arkansas (AR)") — that card's roster-b session hit the watchdog hard context/turn ceiling (turns=716 tokens=213153) at 2026-07-14T22:36 and was killed before creating a worktree or any commits; never resumed, per policy.
+- - OUTCOME: Same as the parked card — validator-clean, evidence-backed official-source inventory record for Arkansas (AR); the jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- - IN SCOPE: AR's official election-authority landing page(s), election calendar, candidate-publication source, format, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence — built on the F01–F07 shared contract.
+- - OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any jurisdiction other than AR.
+- - SAFETY: A filing list cannot be represented as a qualified/certified roster; a failed/blocked/not-yet-published official source stays explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- - TESTS: Inventory verifier scoped to AR rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 AR contest maps to an exact official-source path or an evidenced explicit state.
+- - GOAL_CONDITION: Focused tests prove AR has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation. (Carried forward from parked card 5b46ac88 — same authorized scope, fresh attempt.)
+- - GROOMED: ready — same scope as its parked predecessor, single-jurisdiction inventory, fail-closed safeguards, scoped verifier tests, and goal condition already vetted 2026-07-14; no worktree/commits existed to recover, so this is a clean fresh start, not a resume.
+- STATUS: Backlog
+<!-- card-id: 2396b6af-be6d-47d6-ae8c-1c251bfe2d3b -->
 
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
