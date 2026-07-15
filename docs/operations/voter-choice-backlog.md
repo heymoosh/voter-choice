@@ -1047,6 +1047,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
 - LANE: roster-a
+- RETRY: 1
 <!-- card-id: aa06eb1b-9ce0-4037-856d-fcc2431fd4a6 -->
 
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
