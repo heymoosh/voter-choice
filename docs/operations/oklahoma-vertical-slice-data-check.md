@@ -142,23 +142,39 @@ general): it was never meant to reflect the June primary's outcome, which is
 exactly why this build separately pulled the results portal to derive
 nominees rather than reading the filing PDF as if it were a final list.
 
-**Tooling note — a CSV/XML export exists on the results portal, worth
-revisiting.** Muxin flagged `results.okelections.gov`'s "Export" menu, which
-offers race/county/precinct-level CSV and XML downloads — a structurally
-better source than parsing rendered HTML text. Network inspection found the
-real endpoint (`https://results.okelections.gov/OKERS/enrapi/GetExtract/CSV/20260616`),
-but a direct `fetch()` to it 401s ("Authorization has been denied for this
-request") even after replicating the click that succeeded in the browser
-(confirmed via `read_network_requests` that the real UI click got a 200 on
-the identical URL) — the page's own JS evidently attaches some
-short-lived/one-time auth token or header this session didn't reverse-engineer
-via `fetch`/XHR hooking. The `get_page_text` HTML pull used instead is a
-complete, single-shot read of every race (not partial or virtualized), so
-this build's numbers aren't in doubt, but a future session with time to
-inspect the real request via DevTools (not prototype-patched `fetch`) could
-likely get the CSV working and make any OK-like non-Civix state easier to
-parse. Flagged as an open tooling lead, same posture as TX's own
-unexplored-shortcut note about its `findQualifiedCandidates` API.
+**Tooling note — the CSV export works, it just needs a real browser
+download, not a scripted `fetch`.** Muxin flagged `results.okelections.gov`'s
+"Export" menu (race/county/precinct-level CSV and XML) as a structurally
+better source than parsing rendered HTML text. This session's `fetch()`
+attempts against the endpoint
+(`https://results.okelections.gov/OKERS/enrapi/GetExtract/CSV/20260616`) all
+401'd, even replicating the click that got a 200 in `read_network_requests` —
+the export is served as a same-origin file download (browser "Save As"
+dialog), not a fetchable JSON/text response; a script-level `fetch()` never
+carries whatever the real download flow needs (likely a cookie/session tie
+that a same-page `fetch()` should have had, but evidently didn't — not fully
+root-caused). Muxin clicked through the actual save dialog manually and
+downloaded `20260616_StateResults (1).csv` (83,856 bytes, 650 rows,
+`elec_date,entity_description,race_number,race_description,race_party,
+tot_race_prec,race_prec_reporting,cand_number,cand_name,cand_party,
+cand_absmail_votes,cand_early_votes,cand_elecday_votes,cand_tot_votes,
+race_county_owner`) to her Downloads folder.
+
+**Independent revalidation against the CSV (2026-07-15, post-review):**
+parsed every `FOR UNITED STATES SENATOR` / `FOR UNITED STATES REPRESENTATIVE`
+row and recomputed each race's vote totals and win/no-majority outcome
+directly from the CSV's own `cand_tot_votes` column, independent of the
+original `get_page_text` HTML pull. **Exact match on every figure, all 10
+congressional primary races** (both parties × 5 seats, where contested):
+same candidates, same vote counts, same percentages to two decimals, same
+majority/no-majority determination — including both runoff-pending races
+(OK-1 Republican: Tedford 32.15%/Lahmeyer 25.88%, no majority of 11
+candidates; US Senate Democrat: Thomas 45.19%/Priest 23.85%, no majority of
+5). The CSV also confirms no Libertarian or Green Party primary was held for
+any congressional seat (`race_party` values across the whole file are only
+`DEM`/`REP`/blank), matching the fixture's minor-party findings. This is a
+second, independent, structured-data source confirming the transcription —
+not just the same page read twice.
 
 ## A cross-check finding this build made (not a bug — a real, non-obvious
 incumbency fact caught by the independent-source rule)
@@ -323,10 +339,13 @@ array-shaped `FIXTURES` map.
   one Libertarian (Sevier White) filed for US Senate, unopposed in that
   party's primary. No Green Party filings were found anywhere in the
   official congressional filing list — verified absent, not omitted.
-- **The results-portal CSV/XML export isn't wired up** (401s on a plain
-  `fetch`, unresolved this session) — see the tooling note above. The HTML
-  pull used instead is complete and not in doubt, but the CSV would be more
-  robust for a future build.
+- **The results-portal CSV export can't be scripted with a plain `fetch()`**
+  (401s; it's a same-origin file download, not a fetchable response) — see
+  the tooling note above. Resolved for THIS build via a manual download +
+  independent revalidation (exact match, see above), but a future session
+  automating a non-Civix state like this one will still need a human to
+  click through the save dialog, or time to find a scriptable path (e.g. a
+  headless-Chromium download-directory config), unless/until that's solved.
 - **The base delegation resolver (GovTrack-derived `candidates` table)
   doesn't know Armstrong replaced Mullin either** — a live check via
   `/api/delegation` for a Tulsa address returned `candidate: null` for both
@@ -358,28 +377,39 @@ array-shaped `FIXTURES` map.
     `https://bioguide.congress.gov/search/bio/A000383` (Senate incumbency
     cross-check only — the source of the Armstrong/Mullin finding above)
 
-## A bigger idea, deliberately not built here (Muxin, 2026-07-15)
+## Tracking pending elections going forward — one immediate rule, one bigger
+idea (Muxin, 2026-07-15)
 
 Reviewing this build, Muxin's read on the runoff-pending CTA above was that
-it shouldn't be a one-off for Oklahoma's two races: **every state's
-in-progress elections (primary pending, runoff pending, etc.) should be
-tracked this way, every year going forward** — not just during this initial
-50-state buildout. The product case: (1) it's genuinely valuable voting
-information — a reader in a low-turnout runoff can have outsized influence
-and should be told so; (2) it gives the app a concrete, honest CTA instead
-of a dead end; (3) it lets the app later assess "how did the person you
-voted for in the runoff actually vote" as a follow-through loop.
+it shouldn't be a one-off for Oklahoma's two races. This split into two
+concrete follow-ups, of different sizes:
 
-This is a standing, cross-year capability, not a scoped fix — it needs its
-own design pass (a per-state, per-year election-calendar input beyond the
-2026-only snapshots in `src/data/states/*.json`; a roster-schema concept for
-"which contest, which date resolves it" beyond a single `ballotStatus`
-enum value; a recurring re-check as dates arrive). Deliberately **not**
-designed or built as part of this OK card — captured as a new epic-level
-backlog item for `c5a813bb` instead, per Muxin's request during review, so
-it gets a real scoping pass rather than being bolted onto a single state's
-build. Also written up in the plan doc's own revision log
-(`docs/operations/nationwide-congressional-roster-plan.md`).
+**1. Immediate and mandatory, effective now — no scoping needed.** Every
+remaining state built through the manual track for the rest of 2026 MUST
+check that state's own official source for any still-undetermined
+nomination as a standard part of the same research pass (the builder is
+already on the state's site anyway) and apply the exact mechanism OK already
+built: `runoff_pending` ballotStatus + `SeatChallenger.isRunoffPending` +
+RepCard's "Runoff pending" tag/CTA. Nothing new to design — the mechanism is
+already state-agnostic. Recorded as a standing requirement on the epic card
+(`c5a813bb`) and in the plan doc's own revision log so every future
+per-state card inherits it.
+
+**2. Bigger and deliberately deferred — a cross-year design pass.** Beyond
+2026, **every state's in-progress elections should be tracked this way every
+year going forward** — concrete voter value (a reader in a low-turnout
+runoff can have outsized influence and should be told so), a real CTA
+instead of a dead end, and a later follow-through loop ("how did the person
+you voted for in the runoff actually vote"). This is a genuinely standing,
+cross-year capability, not a scoped fix — it needs its own design pass (a
+per-state, per-year election-calendar input beyond the 2026-only snapshots
+in `src/data/states/*.json`; a roster-schema concept for "which contest,
+which date resolves it" beyond a single `ballotStatus` enum value; a
+recurring re-check as dates arrive). Deliberately **not** designed or built
+as part of this OK card — captured as a new epic-level backlog item for
+`c5a813bb` instead, so it gets a real scoping pass rather than being bolted
+onto a single state's build. Also written up in the plan doc's own revision
+log (`docs/operations/nationwide-congressional-roster-plan.md`).
 
 **Paste-ready backlog card draft** (Muxin's to place — per this repo's
 practice, the backlog stays hers to edit during interactive review; this is
@@ -430,10 +460,15 @@ What remains before this reaches real users or additional states:
    `OFFICIAL_ROSTER_ENABLED` anywhere.
 2. **A follow-up update to this fixture is needed after August 25, 2026**,
    once the OK Senate Democratic and OK-1 Republican runoffs are certified.
-3. **The standing "track pending elections everywhere, every year" idea**
-   above needs its own scoping pass before any implementation — captured as
-   a backlog item, not started here.
-4. **Next states** — per the plan's 2026-07-15 revision, continue the
-   manual track. This build's operational-navigation section above should
-   materially speed up any future state whose official source is neither
-   a static-PDF-only pattern (AZ) nor Civix-vended (TX).
+3. **The "track pending elections" mandatory rule is already active** for
+   every remaining 2026 state build (epic card + plan doc updated) — nothing
+   further needed to act on it. **The bigger cross-year design pass** above
+   still needs its own scoping before any implementation — captured as a
+   backlog item, not started here.
+4. **Muxin's request for the next state:** pick one whose primary AND any
+   runoff are already fully decided (no pending nominations), so the
+   comparison is straightforward for her to verify by hand without needing
+   to reason through runoff-threshold logic like OK's. This build's
+   operational-navigation section above should also materially speed up any
+   future state whose official source is neither a static-PDF-only pattern
+   (AZ) nor Civix-vended (TX).

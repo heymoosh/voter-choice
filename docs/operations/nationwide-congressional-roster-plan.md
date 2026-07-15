@@ -213,28 +213,38 @@ reviewing this build: a runoff-pending nomination is fundamentally different
 from a settled one, and the reader has real agency over the outcome
 (low-turnout runoffs mean a single vote goes further).
 
-**A new standing idea, deliberately not designed or built here (Muxin,
-2026-07-15):** every state's in-progress elections (primary pending, runoff
-pending, etc.) should be tracked this way **every year going forward**, not
-just during this initial buildout — concrete voter value (a reader in a
-pending runoff can be told they still have outsized influence), a real CTA
-instead of a dead end, and it sets up a later follow-through loop ("how did
-the person you voted for in the runoff actually vote"). This is a genuinely
-standing, cross-year capability — not a one-off status value — and needs its
-own design pass before any implementation:
+**Two follow-ups from Muxin's review, one immediate and mandatory, one bigger
+and deliberately deferred:**
 
-- A per-state, per-year election-calendar input, not just the 2026-only
-  snapshots in `src/data/states/*.json` today.
-- A roster-schema concept for "which contest, which date resolves it,"
-  beyond a single `ballotStatus` enum value scoped to one cycle.
-- A recurring re-check as dates arrive (does this need a scheduled job, or
-  is a build-time/import-time refresh sufficient?).
-- Whether the UI treatment built for OK (a static tag + note) generalizes,
-  or needs the actual resolution date once the schema supports it.
+1. **Immediate and mandatory, effective now (Muxin, 2026-07-15):** every
+   remaining state built through this manual track for the rest of 2026 MUST
+   check that state's own official source for any still-undetermined
+   nomination (a pending primary/runoff) as a standard, no-extra-cost part of
+   the same research pass — the builder is already on the state's official
+   site anyway. Use the exact mechanism OK already built and proved:
+   `runoff_pending` ballotStatus + `SeatChallenger.isRunoffPending` + RepCard's
+   "Runoff pending" tag/CTA — all state-agnostic already, no new code needed
+   per state. See the epic card's own "STANDING REQUIREMENT" bullet
+   (`c5a813bb`) for the backlog-level statement of this rule.
+2. **Bigger and deliberately deferred — a cross-year design pass, not needed
+   to satisfy #1 above:** every state's in-progress elections should be
+   tracked this way **every year going forward**, not just 2026 — concrete
+   voter value (a reader in a pending runoff can be told they still have
+   outsized influence), a real CTA instead of a dead end, and a later
+   follow-through loop ("how did the person you voted for in the runoff
+   actually vote"). This needs its own design pass before any implementation:
+   - A per-state, per-year election-calendar input, not just the 2026-only
+     snapshots in `src/data/states/*.json` today.
+   - A roster-schema concept for "which contest, which date resolves it,"
+     beyond a single `ballotStatus` enum value scoped to one cycle.
+   - A recurring re-check as dates arrive (does this need a scheduled job, or
+     is a build-time/import-time refresh sufficient?).
+   - Whether the UI treatment built for OK (a static tag + note) generalizes,
+     or needs the actual resolution date once the schema supports it.
 
-Captured as a new epic-level backlog item under `c5a813bb`, to be scoped
-properly rather than bolted onto a single state's card — see OK's report doc
-for the paste-ready draft.
+   Captured as a new epic-level backlog item under `c5a813bb`, to be scoped
+   properly rather than bolted onto a single state's card — see OK's report
+   doc for the paste-ready draft.
 
 **Repo-hygiene note (resolved 2026-07-15):** this build discovered that
 `docs/operations/nationwide-congressional-roster-plan.md` had diverged across
