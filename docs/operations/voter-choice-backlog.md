@@ -974,7 +974,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- PARKED: cold-start: Step-3 zero-commit retry cap reached (2 relaunches produced no commits) - 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=5 tokens=65321) - session killed mid-card by the watchdog safety valve (already parked by the Step-3 zero-commit retry cap); a fresh follow-up (Resume I05, card 25d6d797-63c0-4ac6-904b-fd15e0df0a49) was already filed for the same scope and is To Do - not re-filing a duplicate - never resumed - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 96f404ab-3bba-4812-b020-85a40a17c2dc -->
 
