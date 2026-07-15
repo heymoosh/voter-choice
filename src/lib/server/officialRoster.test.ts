@@ -42,6 +42,15 @@ import {
   TX_SENATE_SOURCE_URLS,
   TX_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/tx-official-roster-2026";
+import {
+  OK_HOUSE_ROSTER_2026,
+  OK_SENATE_ROSTER_2026,
+  OK_STATE,
+  OK_ELECTION_YEAR,
+  OK_HOUSE_SOURCE_URLS,
+  OK_SENATE_SOURCE_URLS,
+  OK_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ok-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -103,6 +112,43 @@ const TX_HOUSE_DB_ROWS = TX_HOUSE_ROSTER_2026.map((e, i) =>
 const TX_SENATE_DB_ROWS = TX_SENATE_ROSTER_2026.map((e, i) =>
   txDbRow(e, i, "senate"),
 );
+
+/** Same shape as `txDbRow`, but for OK entries. */
+function okDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ok-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? OK_HOUSE_SOURCE_URLS[0] : OK_SENATE_SOURCE_URLS[0],
+    retrievedAt: OK_RETRIEVED_AT,
+  };
+}
+
+const OK_HOUSE_DB_ROWS = OK_HOUSE_ROSTER_2026.map((e, i) =>
+  okDbRow(e, i, "house"),
+);
+const OK_SENATE_DB_ROWS = OK_SENATE_ROSTER_2026.map((e, i) =>
+  okDbRow(e, i, "senate"),
+);
+
+// OK-1 is the only open House seat (Hern filed for Senate instead of
+// re-election); the other 4 districts' winning nominee is the sitting
+// incumbent.
+const OK_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "JOSH BRECHEEN",
+  "03": "FRANK D. LUCAS",
+  "04": "TOM COLE",
+  "05": "STEPHANIE BICE",
+};
 
 // TX districts where the sitting incumbent (per house.gov) is NOT among the
 // 2026 general nominees for either party — the "not on the 2026 ballot"
@@ -372,6 +418,33 @@ describe("officialRosterRowToSeatChallenger", () => {
     const out = officialRosterRowToSeatChallenger(row, ctx);
     expect(out.party).toBeNull();
     expect(out.rosterProvenance.selectableAsReplacement).toBe(true);
+  });
+
+  it("stamps isRunoffPending: true for a runoff_pending row, false/undefined for a determined row", () => {
+    const pending: OfficialRosterRow = {
+      id: "ok-01-0",
+      name: "MARK TEDFORD",
+      party: "REP",
+      isIncumbent: false,
+      ballotStatus: "runoff_pending",
+      sourceUrl: AZ_SOURCE_URLS[0],
+      retrievedAt: AZ_RETRIEVED_AT,
+    };
+    const determined: OfficialRosterRow = {
+      id: "ok-02-0",
+      name: "JOSH BRECHEEN",
+      party: "REP",
+      isIncumbent: true,
+      ballotStatus: "qualified_for_general_ballot",
+      sourceUrl: AZ_SOURCE_URLS[0],
+      retrievedAt: AZ_RETRIEVED_AT,
+    };
+    expect(
+      officialRosterRowToSeatChallenger(pending, ctx).isRunoffPending,
+    ).toBe(true);
+    expect(
+      officialRosterRowToSeatChallenger(determined, ctx).isRunoffPending,
+    ).toBe(false);
   });
 });
 
@@ -643,5 +716,218 @@ describe("lookupChallengers — TX wiring (house + senate both covered)", () => 
     expect(out.senate.find((c) => c.name === "KEN PAXTON")?.party).toBe(
       "Republican",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Oklahoma — third state built through this pipeline (card d9b1ef86). Not
+// Civix-vended (unlike TX); exercises a runoff-pending ballotStatus that
+// neither AZ nor TX needed (OK's Aug 25, 2026 runoff was still pending at
+// transcription time). See
+// docs/operations/oklahoma-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — OK narrowing", () => {
+  it("narrows house rows to the exact district for every OK district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05"]) {
+      const out = await getOfficialRoster(
+        OK_STATE,
+        "house",
+        district,
+        OK_ELECTION_YEAR,
+      );
+      const expectedNames = OK_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 6 OK senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      OK_STATE,
+      "senate",
+      null,
+      OK_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(OK_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...OK_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      OK_STATE,
+      "house",
+      "01",
+      OK_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("runoff_pending rows: both OK-1 Republican finalists come through with that exact ballotStatus", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      OK_STATE,
+      "house",
+      "01",
+      OK_ELECTION_YEAR,
+    );
+    const pending = out.filter((r) => r.ballotStatus === "runoff_pending");
+    expect(pending.map((r) => r.name).sort()).toEqual(
+      ["JACKSON LAHMEYER", "MARK TEDFORD"].sort(),
+    );
+    // The unopposed Democratic nominee is NOT runoff_pending.
+    expect(out.find((r) => r.name === "JOHN CROISANT")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+
+  it("runoff_pending rows: both US Senate Democratic finalists come through with that exact ballotStatus", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      OK_STATE,
+      "senate",
+      null,
+      OK_ELECTION_YEAR,
+    );
+    const pending = out.filter((r) => r.ballotStatus === "runoff_pending");
+    expect(pending.map((r) => r.name).sort()).toEqual(
+      ["JIM PRIEST", "N'KIYLA JASMINE THOMAS"].sort(),
+    );
+    // The Republican and Libertarian nominees are already determined.
+    expect(out.find((r) => r.name === "KEVIN HERN")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "SEVIER WHITE")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — OK", () => {
+  it("returns true for OK-2, OK-3, OK-4, OK-5 — the winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      OK_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          OK_STATE,
+          "house",
+          district,
+          OK_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for OK-1 — Hern (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        OK_STATE,
+        "house",
+        "01",
+        OK_ELECTION_YEAR,
+        "Kevin Hern",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Armstrong (sitting senator) did not file for election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OK_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        OK_STATE,
+        "senate",
+        null,
+        OK_ELECTION_YEAR,
+        "Alan Armstrong",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — OK wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OK_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => okDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, OK_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("OK", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Brecheen excluded; the Democratic nominee and the declared
+    // independent both render as challengers
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["BRANDON WADE", "RONNIE HOPKINS"].sort(),
+    );
+  });
+
+  it("OK-1 (open seat, runoff pending): both Republican finalists render as challengers alongside the Democratic nominee, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OK_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => okDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, OK_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("OK", 1, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["JACKSON LAHMEYER", "JOHN CROISANT", "MARK TEDFORD"].sort(),
+    );
+    // Both Republican finalists carry isRunoffPending; the uncontested
+    // Democratic nominee does not.
+    expect(
+      out.house.find((c) => c.name === "MARK TEDFORD")?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.house.find((c) => c.name === "JACKSON LAHMEYER")?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.house.find((c) => c.name === "JOHN CROISANT")?.isRunoffPending,
+    ).toBe(false);
+  });
+
+  it("senate (open seat, Democratic runoff pending): both Senate runoff finalists render as challengers alongside the determined nominees", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OK_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => okDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, OK_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("OK", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      OK_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "SEVIER WHITE")?.party).toBe(
+      "Libertarian",
+    );
+    expect(out.senate.find((c) => c.name === "CURTIS STINNETT")?.party).toBe(
+      "Independent",
+    );
+    // Both Democratic runoff finalists carry isRunoffPending; the determined
+    // Republican and Libertarian nominees do not.
+    expect(
+      out.senate.find((c) => c.name === "N'KIYLA JASMINE THOMAS")
+        ?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.senate.find((c) => c.name === "JIM PRIEST")?.isRunoffPending,
+    ).toBe(true);
+    expect(
+      out.senate.find((c) => c.name === "KEVIN HERN")?.isRunoffPending,
+    ).toBe(false);
   });
 });

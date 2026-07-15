@@ -150,6 +150,12 @@ export async function isIncumbentSeekingReelection(
  * name-join to FEC finance rows (official names are sometimes surname-only
  * — see the fixture's KNOWN LIMITATIONS — so a name join risks mismatched
  * pairings; better to honestly omit than guess).
+ *
+ * A "runoff_pending" row (added building Oklahoma, card d9b1ef86) still
+ * renders as a normal challenger — nobody is hidden pending a runoff — but
+ * carries `isRunoffPending: true` so the UI can tell the reader their
+ * party's nominee isn't decided yet, instead of implying a settled
+ * candidacy.
  */
 export function officialRosterRowToSeatChallenger(
   row: OfficialRosterRow,
@@ -165,5 +171,6 @@ export function officialRosterRowToSeatChallenger(
       retrievedAt: provenanceContext.retrievedAt,
       sourceUrl: row.sourceUrl,
     }),
+    isRunoffPending: row.ballotStatus === "runoff_pending",
   };
 }

@@ -332,7 +332,9 @@ describe("RepCard roster provenance containment", () => {
     expect(
       screen.queryByText("Running for this seat in 2026"),
     ).not.toBeInTheDocument();
-    expect(screen.getByText("Campaign-finance evidence only")).toBeInTheDocument();
+    expect(
+      screen.getByText("Campaign-finance evidence only"),
+    ).toBeInTheDocument();
     expect(
       screen.getByText(
         "FEC filings preserved for finance history · not verified on the ballot",
@@ -386,5 +388,48 @@ describe("RepCard roster provenance containment", () => {
 
     expect(onOpenDuel).toHaveBeenCalledWith(seat.id);
     expect(onVerdict).not.toHaveBeenCalled();
+  });
+});
+
+describe("RepCard runoff-pending challengers", () => {
+  it("shows the runoff-pending tag and CTA note for a challenger still awaiting a primary runoff", () => {
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "pending-1",
+          name: "Mark Tedford",
+          party: "Republican",
+          totalReceipts: null,
+          rosterProvenance: verifiedRosterProvenance,
+          isRunoffPending: true,
+        },
+      ],
+    });
+
+    renderStrip(seat);
+
+    expect(screen.getByText("Runoff pending")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Your vote in that runoff can still decide/),
+    ).toBeInTheDocument();
+  });
+
+  it("does not show the runoff-pending tag for a determined nominee", () => {
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "determined-1",
+          name: "Brandon Wade",
+          party: "Democrat",
+          totalReceipts: null,
+          rosterProvenance: verifiedRosterProvenance,
+          isRunoffPending: false,
+        },
+      ],
+    });
+
+    renderStrip(seat);
+
+    expect(screen.queryByText("Runoff pending")).not.toBeInTheDocument();
   });
 });

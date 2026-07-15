@@ -46,6 +46,14 @@ export interface SeatChallenger {
    * person is on a current ballot or selectable as a replacement.
    */
   rosterProvenance: RosterProvenance;
+  /**
+   * True when this person is one of two finalists in a still-pending
+   * primary runoff (official-roster ballotStatus "runoff_pending") — their
+   * party's nominee for this seat isn't decided yet. Undefined/false for
+   * every other source, including the FEC path (which has no such
+   * concept). Never set alongside a promoted "on the ballot" status.
+   */
+  isRunoffPending?: boolean;
 }
 
 export interface SeatChallengers {
