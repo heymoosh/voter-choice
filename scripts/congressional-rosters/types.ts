@@ -53,6 +53,17 @@ export interface OfficialRosterEntry {
     // party under Alaska law, distinct from generic IND (added building
     // Alaska, mirroring how AIP was added for Arizona's own state party).
     | "AKP"
+    // California's "No Party Preference" ballot designation — a distinct
+    // legal registration status (Cal. Elec. Code § 2151), not a declared
+    // independent candidacy like TX/OK's generic IND; mirrors why AK added
+    // NPA instead of reusing IND (added building California, card
+    // c5a813bb's CA vertical slice).
+    | "NPP"
+    // California's Peace and Freedom Party — a real state-recognized minor
+    // party (Cal. Elec. Code qualified-party status), distinct from generic
+    // IND (added building California, mirroring the AIP/AKP precedent for
+    // a state's own recognized minor party).
+    | "PF"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
