@@ -974,7 +974,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
-- PARKED: hard context/turn ceiling exceeded (turns=5 tokens=65321) - session killed mid-card by the watchdog safety valve (already parked by the Step-3 zero-commit retry cap); a fresh follow-up (Resume I05, card 25d6d797-63c0-4ac6-904b-fd15e0df0a49) was already filed for the same scope and is To Do - not re-filing a duplicate - never resumed - 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=453 tokens=155825) - session killed mid-card by the watchdog safety valve, never resumed. This is a SECOND ceiling kill on this exact card (first: turns=5, already noted below) - the worktree survived the first park with zero commits ahead of base, so a later cold-start silently re-adopted it as mid-flight via find_inprogress_card_by_lane (STATUS+LANE match does not check PARKED) and burned another 453 turns before hitting the ceiling again with still zero commits. A follow-up (Resume I05, card 25d6d797-63c0-4ac6-904b-fd15e0df0a49) already exists for this exact scope and is itself STATUS: In Progress (lane roster-b, no worktree yet) - not re-filing a duplicate. Pattern matches the I07 chain already flagged as systemic (ceiling too tight for this seven-state inventory card class, or resource contention from concurrent lanes) - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 96f404ab-3bba-4812-b020-85a40a17c2dc -->
 
@@ -988,7 +988,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
@@ -1146,11 +1146,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- STATUS: In Progress
+- STATUS: To Do
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked 10c84215 (I07), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
-- PARKED: hard context/turn ceiling exceeded (turns=10 tokens=68325) - session killed mid-card by the watchdog safety valve before Step 2 (create_worktree) completed - 5th consecutive ceiling kill on this I07 scope across two cards (10c84215 x4, 32f57ded x1); pattern suggests resource pressure from concurrent lanes rather than card content - never resumed - 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=400 tokens=109518) - session killed mid-card by the watchdog safety valve for a SIXTH consecutive time on this exact I07 seven-state scope (10c84215 x4, 32f57ded x2 now); no worktree was created (killed before Step 2 again). A follow-up (Resume I07 (2nd retry), card a0e1d3ad-5e02-42f2-bbf0-d057769984b1) already exists in To Do, unclaimed, carrying an explicit prior-session flag: "worth checking before re-picking a third time" - not re-filing a duplicate. Parking a0e1d3ad too rather than auto-picking it into a 7th failure - this looks systemic (ceiling too tight for this card class, or resource contention from concurrent lanes), not something another blind retry will fix. Surfaced to Muxin live this turn rather than batched - 2026-07-14
 - LANE: roster-b
 <!-- card-id: 32f57ded-7143-4591-8f8d-6ef6ef27778f -->
 
@@ -1163,10 +1163,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NC, ND, OH, OK, OR, PA, RI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked 1c7e4a73 (I09), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+- LANE: roster-a
 <!-- card-id: 165a071e-97e3-4fc5-899a-382d285511bb -->
 
 **[P0] Resume I05 — National source inventory: AZ, AR, CO, CT, DE, FL, GA**
@@ -1178,11 +1179,12 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove AZ, AR, CO, CT, DE, FL, GA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked 96f404ab (I05), refiled fresh after zero-commit retry cap park so it can be picked cleanly - 2026-07-14
-- LANE: roster-a
+- PARKED: hard context/turn ceiling exceeded (turns=487 tokens=173542) - session killed mid-card by the watchdog safety valve, never resumed, before Step 2 (no worktree created). This is the 9th ceiling kill tonight (2026-07-14) across the national-source-inventory epic (I05, I07 x6, I08, I09, I10 and their chained follow-ups), now spanning both roster-a and roster-b lanes, while sibling cards I06 and I11 of the identical card class completed successfully. Not filing another chained follow-up for this exact scope - the precedent set on a0e1d3ad (I07 chain, 6th kill) already declined a 3rd follow-up once the pattern was clearly systemic rather than content-specific, and a 4th I05 follow-up would very likely just die the same way. Surfacing this aggregate pattern live to Muxin as a resource/infrastructure decision (raise the ceiling for this card class, investigate concurrent-lane contention, or split the seven-state scope smaller) rather than blind-retrying further - 2026-07-14
+- LANE: roster-b
 <!-- card-id: 25d6d797-63c0-4ac6-904b-fd15e0df0a49 -->
 
 **[P0] Resume I10 — National source inventory: SC, SD, TN, UT, VT, VA, WA**
@@ -1194,11 +1196,12 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove SC, SD, TN, UT, VT, VA, WA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epics NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked aa06eb1b (I10), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
-- LANE: roster-a
+- PARKED: not attempted - claimed via claim_next_eligible this turn, then deliberately held rather than executed. This is the 10th instance tonight (2026-07-14) of the national-source-inventory epic (I05, I07 x6, I08, I09, I10 and their follow-ups) being claimed on a lane where every prior attempt at this card class has ended in a watchdog ceiling kill or exhausted zero-commit retry cap, with the sole survivors being sibling cards I06 and I11 of the identical class. Executing this now would very likely just be an 10th blind retry of the same systemic failure. Holding for Muxin: raise the ceiling for this card class, investigate concurrent-lane resource contention, or split the seven-state scope smaller. See 25d6d797 and the a0e1d3ad/I07 chain for the fuller pattern history - 2026-07-14
+- LANE: roster-b
 <!-- card-id: ec977674-f95a-4373-ba93-a0fc9aadf4ee -->
 
 **[P0] Resume I08 (2) - National source inventory: MT, NE, NV, NH, NJ, NM, NY**
@@ -1214,6 +1217,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 - Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epics NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked 19ce9e35 (Resume I08), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+- PARKED: not yet attempted - preemptively held, never claimed. Part of the same national-source-inventory epic (I05, I07 x6, I08, I09, I10 and their follow-ups) that has hit the watchdog hard context/turn ceiling or exhausted its zero-commit retry cap on every attempt tonight (2026-07-14) across both roster-a and roster-b lanes, while sibling cards I06 and I11 of the identical class completed successfully. Parking now rather than letting the next relaunch auto-claim and blindly repeat the same failure. Holding for Muxin alongside 25d6d797 and ec977674 pending an infra decision (ceiling size / concurrent-lane contention / scope split) - 2026-07-14
 <!-- card-id: 8d33fd73-ac6c-4372-884a-a651c06809c9 -->
 
 **[P0] Resume I07 (2nd retry) - National source inventory: ME, MD, MA, MI, MN, MS, MO**
@@ -1228,6 +1232,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS: To Do
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- PARKED: held, not auto-picked: this card is the 2nd refiled follow-up for the I07 seven-state scope, which has now failed the watchdog ceiling 6 consecutive times across 3 chained cards (10c84215 x4, 32f57ded x2). The prior session explicitly flagged "worth checking before re-picking a third time" - this pick would be that third time. Holding for Muxin to decide: raise the ceiling for this card class, investigate resource contention from concurrent lanes, or split the seven-state scope smaller. Not a content problem with the card itself - 2026-07-14
 <!-- card-id: a0e1d3ad-5e02-42f2-bbf0-d057769984b1 -->
 
 **[P1] Bump Next.js 15.5.12 -> 15.5.20+ (patches 6 high-severity CVEs)**
