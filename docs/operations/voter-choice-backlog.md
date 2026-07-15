@@ -1146,10 +1146,12 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked 10c84215 (I07), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=10 tokens=68325) - session killed mid-card by the watchdog safety valve before Step 2 (create_worktree) completed - 5th consecutive ceiling kill on this I07 scope across two cards (10c84215 x4, 32f57ded x1); pattern suggests resource pressure from concurrent lanes rather than card content - never resumed - 2026-07-14
+- LANE: roster-b
 <!-- card-id: 32f57ded-7143-4591-8f8d-6ef6ef27778f -->
 
 **[P0] Resume I09 — National source inventory: NC, ND, OH, OK, OR, PA, RI**
@@ -1213,6 +1215,20 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DECISION: authorized - external reads limited to official state election-authority sources per the epics NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: same scope as parked 19ce9e35 (Resume I08), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
 <!-- card-id: 8d33fd73-ac6c-4372-884a-a651c06809c9 -->
+
+**[P0] Resume I07 (2nd retry) - National source inventory: ME, MD, MA, MI, MN, MS, MO**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Second follow-up to parked card 10c84215 (I07). First follow-up 32f57ded-7143-4591-8f8d-6ef6ef27778f was claimed on lane roster-b and killed again by the watchdog hard context/turn ceiling (turns=10 tokens=68325), before Step 2 (create_worktree) — no worktree was ever created for it. This is now 5 consecutive ceiling kills on this exact seven-state scope (10c84215 x4, 32f57ded x1), two of them (turns=10) dying almost immediately, before any execution work began. FLAG FOR MUXIN: this pattern looks more like resource pressure from concurrent lanes / a too-tight watchdog ceiling than anything about this card content — worth checking before re-picking a third time.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for ME, MD, MA, MI, MN, MS, and MO; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+<!-- card-id: a0e1d3ad-5e02-42f2-bbf0-d057769984b1 -->
 
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
