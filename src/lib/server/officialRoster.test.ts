@@ -51,6 +51,15 @@ import {
   OK_SENATE_SOURCE_URLS,
   OK_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ok-official-roster-2026";
+import {
+  AL_HOUSE_ROSTER_2026,
+  AL_SENATE_ROSTER_2026,
+  AL_STATE,
+  AL_ELECTION_YEAR,
+  AL_HOUSE_SOURCE_URLS,
+  AL_SENATE_SOURCE_URLS,
+  AL_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/al-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -139,6 +148,46 @@ const OK_HOUSE_DB_ROWS = OK_HOUSE_ROSTER_2026.map((e, i) =>
 const OK_SENATE_DB_ROWS = OK_SENATE_ROSTER_2026.map((e, i) =>
   okDbRow(e, i, "senate"),
 );
+
+/** Same shape as `okDbRow`, but for AL entries. */
+function alDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `al-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? AL_HOUSE_SOURCE_URLS[0] : AL_SENATE_SOURCE_URLS[0],
+    retrievedAt: AL_RETRIEVED_AT,
+  };
+}
+
+const AL_HOUSE_DB_ROWS = AL_HOUSE_ROSTER_2026.map((e, i) =>
+  alDbRow(e, i, "house"),
+);
+const AL_SENATE_DB_ROWS = AL_SENATE_ROSTER_2026.map((e, i) =>
+  alDbRow(e, i, "senate"),
+);
+
+// AL-3, AL-4, AL-5 are unaffected by redistricting — determined winning
+// nominee is the sitting incumbent. AL-2, AL-7 are special-primary districts
+// whose Democratic incumbent ran unopposed in the special primary (also
+// determined). AL-1 (Moore -> Senate) and AL-6 (Palmer, contested pending
+// special primary) are exercised separately below.
+const AL_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "Shomari C. Figures",
+  "03": "Mike Rogers",
+  "04": "Robert B. Aderholt",
+  "05": "Dale W. Strong",
+  "07": "Terri A. Sewell",
+};
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -928,6 +977,263 @@ describe("lookupChallengers — OK wiring (house + senate both covered)", () => 
     ).toBe(true);
     expect(
       out.senate.find((c) => c.name === "KEVIN HERN")?.isRunoffPending,
+    ).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Alabama — fourth state through this pipeline (card at
+// docs/operations/voter-choice-backlog.md, "Import + verify official
+// roster: Alabama (AL)"). Not Civix-vended; exercises a mid-decade
+// congressional-redistricting special primary (CD1/2/6/7) with NO runoff —
+// distinct from OK's true 2-finalist runoff shape (an entire party field
+// can be "runoff_pending" here, not narrowed to two). See
+// docs/operations/alabama-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — AL narrowing", () => {
+  it("narrows house rows to the exact district for every AL district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07"]) {
+      const out = await getOfficialRoster(
+        AL_STATE,
+        "house",
+        district,
+        AL_ELECTION_YEAR,
+      );
+      const expectedNames = AL_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 2 AL senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      AL_STATE,
+      "senate",
+      null,
+      AL_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(AL_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...AL_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      AL_STATE,
+      "house",
+      "01",
+      AL_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("runoff_pending rows: all 4 AL-1 Republican special-primary filers come through with that exact ballotStatus (no runoff — full field, not narrowed to two)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      AL_STATE,
+      "house",
+      "01",
+      AL_ELECTION_YEAR,
+    );
+    const pending = out.filter((r) => r.ballotStatus === "runoff_pending");
+    expect(pending.map((r) => r.name).sort()).toEqual(
+      ["Austin Sidwell", "Jerry Carl", "John Mills", "Lucas Burger"].sort(),
+    );
+    // The unopposed Democratic nominee is NOT runoff_pending.
+    expect(
+      out.find((r) => r.name === "Clyde W. Jones, Jr.")?.ballotStatus,
+    ).toBe("qualified_for_general_ballot");
+  });
+
+  it("AL-6: incumbent Palmer carries isIncumbent true AND ballotStatus runoff_pending simultaneously — renomination undetermined despite being the sitting officeholder", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      AL_STATE,
+      "house",
+      "06",
+      AL_ELECTION_YEAR,
+    );
+    const palmer = out.find((r) => r.name === "Gary Palmer");
+    expect(palmer?.isIncumbent).toBe(true);
+    expect(palmer?.ballotStatus).toBe("runoff_pending");
+    // Both parties are contested (R: Dixon vs Palmer; D: 4-way) — every
+    // AL-6 row is pending, none determined.
+    expect(out.every((r) => r.ballotStatus === "runoff_pending")).toBe(true);
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [
+        "Ashtyn Kennedy",
+        "Case Dixon",
+        "Gary Palmer",
+        "Jacob Bouma-Sims",
+        "Keith Pilkington",
+        "Maurice Mercer",
+      ].sort(),
+    );
+  });
+
+  it("senate: both AL nominees are determined (unaffected by congressional redistricting)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      AL_STATE,
+      "senate",
+      null,
+      AL_ELECTION_YEAR,
+    );
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "Barry Moore")?.party).toBe("REP");
+    expect(out.find((r) => r.name === "Everett Wess")?.party).toBe("DEM");
+  });
+});
+
+describe("isIncumbentSeekingReelection — AL", () => {
+  it("returns true for AL-2, AL-3, AL-4, AL-5, AL-7 — the winning/determined nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      AL_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          AL_STATE,
+          "house",
+          district,
+          AL_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for AL-1 — Moore (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        AL_STATE,
+        "house",
+        "01",
+        AL_ELECTION_YEAR,
+        "Barry Moore",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Tuberville (sitting senator) filed for Governor instead, not on the Senate ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AL_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        AL_STATE,
+        "senate",
+        null,
+        AL_ELECTION_YEAR,
+        "Tommy Tuberville",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — AL wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => alDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, AL_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("AL", 3, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Rogers excluded; the Democratic nominee renders as the sole
+    // challenger.
+    expect(out.house.map((c) => c.name)).toEqual(["Lee McInnis"]);
+  });
+
+  it("AL-1 (open seat, all-4 Republican field pending, no runoff): every special-primary filer renders as a challenger alongside the determined Democratic nominee, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => alDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, AL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AL", 1, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Austin Sidwell",
+        "Clyde W. Jones, Jr.",
+        "Jerry Carl",
+        "John Mills",
+        "Lucas Burger",
+      ].sort(),
+    );
+    // All four Republican filers carry isRunoffPending; the uncontested
+    // Democratic nominee does not.
+    for (const name of [
+      "Lucas Burger",
+      "Jerry Carl",
+      "John Mills",
+      "Austin Sidwell",
+    ]) {
+      expect(out.house.find((c) => c.name === name)?.isRunoffPending).toBe(
+        true,
+      );
+    }
+    expect(
+      out.house.find((c) => c.name === "Clyde W. Jones, Jr.")?.isRunoffPending,
+    ).toBe(false);
+  });
+
+  it("AL-6 (incumbent Palmer's own renomination pending): Palmer is still excluded as the sitting incumbent (same isIncumbent-keyed contract as AZ/TX/OK) even though his own renomination isn't decided — his primary opponent and every Democratic filer render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "06",
+    ).map((e, i) => alDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, AL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AL", 6, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Ashtyn Kennedy",
+        "Case Dixon",
+        "Jacob Bouma-Sims",
+        "Keith Pilkington",
+        "Maurice Mercer",
+      ].sort(),
+    );
+    expect(out.house.some((c) => c.name === "Gary Palmer")).toBe(false);
+    expect(
+      out.house.find((c) => c.name === "Case Dixon")?.isRunoffPending,
+    ).toBe(true);
+  });
+
+  it("senate: both determined nominees render, neither flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => alDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, AL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AL", 3, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Barry Moore", "Everett Wess"].sort(),
+    );
+    expect(
+      out.senate.find((c) => c.name === "Barry Moore")?.isRunoffPending,
+    ).toBe(false);
+    expect(
+      out.senate.find((c) => c.name === "Everett Wess")?.isRunoffPending,
     ).toBe(false);
   });
 });
