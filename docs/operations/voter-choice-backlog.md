@@ -63,10 +63,12 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - FOLLOW-UP PLANNING RECORD (Muxin, 2026-07-13): The linked planning document completes the requested follow-up sessions and scopes progressive implementation. The verbatim block remains preserved below. Planning completion is not authorization to start coding; the epic stays parked until Muxin separately authorizes implementation.
 - ADDITIONAL REQUIREMENTS FROM MUXIN — VERBATIM (do not correct spelling, rewrite, summarize, or silently resolve during backlog edits):
   > Ensure you use a sanity check and include a testing/validation- for isntance, there's TONS of candidates for Alabama (I think nearly 33 for House alone) whereas TX only has like a dozen. Nobody gets left out. I would also want a scheduled or periodic scraper that repulls new data (can be based on upcoming election dates etc.) I don't see a scope for how to make sure the data is fresh and clean and updated/maintained. The data we do pull MUST work perfectly in the app - use exxisting database schemas where appropriate, etc. It must ensure that users of the app are able to actually see the correct candidate information on their upcoming ballot.
-- NEXT ACTION: Run F07 → I05–I11 → I12 → M13 → M14 unattended on the roster lanes, stopping at M15 (staging wire-up, which waits on Muxin's out-of-band secrets). Downstream of M14, create/emit cards born-decided per the plan's "Pre-authorized execution decisions" and keep running, fail-closed, until a human stop (A25 data sanity test, or C29 cutover) or any discrepancy/failure. Never expose roster data to real users or mutate production outside A25/C29.
+- PIVOT (Muxin, 2026-07-15): The NEXT ACTION below (unattended F07→I05–I11→I12→M13→M14 auto-run toward a 50-state automated fan-out) is STALE and PAUSED. AZ's vertical slice (card 637c2583) went further than a data-check: it built and verified the real integration end-to-end against an isolated Neon staging branch (all 9 AZ House districts match the official roster — see `docs/operations/arizona-vertical-slice-data-check.md` Part C), flag-gated behind `OFFICIAL_ROSTER_ENABLED` (default off, nothing enabled in production). Muxin's direction: state-by-state manual official-source import (the AZ pattern) is the preferred near-term strategy — prove the approach on a handful of states built by hand before committing to the expensive automated 50-state adapter fanout, which is safer and cheaper to validate first. Full rationale in the plan's "Revision — state-by-state manual-first sequencing (2026-07-15)" section. The I05–I11 unattended inventory fan-out (already hitting repeated watchdog ceiling kills per recent commits) and the I12→M13→M14 auto-chain are PAUSED — do not resume unattended until Muxin re-authorizes, and only after several more states have shipped through the manual track.
+- NEXT ACTION (superseded by the PIVOT above; kept for history, do not run): ~~Run F07 → I05–I11 → I12 → M13 → M14 unattended on the roster lanes, stopping at M15 (staging wire-up, which waits on Muxin's out-of-band secrets). Downstream of M14, create/emit cards born-decided per the plan's "Pre-authorized execution decisions" and keep running, fail-closed, until a human stop (A25 data sanity test, or C29 cutover) or any discrepancy/failure. Never expose roster data to real users or mutate production outside A25/C29.~~
+- NEXT ACTION (current, 2026-07-15): Pick the next 1-2 states and repeat the AZ pattern (see card 637c2583 and the "[P0] Import + verify official roster" template card below) — hand-transcribe the official roster, import to an isolated staging branch, verify end-to-end, hold for Muxin's sign-off before any flag flip. Re-evaluate the automated I05–I11/M13/M14 chain only after several states are proven this way.
 - GOAL_CONDITION: After separately authorized implementation, `npm run verify:congressional-rosters -- --year 2026` passes with every expected federal contest mapped to either a complete official qualified roster for the exact election stage or an evidenced `official_roster_not_yet_published` state; the address-to-upcoming-race app flow shows every qualified candidate from the latest verified complete official snapshot; and zero FEC-only, filed-only, defeated, withdrawn, disqualified, stale, unknown, or calendar-conflicted appearances are selectable.
 - STATUS: Backlog
-- DECISION: #1 PRIORITY / QUEUE LOCK — implementation AUTHORIZED (2026-07-14). Waves 1–2 built; F07 + Wave-3 (I05–I11) + Wave-4 (I12/M13/M14) queued to run unattended on the roster lanes, stopping at M15. Every downstream gate is pre-authorized fail-closed per the plan's "Pre-authorized execution decisions" EXCEPT the two human stops A25 (app-vs-source data sanity) and C29 (public cutover); the run never auto-exposes roster data to users or mutates production. Nothing else in the backlog may be implemented until this epic is finished.
+- DECISION: #1 PRIORITY / QUEUE LOCK — implementation AUTHORIZED (2026-07-14), RE-SCOPED (2026-07-15). Waves 1–2 built (F01-F07, F03/F04 Done). The Wave-3/4 unattended auto-chain (I05–I11 → I12 → M13 → M14 → M15) is PAUSED per the 2026-07-15 pivot above — do not resume without Muxin's explicit re-authorization. Current authorized work is the manual state-by-state track: build + verify one state at a time (AZ done), following card 637c2583's pattern. Nothing else in the backlog may be implemented until this epic is finished.
 <!-- card-id: c5a813bb-9223-4dc1-95aa-65637eb6940b -->
 
 ## Phase 1 — Assess Congress (no ballot)
@@ -960,23 +962,38 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DECISION: attended manual gate — do NOT auto-run or auto-merge; conductor stops and surfaces to Muxin for the app-vs-source comparison.
 <!-- card-id: 041eddfa-9c44-4a02-8945-e7acb8052a14 -->
 
-**[P0] Source inventory: Arizona (AZ)**
+**[P0] Arizona vertical slice — full data-check (validate the official-source roster approach end-to-end before any fan-out)**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
-- ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; re-scoped 2026-07-14 from the seven-state group cards (I05/I07/I08/I09/I10) to ONE jurisdiction per card after the seven-state scope repeatedly tripped the watchdog context/turn ceiling with zero commits. One state = one official election-authority website = one focused research target.
-- OUTCOME: Validator-clean, evidence-backed official-source inventory record for Arizona (AZ); the jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
-- IN SCOPE: AZ's official election-authority landing page(s), election calendar, candidate-publication source, format, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence — built on the F01–F07 shared contract.
-- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any jurisdiction other than AZ.
-- SAFETY: A filing list cannot be represented as a qualified/certified roster; a failed/blocked/not-yet-published official source stays explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
-- TESTS: Inventory verifier scoped to AZ rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 AZ contest maps to an exact official-source path or an evidenced explicit state.
-- GOAL_CONDITION: Focused tests prove AZ has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
-- SHIP: auto-pending-merge
-- STATUS: In Progress
+- ORIGIN: Re-scoped 2026-07-14 ~11:20pm from "Source inventory: Arizona (AZ)" (card 637c2583) after Muxin chose a FULL DATA CHECK over inventory-only, and after the unattended roster lanes were killed for looping in cold-start (see Notes on Projects.txt). Brings the A25 app-vs-official sanity test forward onto ONE state so we prove the official-source approach yields CORRECT candidate data BEFORE investing in 49 more. The other 34 Source-inventory state cards are set to Backlog (gated) behind this.
+- OUTCOME: An evidence-backed, row-by-row comparison of Arizona's 2026 federal candidates (US Senate + every US House district) between (a) the official Arizona Secretary of State source and (b) what voter-choice currently holds / can produce — surfacing every mismatch (missing, extra, wrong name / party / incumbency / status) with root causes, ending in an explicit GO / NO-GO verdict on the nationwide approach.
+- IN SCOPE: (1) inventory AZ's official election-authority source (SoS 2026 candidate list, format, access); (2) pull the actual official AZ 2026 federal candidate list; (3) read-only pull of what the app currently holds/shows for AZ federal races; (4) compare row-by-row + document gaps and causes; (5) a written go/no-go on proceeding with the fan-out.
+- OUT OF SCOPE: any state other than AZ; DB migrations/ingestion against PRODUCTION; unattended/auto-run; opening the 34-state fan-out; flipping `OFFICIAL_ROSTER_ENABLED` anywhere persistent.
+- SAFETY: official-source reads only (no Ballotpedia, no access-control bypass); no writes to prod; a blocked/unpublished official source stays explicit, never guessed.
+- ATTENDED: yes — human-in-the-loop validation gate. Do NOT auto-merge. Produce the comparison + verdict and surface to Muxin.
+- GOAL_CONDITION: a written Arizona comparison (official vs ours) with every 2026 federal contest accounted for and a clear GO/NO-GO recommendation; no production writes.
+- STATUS: In Progress (built + verified live on staging; HOLD for Muxin's flag-flip sign-off before this is Done)
+- OUTCOME UPDATE (2026-07-15): Scope expanded past a read-only comparison, per Muxin's direction, into a real build — this is now the reference implementation for the epic's manual state-by-state track. Built: `official_roster_candidates` table (additive migration 0015), AZ fixture (46 candidates, all 9 districts) + idempotent importer, flag-gated (`OFFICIAL_ROSTER_ENABLED`, default off) wiring in `lookupChallengers`/`isIncumbentSeekingReelection`/the delegation route, `AIP` added to the party taxonomy, a "not seeking re-election" badge for open seats (AZ-01/AZ-05). Verified: `npm run check` clean (3048 tests; 3 pre-existing unrelated sandbox-Chromium failures); migration + import applied to an ISOLATED NEON STAGING BRANCH (never production); end-to-end check against staging with the flag on shows all 9 AZ House districts match the official roster exactly, candidate-by-candidate (full output in `docs/operations/arizona-vertical-slice-data-check.md` Part C). Nothing merged; flag not enabled anywhere persistent; no backlog fan-out opened. Awaiting Muxin's review before any merge or flag flip to real users.
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
-- DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
-- GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
-- PARKED: hard context/turn ceiling exceeded (turns=733 tokens=232737) — session killed mid-card by the watchdog safety valve, never resumed
-- LANE: roster-a
+- DECISION: attended manual gate — official AZ SoS reads/transcription (per the epic SOURCE DECISION) plus additive/reversible code, applied only to isolated staging, never production. No candidate ingestion to prod, no production migrations, no fan-out, no flag flip. If run under a conductor, it claims the card, produces or surfaces the comparison/build, and STOPS for Muxin — never auto-merges.
+- GROOMED: ready: full-data-check scope, read-only safeguards, go/no-go goal — 2026-07-14; re-groomed 2026-07-15 for the expanded build-and-verify scope
 <!-- card-id: 637c2583-0a74-4eb4-af2c-7980d6e9f735 -->
+
+**[P0] Import + verify official roster: Texas (TX)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-15 pivot to state-by-state manual official-source import as the preferred near-term strategy (Muxin's direction) over the automated 50-state fan-out — see the epic card's PIVOT note and the plan's "Revision — state-by-state manual-first sequencing (2026-07-15)" section. Muxin picked Texas next specifically because it has an active 2026 US Senate race — AZ had zero Senate contests in 2026, so the Senate-side code path (`office: "senate"`, statewide rather than per-district) was never actually exercised end-to-end. TX is the sanity check that the senate path works, not just the house path.
+- OUTCOME: One more state built and verified end-to-end through the exact pattern card 637c2583 (Arizona) proved: official roster governs the candidate set + incumbent-on-ballot status for that state (House AND Senate) only, flag-gated, zero behavior change elsewhere, verified live against an isolated Neon staging branch before any sign-off.
+- IN SCOPE: (1) fetch + hand-transcribe Texas's official Secretary of State candidate roster (both US House — all TX districts — and the 2026 US Senate race) into `scripts/congressional-rosters/tx-official-roster-2026.ts`; (2) register it in `scripts/ingest/official-roster.ts`'s `FIXTURES` map; (3) apply migration 0015 (if not already applied) + run the importer against the isolated staging Neon branch (`ROSTER_STAGING_DATABASE_URL`) — never production; (4) add automated tests mirroring `officialRoster.test.ts`'s AZ coverage, INCLUDING senate-path coverage (AZ's tests never exercised `office: "senate"` end-to-end since AZ had no 2026 Senate contest); (5) end-to-end verification against staging with the flag on, comparing literal app output candidate-by-candidate against the official source, for both House and Senate; (6) update the report/plan docs with Texas's results. Note: Texas Senate is also the epic's own standing regression fixture (draft PR #296 / the original incident comparison) — this build should reconcile with that history, not duplicate it.
+- OUT OF SCOPE: any state other than Texas; production database writes/migrations; enabling `OFFICIAL_ROSTER_ENABLED` anywhere persistent; the automated parser-family fan-out (paused, see epic); expanding to non-congressional (state legislature) races — that's an explicit Phase 2 idea, not in scope here (see epic notes).
+- SAFETY: official-source reads only (no Ballotpedia, no access-control bypass); all writes go to the isolated staging branch, never production; a blocked/unpublished/ambiguous official source (e.g. AZ's challenge/withdrawal-table discrepancy) stays explicit, never guessed.
+- ATTENDED: yes — same contract as 637c2583. Build + verify, then STOP and surface to Muxin for sign-off before any merge or flag flip.
+- DELIVERABLE REQUIREMENT (Muxin, 2026-07-15): The final report/summary MUST state the full file path(s) to (a) the doc holding the app's output/comparison (mirrors `docs/operations/arizona-vertical-slice-data-check.md`), (b) the fixture file holding the transcribed data (mirrors `scripts/congressional-rosters/az-official-roster-2026.ts`), and (c) the exact official Texas Secretary of State source URL(s) used — so Muxin can independently verify against the official source herself, same as she did for AZ.
+- GOAL_CONDITION: `npm run check` passes; the new state's fixture imports idempotently to staging; an end-to-end check against staging (flag on) shows the app's literal output matching the official roster for every contest in that state, with the comparison written up for review, including the file-path/source-URL deliverable above.
+- STATUS: Backlog
+- DEPENDS ON: [P0] Arizona vertical slice — full data-check (validate the official-source roster approach end-to-end before any fan-out)
+- DECISION: attended manual gate — same authorized scope as 637c2583, extended to one additional state. No production mutation, no flag flip, no fan-out beyond the chosen state.
+- GROOMED: ready: pattern proven by AZ, scope/safety/goal-condition mirror 637c2583 — 2026-07-15
+<!-- card-id: 8530a468-079a-4b00-8588-ce702050aea4 -->
 
 **[P0] Source inventory: Arkansas (AR)**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
@@ -988,12 +1005,10 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to AR rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 AR contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove AR has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: In Progress
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
-- PARKED: hard context/turn ceiling exceeded (turns=716 tokens=213153) — session killed mid-card by the watchdog safety valve, never resumed
-- LANE: roster-b
 <!-- card-id: 5b46ac88-0aa2-4448-a8b4-f488ac8ae081 -->
 
 **[P0] Source inventory: Colorado (CO)**
@@ -1006,12 +1021,10 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to CO rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 CO contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove CO has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: In Progress
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
-- PARKED: hard context/turn ceiling exceeded (turns=733 tokens=232737) — session killed mid-card by the watchdog safety valve, never resumed
-- LANE: roster-b
 <!-- card-id: 419b6260-2192-45e5-bfe2-83c3294f893a -->
 
 **[P0] Source inventory: Connecticut (CT)**
@@ -1024,7 +1037,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to CT rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 CT contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove CT has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1040,7 +1053,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to DE rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 DE contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove DE has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1056,7 +1069,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to FL rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 FL contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove FL has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1072,7 +1085,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to GA rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 GA contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove GA has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1088,7 +1101,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to ME rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 ME contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ME has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1104,7 +1117,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MD rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MD contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MD has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1120,7 +1133,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MA rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MA contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MA has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1136,7 +1149,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MI rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MI contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MI has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1152,7 +1165,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MN rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MN contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MN has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1168,7 +1181,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MS rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MS contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MS has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1184,7 +1197,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MO rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MO contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MO has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1200,7 +1213,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to MT rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 MT contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove MT has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1216,7 +1229,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NE rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NE contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NE has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1232,7 +1245,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NV rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NV contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NV has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1248,7 +1261,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NH rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NH contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NH has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1264,7 +1277,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NJ rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NJ contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NJ has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1280,7 +1293,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NM rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NM contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NM has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1296,7 +1309,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NY rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NY contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NY has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1312,7 +1325,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to NC rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 NC contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NC has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1328,7 +1341,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to ND rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 ND contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ND has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1344,7 +1357,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to OH rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 OH contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove OH has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1360,7 +1373,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to OK rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 OK contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove OK has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1376,7 +1389,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to OR rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 OR contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove OR has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1392,7 +1405,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to PA rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 PA contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove PA has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1408,7 +1421,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to RI rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 RI contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove RI has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1424,7 +1437,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to SC rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 SC contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove SC has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1440,7 +1453,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to SD rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 SD contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove SD has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1456,7 +1469,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to TN rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 TN contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove TN has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1472,7 +1485,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to UT rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 UT contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove UT has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1488,7 +1501,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to VT rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 VT contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove VT has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1504,7 +1517,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to VA rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 VA contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove VA has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1520,7 +1533,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Inventory verifier scoped to WA rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 WA contest maps to an exact official-source path or an evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove WA has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: single-jurisdiction inventory scope, fail-closed safeguards, scoped verifier tests, and goal condition — 2026-07-14
@@ -1538,6 +1551,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GOAL_CONDITION: The national inventory verifier passes for all 56 jurisdictions with no silent omission and no placeholder adapter; the emitted pilot/adapter cards exist as Backlog cards; npm run check passes.
 - SHIP: auto-pending-merge
 - NOTE (2026-07-14): Left un-GROOMED deliberately — the I05–I11 fan-in is a single-dep parser limitation, so the conductor's Step-0.5 re-groom confirms all seven are Done before stamping GROOMED. This matches the plan's "after all seven are Done, create I12" intent while keeping the run unattended.
+- PAUSED (Muxin, 2026-07-15): Superseded by the epic's manual state-by-state pivot — see the epic card and the plan's "Revision — state-by-state manual-first sequencing" section. Do not re-groom or resume until several states have shipped through the manual track (card 637c2583 pattern) and Muxin re-authorizes this automated-fanout chain.
 - STATUS: Backlog
 - DECISION: authorized — consolidation/verification over the already-saved I05–I11 evidence plus card emission only; any incidental re-fetch limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (no Ballotpedia, no access-control bypass). No candidate ingestion, migrations, or production mutation.
 - LANE: roster-a
@@ -1553,6 +1567,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Schema/migration unit tests prove the new structures and their constraints compile and validate against fixtures.
 - GOAL_CONDITION: The canonical schema and migration files exist with passing schema tests and no database application; npm run check passes.
 - SHIP: auto-pending-merge
+- PAUSED (Muxin, 2026-07-15): Superseded by the epic's manual state-by-state pivot — the AZ vertical slice shipped a lighter interim schema (`official_roster_candidates`, additive) for the manual track instead. This fuller canonical schema remains the long-term target only if/when automation is warranted; do not resume until Muxin re-authorizes.
 - STATUS: To Do
 - DEPENDS ON: I12 — National inventory consolidation and semantic gate
 - DECISION: authorized — writes migration files, schema types, and tests only; NO database connection, NO production/staging application, NO external service. Pure code; additive and reversible.
@@ -1570,6 +1585,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: A TDD suite drives the engine entirely through fake Blob/database implementations; every enumerated failure case asserts prior-snapshot retention and no promotion.
 - GOAL_CONDITION: The promotion engine passes its full fail-closed TDD suite against fakes with prior-snapshot retention proven for every failure case; npm run check passes.
 - SHIP: auto-pending-merge
+- PAUSED (Muxin, 2026-07-15): Superseded by the epic's manual state-by-state pivot — see epic card. Do not resume until Muxin re-authorizes.
 - STATUS: To Do
 - DEPENDS ON: M13 — Canonical roster schema and migration
 - DECISION: authorized — implementation and TDD against fake Blob/database only; NO real storage/database credentials, NO external service, NO production mutation. Pure code plus tests.
@@ -1588,6 +1604,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Canary asserts staging connectivity via the two secrets, a round-trip artifact write/read against staging Blob, staging migration applied additively, and fail-closed retention on a simulated failure; no production endpoint is contacted.
 - GOAL_CONDITION: Both staging secrets present → the canary proves staging wire-up + additive staging migration + fail-closed retention against staging only, and npm run check passes (Done). If EITHER secret is absent, the card does NOT complete and is NOT marked Done — it surfaces "staging not provisioned — set ROSTER_STAGING_BLOB_TOKEN + ROSTER_STAGING_DATABASE_URL" and holds for Muxin, so nothing downstream (pilots) runs without real staging.
 - SHIP: auto-pending-merge
+- PAUSED (Muxin, 2026-07-15): Superseded by the epic's manual state-by-state pivot — see epic card. NOTE: `ROSTER_STAGING_DATABASE_URL` was provisioned 2026-07-15 (Vercel Dev+Preview) and is already in active use by the manual track (card 637c2583's AZ migration/import ran against it directly, bypassing M14's fake-only abstraction). `ROSTER_STAGING_BLOB_TOKEN` was not needed/set. Do not resume this card's own wire-up until M13/M14 are re-authorized.
 - STATUS: To Do
 - DEPENDS ON: M14 — Private artifact abstraction and fail-closed promotion engine
 - DECISION: authorized (pre-authorized per the plan's "Pre-authorized execution decisions", M15 clause) — CONSUMES pre-provisioned staging secrets and wires/canaries staging only; NEVER provisions cloud resources, NEVER writes secrets, NEVER touches production; missing secret → honest stop. Muxin sets `ROSTER_STAGING_BLOB_TOKEN` + `ROSTER_STAGING_DATABASE_URL` out of band.
@@ -1645,6 +1662,15 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS: Backlog
 <!-- card-id: 70cdf2b3-66f5-442a-a1c8-ec8e5b00af9c -->
 
+**[P2] Support/attribute the volunteer-run free data sources the app depends on (GovTrack, etc.)**
+- Muxin wants to give back to the free, volunteer/nonprofit-built resources the app's ingest pipeline pulled from — NOT official government sites (they're taxpayer-funded/salaried, out of scope).
+- Confirmed dependency: GovTrack.us — used across ingest (`scripts/ingest/member-stats.ts`, `src/app/api/delegation/route.ts`, `db/schema.ts`, `src/prototype/redesign/RepCard.tsx`, e2e mocks). It's an independently/volunteer-run project. Muxin's pointer: https://www.govtrack.us/congress/members — find GovTrack's actual donate/Patreon page (not the members listing) before adding a link.
+- Also audit for the same volunteer/nonprofit profile: OpenStates/Plural (referenced in `.ai/work-packets/launch-openstates-bulk-ingest.md`) and any other non-.gov source the ingest scripts lean on. Exclude Congress.gov, GovInfo, FEC, Census — official/government-funded.
+- Deliverable: a small attribution + support-link section (e.g. footer or an About/Credits page) crediting each confirmed volunteer source with a link to its actual donation page.
+- Not a bug fix, no deadline — goodwill/attribution gesture.
+- STATUS: Backlog
+<!-- card-id: a772d267-31d2-486c-a667-eee6e4fe7348 -->
+
 **[P0] Source inventory: Arizona (AZ) — retry after ceiling kill**
 - - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - - ORIGIN: cold-start CEILING recovery for parked card 637c2583-0a74-4eb4-af2c-7980d6e9f735 ("[P0] Source inventory: Arizona (AZ)") — that card's roster-a session hit the watchdog hard context/turn ceiling (turns=733 tokens=232737) and was killed before producing any commits; never resumed, per policy.
@@ -1656,7 +1682,8 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - - GOAL_CONDITION: Focused tests prove AZ has a validator-clean official-source record or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation. (Carried forward from parked card 637c2583 — same authorized scope, fresh attempt.)
 - - GROOMED: ready — same scope as its parked predecessor, single-jurisdiction inventory, fail-closed safeguards, scoped verifier tests, and goal condition already vetted 2026-07-14; the mid-flight worktree at voter-choice-worktrees/roster-a/wt-p0-source-inventory-arizona-az-637c2583 has zero commits and is left in place (not cleaned up), so this is a clean fresh start, not a resume.
-- STATUS: Backlog
+- SUPERSEDED (Muxin, 2026-07-15): Do not run — AZ went far past a plain source-inventory record. Card 637c2583 built and verified the full manual-track integration for AZ (see `docs/operations/arizona-vertical-slice-data-check.md` Part C). This card's zero-commit worktree can be cleaned up; no plain-inventory work remains for AZ.
+- STATUS: Done
 <!-- card-id: dc6903f1-a7fd-4056-af8b-caa5e3447003 -->
 
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**

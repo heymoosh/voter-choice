@@ -63,6 +63,19 @@ long-term target if/when automation is warranted; the AZ build's lighter
 schema is an intentionally interim, additive, non-blocking alternative for the
 manual track.
 
+**Standing verification-deliverable requirement (Muxin, 2026-07-15) — applies
+to every state built through this manual track, not just one:** the final
+report/summary for each state MUST state the full file path(s) to (a) the doc
+holding the app's output/comparison for that state (one per state, following
+the pattern of `docs/operations/arizona-vertical-slice-data-check.md`), (b)
+the fixture file holding the transcribed data
+(`scripts/congressional-rosters/<state>-official-roster-<year>.ts`), and (c)
+the exact official state-authority source URL(s) used — so Muxin can
+independently verify against the official source herself, every time, the
+same way she did for AZ. Any per-state backlog card created for this track
+should carry this requirement explicitly (see the Texas card as the template);
+it is not optional polish.
+
 ## Executive decision
 
 Build a cycle-generic, federated ingestion system that treats the legally
