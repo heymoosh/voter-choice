@@ -1181,6 +1181,22 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - GROOMED: ready: same scope as parked 1c7e4a73 (I09), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
 <!-- card-id: 165a071e-97e3-4fc5-899a-382d285511bb -->
 
+**[P0] Resume I05 — National source inventory: AZ, AR, CO, CT, DE, FL, GA**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Follow-up to parked card 96f404ab-3bba-4812-b020-85a40a17c2dc (I05), which was claimed on lane roster-a and relaunched twice via the Step-3 zero-commit retry cap (2 relaunches produced no commits), then parked by cold-start for human review — this park path does not auto-file a follow-up (unlike a ceiling kill), so it sat without one until Muxin directed it be filed here. Its worktree (voter-choice-worktrees/roster-a/wt-i05-seven-state-source-inventory-wave3-v2-96f404ab, branch wt/roster-a/i05-seven-state-source-inventory-wave3-v2-96f404ab) survived and carries zero commits ahead of origin/main — left in place, not cleaned up, for reference only.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for AZ, AR, CO, CT, DE, FL, and GA; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove AZ, AR, CO, CT, DE, FL, GA each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: same scope as parked 96f404ab (I05), refiled fresh after zero-commit retry cap park so it can be picked cleanly - 2026-07-14
+- LANE: roster-a
+<!-- card-id: 25d6d797-63c0-4ac6-904b-fd15e0df0a49 -->
+
 **[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
 - ORIGIN: Wave 3 (national source inventory) of the nationwide official-source congressional roster plan; created 2026-07-14 after F04 declared the contract fit-for-fan-out and the F05/F06/F07 corrections landed.
