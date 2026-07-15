@@ -82,6 +82,14 @@ import {
   CO_HOUSE_ROSTER_2026,
   CO_SENATE_ROSTER_2026,
 } from "../congressional-rosters/co-official-roster-2026";
+import {
+  CA_STATE,
+  CA_ELECTION_YEAR,
+  CA_STAGE,
+  CA_HOUSE_SOURCE_URLS,
+  CA_RETRIEVED_AT,
+  CA_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/ca-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -203,6 +211,17 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: CO_SENATE_SOURCE_URLS[0],
       retrievedAt: CO_RETRIEVED_AT,
       entries: CO_SENATE_ROSTER_2026,
+    },
+  ],
+  CA: [
+    {
+      state: CA_STATE,
+      office: "house",
+      electionYear: CA_ELECTION_YEAR,
+      stage: CA_STAGE,
+      sourceUrl: CA_HOUSE_SOURCE_URLS[0],
+      retrievedAt: CA_RETRIEVED_AT,
+      entries: CA_HOUSE_ROSTER_2026,
     },
   ],
 };
