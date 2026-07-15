@@ -992,6 +992,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=120 tokens=156655) - session killed mid-card by the watchdog safety valve, never resumed - 2026-07-14
 - LANE: roster-b
 <!-- card-id: 10c84215-b264-4d23-a03c-84ed0f519142 -->
 
@@ -1023,10 +1024,11 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove NC, ND, OH, OK, OR, PA, RI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: To Do
+- STATUS: In Progress
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
+- PARKED: hard context/turn ceiling exceeded (turns=120 tokens=156655) - session killed mid-card by the watchdog safety valve, never resumed - 2026-07-14
 - LANE: roster-a
 <!-- card-id: 1c7e4a73-43ca-4f9b-bc7e-e6a7ee3f7d42 -->
 
@@ -1148,6 +1150,36 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS: To Do
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 <!-- card-id: 19ce9e35-279a-497a-9fb0-caba9aa0237e -->
+
+**[P0] Resume I07 — National source inventory: ME, MD, MA, MI, MN, MS, MO**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Follow-up to parked card 10c84215-b264-4d23-a03c-84ed0f519142 (I07), which was claimed on lane roster-b and then killed mid-card by the watchdog hard context/turn ceiling (turns=120 tokens=156655) before Step 3 (execute) produced any commits. Its worktree exists at /Users/Muxin/Documents/GitHub/voter-choice-worktrees/roster-b/wt-i07-national-source-inventory-me-md-ma-mi-mn-ms-mo-10c84215 (branch wt/roster-b/i07-national-source-inventory-me-md-ma-mi-mn-ms-mo-10c84215, zero commits ahead of base, no PR) and is left in place, not cleaned up, for reference.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for ME, MD, MA, MI, MN, MS, and MO; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: same scope as parked 10c84215 (I07), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+<!-- card-id: 32f57ded-7143-4591-8f8d-6ef6ef27778f -->
+
+**[P0] Resume I09 — National source inventory: NC, ND, OH, OK, OR, PA, RI**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: Follow-up to parked card 1c7e4a73-43ca-4f9b-bc7e-e6a7ee3f7d42 (I09), which was claimed on lane roster-a and then killed mid-card by the watchdog hard context/turn ceiling (turns=120 tokens=156655). Its worktree (voter-choice-worktrees/roster-a/wt-i09-seven-state-source-inventory-wave3-1c7e4a73, branch wt/roster-a/i09-seven-state-source-inventory-wave3-1c7e4a73) survived the kill but carries zero commits ahead of origin/main - left in place, not cleaned up, for reference only.
+- OUTCOME: Validator-clean, evidence-backed official-source inventory records for NC, ND, OH, OK, OR, PA, and RI; every jurisdiction resolves to an official authority/source path or an explicit evidenced coverage state, never an unknown omission.
+- IN SCOPE: Official election-authority landing pages, calendars, candidate-publication sources, formats, access constraints, refresh cadence, parser-family classification, fallback manual-import procedure, and saved/reproducible evidence for these seven jurisdictions, built on the F01-F07 shared contract.
+- OUT OF SCOPE: Candidate roster ingestion, database migrations, production mutation, scheduled refreshes, national fan-in/consolidation (I12), pilots, and any source adapter outside these seven jurisdictions.
+- SAFETY: A filing list cannot be represented as a qualified/certified roster; failed/blocked/not-yet-published official sources remain explicit rather than guessed or normalized away; no aggregate record may count as exact contest coverage.
+- TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
+- GOAL_CONDITION: Focused tests prove NC, ND, OH, OK, OR, PA, RI each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
+- STATUS: To Do
+- DEPENDS ON: F07 — Official-source semantic combination invariants
+- DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
+- GROOMED: ready: same scope as parked 1c7e4a73 (I09), refiled fresh after ceiling kill so it can be picked cleanly - 2026-07-14
+<!-- card-id: 165a071e-97e3-4fc5-899a-382d285511bb -->
 
 **[P0] I06 — National source inventory: HI, ID, IL, IN, IA, KS, KY**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
