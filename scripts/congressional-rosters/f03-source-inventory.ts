@@ -175,6 +175,15 @@ export const f03CongressionalSourceInventory: F03CongressionalSourceInventory =
         },
       },
       {
+        // sourceFormat/parserFamily below only classify the CATEGORY of
+        // problem (a JS-rendered portal). The fine-grained navigation
+        // mechanics actually needed to work through it — Civix's specific
+        // filter sequence, its unreliable incumbency signals, the lack of a
+        // published general-election bucket, the virtualized results list —
+        // are written up in nationwide-congressional-roster-plan.md's
+        // "Civix portal operational playbook" section (added building the
+        // TX vertical slice, card 8530a468). Check there before re-deriving
+        // this from scratch for another Civix-vended state.
         schemaVersion: 1,
         sourceId: "tx-2026-march-primary-listing",
         jurisdiction: "TX",
