@@ -988,7 +988,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - TESTS: Group-scoped inventory verifier over the seven jurisdictions rejects missing coverage, non-official authority, incomplete metadata, or an unexplained coverage state; every expected 2026 contest for these states maps to an exact official-source path or evidenced explicit state.
 - GOAL_CONDITION: Focused tests prove ME, MD, MA, MI, MN, MS, MO each have validator-clean official-source records or an evidenced explicit coverage state, with no silent omission; npm run check passes.
 - SHIP: auto-pending-merge
-- STATUS: In Progress
+- STATUS: Backlog
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized — external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only — no candidate ingestion, migrations, or production mutation.
 - GROOMED: ready: explicit seven-jurisdiction inventory scope, fail-closed safeguards, group-scoped verifier tests, and goal condition — 2026-07-14
@@ -1229,6 +1229,28 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: authorized - external reads limited to official state election-authority sources per the epic's NON-NEGOTIABLE SOURCE DECISION (official landing pages/calendars/candidate publications only; low-frequency, identifying user agent; save reproducible fixtures; no Ballotpedia, no access-control bypass). Inventory/evidence only - no candidate ingestion, migrations, or production mutation.
 <!-- card-id: a0e1d3ad-5e02-42f2-bbf0-d057769984b1 -->
+
+**[P1] Bump Next.js 15.5.12 -> 15.5.20+ (patches 6 high-severity CVEs)**
+- npm audit --omit=dev flags 6 high-severity Next.js advisories at installed 15.5.12: connection-exhaustion DoS in Cache Components (GHSA-mg66-mrh9-m8jx), Image Optimization API DoS (GHSA-h64f-5h5j-jqjh), WebSocket-upgrade SSRF (GHSA-c4j6-fc7j-m34r), dynamic-route-param middleware/proxy bypass (GHSA-492v-c6pp-mqqv), RSC cache poisoning (GHSA-wfc6-r584-vfw7), segment-prefetch + i18n middleware bypass (GHSA-267c-6grr-h53f, GHSA-36qx-fr4f-26g5).
+- All 7 advisories list first_patched_version 15.5.16 (confirmed via GitHub Advisory API); 15.5.20 is the latest 15.x release available (dist-tag 'backport') -- a same-major patch bump, no v16 migration needed.
+- ORIGIN: idea-scout 2026-07-14 -- dependency-security-advisory
+- NEEDS DECISION: machine-invented candidate; explicit human promotion required
+- EVIDENCE: https://github.com/advisories/GHSA-mg66-mrh9-m8jx (+6 sibling GHSA ids); local `npm audit --omit=dev` output (retrieved 2026-07-14)
+- HYPOTHESIS: same-major patch bump (15.5.12 -> 15.5.20) should be low-risk and closes all 6 flagged CVEs; uncertainty -- unverified whether the 15.5.13-15.5.20 patch range carries any breaking change for this app's usage (Cache Components / middleware / i18n); confirm with a full build+test pass before merge.
+- GOAL_CONDITION: npm audit --omit=dev reports zero Next.js advisories after the bump; npm run build and the full test suite pass at the new pinned version.
+- STATUS: Backlog
+<!-- card-id: 06e9e179-edf9-45c7-a030-c8a9515b9d72 -->
+
+**[idea] Evaluate whether ballot chat should hard-redirect election-logistics questions instead of answering via LLM**
+- Current chat surface (docs/BALLOT_PROMPT.md / theme-extraction) is scoped to issue-alignment conversation; it isn't confirmed whether the prompt explicitly refuses/redirects a voter who asks a logistics question ("where do I vote", "when does registration close") to an official source rather than answering from the model's own knowledge.
+- External signal: a 2026 Demos/Electoral Commission evaluation found AI chatbots gave inaccurate answers on ~34% of election-procedural test questions in a Scottish-election study; bipartisan US lawmakers and the NY Attorney General have since publicly warned against relying on chatbots for voting/election-logistics answers ahead of the 2026 midterms.
+- ORIGIN: idea-scout 2026-07-14 -- external-research/regulatory-industry-signal
+- NEEDS DECISION: machine-invented candidate; explicit human promotion required
+- EVIDENCE: https://www.resultsense.com/news/2026-05-21-demos-electoral-commission-ai-chatbots-scottish-election/ ; https://ag.ny.gov/publications/protecting-new-york-voters-ai-generated-election-misinformation (retrieved 2026-07-14)
+- HYPOTHESIS: a small, bounded prompt/guard change routing logistics questions to the app's own Google-Civic-backed data (or an explicit official-source redirect) would close a plausible-but-unverified gap; uncertainty -- not yet confirmed the current prompt actually mishandles a logistics question in practice, and product scope may already exclude this by design; a manual eval should run before any code change.
+- GOAL_CONDITION: a short manual eval (N sample logistics questions run through the live chat) either confirms current behavior is already safe (card closes as not-needed) or a prompt change ships that verifiably redirects logistics questions rather than answering them from the model's own general knowledge.
+- STATUS: Backlog
+<!-- card-id: 0467f878-9c34-41b2-80be-0c8add7cb246 -->
 
 **[P0] I11 — National source inventory: WV, WI, WY, AS, GU, MP, VI**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
