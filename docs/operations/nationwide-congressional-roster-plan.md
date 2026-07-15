@@ -17,6 +17,52 @@ public rollout is authorized by this document. When Muxin separately
 authorizes execution, the implementation cards described below must be created
 and groomed in the stated waves.
 
+## Revision — state-by-state manual-first sequencing (2026-07-15)
+
+The Arizona vertical slice (card `637c2583`, report at
+`docs/operations/arizona-vertical-slice-data-check.md`) tested whether this
+plan's approach actually works, then went further and **built it live**: a
+flag-gated (`OFFICIAL_ROSTER_ENABLED`, default off), fully reversible
+integration that makes AZ's hand-transcribed official roster govern
+`lookupChallengers` and incumbent-on-ballot status, with zero behavior change
+for any other state. This is the concrete answer to the plan's most
+under-specified area — "Application interface and behavior" and A24/A25 were
+one line of intent; AZ is now a working reference implementation of that line.
+
+Two sequencing decisions follow from what AZ proved:
+
+1. **State-by-state manual official-source import (Acquisition mode 5, "human-
+   downloaded official document") is the preferred near-term path, not a
+   fallback.** Muxin's explicit direction: prove the approach on a handful of
+   states built by hand before committing to the automated 50-state adapter
+   fanout (Wave 5, N21) — automation is the expensive bet, manual state-by-
+   state is safer and cheaper to validate first. Each new state should follow
+   the AZ pattern: hand-transcribe the official roster into a fixture file
+   (`scripts/congressional-rosters/<state>-official-roster-<year>.ts`), import
+   it into the lightweight `official_roster_candidates` table (additive,
+   modeled on `can_candidates` — see `db/schema.ts`), verify with an automated
+   test plus a local render check, then hold for Muxin's sign-off before
+   flipping the per-build flag anywhere near real users. This does not require
+   waiting on Wave 3's national source inventory (I05-I12) or Wave 4's full
+   canonical schema (M13) — those remain valuable for the eventual automated
+   path but are no longer a prerequisite to shipping a correct, manually-built
+   state.
+2. **Wave 5's automated parser-family fanout (N21) is deferred and gated on
+   proof, not scheduled next.** Recommend gating N21 on at least 3-5 states
+   shipped through the manual track above with clean verification — only then
+   is there enough evidence about source-format diversity (PDF vs. structured
+   feed vs. portal) and integration-pattern stability to justify investing in
+   configuration-first automation. Until that gate, "next state" means another
+   manual build, not inventory/parser research.
+
+This revision does not weaken any completeness, freshness, promotion, or
+release rule below — it only resequences which track is built first and lets
+manually-built states ship (behind their own flag, human-reviewed) without
+waiting on the full automated pipeline. The canonical M13 schema remains the
+long-term target if/when automation is warranted; the AZ build's lighter
+schema is an intentionally interim, additive, non-blocking alternative for the
+manual track.
+
 ## Executive decision
 
 Build a cycle-generic, federated ingestion system that treats the legally
@@ -581,6 +627,12 @@ Record:
 
 ## Progressive execution plan
 
+**Per the 2026-07-15 revision above: the manual state-by-state track (AZ
+pattern) runs now, independent of these waves, and does not block on or wait
+for Wave 3/4. Wave 5's N21 automated fanout additionally requires 3-5 states
+proven manually before it may be scoped as a card.** The waves below are
+otherwise unchanged.
+
 The current mega-card is not implementation-ready as one card. It is an epic.
 The cards below are created only at their gates and each receives:
 
@@ -724,9 +776,11 @@ correction cards. Any semantic correction reruns affected completed pilots.
 
 #### N21 — Parser-family adapter tranche pairs
 
-Create exact cards after P20. Limit each implementation card to one parser
-family and no more than seven ordinary jurisdictions; unusual sources receive
-one card each.
+**Gated by the 2026-07-15 revision: do not scope N21 until at least 3-5 states
+have shipped through the manual state-by-state track with clean verification.**
+Create exact cards after P20 (and after that manual-track gate). Limit each
+implementation card to one parser family and no more than seven ordinary
+jurisdictions; unusual sources receive one card each.
 
 Follow every implementation card with a separate audit card that verifies
 official reconciliation and three manual Ballotpedia samples. A failed audit

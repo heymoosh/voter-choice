@@ -129,6 +129,53 @@ export const candidates = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// official_roster_candidates — state Secretary-of-State candidate rosters
+// (e.g. azsos.gov's qualified-for-primary PDF), crosswalked to `candidates`
+// but never merged. Governs the candidate SET for a contest when the
+// OFFICIAL_ROSTER_ENABLED flag is on and rows exist for that
+// (state, office, district, electionYear) — see
+// src/lib/server/officialRoster.ts / officialRosterFlag.ts. Additive and
+// read-only from the app's perspective; populated by a separate importer.
+// Full validation: docs/operations/arizona-vertical-slice-data-check.md.
+// ---------------------------------------------------------------------------
+export const officialRosterCandidates = pgTable(
+  "official_roster_candidates",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    state: text("state").notNull(), // USPS code, "AZ"
+    office: text("office").notNull(), // "house" | "senate"
+    district: text("district"), // zero-padded House district, "01"; null for senate
+    electionYear: integer("election_year").notNull(),
+    name: text("name").notNull(),
+    party: text("party"), // state-recognized code, e.g. "AIP"; null for write-ins
+    isIncumbent: boolean("is_incumbent").notNull().default(false),
+    // "qualified_for_primary_ballot" | "write_in_qualified" (matches
+    // OfficialBallotStatus in scripts/congressional-rosters/*.ts)
+    ballotStatus: text("ballot_status").notNull(),
+    stage: text("stage").notNull(), // "primary" | "general"
+    sourceUrl: text("source_url").notNull(),
+    retrievedAt: text("retrieved_at").notNull(), // ISO date string, e.g. "2026-07-15"
+    // Crosswalk to our FEC-derived candidates row, when a finance history
+    // match exists. Nullable — most official-roster filers have no FEC row.
+    ourCandidateId: text("our_candidate_id").references(() => candidates.id),
+    insertedAt: timestamp("inserted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("official_roster_candidates_seat_name_uidx").on(
+      t.state,
+      t.office,
+      t.district,
+      t.electionYear,
+      t.name,
+      t.stage,
+    ),
+    index("official_roster_candidates_state_idx").on(t.state),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // candidate_offices
 // ---------------------------------------------------------------------------
 export const candidateOffices = pgTable("candidate_offices", {

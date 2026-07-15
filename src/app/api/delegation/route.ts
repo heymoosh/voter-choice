@@ -36,6 +36,8 @@ import {
 } from "../../../lib/server/can-context";
 import { CAN_ATTRIBUTION } from "../../../lib/canAttribution";
 import { isCan2026DisplayEnabled } from "../../../lib/server/can-flag";
+import { isOfficialRosterEnabled } from "../../../lib/server/officialRosterFlag";
+import { isIncumbentSeekingReelection } from "../../../lib/server/officialRoster";
 
 const MIN_ADDRESS = 4;
 const MAX_ADDRESS = 300;
@@ -136,8 +138,48 @@ export async function POST(request: NextRequest) {
       )
     : delegation.seats.map(() => null);
 
+  // Open-seat override (e.g. AZ-01/AZ-05 2026 — the incumbent filed for a
+  // different office): when an official state roster covers this seat and
+  // shows no incumbent row, the sitting member is not actually running for
+  // re-election even though the seat itself is up. Flag-gated + best-effort:
+  // a failure here never degrades the delegation itself. Keyed by seatId so
+  // the seats.map below can attach it without re-querying.
+  const notSeekingReelectionSeatIds = new Set<string>();
+  if (isOfficialRosterEnabled()) {
+    await Promise.all(
+      delegation.seats.map(async (seat) => {
+        if (!seat.candidate) return;
+        try {
+          const seatDistrict =
+            seat.chamber === "house" && district !== null
+              ? String(district).padStart(2, "0")
+              : null;
+          const seeking = await isIncumbentSeekingReelection(
+            stateCode,
+            seat.chamber,
+            seatDistrict,
+            2026,
+            seat.candidate.name,
+          );
+          if (seeking === false) {
+            notSeekingReelectionSeatIds.add(seat.seatId);
+          }
+        } catch (err) {
+          console.error(
+            "[delegation] official-roster reelection check failed:",
+            err,
+          );
+        }
+      }),
+    );
+  }
+
   const seats = delegation.seats.map((seat, i) => ({
     ...seat,
+    candidate:
+      seat.candidate && notSeekingReelectionSeatIds.has(seat.seatId)
+        ? { ...seat.candidate, seekingReelection2026: false }
+        : seat.candidate,
     challengers:
       seat.chamber === "house"
         ? challengers.house

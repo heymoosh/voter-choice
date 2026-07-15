@@ -510,6 +510,7 @@ const TRANSLATIONS = {
         'FEC filings preserved for finance history · not verified on the ballot',
       notUp2026: 'Not up for election in 2026',
       notUp2026BandSentence: 'You can still review their record — {label}.',
+      notSeekingReelection2026: 'Not seeking re-election in 2026',
       rosterNotVerifiedEyebrow:
         'Campaign-finance records are not ballot roster proof',
       rosterNotVerifiedSentence:
@@ -1104,6 +1105,7 @@ const TRANSLATIONS = {
         'Presentaciones ante la FEC conservadas como historial financiero · no verificadas en la boleta',
       notUp2026: 'No está en la boleta en 2026',
       notUp2026BandSentence: 'Aún puedes revisar su historial — {label}.',
+      notSeekingReelection2026: 'No busca la reelección en 2026',
       rosterNotVerifiedEyebrow:
         'Los registros de financiamiento no prueban la boleta',
       rosterNotVerifiedSentence:

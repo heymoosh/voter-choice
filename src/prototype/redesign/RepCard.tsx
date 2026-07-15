@@ -488,7 +488,9 @@ export function ChallengersStrip({
           <div className="cv2-block-head">
             <div className="lab">{t("repCard.runningForSeat")}</div>
             <div className="overall">
-              <span className="rp-src-note">{t("repCard.fecRankedByFunds")}</span>
+              <span className="rp-src-note">
+                {t("repCard.fecRankedByFunds")}
+              </span>
             </div>
           </div>
           {verifiedRoster.map((ch) => (
@@ -780,6 +782,11 @@ export function RepCard({
         {notUp2026 && (
           <span className="seat-not-up">{t("repCard.notUp2026")}</span>
         )}
+        {cand?.seekingReelection2026 === false && (
+          <span className="seat-not-up seat-not-seeking-reelection">
+            {t("repCard.notSeekingReelection2026")}
+          </span>
+        )}
         {seat.nextElection && (
           <span
             className={
@@ -1054,9 +1061,7 @@ export function RepCard({
                     }
                   }}
                 >
-                  <span className="ck">
-                    {verdict === "replace" ? "✕" : ""}
-                  </span>
+                  <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
                   <span>
                     {verdict === "replace"
                       ? successor
