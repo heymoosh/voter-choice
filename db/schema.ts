@@ -10,6 +10,7 @@ import {
   numeric,
   index,
   uniqueIndex,
+  unique,
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
@@ -163,14 +164,15 @@ export const officialRosterCandidates = pgTable(
       .defaultNow(),
   },
   (t) => [
-    uniqueIndex("official_roster_candidates_seat_name_uidx").on(
-      t.state,
-      t.office,
-      t.district,
-      t.electionYear,
-      t.name,
-      t.stage,
-    ),
+    // NULLS NOT DISTINCT: statewide (Senate) rows have district = NULL, and
+    // a plain unique index treats NULL as distinct from itself in Postgres —
+    // without this, the same Senate candidate re-imported via the fixture
+    // importer would insert a duplicate row every run instead of upserting
+    // (found while building the TX vertical slice; migration 0016 fixes
+    // this on top of 0015's original uniqueIndex).
+    unique("official_roster_candidates_seat_name_uidx")
+      .on(t.state, t.office, t.district, t.electionYear, t.name, t.stage)
+      .nullsNotDistinct(),
     index("official_roster_candidates_state_idx").on(t.state),
   ],
 );
