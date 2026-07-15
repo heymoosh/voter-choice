@@ -36,17 +36,8 @@
  *     withdrawn — an open discrepancy, not resolved here.
  */
 
-export type OfficialBallotStatus =
-  | "qualified_for_primary_ballot"
-  | "write_in_qualified";
-
-export interface OfficialRosterEntry {
-  district: string; // zero-padded House district, "01".."09"
-  name: string;
-  party: "DEM" | "REP" | "LIB" | "GRE" | "AIP" | null;
-  isIncumbent: boolean;
-  ballotStatus: OfficialBallotStatus;
-}
+export type { OfficialBallotStatus, OfficialRosterEntry } from "./types";
+import type { OfficialRosterEntry } from "./types";
 
 export const AZ_STATE = "AZ";
 export const AZ_OFFICE = "house" as const;

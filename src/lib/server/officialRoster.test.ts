@@ -33,6 +33,15 @@ import {
   AZ_RETRIEVED_AT,
   type OfficialRosterEntry,
 } from "../../../scripts/congressional-rosters/az-official-roster-2026";
+import {
+  TX_HOUSE_ROSTER_2026,
+  TX_SENATE_ROSTER_2026,
+  TX_STATE,
+  TX_ELECTION_YEAR,
+  TX_HOUSE_SOURCE_URLS,
+  TX_SENATE_SOURCE_URLS,
+  TX_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/tx-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -65,6 +74,63 @@ function dbRow(entry: OfficialRosterEntry, idx: number) {
 }
 
 const AZ_DB_ROWS = AZ_OFFICIAL_ROSTER_2026.map(dbRow);
+
+/** Same shape as `dbRow`, but for TX entries — office/sourceUrl differ per
+ * chamber (TX registers separate house and senate fixtures), and district
+ * is nullable for the statewide senate contest. */
+function txDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `tx-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? TX_HOUSE_SOURCE_URLS[0] : TX_SENATE_SOURCE_URLS[0],
+    retrievedAt: TX_RETRIEVED_AT,
+  };
+}
+
+const TX_HOUSE_DB_ROWS = TX_HOUSE_ROSTER_2026.map((e, i) =>
+  txDbRow(e, i, "house"),
+);
+const TX_SENATE_DB_ROWS = TX_SENATE_ROSTER_2026.map((e, i) =>
+  txDbRow(e, i, "senate"),
+);
+
+// TX districts where the sitting incumbent (per house.gov) is NOT among the
+// 2026 general nominees for either party — the "not on the 2026 ballot"
+// case. TX-23 is a separate vacancy (no incumbent to check at all).
+const TX_OPEN_SEAT_TEST_DISTRICTS = [
+  "02",
+  "08",
+  "09",
+  "10",
+  "19",
+  "21",
+  "30",
+  "32",
+  "33",
+  "35",
+  "37",
+  "38",
+];
+
+// A sample of TX districts whose winning nominee IS the sitting incumbent —
+// paired with the incumbent's full nominee-roster name for the
+// isIncumbentSeekingReelection cross-check.
+const TX_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "NATHANIEL MORAN",
+  "07": "LIZZIE PANNILL FLETCHER",
+  "18": "CHRISTIAN DASHAUN MENEFEE",
+  "28": "HENRY CUELLAR",
+};
 
 /** A single-call db mock: one .where() resolving to `rows`. */
 function makeDbMock(rows: unknown[]) {
@@ -204,7 +270,7 @@ describe("hasOfficialRoster", () => {
 
   it("returns false for a state with no imported rows (never assumes coverage)", async () => {
     mockedGetDb.mockReturnValue(makeDbMock([]));
-    expect(await hasOfficialRoster("TX")).toBe(false);
+    expect(await hasOfficialRoster("WY")).toBe(false);
   });
 });
 
@@ -216,7 +282,7 @@ describe("isIncumbentSeekingReelection", () => {
   it("returns null when no official roster covers this seat", async () => {
     mockedGetDb.mockReturnValue(makeDbMock([]));
     const out = await isIncumbentSeekingReelection(
-      "TX",
+      "WY",
       "house",
       "07",
       2026,
@@ -417,5 +483,165 @@ describe("lookupChallengers — official-roster wiring", () => {
       ["Descheenie", "Flores", "Goodwin", "Nez"].sort(),
     );
     expect(out.house.find((c) => c.name === "Flores")?.party).toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Texas — exercises the senate path AZ never covered (AZ has 0 senate
+// contests in 2026; TX has an active one). See
+// docs/operations/texas-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — TX senate narrowing", () => {
+  it("returns the 7 TX senate rows for (senate, null), none for a house district in the same DB rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TX_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      TX_STATE,
+      "senate",
+      null,
+      TX_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(TX_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...TX_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      TX_STATE,
+      "house",
+      "01",
+      TX_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("narrows house rows to the exact district for a sample of TX districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TX_HOUSE_DB_ROWS));
+    for (const district of ["01", "09", "23", "38"]) {
+      const out = await getOfficialRoster(
+        TX_STATE,
+        "house",
+        district,
+        TX_ELECTION_YEAR,
+      );
+      const expectedNames = TX_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+});
+
+describe("isIncumbentSeekingReelection — TX", () => {
+  it("returns true for districts whose winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TX_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      TX_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          TX_STATE,
+          "house",
+          district,
+          TX_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for every open-seat district — sitting incumbent lost their primary/runoff or didn't run there, not seeking re-election on this seat's ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TX_HOUSE_DB_ROWS));
+    for (const district of TX_OPEN_SEAT_TEST_DISTRICTS) {
+      expect(
+        await isIncumbentSeekingReelection(
+          TX_STATE,
+          "house",
+          district,
+          TX_ELECTION_YEAR,
+          "irrelevant — no incumbent row exists for this seat",
+        ),
+      ).toBe(false);
+    }
+  });
+
+  it("returns false for TX-23 — a house.gov-listed vacancy, no incumbent row", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TX_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        TX_STATE,
+        "house",
+        "23",
+        TX_ELECTION_YEAR,
+        "Tony Gonzales",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — TX wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = TX_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => txDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, TX_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("TX", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Moran excluded; the Democratic nominee and the declared
+    // independent both render as challengers
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["NATHAN LEVIN JACKSON", "YOLANDA R. PRINCE"].sort(),
+    );
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      TX_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+  });
+
+  it("TX-02 (open seat): both party nominees render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = TX_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => txDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, TX_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("TX", 2, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["SHAUN FINNIE", "STEVE TOTH"].sort(),
+    );
+  });
+
+  it("senate: independents render with party 'Independent' (IND code mapped via partyName)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = TX_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => txDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, TX_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("TX", 1, 2026);
+
+    const independentNames = TX_SENATE_ROSTER_2026.filter(
+      (e) => e.party === "IND",
+    ).map((e) => e.name);
+    expect(independentNames.length).toBeGreaterThan(0);
+    for (const name of independentNames) {
+      expect(out.senate.find((c) => c.name === name)?.party).toBe(
+        "Independent",
+      );
+    }
+    expect(out.senate.find((c) => c.name === "JAMES TALARICO")?.party).toBe(
+      "Democrat",
+    );
+    expect(out.senate.find((c) => c.name === "KEN PAXTON")?.party).toBe(
+      "Republican",
+    );
   });
 });

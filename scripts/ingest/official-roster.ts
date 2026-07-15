@@ -32,6 +32,16 @@ import {
   AZ_OFFICIAL_ROSTER_2026,
   type OfficialRosterEntry,
 } from "../congressional-rosters/az-official-roster-2026";
+import {
+  TX_STATE,
+  TX_ELECTION_YEAR,
+  TX_STAGE,
+  TX_HOUSE_SOURCE_URLS,
+  TX_SENATE_SOURCE_URLS,
+  TX_RETRIEVED_AT,
+  TX_HOUSE_ROSTER_2026,
+  TX_SENATE_ROSTER_2026,
+} from "../congressional-rosters/tx-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -43,16 +53,38 @@ export interface OfficialRosterFixture {
   entries: OfficialRosterEntry[];
 }
 
-const FIXTURES: Record<string, OfficialRosterFixture> = {
-  AZ: {
-    state: AZ_STATE,
-    office: AZ_OFFICE,
-    electionYear: AZ_ELECTION_YEAR,
-    stage: AZ_STAGE,
-    sourceUrl: AZ_SOURCE_URLS[0],
-    retrievedAt: AZ_RETRIEVED_AT,
-    entries: AZ_OFFICIAL_ROSTER_2026,
-  },
+const FIXTURES: Record<string, OfficialRosterFixture[]> = {
+  AZ: [
+    {
+      state: AZ_STATE,
+      office: AZ_OFFICE,
+      electionYear: AZ_ELECTION_YEAR,
+      stage: AZ_STAGE,
+      sourceUrl: AZ_SOURCE_URLS[0],
+      retrievedAt: AZ_RETRIEVED_AT,
+      entries: AZ_OFFICIAL_ROSTER_2026,
+    },
+  ],
+  TX: [
+    {
+      state: TX_STATE,
+      office: "house",
+      electionYear: TX_ELECTION_YEAR,
+      stage: TX_STAGE,
+      sourceUrl: TX_HOUSE_SOURCE_URLS[0],
+      retrievedAt: TX_RETRIEVED_AT,
+      entries: TX_HOUSE_ROSTER_2026,
+    },
+    {
+      state: TX_STATE,
+      office: "senate",
+      electionYear: TX_ELECTION_YEAR,
+      stage: TX_STAGE,
+      sourceUrl: TX_SENATE_SOURCE_URLS[0],
+      retrievedAt: TX_RETRIEVED_AT,
+      entries: TX_SENATE_ROSTER_2026,
+    },
+  ],
 };
 
 export interface OfficialRosterImportCounts {
@@ -64,49 +96,53 @@ export async function runOfficialRosterImport(
   db: DbClient,
   state: string,
 ): Promise<OfficialRosterImportCounts> {
-  const fixture = FIXTURES[state.toUpperCase()];
-  if (!fixture) {
+  const fixtures = FIXTURES[state.toUpperCase()];
+  if (!fixtures || fixtures.length === 0) {
     throw new Error(
       `[official-roster] no fixture registered for state "${state}" — add one to FIXTURES in this file`,
     );
   }
 
-  for (const entry of fixture.entries) {
-    await db
-      .insert(officialRosterCandidates)
-      .values({
-        state: fixture.state,
-        office: fixture.office,
-        district: entry.district,
-        electionYear: fixture.electionYear,
-        name: entry.name,
-        party: entry.party,
-        isIncumbent: entry.isIncumbent,
-        ballotStatus: entry.ballotStatus,
-        stage: fixture.stage,
-        sourceUrl: fixture.sourceUrl,
-        retrievedAt: fixture.retrievedAt,
-      })
-      .onConflictDoUpdate({
-        target: [
-          officialRosterCandidates.state,
-          officialRosterCandidates.office,
-          officialRosterCandidates.district,
-          officialRosterCandidates.electionYear,
-          officialRosterCandidates.name,
-          officialRosterCandidates.stage,
-        ],
-        set: {
-          party: sql`excluded.party`,
-          isIncumbent: sql`excluded.is_incumbent`,
-          ballotStatus: sql`excluded.ballot_status`,
-          sourceUrl: sql`excluded.source_url`,
-          retrievedAt: sql`excluded.retrieved_at`,
-        },
-      });
+  let rowsUpserted = 0;
+  for (const fixture of fixtures) {
+    for (const entry of fixture.entries) {
+      await db
+        .insert(officialRosterCandidates)
+        .values({
+          state: fixture.state,
+          office: fixture.office,
+          district: entry.district,
+          electionYear: fixture.electionYear,
+          name: entry.name,
+          party: entry.party,
+          isIncumbent: entry.isIncumbent,
+          ballotStatus: entry.ballotStatus,
+          stage: fixture.stage,
+          sourceUrl: fixture.sourceUrl,
+          retrievedAt: fixture.retrievedAt,
+        })
+        .onConflictDoUpdate({
+          target: [
+            officialRosterCandidates.state,
+            officialRosterCandidates.office,
+            officialRosterCandidates.district,
+            officialRosterCandidates.electionYear,
+            officialRosterCandidates.name,
+            officialRosterCandidates.stage,
+          ],
+          set: {
+            party: sql`excluded.party`,
+            isIncumbent: sql`excluded.is_incumbent`,
+            ballotStatus: sql`excluded.ballot_status`,
+            sourceUrl: sql`excluded.source_url`,
+            retrievedAt: sql`excluded.retrieved_at`,
+          },
+        });
+      rowsUpserted += 1;
+    }
   }
 
-  return { state: fixture.state, rowsUpserted: fixture.entries.length };
+  return { state: fixtures[0].state, rowsUpserted };
 }
 
 function parseArgs(argv: string[]): { state: string } {
