@@ -372,6 +372,16 @@ import {
   VT_RETRIEVED_AT,
   VT_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/vt-official-roster-2026";
+import {
+  MI_STATE,
+  MI_ELECTION_YEAR,
+  MI_STAGE,
+  MI_HOUSE_SOURCE_URLS,
+  MI_SENATE_SOURCE_URLS,
+  MI_RETRIEVED_AT,
+  MI_HOUSE_ROSTER_2026,
+  MI_SENATE_ROSTER_2026,
+} from "../congressional-rosters/mi-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1111,6 +1121,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: VT_HOUSE_SOURCE_URLS[0],
       retrievedAt: VT_RETRIEVED_AT,
       entries: VT_HOUSE_ROSTER_2026,
+    },
+  ],
+  MI: [
+    {
+      state: MI_STATE,
+      office: "house",
+      electionYear: MI_ELECTION_YEAR,
+      stage: MI_STAGE,
+      sourceUrl: MI_HOUSE_SOURCE_URLS[0],
+      retrievedAt: MI_RETRIEVED_AT,
+      entries: MI_HOUSE_ROSTER_2026,
+    },
+    {
+      state: MI_STATE,
+      office: "senate",
+      electionYear: MI_ELECTION_YEAR,
+      stage: MI_STAGE,
+      sourceUrl: MI_SENATE_SOURCE_URLS[0],
+      retrievedAt: MI_RETRIEVED_AT,
+      entries: MI_SENATE_ROSTER_2026,
     },
   ],
 };
