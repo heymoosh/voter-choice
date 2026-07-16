@@ -220,6 +220,53 @@ A dated follow-up card ("Re-check official roster: Delaware (DE) — after
 primary certification," `NOT BEFORE: 2026-09-18`) has been opened per the
 epic's "NOT BEFORE DATE-GATE CONVENTION" — see `voter-choice-backlog.md`.
 
+## Post-merge independent revalidation (2026-07-15/16, after Muxin's own review)
+
+Muxin independently visited the primary candidate-list page herself, found
+it hard to read (a single giant table mixing federal, state legislative, and
+county races under one "Office" column), and asked for a re-check of whether
+any candidate was missing. This prompted a re-verification using **two
+additional, independent extraction methods** beyond the original build's
+`WebFetch` pull:
+
+1. **A raw HTML fetch** (`curl -sk`, bypassing TLS verification per the same
+   known cert-chain gap documented for Alaska — bypassing `WebFetch`'s
+   AI-summarization layer entirely, reading the literal page source): the
+   primary page's `<table>` parses to exactly the same 6 U.S. Senator rows +
+   4 Representative in Congress rows already in the fixture. The general
+   page parses to exactly 1 Representative in Congress row (McBride) and
+   zero U.S. Senator rows. **0 discrepancies.**
+2. **The site's own Excel export** — a "Download the candidate list Excel
+   file" link on the page (not used in the original build; surfaced by
+   Muxin's own screenshot). This is a genuinely better source than the HTML
+   page for future builds: it's structured (one row per candidate, stable
+   column names), and carries two fields the HTML page doesn't cleanly
+   expose — an explicit `Withdrawal Date` column and a `DisplayedStatus`
+   column. Read directly with `openpyxl`
+   (`/Users/Muxin/Downloads/prim_fcddt_2026.xlsx`, downloaded by Muxin):
+   81 total candidate rows across every office on the primary ballot;
+   filtering to `Office in ('U.S. Senator', 'Representative in Congress')`
+   returns exactly the same 10 rows, every one `DisplayedStatus: Qualified`
+   and `Withdrawal Date: None`. Confirmed no alternate spelling of either
+   office label exists in the file (checked every distinct `Office` value).
+
+**Result: three independent extraction methods (AI-summarized fetch, raw
+HTML parse, official Excel export) all agree exactly — no candidate is
+missing from this fixture, and none of the 10 primary-stage filers has
+withdrawn.** The "Donyale Hall" name from a secondary aggregator (see "How
+this was verified" above) is confirmed absent from Delaware's official
+source by all three methods, not a gap in this build.
+
+**Operational note for future sessions:** every Delaware candidate-list page
+has this Excel export — worth using directly (via `openpyxl` or similar)
+instead of parsing the HTML table, since it's structured and includes the
+`Withdrawal Date` field the HTML page doesn't expose as a clean column. Also
+worth remembering for future states: `WebFetch` summarizes page content
+through a small model rather than returning literal text — fine for a quick
+read, but for an exhaustive candidate-by-candidate list, prefer a raw fetch
+or a structured export when one exists, and cross-check with a second method
+before treating a page read as final.
+
 ## Known gaps (explicit, not guessed — per the epic's SAFETY rule)
 
 - **Every contested-primary row is undetermined pending the September 15,
@@ -230,8 +277,11 @@ epic's "NOT BEFORE DATE-GATE CONVENTION" — see `voter-choice-backlog.md`.
   at transcription time** — any row here could still be withdrawn before
   that date without forfeiting the filer's fee.
 - **The "Donyale Hall" discrepancy** (see "How this was verified" above) is
-  unresolved — not included as a row, flagged for the dated follow-up
-  recheck to re-verify against the then-current official page.
+  now **resolved** — see "Post-merge independent revalidation" below. Three
+  independent extraction methods of the primary page (an AI-summarized
+  fetch, a raw-HTML parse, and the site's own Excel export) all agree: she
+  is not a Delaware filer. Confirmed a stale/wrong aggregator snippet, not a
+  gap in this fixture.
 - **No independent or minor-party candidate has filed for House or Senate**
   as of transcription time — confirmed absent from both official
   candidate-list pages, not omitted. Delaware's independent
