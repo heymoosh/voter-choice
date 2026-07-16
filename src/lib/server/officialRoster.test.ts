@@ -178,6 +178,15 @@ import {
   KS_SENATE_SOURCE_URLS,
   KS_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ks-official-roster-2026";
+import {
+  ID_HOUSE_ROSTER_2026,
+  ID_SENATE_ROSTER_2026,
+  ID_STATE,
+  ID_ELECTION_YEAR,
+  ID_HOUSE_SOURCE_URLS,
+  ID_SENATE_SOURCE_URLS,
+  ID_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/id-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -768,6 +777,41 @@ const KS_INCUMBENTS: Record<string, string> = {
   "02": "Derek Schmidt",
   "03": "Sharice L. Davids",
   "04": "Ron Estes",
+};
+
+/** Same shape as `flDbRow`, but for ID entries. */
+function idDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `id-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? ID_HOUSE_SOURCE_URLS[0] : ID_SENATE_SOURCE_URLS[0],
+    retrievedAt: ID_RETRIEVED_AT,
+  };
+}
+
+const ID_HOUSE_DB_ROWS = ID_HOUSE_ROSTER_2026.map((e, i) =>
+  idDbRow(e, i, "house"),
+);
+const ID_SENATE_DB_ROWS = ID_SENATE_ROSTER_2026.map((e, i) =>
+  idDbRow(e, i, "senate"),
+);
+
+// Both ID House districts' winning nominee is the sitting incumbent —
+// Idaho's May 19, 2026 primary is certified with no open congressional
+// seats this cycle.
+const ID_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Russ Fulcher",
+  "02": "Mike Simpson",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -4092,5 +4136,170 @@ describe("lookupChallengers — KS wiring (house + senate both covered)", () => 
     for (const c of out.senate) {
       expect(c.isRunoffPending).toBe(false);
     }
+  });
+});
+
+// Idaho — built with a certified May 19, 2026 primary already behind it
+// (Idaho State Board of Canvassers certified June 9, 2026, no outcomes
+// changed), so this fixture carries only determined general-ballot
+// nominees, not primary-stage rows. Independent and Constitution Party
+// (`CST`, a new party code added for this build) filers go straight to the
+// general — Idaho's official primary-results system has no Independent or
+// Constitution Party contest for either federal race. See
+// docs/operations/idaho-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — ID narrowing", () => {
+  it("narrows house rows to the exact district for both ID districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ID_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        ID_STATE,
+        "house",
+        district,
+        ID_ELECTION_YEAR,
+      );
+      const expectedNames = ID_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 5 ID senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ID_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      ID_STATE,
+      "senate",
+      null,
+      ID_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(ID_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...ID_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      ID_STATE,
+      "house",
+      "01",
+      ID_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("ID-2's Constitution Party filer (C. Sierra - ID Law - Idaho Lorax) carries party CST and qualified_for_general_ballot, having bypassed a primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ID_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      ID_STATE,
+      "house",
+      "02",
+      ID_ELECTION_YEAR,
+    );
+    const lorax = out.find(
+      (r) => r.name === "C. Sierra - ID Law - Idaho Lorax",
+    );
+    expect(lorax?.party).toBe("CST");
+    expect(lorax?.ballotStatus).toBe("qualified_for_general_ballot");
+  });
+});
+
+describe("isIncumbentSeekingReelection — ID", () => {
+  it("returns true for both ID districts — Fulcher (ID-1) and Simpson (ID-2) each won their certified primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ID_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      ID_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          ID_STATE,
+          "house",
+          district,
+          ID_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the US Senate seat — Risch (sitting senator) won his certified primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ID_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        ID_STATE,
+        "senate",
+        null,
+        ID_ELECTION_YEAR,
+        "Jim Risch",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — ID wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = ID_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => idDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, ID_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("ID", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Fulcher excluded; every other ID-1 filer renders.
+    expect(out.house.some((c) => c.name === "Russ Fulcher")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Kaylee Peterson", "Sarah Zabel", "Brendan J. Gomez"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("ID-2 (6 filers, the most crowded ID race): incumbent Simpson excluded, every other filer renders as a challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = ID_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => idDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, ID_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("ID", 2, 2026);
+
+    expect(out.house.some((c) => c.name === "Mike Simpson")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Ellie Gilbreath",
+        "Will Johanson",
+        "C. Sierra - ID Law - Idaho Lorax",
+        "Emre Houser",
+        "Tripp Charles Hutchinson",
+      ].sort(),
+    );
+  });
+
+  it("senate: incumbent Risch excluded; Roth, Loesby, Fleming, and Achilles all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = ID_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => idDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, ID_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("ID", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "Jim Risch")).toBe(false);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      [
+        "David Roth",
+        "Matt Loesby",
+        "Natalie M Fleming",
+        "Todd Achilles",
+      ].sort(),
+    );
   });
 });
