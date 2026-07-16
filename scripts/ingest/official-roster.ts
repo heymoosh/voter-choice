@@ -364,6 +364,14 @@ import {
   OH_SENATE_ROSTER_CUYAHOGA,
   OH_SENATE_ROSTER_BUTLER,
 } from "../congressional-rosters/oh-official-roster-2026";
+import {
+  VT_STATE,
+  VT_ELECTION_YEAR,
+  VT_STAGE,
+  VT_HOUSE_SOURCE_URLS,
+  VT_RETRIEVED_AT,
+  VT_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/vt-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1090,6 +1098,19 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: OH_SENATE_SOURCES.BUTLER,
       retrievedAt: OH_RETRIEVED_AT,
       entries: OH_SENATE_ROSTER_BUTLER,
+    },
+  ],
+  // No Senate row — Vermont has no 2026 US Senate contest (Sanders's Class 1
+  // seat runs to 2030, Welch's Class 3 seat to 2028).
+  VT: [
+    {
+      state: VT_STATE,
+      office: "house",
+      electionYear: VT_ELECTION_YEAR,
+      stage: VT_STAGE,
+      sourceUrl: VT_HOUSE_SOURCE_URLS[0],
+      retrievedAt: VT_RETRIEVED_AT,
+      entries: VT_HOUSE_ROSTER_2026,
     },
   ],
 };
