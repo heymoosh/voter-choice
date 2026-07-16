@@ -137,6 +137,14 @@ import {
   HI_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/hi-official-roster-2026";
 import {
+  LA_STATE,
+  LA_ELECTION_YEAR,
+  LA_STAGE,
+  LA_SENATE_SOURCE_URLS,
+  LA_RETRIEVED_AT,
+  LA_SENATE_ROSTER_2026,
+} from "../congressional-rosters/la-official-roster-2026";
+import {
   ME_STATE,
   ME_ELECTION_YEAR,
   ME_STAGE,
@@ -368,6 +376,24 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: HI_HOUSE_SOURCE_URLS[0],
       retrievedAt: HI_RETRIEVED_AT,
       entries: HI_HOUSE_ROSTER_2026,
+    },
+  ],
+  // House deliberately omitted — Louisiana's Nov 3, 2026 open-primary
+  // qualifying period (Aug 5-7, 2026) had not opened at transcription time,
+  // so zero House candidates exist to register. See
+  // la-official-roster-2026.ts's docblock: races.ts's getOfficialRoster
+  // falls through to the pre-existing FEC-derived path for any
+  // state/office/district/year with no rows, so omitting House here is the
+  // correct behavior, not a gap.
+  LA: [
+    {
+      state: LA_STATE,
+      office: "senate",
+      electionYear: LA_ELECTION_YEAR,
+      stage: LA_STAGE,
+      sourceUrl: LA_SENATE_SOURCE_URLS[0],
+      retrievedAt: LA_RETRIEVED_AT,
+      entries: LA_SENATE_ROSTER_2026,
     },
   ],
   ME: [

@@ -130,6 +130,14 @@ import {
   HI_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/hi-official-roster-2026";
 import {
+  LA_SENATE_ROSTER_2026,
+  LA_STATE,
+  LA_OFFICE,
+  LA_ELECTION_YEAR,
+  LA_SENATE_SOURCE_URLS,
+  LA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/la-official-roster-2026";
+import {
   ME_HOUSE_ROSTER_2026,
   ME_SENATE_ROSTER_2026,
   ME_STATE,
@@ -530,6 +538,26 @@ const HI_INCUMBENTS: Record<string, string> = {
   "01": "Ed Case",
   "02": "Jill N. Tokuda",
 };
+
+/** Same shape as `hiDbRow`, but for LA entries — senate-only, no house
+ * contest exists in the fixture (Louisiana's Nov 3, 2026 House
+ * open-primary qualifying period had not opened at transcription time; see
+ * the fixture's docblock). */
+function laDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `la-senate-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: LA_OFFICE,
+    district: entry.district,
+    sourceUrl: LA_SENATE_SOURCE_URLS[0],
+    retrievedAt: LA_RETRIEVED_AT,
+  };
+}
+
+const LA_SENATE_DB_ROWS = LA_SENATE_ROSTER_2026.map(laDbRow);
 
 /** Same shape as `deDbRow`, but for ME entries. */
 function meDbRow(
@@ -3115,6 +3143,73 @@ describe("lookupChallengers — HI wiring (house-only, no senate contest)", () =
         "Randall Terry",
       ].sort(),
     );
+  });
+});
+
+describe("getOfficialRoster — LA narrowing", () => {
+  it("returns both Senate general-ballot nominees", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(LA_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      LA_STATE,
+      "senate",
+      null,
+      LA_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ['"Jamie" Davis', "Julia Letlow"].sort(),
+    );
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+
+  it("returns [] for any LA house district — Nov 3 open-primary qualifying (Aug 5-7, 2026) had not opened at transcription time, so no fixture rows exist", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const house = await getOfficialRoster(
+      LA_STATE,
+      "house",
+      "01",
+      LA_ELECTION_YEAR,
+    );
+    expect(house).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — LA", () => {
+  it("returns false for Bill Cassidy — the sitting incumbent lost renomination and is not one of the two Nov 3 general-ballot nominees", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(LA_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        LA_STATE,
+        LA_OFFICE,
+        null,
+        LA_ELECTION_YEAR,
+        "Bill Cassidy",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — LA wiring (senate-only, house not yet qualified)", () => {
+  it("both Senate nominees render as challengers; house falls through to the (empty) FEC path since no official rows cover it", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    // Sequenced: official house query -> [] (Louisiana's Nov 3 House
+    // open-primary qualifying period had not opened at transcription time,
+    // so no fixture rows exist for any district), official senate query ->
+    // LA_SENATE_DB_ROWS, FEC fallback (house uncovered) -> [].
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([[], LA_SENATE_DB_ROWS, []]),
+    );
+
+    const out = await lookupChallengers("LA", 1, 2026);
+
+    expect(out.house).toEqual([]);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ['"Jamie" Davis', "Julia Letlow"].sort(),
+    );
+    for (const c of out.senate) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
   });
 });
 
