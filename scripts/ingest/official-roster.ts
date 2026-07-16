@@ -268,6 +268,16 @@ import {
   MT_HOUSE_ROSTER_2026,
   MT_SENATE_ROSTER_2026,
 } from "../congressional-rosters/mt-official-roster-2026";
+import {
+  NJ_STATE,
+  NJ_ELECTION_YEAR,
+  NJ_STAGE,
+  NJ_HOUSE_SOURCE_URLS,
+  NJ_SENATE_SOURCE_URLS,
+  NJ_RETRIEVED_AT,
+  NJ_HOUSE_ROSTER_2026,
+  NJ_SENATE_ROSTER_2026,
+} from "../congressional-rosters/nj-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -735,6 +745,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: MT_SENATE_SOURCE_URLS[0],
       retrievedAt: MT_RETRIEVED_AT,
       entries: MT_SENATE_ROSTER_2026,
+    },
+  ],
+  NJ: [
+    {
+      state: NJ_STATE,
+      office: "house",
+      electionYear: NJ_ELECTION_YEAR,
+      stage: NJ_STAGE,
+      sourceUrl: NJ_HOUSE_SOURCE_URLS[0],
+      retrievedAt: NJ_RETRIEVED_AT,
+      entries: NJ_HOUSE_ROSTER_2026,
+    },
+    {
+      state: NJ_STATE,
+      office: "senate",
+      electionYear: NJ_ELECTION_YEAR,
+      stage: NJ_STAGE,
+      sourceUrl: NJ_SENATE_SOURCE_URLS[0],
+      retrievedAt: NJ_RETRIEVED_AT,
+      entries: NJ_SENATE_ROSTER_2026,
     },
   ],
 };
