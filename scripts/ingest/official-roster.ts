@@ -428,6 +428,14 @@ import {
   NH_HOUSE_ROSTER_2026,
   NH_SENATE_ROSTER_2026,
 } from "../congressional-rosters/nh-official-roster-2026";
+import {
+  NY_STATE,
+  NY_ELECTION_YEAR,
+  NY_STAGE,
+  NY_HOUSE_SOURCE_URLS,
+  NY_RETRIEVED_AT,
+  NY_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/ny-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1271,6 +1279,17 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: NH_SENATE_SOURCE_URLS[0],
       retrievedAt: NH_RETRIEVED_AT,
       entries: NH_SENATE_ROSTER_2026,
+    },
+  ],
+  NY: [
+    {
+      state: NY_STATE,
+      office: "house",
+      electionYear: NY_ELECTION_YEAR,
+      stage: NY_STAGE,
+      sourceUrl: NY_HOUSE_SOURCE_URLS[0],
+      retrievedAt: NY_RETRIEVED_AT,
+      entries: NY_HOUSE_ROSTER_2026,
     },
   ],
 };
