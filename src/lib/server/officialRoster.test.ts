@@ -122,6 +122,13 @@ import {
   FL_SENATE_SOURCE_URLS,
   FL_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/fl-official-roster-2026";
+import {
+  HI_HOUSE_ROSTER_2026,
+  HI_STATE,
+  HI_ELECTION_YEAR,
+  HI_HOUSE_SOURCE_URLS,
+  HI_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/hi-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -482,6 +489,31 @@ const FL_INCUMBENT_SAMPLE: Record<string, string> = {
 // person), 16 (Buchanan), 19 (Donalds, running for Governor), 22 (Frankel's
 // old seat, no longer contested by her), 24 (Wilson).
 const FL_OPEN_SEAT_DISTRICTS = ["02", "11", "16", "19", "22", "24"];
+
+/** Same shape as `ctDbRow`, but for HI entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function hiDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `hi-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: HI_HOUSE_SOURCE_URLS[0],
+    retrievedAt: HI_RETRIEVED_AT,
+  };
+}
+
+const HI_HOUSE_DB_ROWS = HI_HOUSE_ROSTER_2026.map(hiDbRow);
+
+// Both HI districts' winning-so-far nominee (per case.house.gov /
+// tokuda.house.gov) is the sitting incumbent — no open seats in 2026.
+const HI_INCUMBENTS: Record<string, string> = {
+  "01": "Ed Case",
+  "02": "Jill N. Tokuda",
+};
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -2859,6 +2891,145 @@ describe("lookupChallengers — FL wiring (house + senate both covered)", () => 
         'Ernest "Ernie" Rivera',
         "Alex Vindman",
         "Neil J. Gillespie",
+      ].sort(),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Hawaii (HI) — house-only, no US Senate contest exists in 2026 (Schatz's
+// seat runs through 2029, Hirono's through 2031 — see the fixture's
+// docblock). Both districts' sitting incumbent (Ed Case/HI-01, Jill N.
+// Tokuda/HI-02) filed for re-election. 13 "Issued but never Filed"
+// applications (picked up nomination papers, never completed them) were
+// excluded from the fixture entirely — see
+// docs/operations/hawaii-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — HI narrowing", () => {
+  it("narrows house rows to the exact district for both HI districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(HI_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        HI_STATE,
+        "house",
+        district,
+        HI_ELECTION_YEAR,
+      );
+      const expectedNames = HI_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("HI-01: 8 filed candidates, every row qualified_for_primary_ballot (including the sole Republican filer)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(HI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      HI_STATE,
+      "house",
+      "01",
+      HI_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(8);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "Adriel C. Lam")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+  });
+
+  it("HI-02: 7 filed candidates; incumbent Tokuda carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(HI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      HI_STATE,
+      "house",
+      "02",
+      HI_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(7);
+    expect(out.find((r) => r.name === "Jill N. Tokuda")?.isIncumbent).toBe(
+      true,
+    );
+  });
+
+  it("returns [] for (senate, null) — no HI senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      HI_STATE,
+      "senate",
+      null,
+      HI_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — HI", () => {
+  it("returns true for both HI districts' sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(HI_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(HI_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          HI_STATE,
+          "house",
+          district,
+          HI_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — HI wiring (house-only, no senate contest)", () => {
+  it("HI-01: incumbent Ed Case excluded; the 7 other filers all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = HI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => hiDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (HI has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("HI", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Ed Case")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Nathan M. Berning",
+        "Jennifer Booker",
+        "Jordan S. Conley",
+        "Ben Fatula",
+        "Jarrett K. Keohokalole",
+        'Nicholas "Nick" Kiswanto',
+        "Adriel C. Lam",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("HI-02: incumbent Jill N. Tokuda excluded; the 6 other filers all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = HI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => hiDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("HI", 2, 2026);
+
+    expect(out.house.some((c) => c.name === "Jill N. Tokuda")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Brenton Awa",
+        "Kirill Basin",
+        "Edward A. Codelia",
+        "Greg Guithues",
+        "Steven King",
+        "Randall Terry",
       ].sort(),
     );
   });
