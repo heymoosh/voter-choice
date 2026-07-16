@@ -289,6 +289,16 @@ import {
   OR_SENATE_SOURCE_URLS,
   OR_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/or-official-roster-2026";
+import {
+  SD_HOUSE_ROSTER_2026,
+  SD_SENATE_ROSTER_2026,
+  SD_STATE,
+  SD_ELECTION_YEAR,
+  SD_HOUSE_DISTRICT,
+  SD_HOUSE_SOURCE_URLS,
+  SD_SENATE_SOURCE_URLS,
+  SD_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/sd-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1379,6 +1389,34 @@ const OR_INCUMBENTS: Record<string, string> = {
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
+
+/** Same shape as `akDbRow`, but for SD entries — the House side uses
+ * district "00" (at-large), never null (see the SD fixture's docblock). */
+function sdDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `sd-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? SD_HOUSE_SOURCE_URLS[0] : SD_SENATE_SOURCE_URLS[0],
+    retrievedAt: SD_RETRIEVED_AT,
+  };
+}
+
+const SD_HOUSE_DB_ROWS = SD_HOUSE_ROSTER_2026.map((e, i) =>
+  sdDbRow(e, i, "house"),
+);
+const SD_SENATE_DB_ROWS = SD_SENATE_ROSTER_2026.map((e, i) =>
+  sdDbRow(e, i, "senate"),
+);
 const OK_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "JOSH BRECHEEN",
   "03": "FRANK D. LUCAS",
@@ -7209,5 +7247,152 @@ describe("lookupChallengers — PA wiring (house-only, no senate contest)", () =
     const out = await lookupChallengers("PA", 3, 2026);
 
     expect(out.house.map((c) => c.name)).toEqual(["Chris Rabb"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// South Dakota — built via the SoS's own "VIP" candidate-list portal (an
+// ASP.NET/Telerik grid, not Civix). SD's June 2, 2026 primary has already
+// been certified, so this is a general-ballot state: every filer is
+// "qualified_for_general_ballot", no runoff_pending contest exists. SD's
+// single at-large House seat is OPEN — incumbent Dusty Johnson (R) did not
+// file for re-election (running for Governor instead); the Senate (Class
+// II) seat has incumbent Mike Rounds (R) seeking re-election. See
+// docs/operations/south-dakota-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — SD narrowing", () => {
+  it("returns both SD house rows for the at-large district key ('00'), none for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SD_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      SD_STATE,
+      "house",
+      SD_HOUSE_DISTRICT,
+      SD_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [...SD_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const wrongDistrict = await getOfficialRoster(
+      SD_STATE,
+      "house",
+      "01",
+      SD_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+
+  it("returns all 3 SD senate rows for (senate, null), none for the house district key in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SD_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      SD_STATE,
+      "senate",
+      null,
+      SD_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(3);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...SD_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      SD_STATE,
+      "house",
+      SD_HOUSE_DISTRICT,
+      SD_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every SD row is qualified_for_general_ballot — the June 2, 2026 primary is already certified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SD_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      SD_STATE,
+      "house",
+      SD_HOUSE_DISTRICT,
+      SD_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(SD_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      SD_STATE,
+      "senate",
+      null,
+      SD_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — SD", () => {
+  it("returns false for the House seat — open seat, Dusty Johnson did not file for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SD_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        SD_STATE,
+        "house",
+        SD_HOUSE_DISTRICT,
+        SD_ELECTION_YEAR,
+        "Dusty Johnson",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the Senate seat — Rounds (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SD_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        SD_STATE,
+        "senate",
+        null,
+        SD_ELECTION_YEAR,
+        "Mike Rounds",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — SD wiring (at-large house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3); a numeric district of 0 resolves the at-large seat", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const dbMock = makeSequencedDbMock([SD_HOUSE_DB_ROWS, SD_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("SD", 0, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // open seat: both house filers render as challengers, no one excluded
+    expect(out.house.length).toBe(SD_HOUSE_ROSTER_2026.length);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Marty Jackley", 'Nicole "Nikki" Gronli'].sort(),
+    );
+  });
+
+  it("senate: incumbent Rounds excluded; Beaudion and the independent filer Bengs both render as challengers with mapped party names", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([SD_HOUSE_DB_ROWS, SD_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("SD", 0, 2026);
+
+    expect(out.senate.some((c) => c.name === "Mike Rounds")).toBe(false);
+    expect(out.senate.length).toBe(SD_SENATE_ROSTER_2026.length - 1);
+    expect(out.senate.find((c) => c.name === "Julian Beaudion")?.party).toBe(
+      "Democrat",
+    );
+    expect(out.senate.find((c) => c.name === "Brian L. Bengs")?.party).toBe(
+      "Independent",
+    );
+    for (const c of out.senate) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
   });
 });

@@ -316,6 +316,16 @@ import {
   PA_RETRIEVED_AT,
   PA_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/pa-official-roster-2026";
+import {
+  SD_STATE,
+  SD_ELECTION_YEAR,
+  SD_STAGE,
+  SD_HOUSE_SOURCE_URLS,
+  SD_SENATE_SOURCE_URLS,
+  SD_RETRIEVED_AT,
+  SD_HOUSE_ROSTER_2026,
+  SD_SENATE_ROSTER_2026,
+} from "../congressional-rosters/sd-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -874,6 +884,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: PA_HOUSE_SOURCE_URLS[0],
       retrievedAt: PA_RETRIEVED_AT,
       entries: PA_HOUSE_ROSTER_2026,
+    },
+  ],
+  SD: [
+    {
+      state: SD_STATE,
+      office: "house",
+      electionYear: SD_ELECTION_YEAR,
+      stage: SD_STAGE,
+      sourceUrl: SD_HOUSE_SOURCE_URLS[0],
+      retrievedAt: SD_RETRIEVED_AT,
+      entries: SD_HOUSE_ROSTER_2026,
+    },
+    {
+      state: SD_STATE,
+      office: "senate",
+      electionYear: SD_ELECTION_YEAR,
+      stage: SD_STAGE,
+      sourceUrl: SD_SENATE_SOURCE_URLS[0],
+      retrievedAt: SD_RETRIEVED_AT,
+      entries: SD_SENATE_ROSTER_2026,
     },
   ],
 };
