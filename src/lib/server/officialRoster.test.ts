@@ -160,6 +160,15 @@ import {
   GA_SENATE_SOURCE_URLS,
   GA_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ga-official-roster-2026";
+import {
+  IA_HOUSE_ROSTER_2026,
+  IA_SENATE_ROSTER_2026,
+  IA_STATE,
+  IA_ELECTION_YEAR,
+  IA_HOUSE_SOURCE_URLS,
+  IA_SENATE_SOURCE_URLS,
+  IA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ia-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -678,6 +687,42 @@ const IN_INCUMBENTS: Record<string, string> = {
   "07": "André Carson",
   "08": "Mark Messmer",
   "09": "Erin Houchin",
+};
+
+/** Same shape as `okDbRow`, but for IA entries. */
+function iaDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ia-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? IA_HOUSE_SOURCE_URLS[0] : IA_SENATE_SOURCE_URLS[0],
+    retrievedAt: IA_RETRIEVED_AT,
+  };
+}
+
+const IA_HOUSE_DB_ROWS = IA_HOUSE_ROSTER_2026.map((e, i) =>
+  iaDbRow(e, i, "house"),
+);
+const IA_SENATE_DB_ROWS = IA_SENATE_ROSTER_2026.map((e, i) =>
+  iaDbRow(e, i, "senate"),
+);
+
+// IA-1 (Miller-Meeks) and IA-3 (Nunn) are the only non-open districts —
+// their winning nominee is the sitting incumbent, per house.gov. IA-2 and
+// IA-4 are open seats (exercised separately below), so they're excluded
+// from this sample.
+const IA_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Mariannette Miller-Meeks",
+  "03": "Zach Nunn",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -3648,5 +3693,172 @@ describe("lookupChallengers — GA wiring (house + senate both covered)", () => 
 
     expect(out.senate.some((c) => c.name === "Jon Ossoff")).toBe(false);
     expect(out.senate.map((c) => c.name)).toEqual(["Mike Collins"]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Iowa (IA) — 4 US House districts + US Senate, all determined
+// (qualified_for_general_ballot) as of this fixture's retrieval date; the
+// June 2, 2026 primary has already passed and no runoff/convention contest
+// is pending. IA-2 (Hinson filed for Senate instead) and IA-4 (Feenstra not
+// seeking re-election) are open seats — see
+// docs/operations/iowa-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — IA narrowing", () => {
+  it("narrows house rows to the exact district for all 4 IA districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IA_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04"]) {
+      const out = await getOfficialRoster(
+        IA_STATE,
+        "house",
+        district,
+        IA_ELECTION_YEAR,
+      );
+      const expectedNames = IA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("narrows senate rows (district null) to all 3 IA Senate filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IA_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      IA_STATE,
+      "senate",
+      null,
+      IA_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(IA_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...IA_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+  });
+
+  it("every IA house row is qualified_for_general_ballot — no pending nomination this cycle", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IA_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      IA_STATE,
+      "house",
+      "01",
+      IA_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — IA", () => {
+  it("returns true for IA-1 and IA-3's sitting incumbents", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IA_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      IA_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          IA_STATE,
+          "house",
+          district,
+          IA_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for IA-2 and IA-4 — open seats, sitting incumbent not a candidate for their own district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IA_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        IA_STATE,
+        "house",
+        "02",
+        IA_ELECTION_YEAR,
+        "Ashley Hinson",
+      ),
+    ).toBe(false);
+    expect(
+      await isIncumbentSeekingReelection(
+        IA_STATE,
+        "house",
+        "04",
+        IA_ELECTION_YEAR,
+        "Randy Feenstra",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — IA wiring (house + senate both covered)", () => {
+  it("IA-1: incumbent Miller-Meeks excluded; the other 2 filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => iaDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, IA_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("IA", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    expect(out.house.some((c) => c.name === "Mariannette Miller-Meeks")).toBe(
+      false,
+    );
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Christina Bohannan", "Michael Bridgford"].sort(),
+    );
+  });
+
+  it("IA-2 (open seat, Hinson filed for Senate instead): all 4 filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => iaDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, IA_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("IA", 2, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Dave Bushaw", "Joe Mitchell", "Lindsay James", "Rick Stewart"].sort(),
+    );
+  });
+
+  it("IA-4 (open seat, Feenstra not seeking re-election): both filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "04",
+    ).map((e, i) => iaDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, IA_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("IA", 4, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Chris McGowan", "Dave Dawson"].sort(),
+    );
+  });
+
+  it("senate: all 3 determined nominees render, none flagged incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => iaDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, IA_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("IA", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Ashley Hinson", "Josh Turek", "Thomas Laehn"].sort(),
+    );
+    for (const c of out.senate) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
   });
 });

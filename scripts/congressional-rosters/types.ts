@@ -72,6 +72,14 @@ export interface OfficialRosterEntry {
     // Florida law, distinct from generic IND (added building Florida,
     // confirmed against dos.fl.gov's official political-parties list).
     | "FFP"
+    // Iowa's own "No Party" ballot designation for a nomination-by-petition
+    // candidate not affiliated with any party (Iowa Code ch. 44) — the
+    // Iowa Secretary of State's official candidate list literally prints
+    // "No Party" as the Party column value, distinct from generic IND
+    // per the same precedent as NPA/NPP (a state's own literal ballot
+    // label, preserved rather than collapsed into the generic bucket;
+    // added building Iowa).
+    | "NPI"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
