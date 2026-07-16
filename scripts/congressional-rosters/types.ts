@@ -94,6 +94,13 @@ export interface OfficialRosterEntry {
     // building Kentucky, mirroring the AIP/AKP/NPP/PF/LPF/FFP precedent
     // for a state's own recognized minor party).
     | "KYP"
+    // Legal Marijuana Now — a real, state-recognized minor party under
+    // Nebraska election law, distinct from generic IND (added building
+    // Nebraska; the party label comes directly from the Nebraska Secretary
+    // of State's own official candidate-filing spreadsheet, mirroring the
+    // AIP/AKP/NPP/PF/LPF/FFP precedent of trusting an official source's own
+    // party label over inventing a generic bucket).
+    | "LMN"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
