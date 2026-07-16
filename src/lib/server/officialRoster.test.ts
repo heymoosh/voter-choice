@@ -325,6 +325,14 @@ import {
   OH_DISTRICT_SOURCE,
   OH_SENATE_SOURCES,
 } from "../../../scripts/congressional-rosters/oh-official-roster-2026";
+import {
+  VT_HOUSE_ROSTER_2026,
+  VT_STATE,
+  VT_ELECTION_YEAR,
+  VT_HOUSE_DISTRICT,
+  VT_HOUSE_SOURCE_URLS,
+  VT_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/vt-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1158,6 +1166,25 @@ function moDbRow(entry: OfficialRosterEntry, idx: number) {
 }
 
 const MO_HOUSE_DB_ROWS = MO_HOUSE_ROSTER_2026.map(moDbRow);
+
+/** Same shape as `moDbRow`, but for VT entries — house-only, at-large
+ * district "00", no senate contest exists in 2026 (see the fixture's
+ * docblock). */
+function vtDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `vt-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: VT_HOUSE_SOURCE_URLS[0],
+    retrievedAt: VT_RETRIEVED_AT,
+  };
+}
+
+const VT_HOUSE_DB_ROWS = VT_HOUSE_ROSTER_2026.map(vtDbRow);
 
 // Per house.gov, cross-checked against the SOS's active + withdrawn
 // candidate lists (see the fixture's docblock). District 06 has NO
@@ -8150,5 +8177,100 @@ describe("lookupChallengers — OH wiring (house + senate both covered)", () => 
     expect(out.senate.find((c) => c.name === "Gregory Lee Levy")?.party).toBe(
       "Independent",
     );
+  });
+});
+
+describe("getOfficialRoster — VT narrowing", () => {
+  it("narrows house rows to the at-large district and returns [] for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VT_HOUSE_DB_ROWS));
+    const atLarge = await getOfficialRoster(
+      VT_STATE,
+      "house",
+      VT_HOUSE_DISTRICT,
+      VT_ELECTION_YEAR,
+    );
+    expect(atLarge.map((r) => r.name).sort()).toEqual(
+      VT_HOUSE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const bogus = await getOfficialRoster(
+      VT_STATE,
+      "house",
+      "01",
+      VT_ELECTION_YEAR,
+    );
+    expect(bogus).toEqual([]);
+  });
+
+  it("every contested-primary row is qualified_for_primary_ballot; the independent filer is qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VT_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      VT_STATE,
+      "house",
+      VT_HOUSE_DISTRICT,
+      VT_ELECTION_YEAR,
+    );
+    const primaryRows = out.filter(
+      (r) => r.ballotStatus === "qualified_for_primary_ballot",
+    );
+    expect(primaryRows.map((r) => r.name).sort()).toEqual(
+      ["Becca Balint", "Mark Coester", "Gerald Malloy"].sort(),
+    );
+    expect(out.find((r) => r.name === "Adam Ortiz")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+
+  it("returns [] for (senate, null) — no VT senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      VT_STATE,
+      "senate",
+      null,
+      VT_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — VT", () => {
+  it("returns true for the at-large seat — incumbent Becca Balint filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VT_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        VT_STATE,
+        "house",
+        VT_HOUSE_DISTRICT,
+        VT_ELECTION_YEAR,
+        "Becca Balint",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — VT wiring (house-only, no senate contest)", () => {
+  it("incumbent Becca Balint excluded; the 3 other filers all render as challengers with mapped party names", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = VT_HOUSE_ROSTER_2026.map((e, i) => vtDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (VT has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("VT", 0, 2026);
+
+    expect(out.house.some((c) => c.name === "Becca Balint")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Mark Coester", "Gerald Malloy", "Adam Ortiz"].sort(),
+    );
+    const coester = out.house.find((c) => c.name === "Mark Coester");
+    expect(coester?.party).toBe("Republican");
+    const ortiz = out.house.find((c) => c.name === "Adam Ortiz");
+    expect(ortiz?.party).toBe("Independent");
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+      expect(c.isRunoffPending).toBe(false);
+    }
+    expect(out.senate).toEqual([]);
   });
 });
