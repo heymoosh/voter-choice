@@ -238,6 +238,16 @@ import {
   MO_RETRIEVED_AT,
   MO_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/mo-official-roster-2026";
+import {
+  MN_STATE,
+  MN_ELECTION_YEAR,
+  MN_STAGE,
+  MN_HOUSE_SOURCE_URLS,
+  MN_SENATE_SOURCE_URLS,
+  MN_RETRIEVED_AT,
+  MN_HOUSE_ROSTER_2026,
+  MN_SENATE_ROSTER_2026,
+} from "../congressional-rosters/mn-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -645,6 +655,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: MO_HOUSE_SOURCE_URLS[0],
       retrievedAt: MO_RETRIEVED_AT,
       entries: MO_HOUSE_ROSTER_2026,
+    },
+  ],
+  MN: [
+    {
+      state: MN_STATE,
+      office: "house",
+      electionYear: MN_ELECTION_YEAR,
+      stage: MN_STAGE,
+      sourceUrl: MN_HOUSE_SOURCE_URLS[0],
+      retrievedAt: MN_RETRIEVED_AT,
+      entries: MN_HOUSE_ROSTER_2026,
+    },
+    {
+      state: MN_STATE,
+      office: "senate",
+      electionYear: MN_ELECTION_YEAR,
+      stage: MN_STAGE,
+      sourceUrl: MN_SENATE_SOURCE_URLS[0],
+      retrievedAt: MN_RETRIEVED_AT,
+      entries: MN_SENATE_ROSTER_2026,
     },
   ],
 };
