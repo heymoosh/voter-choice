@@ -120,6 +120,10 @@ const PARTY_NAMES: Record<string, string> = {
   // Wisconsin Green (Wisconsin vertical slice) — one of WI's five
   // ballot-status recognized parties, distinct from generic "GRE".
   WGR: "Wisconsin Green",
+  // Nevada's Independent American Party (Nevada vertical slice) — a real
+  // state-recognized minor party, not generic "IND" and NOT the same party
+  // as Arizona's "AIP" despite the similar name.
+  IAP: "Independent American Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

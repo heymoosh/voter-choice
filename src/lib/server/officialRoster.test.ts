@@ -392,6 +392,13 @@ import {
   NY_HOUSE_SOURCE_URLS,
   NY_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ny-official-roster-2026";
+import {
+  NV_HOUSE_ROSTER_2026,
+  NV_STATE,
+  NV_ELECTION_YEAR,
+  NV_HOUSE_SOURCE_URLS,
+  NV_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/nv-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1753,6 +1760,34 @@ const NH_SENATE_DB_ROWS = NH_SENATE_ROSTER_2026.map((e, i) =>
 // Senate seat is open (Shaheen did not file) — see the fixture's docblock.
 const NH_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "Maggie Goodlander",
+};
+
+/** Same shape as `inDbRow`, but for NV entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function nvDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `nv-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: NV_HOUSE_SOURCE_URLS[0],
+    retrievedAt: NV_RETRIEVED_AT,
+  };
+}
+
+const NV_HOUSE_DB_ROWS = NV_HOUSE_ROSTER_2026.map(nvDbRow);
+
+// NV-02 is an open seat (Amodei not seeking re-election, not a 2026
+// candidate) — excluded here, checked separately below. The other 3
+// districts' winning Democratic nominee is the sitting incumbent (per
+// house.gov, see the fixture's docblock).
+const NV_INCUMBENTS: Record<string, string> = {
+  "01": "Titus, Dina",
+  "03": "Lee, Susie",
+  "04": "Horsford, Steven A.",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -9846,5 +9881,150 @@ describe("lookupChallengers — NY wiring (house-only, all 26 districts, no runo
     const out = await lookupChallengers("NY", 1, 2026);
 
     expect(out.senate).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Nevada (NV) — house-only, no US Senate contest exists in 2026 (Cortez
+// Masto's seat runs to 2028, Rosen's to 2030). All 4 districts' major-party
+// nominees are post-primary (STAGE = "general") — the June 9, 2026 primary
+// is fully certified and Nevada has no runoff mechanism. NV-02 is an open
+// seat (Amodei not seeking re-election). Six individual-petition
+// independents across the 4 districts are recorded
+// declared_general_ballot_intent, not yet qualified_for_general_ballot,
+// pending petition-signature sufficiency confirmation — see the fixture's
+// docblock and docs/operations/nevada-vertical-slice-data-check.md for the
+// full build, including the split-filing-officer mechanics (Clark County
+// for NV-1/NV-3, Secretary of State for NV-2/NV-4).
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — NV narrowing", () => {
+  it("narrows house rows to the exact district for all 4 NV districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NV_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04"]) {
+      const out = await getOfficialRoster(
+        NV_STATE,
+        "house",
+        district,
+        NV_ELECTION_YEAR,
+      );
+      const expectedNames = NV_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("NV-01: 6 rows (2 major-party nominees + 4 pending independents), all qualified_for_general_ballot or declared_general_ballot_intent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NV_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NV_STATE,
+      "house",
+      "01",
+      NV_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(6);
+    expect(out.find((r) => r.name === "Titus, Dina")?.isIncumbent).toBe(true);
+    expect(
+      out.find((r) => r.name === 'Khan, Afzal "Bobby"')?.ballotStatus,
+    ).toBe("declared_general_ballot_intent");
+  });
+
+  it("NV-02 (open seat): 3 rows, no incumbent, IAP nominee Chapman renders qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NV_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NV_STATE,
+      "house",
+      "02",
+      NV_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(3);
+    expect(out.some((r) => r.isIncumbent)).toBe(false);
+    const chapman = out.find((r) => r.name === "Chapman, Lynn");
+    expect(chapman?.party).toBe("IAP");
+    expect(chapman?.ballotStatus).toBe("qualified_for_general_ballot");
+  });
+
+  it("returns [] for (senate, null) — no NV senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      NV_STATE,
+      "senate",
+      null,
+      NV_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — NV", () => {
+  it("returns true for NV-01, NV-03, NV-04's sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NV_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(NV_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          NV_STATE,
+          "house",
+          district,
+          NV_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for NV-02 — open seat, no incumbent row", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NV_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NV_STATE,
+        "house",
+        "02",
+        NV_ELECTION_YEAR,
+        "Mark Amodei",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — NV wiring (house-only, no senate contest)", () => {
+  it("NV-01: incumbent Titus, Dina excluded; the 5 other filers (incl. 4 pending independents) all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NV_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => nvDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (NV has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("NV", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Titus, Dina")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Buck, Carrie Ann",
+        'Khan, Afzal "Bobby"',
+        'St John, Steven "Chap"',
+        "Thomas, Jr., Anthony",
+        "Willert, Victor R.",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("NV-02 (open seat): all 3 filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NV_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => nvDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("NV", 2, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Benitez-Thompson, Teresa F.", "Chapman, Lynn", "Flippo, David"].sort(),
+    );
   });
 });
