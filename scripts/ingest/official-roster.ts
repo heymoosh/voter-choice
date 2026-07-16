@@ -444,6 +444,16 @@ import {
   NV_RETRIEVED_AT,
   NV_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/nv-official-roster-2026";
+import {
+  WV_STATE,
+  WV_ELECTION_YEAR,
+  WV_STAGE,
+  WV_HOUSE_SOURCE_URLS,
+  WV_SENATE_SOURCE_URLS,
+  WV_RETRIEVED_AT,
+  WV_HOUSE_ROSTER_2026,
+  WV_SENATE_ROSTER_2026,
+} from "../congressional-rosters/wv-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1309,6 +1319,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: NV_HOUSE_SOURCE_URLS[0],
       retrievedAt: NV_RETRIEVED_AT,
       entries: NV_HOUSE_ROSTER_2026,
+    },
+  ],
+  WV: [
+    {
+      state: WV_STATE,
+      office: "house",
+      electionYear: WV_ELECTION_YEAR,
+      stage: WV_STAGE,
+      sourceUrl: WV_HOUSE_SOURCE_URLS[0],
+      retrievedAt: WV_RETRIEVED_AT,
+      entries: WV_HOUSE_ROSTER_2026,
+    },
+    {
+      state: WV_STATE,
+      office: "senate",
+      electionYear: WV_ELECTION_YEAR,
+      stage: WV_STAGE,
+      sourceUrl: WV_SENATE_SOURCE_URLS[0],
+      retrievedAt: WV_RETRIEVED_AT,
+      entries: WV_SENATE_ROSTER_2026,
     },
   ],
 };

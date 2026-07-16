@@ -399,6 +399,15 @@ import {
   NV_HOUSE_SOURCE_URLS,
   NV_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/nv-official-roster-2026";
+import {
+  WV_HOUSE_ROSTER_2026,
+  WV_SENATE_ROSTER_2026,
+  WV_STATE,
+  WV_ELECTION_YEAR,
+  WV_HOUSE_SOURCE_URLS,
+  WV_SENATE_SOURCE_URLS,
+  WV_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/wv-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1788,6 +1797,39 @@ const NV_INCUMBENTS: Record<string, string> = {
   "01": "Titus, Dina",
   "03": "Lee, Susie",
   "04": "Horsford, Steven A.",
+};
+
+/** Same shape as `okDbRow`, but for WV entries. */
+function wvDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `wv-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? WV_HOUSE_SOURCE_URLS[0] : WV_SENATE_SOURCE_URLS[0],
+    retrievedAt: WV_RETRIEVED_AT,
+  };
+}
+
+const WV_HOUSE_DB_ROWS = WV_HOUSE_ROSTER_2026.map((e, i) =>
+  wvDbRow(e, i, "house"),
+);
+const WV_SENATE_DB_ROWS = WV_SENATE_ROSTER_2026.map((e, i) =>
+  wvDbRow(e, i, "senate"),
+);
+
+// Both WV House districts have a defending incumbent; no open seat.
+const WV_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "CAROL MILLER",
+  "02": "RILEY MOORE",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -10026,5 +10068,174 @@ describe("lookupChallengers — NV wiring (house-only, no senate contest)", () =
     expect(out.house.map((c) => c.name).sort()).toEqual(
       ["Benitez-Thompson, Teresa F.", "Chapman, Lynn", "Flippo, David"].sort(),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// West Virginia — built through this pipeline (card "[P0] Import + verify
+// official roster: West Virginia (WV)"). Not Civix-vended; West Virginia's
+// May 12, 2026 primary already happened and every federal nomination is
+// determined — no runoff_pending rows. Exercises declared_general_ballot_
+// intent (Wilson, Constitution, pending petition-signature certification)
+// and write_in_qualified (Phillips) instead. See
+// docs/operations/west-virginia-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — WV narrowing", () => {
+  it("narrows house rows to the exact district for both WV districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WV_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        WV_STATE,
+        "house",
+        district,
+        WV_ELECTION_YEAR,
+      );
+      const expectedNames = WV_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 4 WV senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WV_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      WV_STATE,
+      "senate",
+      null,
+      WV_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(WV_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...WV_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      WV_STATE,
+      "house",
+      "01",
+      WV_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("Wilson (Constitution) carries party CST (raw, unmapped) and declared_general_ballot_intent, not qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WV_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WV_STATE,
+      "senate",
+      null,
+      WV_ELECTION_YEAR,
+    );
+    const wilson = out.find((r) => r.name === "S. MARSHALL WILSON");
+    expect(wilson?.party).toBe("CST");
+    expect(wilson?.ballotStatus).toBe("declared_general_ballot_intent");
+    // The determined nominees are NOT declared_general_ballot_intent.
+    expect(
+      out.find((r) => r.name === "SHELLEY MOORE CAPITO")?.ballotStatus,
+    ).toBe("qualified_for_general_ballot");
+  });
+
+  it("Phillips (write-in) carries party null and write_in_qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WV_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WV_STATE,
+      "senate",
+      null,
+      WV_ELECTION_YEAR,
+    );
+    const phillips = out.find((r) => r.name === "RIO PHILLIPS");
+    expect(phillips?.party).toBeNull();
+    expect(phillips?.ballotStatus).toBe("write_in_qualified");
+  });
+});
+
+describe("isIncumbentSeekingReelection — WV", () => {
+  it("returns true for WV-01 and WV-02 — the winning nominee is the sitting incumbent in both", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WV_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      WV_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          WV_STATE,
+          "house",
+          district,
+          WV_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the US Senate seat — Capito (sitting senator) is the Republican nominee", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WV_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        WV_STATE,
+        "senate",
+        null,
+        WV_ELECTION_YEAR,
+        "Shelley Moore Capito",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — WV wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WV_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => wvDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, WV_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("WV", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Miller excluded; George renders as the sole challenger.
+    expect(out.house.map((c) => c.name)).toEqual(["VINCE GEORGE"]);
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("WV-02: incumbent Riley Moore excluded, Parsi renders as the sole challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WV_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => wvDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, WV_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("WV", 2, 2026);
+
+    expect(out.house.map((c) => c.name)).toEqual(["ACE PARSI"]);
+  });
+
+  it("senate: incumbent Capito excluded; Wilson, Anderson, and write-in Phillips all render as challengers, none carrying isRunoffPending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WV_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => wvDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, WV_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("WV", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "SHELLEY MOORE CAPITO")).toBe(
+      false,
+    );
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["S. MARSHALL WILSON", "RACHEL FETTY ANDERSON", "RIO PHILLIPS"].sort(),
+    );
+    for (const c of out.senate) {
+      expect(c.isRunoffPending).toBeFalsy();
+    }
   });
 });
