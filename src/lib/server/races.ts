@@ -93,6 +93,9 @@ const PARTY_NAMES: Record<string, string> = {
   // Florida Forward Party (Florida vertical slice) — a real
   // state-recognized minor party, not generic "IND".
   FFP: "Florida Forward Party",
+  // The Kentucky Party (Kentucky vertical slice) — a real
+  // state-recognized minor party, not generic "IND".
+  KYP: "Kentucky Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

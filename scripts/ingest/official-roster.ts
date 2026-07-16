@@ -136,6 +136,16 @@ import {
   HI_RETRIEVED_AT,
   HI_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/hi-official-roster-2026";
+import {
+  KY_STATE,
+  KY_ELECTION_YEAR,
+  KY_STAGE,
+  KY_HOUSE_SOURCE_URLS,
+  KY_SENATE_SOURCE_URLS,
+  KY_RETRIEVED_AT,
+  KY_HOUSE_ROSTER_2026,
+  KY_SENATE_ROSTER_2026,
+} from "../congressional-rosters/ky-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -350,6 +360,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: HI_HOUSE_SOURCE_URLS[0],
       retrievedAt: HI_RETRIEVED_AT,
       entries: HI_HOUSE_ROSTER_2026,
+    },
+  ],
+  KY: [
+    {
+      state: KY_STATE,
+      office: "house",
+      electionYear: KY_ELECTION_YEAR,
+      stage: KY_STAGE,
+      sourceUrl: KY_HOUSE_SOURCE_URLS[0],
+      retrievedAt: KY_RETRIEVED_AT,
+      entries: KY_HOUSE_ROSTER_2026,
+    },
+    {
+      state: KY_STATE,
+      office: "senate",
+      electionYear: KY_ELECTION_YEAR,
+      stage: KY_STAGE,
+      sourceUrl: KY_SENATE_SOURCE_URLS[0],
+      retrievedAt: KY_RETRIEVED_AT,
+      entries: KY_SENATE_ROSTER_2026,
     },
   ],
 };
