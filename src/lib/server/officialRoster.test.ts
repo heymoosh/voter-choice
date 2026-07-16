@@ -299,6 +299,13 @@ import {
   SD_SENATE_SOURCE_URLS,
   SD_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/sd-official-roster-2026";
+import {
+  WA_HOUSE_ROSTER_2026,
+  WA_STATE,
+  WA_ELECTION_YEAR,
+  WA_HOUSE_SOURCE_URLS,
+  WA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/wa-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1417,6 +1424,42 @@ const SD_HOUSE_DB_ROWS = SD_HOUSE_ROSTER_2026.map((e, i) =>
 const SD_SENATE_DB_ROWS = SD_SENATE_ROSTER_2026.map((e, i) =>
   sdDbRow(e, i, "senate"),
 );
+
+/** Same shape as `moDbRow`, but for WA entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function waDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `wa-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: WA_HOUSE_SOURCE_URLS[0],
+    retrievedAt: WA_RETRIEVED_AT,
+  };
+}
+
+const WA_HOUSE_DB_ROWS = WA_HOUSE_ROSTER_2026.map(waDbRow);
+
+// Per house.gov, cross-checked against the SoS's active + withdrawn filer
+// list (see the fixture's docblock). District 04 has NO incumbent row —
+// sitting incumbent Dan Newhouse announced he is not seeking re-election,
+// making it an open seat; exercised separately below.
+const WA_INCUMBENTS: Record<string, string> = {
+  "01": "Suzan DelBene",
+  "02": "Rick Larsen",
+  "03": "Marie Gluesenkamp Perez",
+  "05": "Michael Baumgartner",
+  "06": "Emily Randall",
+  "07": "Pramila Jayapal",
+  "08": "Kim Schrier",
+  "09": "Adam Smith",
+  "10": "Marilyn Strickland",
+};
+
+const WA_OPEN_SEAT_DISTRICTS = ["04"];
 const OK_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "JOSH BRECHEEN",
   "03": "FRANK D. LUCAS",
@@ -7394,5 +7437,154 @@ describe("lookupChallengers — SD wiring (at-large house + senate both covered)
     for (const c of out.senate) {
       expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Washington (WA) — house-only, no US Senate contest exists in 2026 (Murray's
+// term runs to 2029, Cantwell's to 2031). All 10 districts' rows are
+// PRE-primary (STAGE = "primary") — the August 4, 2026 top-two primary has
+// not yet occurred, so every row is qualified_for_primary_ballot, never
+// qualified_for_general_ballot. District 04 is a genuine open seat: sitting
+// incumbent Dan Newhouse announced December 17, 2025 he would not seek
+// re-election. Two filers who withdrew before the May 11, 2026 statutory
+// deadline (Raymond Pelletti, CD-2; Mike Gahvarehchee, CD-5) are excluded
+// from the fixture entirely. See
+// docs/operations/washington-vertical-slice-data-check.md for the full
+// build, including the SoS candidate-list cross-check and the house.gov
+// incumbency cross-check.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — WA narrowing", () => {
+  it("narrows house rows to the exact district for all 10 WA districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WA_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+    ]) {
+      const out = await getOfficialRoster(
+        WA_STATE,
+        "house",
+        district,
+        WA_ELECTION_YEAR,
+      );
+      const expectedNames = WA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("WA-01: 7 rows, all qualified_for_primary_ballot; incumbent Suzan DelBene present", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WA_STATE,
+      "house",
+      "01",
+      WA_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(7);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "Suzan DelBene")?.isIncumbent).toBe(true);
+  });
+
+  it("WA-04: open seat — no row carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WA_STATE,
+      "house",
+      "04",
+      WA_ELECTION_YEAR,
+    );
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+
+  it("returns [] for (senate, null) — no WA senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      WA_STATE,
+      "senate",
+      null,
+      WA_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — WA", () => {
+  it("returns true for the 9 WA districts with a sitting incumbent seeking re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WA_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(WA_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          WA_STATE,
+          "house",
+          district,
+          WA_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for WA-04 — open seat, no sitting member among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WA_HOUSE_DB_ROWS));
+    for (const district of WA_OPEN_SEAT_DISTRICTS) {
+      const rows = WA_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — WA wiring (house-only, no senate contest)", () => {
+  it("WA-01: incumbent Suzan DelBene excluded; the 6 other filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => waDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (WA has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("WA", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Suzan DelBene")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Benjamin Kincaid",
+        "Bryce Nickel",
+        "James Etzkorn",
+        "Hunter Gordon",
+        "Mary Silva",
+        "Catherine Hildebrand",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("WA-04 (open seat): no incumbent excluded, all 11 filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "04",
+    ).map((e, i) => waDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("WA", 4, 2026);
+
+    expect(out.house).toHaveLength(11);
+    expect(out.house.some((c) => c.name === "Dan Newhouse")).toBe(false);
   });
 });
