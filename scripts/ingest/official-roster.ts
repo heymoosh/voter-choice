@@ -258,6 +258,16 @@ import {
   IL_HOUSE_ROSTER_2026,
   IL_SENATE_ROSTER_2026,
 } from "../congressional-rosters/il-official-roster-2026";
+import {
+  MT_STATE,
+  MT_ELECTION_YEAR,
+  MT_STAGE,
+  MT_HOUSE_SOURCE_URLS,
+  MT_SENATE_SOURCE_URLS,
+  MT_RETRIEVED_AT,
+  MT_HOUSE_ROSTER_2026,
+  MT_SENATE_ROSTER_2026,
+} from "../congressional-rosters/mt-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -705,6 +715,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: IL_SENATE_SOURCE_URLS[0],
       retrievedAt: IL_RETRIEVED_AT,
       entries: IL_SENATE_ROSTER_2026,
+    },
+  ],
+  MT: [
+    {
+      state: MT_STATE,
+      office: "house",
+      electionYear: MT_ELECTION_YEAR,
+      stage: MT_STAGE,
+      sourceUrl: MT_HOUSE_SOURCE_URLS[0],
+      retrievedAt: MT_RETRIEVED_AT,
+      entries: MT_HOUSE_ROSTER_2026,
+    },
+    {
+      state: MT_STATE,
+      office: "senate",
+      electionYear: MT_ELECTION_YEAR,
+      stage: MT_STAGE,
+      sourceUrl: MT_SENATE_SOURCE_URLS[0],
+      retrievedAt: MT_RETRIEVED_AT,
+      entries: MT_SENATE_ROSTER_2026,
     },
   ],
 };
