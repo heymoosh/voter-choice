@@ -64,6 +64,14 @@ export interface OfficialRosterEntry {
     // IND (added building California, mirroring the AIP/AKP precedent for
     // a state's own recognized minor party).
     | "PF"
+    // Libertarian Party of Florida — a real state-recognized minor party
+    // under Florida law, distinct from generic IND (added building Florida,
+    // confirmed against dos.fl.gov's official political-parties list).
+    | "LPF"
+    // Florida Forward Party — a real state-recognized minor party under
+    // Florida law, distinct from generic IND (added building Florida,
+    // confirmed against dos.fl.gov's official political-parties list).
+    | "FFP"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;

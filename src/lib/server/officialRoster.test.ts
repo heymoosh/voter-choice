@@ -113,6 +113,15 @@ import {
   DE_SENATE_SOURCE_URLS,
   DE_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/de-official-roster-2026";
+import {
+  FL_HOUSE_ROSTER_2026,
+  FL_SENATE_ROSTER_2026,
+  FL_STATE,
+  FL_ELECTION_YEAR,
+  FL_HOUSE_SOURCE_URLS,
+  FL_SENATE_SOURCE_URLS,
+  FL_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/fl-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -418,6 +427,61 @@ const DE_HOUSE_DB_ROWS = DE_HOUSE_ROSTER_2026.map((e, i) =>
 const DE_SENATE_DB_ROWS = DE_SENATE_ROSTER_2026.map((e, i) =>
   deDbRow(e, i, "senate"),
 );
+
+/** Same shape as `arDbRow`, but for FL entries. */
+function flDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `fl-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? FL_HOUSE_SOURCE_URLS[0] : FL_SENATE_SOURCE_URLS[0],
+    retrievedAt: FL_RETRIEVED_AT,
+  };
+}
+
+const FL_HOUSE_DB_ROWS = FL_HOUSE_ROSTER_2026.map((e, i) =>
+  flDbRow(e, i, "house"),
+);
+const FL_SENATE_DB_ROWS = FL_SENATE_ROSTER_2026.map((e, i) =>
+  flDbRow(e, i, "senate"),
+);
+
+// A sample of FL districts whose winning-so-far nominee IS a sitting
+// incumbent, per the fixture's redistricting cross-check (house.gov member
+// directory, matched by name not district number — see the fixture's
+// docblock). "23" (Frankel) and "25" (Moskowitz) are post-redistricting
+// incumbents the portal's own tag omitted; "20" is intentionally excluded
+// here (its incumbency is exercised separately below — a genuine
+// two-sitting-member primary, Wasserman Schultz true / Cherfilus-McCormick
+// false despite the portal's stale tag).
+const FL_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Jimmy Patronis",
+  "03": "Kat Cammack",
+  "04": "Aaron Bean",
+  "09": "Darren Soto",
+  "10": "Maxwell Alejandro Frost",
+  "23": "Lois Frankel",
+  "25": "Jared Moskowitz",
+  "26": "Mario Diaz-Balart",
+  "27": "Maria Elvira Salazar",
+  "28": "Carlos A. Gimenez",
+};
+
+// FL districts with no incumbent row at all (sitting member retired, ran for
+// a different office, or is a namesake match only — see fixture docblock):
+// 02 (Dunn), 11 (Webster — Royal Webster in the roster is a different
+// person), 16 (Buchanan), 19 (Donalds, running for Governor), 22 (Frankel's
+// old seat, no longer contested by her), 24 (Wilson).
+const FL_OPEN_SEAT_DISTRICTS = ["02", "11", "16", "19", "22", "24"];
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -2526,5 +2590,276 @@ describe("lookupChallengers — DE wiring (at-large house + senate both covered)
     for (const c of out.senate) {
       expect(c.isRunoffPending).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Florida — the first state through this track built after a mid-decade
+// congressional redistricting (signed into law May 4, 2026). Incumbency was
+// cross-checked by NAME across the ENTIRE candidate list, not by district
+// number, surfacing 3 candidates the portal's own *Incumbent tag omitted
+// (Frankel/CD23, Moskowitz/CD25, Wasserman Schultz/CD20 — each a sitting
+// member who filed in a new district number) and one it wrongly carried
+// forward (Cherfilus-McCormick/CD20 resigned 2026-04-21, well before this
+// fixture's retrieval, per independent news reporting). See
+// docs/operations/florida-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — FL narrowing", () => {
+  it("narrows house rows to the exact district for every FL district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    const districts = Array.from({ length: 28 }, (_, i) =>
+      String(i + 1).padStart(2, "0"),
+    );
+    for (const district of districts) {
+      const out = await getOfficialRoster(
+        FL_STATE,
+        "house",
+        district,
+        FL_ELECTION_YEAR,
+      );
+      const expectedNames = FL_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 7 FL senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      FL_STATE,
+      "senate",
+      null,
+      FL_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(FL_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...FL_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      FL_STATE,
+      "house",
+      "01",
+      FL_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("CD10 (Maxwell Frost): the only row in the district, qualified_for_general_ballot, isIncumbent true — no primary or general contest was held", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      FL_STATE,
+      "house",
+      "10",
+      FL_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe("Maxwell Alejandro Frost");
+    expect(out[0].isIncumbent).toBe(true);
+    expect(out[0].ballotStatus).toBe("qualified_for_general_ballot");
+  });
+
+  it("CD20: Wasserman Schultz carries isIncumbent true, Cherfilus-McCormick carries isIncumbent false, despite the portal's own stale tag", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      FL_STATE,
+      "house",
+      "20",
+      FL_ELECTION_YEAR,
+    );
+    expect(
+      out.find((r) => r.name === "Debbie Wasserman Schultz")?.isIncumbent,
+    ).toBe(true);
+    expect(
+      out.find((r) => r.name === "Sheila Cherfilus-McCormick")?.isIncumbent,
+    ).toBe(false);
+  });
+
+  it("write-in rows (e.g. CD5's William Lintag Upham) carry write_in_qualified and a null party", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      FL_STATE,
+      "house",
+      "05",
+      FL_ELECTION_YEAR,
+    );
+    const writeIn = out.find((r) => r.name === "William Lintag Upham");
+    expect(writeIn?.ballotStatus).toBe("write_in_qualified");
+    expect(writeIn?.party).toBeNull();
+  });
+
+  it("senate: Moody (contested REP primary) carries qualified_for_primary_ballot and isIncumbent true; NPA filer Gillespie carries qualified_for_general_ballot with no primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      FL_STATE,
+      "senate",
+      null,
+      FL_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Ashley Moody")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+    expect(out.find((r) => r.name === "Ashley Moody")?.isIncumbent).toBe(true);
+    expect(out.find((r) => r.name === "Neil J. Gillespie")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — FL", () => {
+  it("returns true for the sample of FL districts whose winning-so-far nominee is a sitting incumbent, including the two post-redistricting corrections (Frankel/CD23, Moskowitz/CD25)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      FL_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          FL_STATE,
+          "house",
+          district,
+          FL_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for the open-seat districts — no sitting member is among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    for (const district of FL_OPEN_SEAT_DISTRICTS) {
+      const rows = FL_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+
+  it("CD20: the seat's own incumbent row is Wasserman Schultz (matches, no warning); checking against Cherfilus-McCormick's name (resigned, not the roster's incumbent row) still returns true for the seat but logs a mismatch warning", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_HOUSE_DB_ROWS));
+    const warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+
+    expect(
+      await isIncumbentSeekingReelection(
+        FL_STATE,
+        "house",
+        "20",
+        FL_ELECTION_YEAR,
+        "Debbie Wasserman Schultz",
+      ),
+    ).toBe(true);
+    expect(warnSpy).not.toHaveBeenCalled();
+
+    expect(
+      await isIncumbentSeekingReelection(
+        FL_STATE,
+        "house",
+        "20",
+        FL_ELECTION_YEAR,
+        "Sheila Cherfilus-McCormick",
+      ),
+    ).toBe(true);
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining("incumbent name mismatch"),
+    );
+
+    warnSpy.mockRestore();
+  });
+
+  it("returns true for the US Senate seat — Moody (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(FL_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        FL_STATE,
+        "senate",
+        null,
+        FL_ELECTION_YEAR,
+        "Ashley Moody",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — FL wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = FL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => flDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, FL_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("FL", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Patronis excluded; every other CD1 filer renders.
+    expect(out.house.some((c) => c.name === "Jimmy Patronis")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Douglas Chico",
+        "Tyler L. Davis",
+        "John Frankman",
+        "Gay Valimont",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("CD10 (Frost, uncontested everywhere): renders as the sole entry and is excluded as the incumbent, leaving zero challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = FL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "10",
+    ).map((e, i) => flDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, FL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("FL", 10, 2026);
+
+    expect(out.house).toEqual([]);
+  });
+
+  it("CD20 (double sitting-member primary): Wasserman Schultz excluded as the incumbent; Cherfilus-McCormick (resigned, not excluded) and every other filer render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = FL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "20",
+    ).map((e, i) => flDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, FL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("FL", 20, 2026);
+
+    expect(out.house.some((c) => c.name === "Debbie Wasserman Schultz")).toBe(
+      false,
+    );
+    expect(out.house.some((c) => c.name === "Sheila Cherfilus-McCormick")).toBe(
+      true,
+    );
+  });
+
+  it("senate: incumbent Moody excluded; the contested REP/DEM filers and the NPA filer all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = FL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => flDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, FL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("FL", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "Ashley Moody")).toBe(false);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      [
+        "Chris Gleason",
+        "Angie Nixon",
+        "Neelam Taneja Perry",
+        'Ernest "Ernie" Rivera',
+        "Alex Vindman",
+        "Neil J. Gillespie",
+      ].sort(),
+    );
   });
 });
