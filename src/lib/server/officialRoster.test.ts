@@ -187,6 +187,13 @@ import {
   ID_SENATE_SOURCE_URLS,
   ID_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/id-official-roster-2026";
+import {
+  MD_HOUSE_ROSTER_2026,
+  MD_STATE,
+  MD_ELECTION_YEAR,
+  MD_HOUSE_SOURCE_URLS,
+  MD_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/md-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -812,6 +819,37 @@ const ID_SENATE_DB_ROWS = ID_SENATE_ROSTER_2026.map((e, i) =>
 const ID_INCUMBENT_SAMPLE: Record<string, string> = {
   "01": "Russ Fulcher",
   "02": "Mike Simpson",
+};
+
+/** Same shape as `hiDbRow`, but for MD entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function mdDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `md-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: MD_HOUSE_SOURCE_URLS[0],
+    retrievedAt: MD_RETRIEVED_AT,
+  };
+}
+
+const MD_HOUSE_DB_ROWS = MD_HOUSE_ROSTER_2026.map(mdDbRow);
+
+// CD5 is Maryland's only open seat in 2026 (incumbent Steny Hoyer not
+// seeking re-election — see fixture docblock); every other district's
+// nominee is the sitting incumbent per house.gov.
+const MD_INCUMBENTS: Record<string, string> = {
+  "01": "Andy Harris",
+  "02": 'John "Johnny O" Olszewski, Jr.',
+  "03": "Sarah Elfreth",
+  "04": "Glenn F. Ivey",
+  "06": "April McClain Delaney",
+  "07": "Kweisi Mfume",
+  "08": "Jamie Raskin",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -4299,6 +4337,179 @@ describe("lookupChallengers — ID wiring (house + senate both covered)", () => 
         "Matt Loesby",
         "Natalie M Fleming",
         "Todd Achilles",
+      ].sort(),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Maryland (MD) — house-only, no US Senate contest exists in 2026
+// (Alsobrooks's seat runs through 2031, Van Hollen's through 2029 — see the
+// fixture's docblock). Maryland's June 23, 2026 primary has already
+// occurred; nominees below are recorded per the official results
+// dashboard's all-precincts-reporting numbers (refreshed 2026-07-10). CD5 is
+// the sole open seat (incumbent Steny Hoyer not seeking re-election) — see
+// docs/operations/maryland-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MD narrowing", () => {
+  it("narrows house rows to the exact district for every MD district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MD_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07", "08"]) {
+      const out = await getOfficialRoster(
+        MD_STATE,
+        "house",
+        district,
+        MD_ELECTION_YEAR,
+      );
+      const expectedNames = MD_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("MD-01: incumbent Andy Harris (REP), challenger Dan Schwartz (DEM, qualified_for_general_ballot), and write-in Edward Shlikas (IND, write_in_qualified)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MD_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MD_STATE,
+      "house",
+      "01",
+      MD_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(3);
+    expect(out.find((r) => r.name === "Andy Harris")?.isIncumbent).toBe(true);
+    expect(out.find((r) => r.name === "Edward Shlikas")?.ballotStatus).toBe(
+      "write_in_qualified",
+    );
+    expect(out.find((r) => r.name === "Edward Shlikas")?.party).toBe("IND");
+  });
+
+  it("MD-05: open seat — 5 rows (2 major-party nominees, 2 declared_general_ballot_intent Unaffiliated petition filers, 1 write-in), none carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MD_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MD_STATE,
+      "house",
+      "05",
+      MD_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(5);
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    expect(
+      out
+        .filter((r) => r.ballotStatus === "declared_general_ballot_intent")
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(["Brian S. Jordan", "Jonathan Burruss"].sort());
+    expect(out.find((r) => r.name === "Mildred Marie Hall")?.ballotStatus).toBe(
+      "write_in_qualified",
+    );
+    expect(out.find((r) => r.name === "Mildred Marie Hall")?.party).toBeNull();
+  });
+
+  it("MD-06 and MD-08: Green Party filers 'seeking the nomination' recorded declared_general_ballot_intent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MD_HOUSE_DB_ROWS));
+    const cd6 = await getOfficialRoster(
+      MD_STATE,
+      "house",
+      "06",
+      MD_ELECTION_YEAR,
+    );
+    const cd8 = await getOfficialRoster(
+      MD_STATE,
+      "house",
+      "08",
+      MD_ELECTION_YEAR,
+    );
+    expect(cd6.find((r) => r.name === "Moshe Y. Landman")).toMatchObject({
+      party: "GRE",
+      ballotStatus: "declared_general_ballot_intent",
+    });
+    expect(cd8.find((r) => r.name === "Nancy Wallace")).toMatchObject({
+      party: "GRE",
+      ballotStatus: "declared_general_ballot_intent",
+    });
+  });
+
+  it("returns [] for (senate, null) — no MD senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      MD_STATE,
+      "senate",
+      null,
+      MD_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — MD", () => {
+  it("returns true for every district whose sitting incumbent filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MD_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(MD_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MD_STATE,
+          "house",
+          district,
+          MD_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for CD5 (Hoyer not a candidate — open seat)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MD_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MD_STATE,
+        "house",
+        "05",
+        MD_ELECTION_YEAR,
+        "Steny Hoyer",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — MD wiring (house-only, no senate contest)", () => {
+  it("MD-01: incumbent Andy Harris excluded; Dan Schwartz and write-in Edward Shlikas render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MD_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => mdDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (MD has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("MD", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Andy Harris")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Dan Schwartz", "Edward Shlikas"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("MD-05 (open seat): all 5 filers render as challengers, no incumbent excluded", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MD_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "05",
+    ).map((e, i) => mdDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("MD", 5, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Adrian Boafo",
+        "Chris Chaffee",
+        "Brian S. Jordan",
+        "Jonathan Burruss",
+        "Mildred Marie Hall",
       ].sort(),
     );
   });
