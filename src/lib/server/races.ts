@@ -112,6 +112,11 @@ const PARTY_NAMES: Record<string, string> = {
   // nationally-recognized minor party appearing identically across two
   // unrelated 2026 NJ federal filings, not generic "IND".
   SWP: "Socialist Workers Party",
+  // Working Class Party of Michigan (Michigan vertical slice) — a real
+  // state-recognized minor party, not generic "IND". Coded "WCPM", not
+  // "WCP", to avoid colliding with Illinois's distinct Working Class Party
+  // (same-named but separate state party org — disambiguated 2026-07-16).
+  WCPM: "Working Class Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

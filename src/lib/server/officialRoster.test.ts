@@ -333,6 +333,15 @@ import {
   VT_HOUSE_SOURCE_URLS,
   VT_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/vt-official-roster-2026";
+import {
+  MI_HOUSE_ROSTER_2026,
+  MI_SENATE_ROSTER_2026,
+  MI_STATE,
+  MI_ELECTION_YEAR,
+  MI_HOUSE_SOURCE_URLS,
+  MI_SENATE_SOURCE_URLS,
+  MI_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/mi-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -880,6 +889,55 @@ const NJ_INCUMBENT_SAMPLE: Record<string, string> = {
   "09": "NELIDA POU",
   "10": "LAMONICA R. MCIVER",
   "11": "ANALILIA MEJIA",
+};
+
+/** Same shape as `inDbRow`, but for MI entries — office/sourceUrl differ per
+ * chamber (MI registers separate house and senate fixtures), and district
+ * is nullable for the statewide senate contest. */
+function miDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `mi-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? MI_HOUSE_SOURCE_URLS[0] : MI_SENATE_SOURCE_URLS[0],
+    retrievedAt: MI_RETRIEVED_AT,
+  };
+}
+
+const MI_HOUSE_DB_ROWS = MI_HOUSE_ROSTER_2026.map((e, i) =>
+  miDbRow(e, i, "house"),
+);
+const MI_SENATE_DB_ROWS = MI_SENATE_ROSTER_2026.map((e, i) =>
+  miDbRow(e, i, "senate"),
+);
+
+// MI-10 (John James filed for Governor instead) and MI-11 (Haley Stevens
+// filed for US Senate instead) are the only two open House seats; every
+// other district's sitting incumbent (per house.gov) is a 2026 primary
+// filer in their own district — see the fixture's docblock. Since MI is
+// pre-primary, "incumbent" here means "the roster row flagged isIncumbent,"
+// not "the eventual nominee" (undetermined until Aug 4, 2026).
+const MI_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Jack Bergman",
+  "02": "John Moolenaar",
+  "03": "Hillary Scholten",
+  "04": "Bill Huizenga",
+  "05": "Tim Walberg",
+  "06": "Debbie Dingell",
+  "07": "Tom Barrett",
+  "08": "Kristen McDonald Rivet",
+  "09": "Lisa McClain",
+  "12": "Rashida Tlaib",
+  "13": "Shri Thanedar",
 };
 
 // Every one of IN's 9 sitting US Representatives (per house.gov) won their
@@ -8272,5 +8330,315 @@ describe("lookupChallengers — VT wiring (house-only, no senate contest)", () =
       expect(c.isRunoffPending).toBe(false);
     }
     expect(out.senate).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Michigan — fifteenth state through this pipeline (card at
+// docs/operations/voter-choice-backlog.md, "Import + verify official
+// roster: Michigan (MI)"). Not Civix-vended; Michigan's Aug 4, 2026 primary
+// is still in the future at build time (2026-07-15), so — like Arizona —
+// every DEM/REP row is "qualified_for_primary_ballot" and MULTIPLE
+// candidates per party per district are expected and correct (no runoff
+// system, and no "pick the nominee" step: nobody has been decided yet).
+// UNLIKE Arizona, Michigan's minor parties (Libertarian, Green, Working
+// Class) nominate by convention rather than primary, so their rows carry
+// "qualified_for_general_ballot" instead — a genuinely mixed-status
+// district is the normal shape here, not an edge case. See
+// docs/operations/michigan-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MI narrowing", () => {
+  it("narrows house rows to the exact district for every MI district, preserving the multi-candidate pre-primary field", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+    ]) {
+      const out = await getOfficialRoster(
+        MI_STATE,
+        "house",
+        district,
+        MI_ELECTION_YEAR,
+      );
+      const expectedNames = MI_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 6 MI senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      MI_STATE,
+      "senate",
+      null,
+      MI_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(MI_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...MI_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      MI_STATE,
+      "house",
+      "01",
+      MI_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("MI-01: 3 undetermined Democratic filers + incumbent Bergman among 3 undetermined Republican filers, all qualified_for_primary_ballot; the convention-nominated Libertarian and Working Class rows are qualified_for_general_ballot instead", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MI_STATE,
+      "house",
+      "01",
+      MI_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [
+        "Callie Barr",
+        "Kyle Blomquist",
+        "Wayne Stiles",
+        "Jack Bergman",
+        "Matthew DenOtter",
+        "Justin Michal",
+        "Arnett Satterla",
+        "Liz Hakola",
+      ].sort(),
+    );
+    for (const name of [
+      "Callie Barr",
+      "Kyle Blomquist",
+      "Wayne Stiles",
+      "Jack Bergman",
+      "Matthew DenOtter",
+      "Justin Michal",
+    ]) {
+      expect(out.find((r) => r.name === name)?.ballotStatus).toBe(
+        "qualified_for_primary_ballot",
+      );
+    }
+    for (const name of ["Arnett Satterla", "Liz Hakola"]) {
+      expect(out.find((r) => r.name === name)?.ballotStatus).toBe(
+        "qualified_for_general_ballot",
+      );
+    }
+    expect(out.find((r) => r.name === "Jack Bergman")?.isIncumbent).toBe(true);
+  });
+
+  it("MI-10 and MI-11: open seats — no roster row is flagged incumbent (James filed for Governor, Stevens filed for Senate)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_HOUSE_DB_ROWS));
+    for (const district of ["10", "11"]) {
+      const out = await getOfficialRoster(
+        MI_STATE,
+        "house",
+        district,
+        MI_ELECTION_YEAR,
+      );
+      expect(out.length).toBeGreaterThan(0);
+      expect(out.some((r) => r.isIncumbent)).toBe(false);
+    }
+  });
+
+  it("senate: open seat (Peters not seeking re-election) — no roster row is flagged incumbent; DEM/REP rows are primary-pending, LIB/GRE rows are already the party's general-ballot nominee", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MI_STATE,
+      "senate",
+      null,
+      MI_ELECTION_YEAR,
+    );
+    expect(out.some((r) => r.isIncumbent)).toBe(false);
+    for (const name of [
+      "Abdul El-Sayed",
+      "Mallory McMorrow",
+      "Haley Stevens",
+      "Mike Rogers",
+    ]) {
+      expect(out.find((r) => r.name === name)?.ballotStatus).toBe(
+        "qualified_for_primary_ballot",
+      );
+    }
+    for (const name of ["Lydia Christensen", "Douglas P. Marsh"]) {
+      expect(out.find((r) => r.name === name)?.ballotStatus).toBe(
+        "qualified_for_general_ballot",
+      );
+    }
+  });
+});
+
+describe("isIncumbentSeekingReelection — MI", () => {
+  it("returns true for the 11 districts where the sitting incumbent (per house.gov) is a 2026 primary filer in their own district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      MI_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MI_STATE,
+          "house",
+          district,
+          MI_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for MI-10 — James (sitting rep) filed for Governor instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MI_STATE,
+        "house",
+        "10",
+        MI_ELECTION_YEAR,
+        "John James",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for MI-11 — Stevens (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MI_STATE,
+        "house",
+        "11",
+        MI_ELECTION_YEAR,
+        "Haley Stevens",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Peters (sitting senator) did not file for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MI_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MI_STATE,
+        "senate",
+        null,
+        MI_ELECTION_YEAR,
+        "Gary Peters",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — MI wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => miDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, MI_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("MI", 3, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Scholten excluded; both Republican primary filers render as
+    // challengers (no minor-party filer in MI-03).
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Ryan Cushman", "Terri DeBoer"].sort(),
+    );
+    // Pre-primary MI: nobody is flagged runoff-pending (MI has no runoff
+    // system), including the still-undetermined primary field.
+    for (const c of out.house) {
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("MI-01 (incumbent's own renomination pending): Bergman is still excluded as the sitting incumbent even though his renomination isn't decided; every other DEM/REP primary filer AND the already-determined LIB/WCPM general-ballot nominees all render as challengers together", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => miDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MI_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MI", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Jack Bergman")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Callie Barr",
+        "Kyle Blomquist",
+        "Wayne Stiles",
+        "Matthew DenOtter",
+        "Justin Michal",
+        "Arnett Satterla",
+        "Liz Hakola",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("MI-10 and MI-11 (open seats): every filer renders as a challenger, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    for (const [district, seatNumber] of [
+      ["10", 10],
+      ["11", 11],
+    ] as const) {
+      const houseRows = MI_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e, i) => miDbRow(e, i, "house"));
+      mockedGetDb.mockReturnValue(
+        makeSequencedDbMock([houseRows, MI_SENATE_DB_ROWS]),
+      );
+
+      const out = await lookupChallengers("MI", seatNumber, 2026);
+
+      const expectedNames = MI_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.house.map((c) => c.name).sort()).toEqual(
+        [...expectedNames].sort(),
+      );
+    }
+  });
+
+  it("senate (open seat, Peters not running): every filer renders as a challenger, none excluded as incumbent, none flagged runoff-pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => miDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MI_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MI", 3, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      MI_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "Lydia Christensen")?.party).toBe(
+      "Libertarian",
+    );
+    expect(out.senate.find((c) => c.name === "Douglas P. Marsh")?.party).toBe(
+      "Green",
+    );
+    for (const c of out.senate) {
+      expect(c.isRunoffPending).toBe(false);
+    }
   });
 });

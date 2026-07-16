@@ -152,6 +152,19 @@ export interface OfficialRosterEntry {
     // Socialist Workers Party, self-designated per WA's system.
     | "UNP" // "UNION" — a candidate's own self-designated preference text,
     // not a registered party.
+    // Working Class Party of Michigan — one of Michigan's seven officially
+    // recognized political parties (Democratic, Green, Libertarian, Natural
+    // Law, Republican, U.S. Taxpayers, Working Class — confirmed via
+    // Ballotpedia's "Political parties in Michigan" page, cross-checking
+    // the mi-boe.entellitrak.com portal's "Working" party label), distinct
+    // from generic IND (added building Michigan, mirroring the AIP/AKP/PF/
+    // LPF/FFP precedent for a state's own recognized minor party). Coded
+    // "WCPM" rather than reusing Illinois's "WCP" — both states independently
+    // chose the same abbreviation for their own distinct state party
+    // organization; disambiguated during the MI/IL merge (2026-07-16) since
+    // the two are different real-world entities that would otherwise collide
+    // under one party code and render the wrong display name for one state.
+    | "WCPM"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
