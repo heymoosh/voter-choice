@@ -182,6 +182,16 @@ import {
   IA_HOUSE_ROSTER_2026,
   IA_SENATE_ROSTER_2026,
 } from "../congressional-rosters/ia-official-roster-2026";
+import {
+  KS_STATE,
+  KS_ELECTION_YEAR,
+  KS_STAGE,
+  KS_HOUSE_SOURCE_URLS,
+  KS_SENATE_SOURCE_URLS,
+  KS_RETRIEVED_AT,
+  KS_HOUSE_ROSTER_2026,
+  KS_SENATE_ROSTER_2026,
+} from "../congressional-rosters/ks-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -485,6 +495,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: IA_SENATE_SOURCE_URLS[0],
       retrievedAt: IA_RETRIEVED_AT,
       entries: IA_SENATE_ROSTER_2026,
+    },
+  ],
+  KS: [
+    {
+      state: KS_STATE,
+      office: "house",
+      electionYear: KS_ELECTION_YEAR,
+      stage: KS_STAGE,
+      sourceUrl: KS_HOUSE_SOURCE_URLS[0],
+      retrievedAt: KS_RETRIEVED_AT,
+      entries: KS_HOUSE_ROSTER_2026,
+    },
+    {
+      state: KS_STATE,
+      office: "senate",
+      electionYear: KS_ELECTION_YEAR,
+      stage: KS_STAGE,
+      sourceUrl: KS_SENATE_SOURCE_URLS[0],
+      retrievedAt: KS_RETRIEVED_AT,
+      entries: KS_SENATE_ROSTER_2026,
     },
   ],
 };

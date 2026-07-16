@@ -169,6 +169,15 @@ import {
   IA_SENATE_SOURCE_URLS,
   IA_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ia-official-roster-2026";
+import {
+  KS_HOUSE_ROSTER_2026,
+  KS_SENATE_ROSTER_2026,
+  KS_STATE,
+  KS_ELECTION_YEAR,
+  KS_HOUSE_SOURCE_URLS,
+  KS_SENATE_SOURCE_URLS,
+  KS_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ks-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -723,6 +732,42 @@ const IA_SENATE_DB_ROWS = IA_SENATE_ROSTER_2026.map((e, i) =>
 const IA_INCUMBENT_SAMPLE: Record<string, string> = {
   "01": "Mariannette Miller-Meeks",
   "03": "Zach Nunn",
+};
+
+/** Same shape as `meDbRow`, but for KS entries. */
+function ksDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ks-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? KS_HOUSE_SOURCE_URLS[0] : KS_SENATE_SOURCE_URLS[0],
+    retrievedAt: KS_RETRIEVED_AT,
+  };
+}
+
+const KS_HOUSE_DB_ROWS = KS_HOUSE_ROSTER_2026.map((e, i) =>
+  ksDbRow(e, i, "house"),
+);
+const KS_SENATE_DB_ROWS = KS_SENATE_ROSTER_2026.map((e, i) =>
+  ksDbRow(e, i, "senate"),
+);
+
+// All 4 KS House seats + the Senate seat have a sitting incumbent seeking
+// re-election — no open seats (see the fixture's docblock).
+const KS_INCUMBENTS: Record<string, string> = {
+  "01": "Tracey Mann",
+  "02": "Derek Schmidt",
+  "03": "Sharice L. Davids",
+  "04": "Ron Estes",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -3859,6 +3904,193 @@ describe("lookupChallengers — IA wiring (house + senate both covered)", () => 
     );
     for (const c of out.senate) {
       expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Kansas (KS) — thirteenth state built through this pipeline. The August 4,
+// 2026 primary had not yet occurred at transcription time, so every
+// contested Democratic/Republican filer (including KS-2's sole Democratic
+// filer, Don Coover — Kansas does not cancel an uncontested primary) is
+// qualified_for_primary_ballot; every Libertarian filer bypasses the
+// primary entirely (nominated by convention) and is
+// qualified_for_general_ballot. Kansas has no primary runoff, so no
+// runoff_pending rows appear anywhere in this fixture. See
+// docs/operations/kansas-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — KS narrowing", () => {
+  it("narrows house rows to the exact district for all 4 KS districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KS_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04"]) {
+      const out = await getOfficialRoster(
+        KS_STATE,
+        "house",
+        district,
+        KS_ELECTION_YEAR,
+      );
+      const expectedNames = KS_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns all 14 KS senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KS_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      KS_STATE,
+      "senate",
+      null,
+      KS_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(KS_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...KS_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      KS_STATE,
+      "house",
+      "01",
+      KS_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("KS-2: Don Coover is the sole Democratic filer but still qualified_for_primary_ballot — Kansas does not cancel an uncontested primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KS_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      KS_STATE,
+      "house",
+      "02",
+      KS_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Don Coover")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+  });
+
+  it("every Libertarian filer is qualified_for_general_ballot (bypasses the primary); every DEM/REP filer is qualified_for_primary_ballot; no runoff_pending rows exist anywhere", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([...KS_HOUSE_DB_ROWS, ...KS_SENATE_DB_ROWS]),
+    );
+    const allRows = [...KS_HOUSE_ROSTER_2026, ...KS_SENATE_ROSTER_2026];
+    expect(allRows.some((e) => e.ballotStatus === "runoff_pending")).toBe(
+      false,
+    );
+    for (const e of allRows) {
+      if (e.party === "LIB") {
+        expect(e.ballotStatus).toBe("qualified_for_general_ballot");
+      } else {
+        expect(e.ballotStatus).toBe("qualified_for_primary_ballot");
+      }
+    }
+  });
+});
+
+describe("isIncumbentSeekingReelection — KS", () => {
+  it("returns true for all 4 KS House districts' sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KS_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(KS_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          KS_STATE,
+          "house",
+          district,
+          KS_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the Senate seat — Roger Marshall (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KS_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        KS_STATE,
+        "senate",
+        null,
+        KS_ELECTION_YEAR,
+        "Roger Marshall",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — KS wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KS_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => ksDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, KS_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("KS", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Schmidt excluded; Coover (DEM, primary-stage), Young (REP,
+    // primary-stage), and Hauer (LIB, general-stage) all render.
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Don Coover", "Chad E Young", "John Hauer"].sort(),
+    );
+    expect(out.house.some((c) => c.name === "Derek Schmidt")).toBe(false);
+    for (const c of out.house) {
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("KS-4: incumbent Estes excluded; the 4 Democratic primary filers, the Republican primary filer, and the Libertarian general filer all render, none flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KS_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "04",
+    ).map((e, i) => ksDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, KS_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("KS", 4, 2026);
+
+    expect(out.house.some((c) => c.name === "Ron Estes")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Chris Carmichael",
+        "Cole Epley",
+        "Ryan Gilbert",
+        "Katy Tyndell",
+        "Frank A. McCollum",
+        "Drew Cranmer",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("senate: incumbent Marshall excluded; the 11 Democratic primary filers, the Republican primary filer, and the Libertarian general filer all render, none flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KS_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => ksDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, KS_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("KS", 2, 2026);
+
+    expect(out.senate.some((c) => c.name === "Roger Marshall")).toBe(false);
+    expect(out.senate).toHaveLength(KS_SENATE_ROSTER_2026.length - 1);
+    expect(out.senate.find((c) => c.name === "Pond Naramore")?.party).toBe(
+      "Republican",
+    );
+    expect(out.senate.find((c) => c.name === "David C Graham")?.party).toBe(
+      "Libertarian",
+    );
+    for (const c of out.senate) {
+      expect(c.isRunoffPending).toBe(false);
     }
   });
 });
