@@ -153,6 +153,13 @@ import {
   IN_HOUSE_SOURCE_URLS,
   IN_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/in-official-roster-2026";
+import {
+  GA_HOUSE_ROSTER_2026,
+  GA_SENATE_ROSTER_2026,
+  GA_HOUSE_SOURCE_URLS,
+  GA_SENATE_SOURCE_URLS,
+  GA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ga-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -485,6 +492,53 @@ const FL_HOUSE_DB_ROWS = FL_HOUSE_ROSTER_2026.map((e, i) =>
 const FL_SENATE_DB_ROWS = FL_SENATE_ROSTER_2026.map((e, i) =>
   flDbRow(e, i, "senate"),
 );
+
+/** Same shape as `flDbRow`, but for GA entries. */
+function gaDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ga-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? GA_HOUSE_SOURCE_URLS[0] : GA_SENATE_SOURCE_URLS[0],
+    retrievedAt: GA_RETRIEVED_AT,
+  };
+}
+
+const GA_SENATE_DB_ROWS = GA_SENATE_ROSTER_2026.map((e, i) =>
+  gaDbRow(e, i, "senate"),
+);
+
+// GA districts whose nominee IS a sitting incumbent, per house.gov cross-
+// check (see the fixture's docblock). GA-14 (Fuller) is included even though
+// the results portal's own primary data omitted his incumbent tag — the
+// fixture corrects that, mirroring FL's redistricting-tag corrections.
+const GA_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "Sanford Bishop",
+  "03": "Brian Jack",
+  "04": 'Henry "Hank" Johnson, Jr.',
+  "05": "Nikema Williams",
+  "06": "Lucy McBath",
+  "07": "Rich McCormick",
+  "08": "Austin Scott",
+  "09": "Andrew Clyde",
+  "12": "Rick W. Allen",
+  "14": "Clay Fuller",
+};
+
+// GA districts with no incumbent row at all — each an independently-sourced
+// open seat/vacancy (see fixture docblock): 01 (Carter ran for Senate), 10
+// (Collins ran for Senate), 11 (Loudermilk retiring), 13 (Scott died, seat
+// vacant pending a separate July 28, 2026 special election).
+const GA_OPEN_SEAT_DISTRICTS = ["01", "10", "11", "13"];
 
 // A sample of FL districts whose winning-so-far nominee IS a sitting
 // incumbent, per the fixture's redistricting cross-check (house.gov member
@@ -3513,5 +3567,86 @@ describe("lookupChallengers — IN wiring (house-only, no senate contest)", () =
     expect(out.house.map((c) => c.name).sort()).toEqual(
       ["Brad A. Meyer", "Floyd Michael Taylor", "Tonya L. Hudson"].sort(),
     );
+  });
+});
+
+describe("lookupChallengers — GA wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = GA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => gaDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, GA_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("GA", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Bishop excluded; the REP nominee still renders.
+    expect(out.house.some((c) => c.name === "Sanford Bishop")).toBe(false);
+    expect(out.house.map((c) => c.name)).toEqual(["Matt Day"]);
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("every GA district with a documented incumbent excludes them, every other nominee renders", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    for (const [district, incumbentName] of Object.entries(
+      GA_INCUMBENT_SAMPLE,
+    )) {
+      const houseRows = GA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e, i) => gaDbRow(e, i, "house"));
+      mockedGetDb.mockReturnValue(
+        makeSequencedDbMock([houseRows, GA_SENATE_DB_ROWS]),
+      );
+
+      const out = await lookupChallengers("GA", Number(district), 2026);
+
+      expect(out.house.some((c) => c.name === incumbentName)).toBe(false);
+      const expectedChallengers = GA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district && e.name !== incumbentName,
+      ).map((e) => e.name);
+      expect(out.house.map((c) => c.name).sort()).toEqual(
+        [...expectedChallengers].sort(),
+      );
+    }
+  });
+
+  it("open-seat districts (01, 10, 11, 13): no incumbent to exclude, both nominees render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    for (const district of GA_OPEN_SEAT_DISTRICTS) {
+      const houseRows = GA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e, i) => gaDbRow(e, i, "house"));
+      mockedGetDb.mockReturnValue(
+        makeSequencedDbMock([houseRows, GA_SENATE_DB_ROWS]),
+      );
+
+      const out = await lookupChallengers("GA", Number(district), 2026);
+
+      const expectedNames = GA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.house.map((c) => c.name).sort()).toEqual(
+        [...expectedNames].sort(),
+      );
+    }
+  });
+
+  it("senate: incumbent Ossoff excluded; the REP nominee renders as a challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = GA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => gaDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, GA_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("GA", 2, 2026);
+
+    expect(out.senate.some((c) => c.name === "Jon Ossoff")).toBe(false);
+    expect(out.senate.map((c) => c.name)).toEqual(["Mike Collins"]);
   });
 });

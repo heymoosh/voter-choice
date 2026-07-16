@@ -162,6 +162,16 @@ import {
   IN_RETRIEVED_AT,
   IN_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/in-official-roster-2026";
+import {
+  GA_STATE,
+  GA_ELECTION_YEAR,
+  GA_STAGE,
+  GA_HOUSE_SOURCE_URLS,
+  GA_SENATE_SOURCE_URLS,
+  GA_RETRIEVED_AT,
+  GA_HOUSE_ROSTER_2026,
+  GA_SENATE_ROSTER_2026,
+} from "../congressional-rosters/ga-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -425,6 +435,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: IN_HOUSE_SOURCE_URLS[0],
       retrievedAt: IN_RETRIEVED_AT,
       entries: IN_HOUSE_ROSTER_2026,
+    },
+  ],
+  GA: [
+    {
+      state: GA_STATE,
+      office: "house",
+      electionYear: GA_ELECTION_YEAR,
+      stage: GA_STAGE,
+      sourceUrl: GA_HOUSE_SOURCE_URLS[0],
+      retrievedAt: GA_RETRIEVED_AT,
+      entries: GA_HOUSE_ROSTER_2026,
+    },
+    {
+      state: GA_STATE,
+      office: "senate",
+      electionYear: GA_ELECTION_YEAR,
+      stage: GA_STAGE,
+      sourceUrl: GA_SENATE_SOURCE_URLS[0],
+      retrievedAt: GA_RETRIEVED_AT,
+      entries: GA_SENATE_ROSTER_2026,
     },
   ],
 };
