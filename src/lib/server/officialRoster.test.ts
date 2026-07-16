@@ -138,6 +138,13 @@ import {
   ME_SENATE_SOURCE_URLS,
   ME_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/me-official-roster-2026";
+import {
+  IN_HOUSE_ROSTER_2026,
+  IN_STATE,
+  IN_ELECTION_YEAR,
+  IN_HOUSE_SOURCE_URLS,
+  IN_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/in-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -556,6 +563,39 @@ const ME_SENATE_DB_ROWS = ME_SENATE_ROSTER_2026.map((e, i) =>
 // CD2, exercised separately below rather than in this sample.
 const ME_INCUMBENT_SAMPLE: Record<string, string> = {
   "01": "Chellie Pingree",
+};
+
+/** Same shape as `hiDbRow`, but for IN entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function inDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `in-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: IN_HOUSE_SOURCE_URLS[0],
+    retrievedAt: IN_RETRIEVED_AT,
+  };
+}
+
+const IN_HOUSE_DB_ROWS = IN_HOUSE_ROSTER_2026.map(inDbRow);
+
+// Every one of IN's 9 sitting US Representatives (per house.gov) won their
+// own party's primary in the same district they currently hold — no open
+// seats, no redistricting complications (see the fixture's docblock).
+const IN_INCUMBENTS: Record<string, string> = {
+  "01": "Frank J. Mrvan",
+  "02": "Rudy Yakym",
+  "03": "Marlin A. Stutzman",
+  "04": "Jim Baird",
+  "05": "Victoria Spartz",
+  "06": "Jefferson Shreve",
+  "07": "André Carson",
+  "08": "Mark Messmer",
+  "09": "Erin Houchin",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -3249,5 +3289,134 @@ describe("lookupChallengers — ME wiring (house + senate both covered)", () => 
     // fixture (vacant pending party replacement), the senate challenger
     // list is empty, not guessed.
     expect(out.senate).toEqual([]);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Indiana (IN) — house-only, no US Senate contest exists in 2026 (both IN
+// Senate seats are Class 1 / Class 3, not up this cycle). All 9 districts'
+// nominees are post-primary (STAGE = "general") — the May 5, 2026 primary is
+// fully certified. Every sitting incumbent won their own party's primary in
+// the same district they currently hold. See
+// docs/operations/indiana-vertical-slice-data-check.md for the full build,
+// including the General Candidate List's federal-office publication gap
+// (linked to an unrelated state-legislative recount) worked around via the
+// state's own certified primary-results portal.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — IN narrowing", () => {
+  it("narrows house rows to the exact district for all 9 IN districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    for (const district of Object.keys(IN_INCUMBENTS)) {
+      const out = await getOfficialRoster(
+        IN_STATE,
+        "house",
+        district,
+        IN_ELECTION_YEAR,
+      );
+      const expectedNames = IN_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("IN-01: 4 rows (2 major-party nominees + 2 write-ins), all qualified_for_general_ballot or write_in_qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      IN_STATE,
+      "house",
+      "01",
+      IN_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(4);
+    expect(out.find((r) => r.name === "Frank J. Mrvan")?.isIncumbent).toBe(
+      true,
+    );
+    expect(
+      out.find((r) => r.name === "Alexander R. (Alex) Degman")?.ballotStatus,
+    ).toBe("write_in_qualified");
+  });
+
+  it("IN-02: Libertarian nominee William Eric Henry renders qualified_for_general_ballot with party LIB", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      IN_STATE,
+      "house",
+      "02",
+      IN_ELECTION_YEAR,
+    );
+    const henry = out.find((r) => r.name === "William Eric Henry");
+    expect(henry?.party).toBe("LIB");
+    expect(henry?.ballotStatus).toBe("qualified_for_general_ballot");
+  });
+
+  it("returns [] for (senate, null) — no IN senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      IN_STATE,
+      "senate",
+      null,
+      IN_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — IN", () => {
+  it("returns true for all 9 IN districts' sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(IN_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          IN_STATE,
+          "house",
+          district,
+          IN_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — IN wiring (house-only, no senate contest)", () => {
+  it("IN-01: incumbent Frank J. Mrvan excluded; the 3 other filers (incl. 2 write-ins) all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => inDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (IN has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("IN", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Frank J. Mrvan")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Barb Regnitz",
+        "Alexander R. (Alex) Degman",
+        "Prescription Dope Deaths Johnson, Jr.",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("IN-09: incumbent Erin Houchin excluded; the 3 other filers (incl. write-in + Libertarian) all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "09",
+    ).map((e, i) => inDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("IN", 9, 2026);
+
+    expect(out.house.some((c) => c.name === "Erin Houchin")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Brad A. Meyer", "Floyd Michael Taylor", "Tonya L. Hudson"].sort(),
+    );
   });
 });
