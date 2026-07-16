@@ -100,6 +100,9 @@ const PARTY_NAMES: Record<string, string> = {
   // The Kentucky Party (Kentucky vertical slice) — a real
   // state-recognized minor party, not generic "IND".
   KYP: "Kentucky Party",
+  // Legal Marijuana Now (Nebraska vertical slice) — a real, state-
+  // recognized minor party under Nebraska election law, not generic "IND".
+  LMN: "Legal Marijuana Now",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

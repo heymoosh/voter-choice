@@ -203,6 +203,15 @@ import {
   KY_SENATE_SOURCE_URLS,
   KY_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ky-official-roster-2026";
+import {
+  NE_HOUSE_ROSTER_2026,
+  NE_SENATE_ROSTER_2026,
+  NE_STATE,
+  NE_ELECTION_YEAR,
+  NE_HOUSE_SOURCE_URLS,
+  NE_SENATE_SOURCE_URLS,
+  NE_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ne-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -897,6 +906,43 @@ const KY_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "S. Brett Guthrie",
   "03": "Morgan McGarvey",
   "05": "Hal Rogers",
+};
+
+
+/** Same shape as `meDbRow`, but for NE entries (house + senate both
+ * covered — see the fixture's docblock). */
+function neDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ne-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? NE_HOUSE_SOURCE_URLS[0] : NE_SENATE_SOURCE_URLS[0],
+    retrievedAt: NE_RETRIEVED_AT,
+  };
+}
+
+const NE_HOUSE_DB_ROWS = NE_HOUSE_ROSTER_2026.map((e, i) =>
+  neDbRow(e, i, "house"),
+);
+const NE_SENATE_DB_ROWS = NE_SENATE_ROSTER_2026.map((e, i) =>
+  neDbRow(e, i, "senate"),
+);
+
+// NE-01 (Flood) and NE-03 (Smith) are held by the sitting incumbent who won
+// their own party's primary. NE-02 is an open seat (Bacon did not file) —
+// no incumbent row exists for NE-02, exercised separately below.
+const NE_INCUMBENTS: Record<string, string> = {
+  "01": "Mike Flood",
+  "03": "Adrian Smith",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -4834,5 +4880,185 @@ describe("lookupChallengers — KY wiring (house + senate both covered)", () => 
     expect(
       out.senate.find((c) => c.name === "Christopher Campbell")?.party,
     ).toBe("Kentucky Party");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Nebraska (NE) — all 3 US House districts + the 2026 US Senate race
+// (Ricketts's seat). NE-01 and NE-03 are held by the sitting incumbent;
+// NE-02 is an open seat (Bacon did not file). 5 independent/nonpartisan
+// petition filers (incl. Senate candidate Dan Osborn) are recorded
+// `declared_general_ballot_intent`, not yet qualified. See
+// docs/operations/nebraska-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — NE narrowing", () => {
+  it("narrows house rows to the exact district for all 3 NE districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03"]) {
+      const out = await getOfficialRoster(
+        NE_STATE,
+        "house",
+        district,
+        NE_ELECTION_YEAR,
+      );
+      const expectedNames = NE_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("NE-02 (open seat): 4 rows, no isIncumbent true anywhere", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NE_STATE,
+      "house",
+      "02",
+      NE_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(4);
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    expect(
+      out.find((r) => r.name === "Christopher J. Feuerbach")?.ballotStatus,
+    ).toBe("declared_general_ballot_intent");
+  });
+
+  it("NE-03: Legal Marijuana NOW nominee renders qualified_for_general_ballot with party LMN", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NE_STATE,
+      "house",
+      "03",
+      NE_ELECTION_YEAR,
+    );
+    const else_ = out.find((r) => r.name === "David J. Else");
+    expect(else_?.party).toBe("LMN");
+    expect(else_?.ballotStatus).toBe("qualified_for_general_ballot");
+    // Two pending independent petition filers on this district, neither
+    // promoted past declared_general_ballot_intent.
+    expect(
+      out
+        .filter((r) => r.ballotStatus === "declared_general_ballot_intent")
+        .map((r) => r.name)
+        .sort(),
+    ).toEqual(["Macey Budke", "Mark Cohen"].sort());
+  });
+
+  it("senate: Osborn is declared_general_ballot_intent, not qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NE_STATE,
+      "senate",
+      null,
+      NE_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(4);
+    const osborn = out.find((r) => r.name === "Dan Osborn");
+    expect(osborn?.ballotStatus).toBe("declared_general_ballot_intent");
+    expect(out.find((r) => r.name === "Pete Ricketts")?.isIncumbent).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — NE", () => {
+  it("returns true for NE-01 and NE-03's sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(NE_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          NE_STATE,
+          "house",
+          district,
+          NE_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for NE-02 — Bacon (sitting rep) did not file, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NE_STATE,
+        "house",
+        "02",
+        NE_ELECTION_YEAR,
+        "Don Bacon",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the US Senate seat — sitting Senator Ricketts is a determined nominee", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NE_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NE_STATE,
+        "senate",
+        null,
+        NE_ELECTION_YEAR,
+        "Pete Ricketts",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — NE wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NE_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => neDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, NE_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("NE", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Flood excluded; the other 3 filers render as challengers
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Chris Backemeyer", "Nik Sandman", "Austin Ahlman"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("NE-02 (open seat): all 4 filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NE_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => neDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NE_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NE", 2, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Brinker Harding",
+        "Denise Powell",
+        "Eric Michael Foreman",
+        "Christopher J. Feuerbach",
+      ].sort(),
+    );
+  });
+
+  it("senate: Ricketts excluded as incumbent, Burbank/Marvin/Osborn all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NE_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => neDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NE_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NE", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "Pete Ricketts")).toBe(false);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Cindy Burbank", "Mike Marvin", "Dan Osborn"].sort(),
+    );
   });
 });
