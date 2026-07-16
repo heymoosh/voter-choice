@@ -107,6 +107,12 @@ exactly when a re-check is warranted without re-deriving the state's
 election calendar from scratch. If the state's official election calendar
 document/page was already fetched for other reasons during the build, no
 extra source-hunting is required — just extract the relevant dates from it.
+**Recording the dates here is not the finish line** — the build must also
+open the actual dated follow-up card so a future session (or conductor) acts
+on them automatically; see the backlog epic's "STANDING REQUIREMENT — NOT
+BEFORE DATE-GATE CONVENTION" bullet (`c5a813bb`, 2026-07-15) for the exact
+card format and the picking-rule exclusion that keeps it from being grabbed
+before its date.
 
 Plain chat/text output does not satisfy (a)-(c) or (e) — Muxin cannot click
 or navigate a truncated path, a description of a URL, or a vague "sometime
