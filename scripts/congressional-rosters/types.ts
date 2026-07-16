@@ -108,6 +108,17 @@ export interface OfficialRosterEntry {
     // (added building Minnesota, mirroring the AIP/AKP/NPP/PF/LPF/FFP
     // precedent for a state's own recognized major/minor party).
     | "DFL"
+    // Working Class Party — read verbatim from the Illinois State Board of
+    // Elections' own official candidate-filing "Party" field (the SBE portal
+    // IS the official source of truth for a candidate's recorded party
+    // affiliation here, so no separate party-list lookup was needed, unlike
+    // AIP/PF/NPP/LPF/FFP which were cross-checked against a state's
+    // published party list) (added building Illinois).
+    | "WCP"
+    // American Center Party — same sourcing basis as WCP above: read
+    // verbatim from the Illinois SBE's own official candidate-filing record
+    // (added building Illinois).
+    | "ACP"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
