@@ -195,6 +195,13 @@ import {
   MD_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/md-official-roster-2026";
 import {
+  PA_HOUSE_ROSTER_2026,
+  PA_STATE,
+  PA_ELECTION_YEAR,
+  PA_HOUSE_SOURCE_URLS,
+  PA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/pa-official-roster-2026";
+import {
   KY_HOUSE_ROSTER_2026,
   KY_SENATE_ROSTER_2026,
   KY_STATE,
@@ -982,6 +989,46 @@ const MD_INCUMBENTS: Record<string, string> = {
   "06": "April McClain Delaney",
   "07": "Kweisi Mfume",
   "08": "Jamie Raskin",
+};
+
+/** Same shape as `mdDbRow`, but for PA entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function paDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `pa-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: PA_HOUSE_SOURCE_URLS[0],
+    retrievedAt: PA_RETRIEVED_AT,
+  };
+}
+
+const PA_HOUSE_DB_ROWS = PA_HOUSE_ROSTER_2026.map(paDbRow);
+
+// CD3 is Pennsylvania's only open seat in 2026 (incumbent Dwight Evans not
+// seeking re-election — see fixture docblock); every other district's
+// nominee is the sitting incumbent per house.gov.
+const PA_INCUMBENTS: Record<string, string> = {
+  "01": "Brian Fitzpatrick",
+  "02": "Brendan F. Boyle",
+  "04": "Madeleine Dean",
+  "05": "Mary Gay Scanlon",
+  "06": "Chrissy Houlahan",
+  "07": "Ryan Mackenzie",
+  "08": "Rob Bresnahan Jr.",
+  "09": "Dan Meuser",
+  "10": "Scott Perry",
+  "11": "Lloyd K. Smucker",
+  "12": "Summer Lee",
+  "13": "John Joyce",
+  "14": "Guy Reschenthaler",
+  "15": 'Glenn "GT" Thompson',
+  "16": "Mike Kelly",
+  "17": "Chris Deluzio",
 };
 
 /** Same shape as `arDbRow`, but for KY entries. */
@@ -7026,5 +7073,141 @@ describe("lookupChallengers — OR wiring (house + senate both covered)", () => 
     expect(out.senate.find((c) => c.name === "David Brock Smith")?.party).toBe(
       "Republican",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Pennsylvania — no prior F03/I06/I11 rehearsal; this build's source
+// research started cold. Not Civix-vended (electionreturns.pa.gov is a
+// Commonwealth-branded results portal, pavoterservices.pa.gov's candidate
+// database is a plain ASP.NET/DataTables site — neither matches the Civix
+// URL pattern or footer). Pennsylvania's May 19, 2026 primary is already
+// certified (Secretary of the Commonwealth press release, June 17, 2026).
+// CD3 is the sole open seat (incumbent Dwight Evans not seeking
+// re-election) and also the only district with no Republican nominee — see
+// docs/operations/pennsylvania-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — PA narrowing", () => {
+  it("narrows house rows to the exact district for every PA district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(PA_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "17",
+    ]) {
+      const out = await getOfficialRoster(
+        PA_STATE,
+        "house",
+        district,
+        PA_ELECTION_YEAR,
+      );
+      const expectedNames = PA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("PA-03: open seat — 1 row (Chris Rabb, DEM), no Republican nominee, no isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(PA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      PA_STATE,
+      "house",
+      "03",
+      PA_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(1);
+    expect(out[0].name).toBe("Chris Rabb");
+    expect(out[0].party).toBe("DEM");
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+
+  it("returns [] for (senate, null) — no PA senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      PA_STATE,
+      "senate",
+      null,
+      PA_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — PA", () => {
+  it("returns true for every district whose sitting incumbent filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(PA_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(PA_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          PA_STATE,
+          "house",
+          district,
+          PA_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for CD3 (Evans not a candidate — open seat)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(PA_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        PA_STATE,
+        "house",
+        "03",
+        PA_ELECTION_YEAR,
+        "Dwight Evans",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — PA wiring (house-only, no senate contest)", () => {
+  it("PA-01: incumbent Brian Fitzpatrick excluded; Bob Harvie renders as challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = PA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => paDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (PA has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("PA", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Brian Fitzpatrick")).toBe(false);
+    expect(out.house.map((c) => c.name)).toEqual(["Bob Harvie"]);
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("PA-03 (open seat): sole filer Chris Rabb renders as challenger, no incumbent excluded", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = PA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => paDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("PA", 3, 2026);
+
+    expect(out.house.map((c) => c.name)).toEqual(["Chris Rabb"]);
   });
 });
