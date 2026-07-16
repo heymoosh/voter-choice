@@ -93,6 +93,10 @@ const PARTY_NAMES: Record<string, string> = {
   // Florida Forward Party (Florida vertical slice) — a real
   // state-recognized minor party, not generic "IND".
   FFP: "Florida Forward Party",
+  // Iowa's own "No Party" ballot designation for a nomination-by-petition
+  // candidate (Iowa vertical slice) — the Iowa SoS's official candidate
+  // list literally prints "No Party", distinct from generic "IND".
+  NPI: "No Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name
