@@ -246,6 +246,15 @@ import {
   MT_SENATE_SOURCE_URLS,
   MT_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/mt-official-roster-2026";
+import {
+  NJ_HOUSE_ROSTER_2026,
+  NJ_SENATE_ROSTER_2026,
+  NJ_STATE,
+  NJ_ELECTION_YEAR,
+  NJ_HOUSE_SOURCE_URLS,
+  NJ_SENATE_SOURCE_URLS,
+  NJ_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/nj-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -750,6 +759,50 @@ function inDbRow(entry: OfficialRosterEntry, idx: number) {
 }
 
 const IN_HOUSE_DB_ROWS = IN_HOUSE_ROSTER_2026.map(inDbRow);
+
+/** Same shape as `okDbRow`, but for NJ entries. */
+function njDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `nj-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? NJ_HOUSE_SOURCE_URLS[0] : NJ_SENATE_SOURCE_URLS[0],
+    retrievedAt: NJ_RETRIEVED_AT,
+  };
+}
+
+const NJ_HOUSE_DB_ROWS = NJ_HOUSE_ROSTER_2026.map((e, i) =>
+  njDbRow(e, i, "house"),
+);
+const NJ_SENATE_DB_ROWS = NJ_SENATE_ROSTER_2026.map((e, i) =>
+  njDbRow(e, i, "senate"),
+);
+
+// NJ-12 is the only open House seat (Watson Coleman not seeking
+// re-election); every other district's winning nominee is the sitting
+// incumbent (per house.gov, current as of this build).
+const NJ_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "DONALD NORCROSS",
+  "02": "JEFF VAN DREW",
+  "03": "HERB CONAWAY",
+  "04": "CHRISTOPHER H. SMITH",
+  "05": "JOSH GOTTHEIMER",
+  "06": "FRANK PALLONE JR.",
+  "07": "THOMAS H. KEAN JR.",
+  "08": "ROB MENENDEZ",
+  "09": "NELIDA POU",
+  "10": "LAMONICA R. MCIVER",
+  "11": "ANALILIA MEJIA",
+};
 
 // Every one of IN's 9 sitting US Representatives (per house.gov) won their
 // own party's primary in the same district they currently hold — no open
@@ -6019,6 +6072,301 @@ describe("lookupChallengers — MT wiring (house + senate both covered)", () => 
     );
     expect(out.senate.find((c) => c.name === "Alani Bankhead")?.party).toBe(
       "Democrat",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Indiana (IN) — house-only, no US Senate contest exists in 2026 (both IN
+// Senate seats are Class 1 / Class 3, not up this cycle). All 9 districts'
+// nominees are post-primary (STAGE = "general") — the May 5, 2026 primary is
+// fully certified. Every sitting incumbent won their own party's primary in
+// the same district they currently hold. See
+// docs/operations/indiana-vertical-slice-data-check.md for the full build,
+// including the General Candidate List's federal-office publication gap
+// (linked to an unrelated state-legislative recount) worked around via the
+// state's own certified primary-results portal.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — IN narrowing", () => {
+  it("narrows house rows to the exact district for all 9 IN districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    for (const district of Object.keys(IN_INCUMBENTS)) {
+      const out = await getOfficialRoster(
+        IN_STATE,
+        "house",
+        district,
+        IN_ELECTION_YEAR,
+      );
+      const expectedNames = IN_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("IN-01: 4 rows (2 major-party nominees + 2 write-ins), all qualified_for_general_ballot or write_in_qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      IN_STATE,
+      "house",
+      "01",
+      IN_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(4);
+    expect(out.find((r) => r.name === "Frank J. Mrvan")?.isIncumbent).toBe(
+      true,
+    );
+    expect(
+      out.find((r) => r.name === "Alexander R. (Alex) Degman")?.ballotStatus,
+    ).toBe("write_in_qualified");
+  });
+
+  it("IN-02: Libertarian nominee William Eric Henry renders qualified_for_general_ballot with party LIB", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      IN_STATE,
+      "house",
+      "02",
+      IN_ELECTION_YEAR,
+    );
+    const henry = out.find((r) => r.name === "William Eric Henry");
+    expect(henry?.party).toBe("LIB");
+    expect(henry?.ballotStatus).toBe("qualified_for_general_ballot");
+  });
+
+  it("returns [] for (senate, null) — no IN senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      IN_STATE,
+      "senate",
+      null,
+      IN_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — IN", () => {
+  it("returns true for all 9 IN districts' sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IN_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(IN_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          IN_STATE,
+          "house",
+          district,
+          IN_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — IN wiring (house-only, no senate contest)", () => {
+  it("IN-01: incumbent Frank J. Mrvan excluded; the 3 other filers (incl. 2 write-ins) all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => inDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (IN has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("IN", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Frank J. Mrvan")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Barb Regnitz",
+        "Alexander R. (Alex) Degman",
+        "Prescription Dope Deaths Johnson, Jr.",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("IN-09: incumbent Erin Houchin excluded; the 3 other filers (incl. write-in + Libertarian) all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "09",
+    ).map((e, i) => inDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("IN", 9, 2026);
+
+    expect(out.house.some((c) => c.name === "Erin Houchin")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Brad A. Meyer", "Floyd Michael Taylor", "Tonya L. Hudson"].sort(),
+    );
+  });
+});
+
+describe("getOfficialRoster — NJ narrowing", () => {
+  it("narrows house rows to the exact district for all 12 NJ districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NJ_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+    ]) {
+      const out = await getOfficialRoster(
+        NJ_STATE,
+        "house",
+        district,
+        NJ_ELECTION_YEAR,
+      );
+      const expectedNames = NJ_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 4 NJ senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NJ_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NJ_STATE,
+      "senate",
+      null,
+      NJ_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(NJ_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...NJ_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      NJ_STATE,
+      "house",
+      "01",
+      NJ_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("NJ-08: no runoff_pending anywhere (NJ holds no primary runoffs) and no Republican nominee for this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NJ_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NJ_STATE,
+      "house",
+      "08",
+      NJ_ELECTION_YEAR,
+    );
+    expect(out.some((r) => r.ballotStatus === "runoff_pending")).toBe(false);
+    expect(out.some((r) => r.party === "REP")).toBe(false);
+    expect(out.find((r) => r.name === "ROB MENENDEZ")?.isIncumbent).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — NJ", () => {
+  it("returns true for every NJ district except the NJ-12 open seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NJ_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      NJ_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          NJ_STATE,
+          "house",
+          district,
+          NJ_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for NJ-12 — Watson Coleman did not file for re-election, no incumbent row on this open seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NJ_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NJ_STATE,
+        "house",
+        "12",
+        NJ_ELECTION_YEAR,
+        "Bonnie Watson Coleman",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the US Senate seat — Booker (sitting senator) is the Democratic nominee", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NJ_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NJ_STATE,
+        "senate",
+        null,
+        NJ_ELECTION_YEAR,
+        "Cory Booker",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — NJ wiring (house + senate both covered)", () => {
+  it("NJ-02: incumbent Van Drew excluded; the Democratic nominee and the declared independent both render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NJ_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => njDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, NJ_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("NJ", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    expect(out.house.some((c) => c.name === "JEFF VAN DREW")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["ZACK MULLOCK", "RAMON MORA JR."].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("NJ-12 (open seat): both major-party nominees and both minor-party filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NJ_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "12",
+    ).map((e, i) => njDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NJ_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NJ", 12, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["ADAM HAMAWY", "GREGG MELE", "ANDRES JINETE", "WINSTON JORDAN"].sort(),
+    );
+  });
+
+  it("senate: incumbent Booker excluded; the Republican nominee and both declared minor-party filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NJ_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => njDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NJ_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NJ", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "CORY BOOKER")).toBe(false);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["JUSTIN MURPHY", "VERONICA FERNANDEZ", "JOANNE KUNIANSKY"].sort(),
     );
   });
 });

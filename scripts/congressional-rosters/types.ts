@@ -119,6 +119,13 @@ export interface OfficialRosterEntry {
     // verbatim from the Illinois SBE's own official candidate-filing record
     // (added building Illinois).
     | "ACP"
+    // Socialist Workers Party — a real, nationally-recognized minor party
+    // (not a one-off candidate-chosen ballot slogan), confirmed by two
+    // independent 2026 New Jersey federal filings under this exact party
+    // name (a US Senate candidate and a US House candidate), distinct from
+    // generic IND (added building New Jersey, mirroring the GRE/LIB/AIP/
+    // AKP/NPP/PF/LPF/FFP precedent for a real recognized minor party).
+    | "SWP"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;

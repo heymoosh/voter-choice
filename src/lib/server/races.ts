@@ -108,6 +108,10 @@ const PARTY_NAMES: Record<string, string> = {
   // generic "DEM"; the official candidates.sos.mn.gov portal lists this
   // verbatim as the party name.
   DFL: "Democratic-Farmer-Labor",
+  // Socialist Workers Party (New Jersey vertical slice) — a real,
+  // nationally-recognized minor party appearing identically across two
+  // unrelated 2026 NJ federal filings, not generic "IND".
+  SWP: "Socialist Workers Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name
