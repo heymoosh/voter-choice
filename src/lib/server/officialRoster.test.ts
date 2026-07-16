@@ -273,6 +273,15 @@ import {
   NC_SENATE_SOURCE_URLS,
   NC_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/nc-official-roster-2026";
+import {
+  OR_HOUSE_ROSTER_2026,
+  OR_SENATE_ROSTER_2026,
+  OR_STATE,
+  OR_ELECTION_YEAR,
+  OR_HOUSE_SOURCE_URLS,
+  OR_SENATE_SOURCE_URLS,
+  OR_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/or-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1280,6 +1289,44 @@ const NC_INCUMBENT_SAMPLE: Record<string, string> = {
   "09": "Richard Hudson",
   "12": "Alma S. Adams",
   "14": "Tim Moore",
+};
+
+/** Same shape as `kyDbRow`, but for OR entries. */
+function orDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `or-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? OR_HOUSE_SOURCE_URLS[0] : OR_SENATE_SOURCE_URLS[0],
+    retrievedAt: OR_RETRIEVED_AT,
+  };
+}
+
+const OR_HOUSE_DB_ROWS = OR_HOUSE_ROSTER_2026.map((e, i) =>
+  orDbRow(e, i, "house"),
+);
+const OR_SENATE_DB_ROWS = OR_SENATE_ROSTER_2026.map((e, i) =>
+  orDbRow(e, i, "senate"),
+);
+
+// All 6 OR House seats + the Senate seat have a sitting incumbent seeking
+// re-election — no open seats (see the fixture's docblock).
+const OR_INCUMBENTS: Record<string, string> = {
+  "01": "Suzanne Bonamici",
+  "02": "Cliff Bentz",
+  "03": "Maxine E Dexter",
+  "04": "Val Hoyle",
+  "05": "Janelle S Bynum",
+  "06": "Andrea Salinas",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -6819,6 +6866,165 @@ describe("lookupChallengers — NC wiring (house + senate both covered)", () => 
     );
     expect(out.senate.find((c) => c.name === "Michael Dublin")?.party).toBe(
       "Green",
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Oregon — built with a certified May 19, 2026 primary already behind it;
+// this fixture carries only determined general-ballot nominees. ALL 6 House
+// incumbents plus the sitting Senator won their own primary — no open
+// seats, no new party code (every row is DEM or REP; no independent,
+// minor-party, or write-in candidate had filed as of retrieval — that
+// filing window was still open, see the fixture's docblock). See
+// docs/operations/oregon-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — OR narrowing", () => {
+  it("narrows house rows to the exact district for all 6 OR districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OR_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06"]) {
+      const out = await getOfficialRoster(
+        OR_STATE,
+        "house",
+        district,
+        OR_ELECTION_YEAR,
+      );
+      const expectedNames = OR_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 2 OR senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OR_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      OR_STATE,
+      "senate",
+      null,
+      OR_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(OR_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...OR_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      OR_STATE,
+      "house",
+      "01",
+      OR_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every OR row is qualified_for_general_ballot — no runoff_pending, no non-DEM/REP party anywhere", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([...OR_HOUSE_DB_ROWS, ...OR_SENATE_DB_ROWS]),
+    );
+    const allRows = [...OR_HOUSE_ROSTER_2026, ...OR_SENATE_ROSTER_2026];
+    expect(
+      allRows.every((e) => e.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+    expect(allRows.every((e) => e.party === "DEM" || e.party === "REP")).toBe(
+      true,
+    );
+  });
+
+  it("OR-5: Adair (REP) is the ballot nominee, not Lockwood — resolves the pre-primary 4-name ambiguity", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OR_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      OR_STATE,
+      "house",
+      "05",
+      OR_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Janelle S Bynum", "Patti Adair"].sort(),
+    );
+    expect(out.some((r) => r.name === "Jonathan Lockwood")).toBe(false);
+    expect(out.some((r) => r.name === "Jo Rae Perkins")).toBe(false);
+  });
+});
+
+describe("isIncumbentSeekingReelection — OR", () => {
+  it("returns true for all 6 OR House districts' sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OR_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(OR_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          OR_STATE,
+          "house",
+          district,
+          OR_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the Senate seat — Jeff Merkley (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OR_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        OR_STATE,
+        "senate",
+        null,
+        OR_ELECTION_YEAR,
+        "Jeff Merkley",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — OR wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OR_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => orDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, OR_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("OR", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Bentz excluded; Beck (the crowded-primary DEM winner) renders
+    expect(out.house.map((c) => c.name)).toEqual(["Chris Beck"]);
+    expect(out.house.some((c) => c.name === "Cliff Bentz")).toBe(false);
+  });
+
+  it("OR-5: incumbent Bynum excluded; Adair (REP nominee) renders as the sole challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OR_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "05",
+    ).map((e, i) => orDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, OR_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("OR", 5, 2026);
+
+    expect(out.house.map((c) => c.name)).toEqual(["Patti Adair"]);
+    expect(out.house.some((c) => c.name === "Janelle S Bynum")).toBe(false);
+  });
+
+  it("senate: incumbent Merkley excluded; David Brock Smith (REP nominee) renders as the sole challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OR_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => orDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, OR_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("OR", 2, 2026);
+
+    expect(out.senate.map((c) => c.name)).toEqual(["David Brock Smith"]);
+    expect(out.senate.some((c) => c.name === "Jeff Merkley")).toBe(false);
+    expect(out.senate.find((c) => c.name === "David Brock Smith")?.party).toBe(
+      "Republican",
     );
   });
 });
