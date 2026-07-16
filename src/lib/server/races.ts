@@ -87,6 +87,12 @@ const PARTY_NAMES: Record<string, string> = {
   // California's Peace and Freedom Party (California vertical slice) — a
   // real state-recognized minor party, not generic "IND".
   PF: "Peace and Freedom",
+  // Libertarian Party of Florida (Florida vertical slice) — a real
+  // state-recognized minor party, not generic "IND".
+  LPF: "Libertarian Party of Florida",
+  // Florida Forward Party (Florida vertical slice) — a real
+  // state-recognized minor party, not generic "IND".
+  FFP: "Florida Forward Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name
