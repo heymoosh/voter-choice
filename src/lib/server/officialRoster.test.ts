@@ -264,6 +264,15 @@ import {
   MS_SENATE_SOURCE_URLS,
   MS_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ms-official-roster-2026";
+import {
+  NC_HOUSE_ROSTER_2026,
+  NC_SENATE_ROSTER_2026,
+  NC_STATE,
+  NC_ELECTION_YEAR,
+  NC_HOUSE_SOURCE_URLS,
+  NC_SENATE_SOURCE_URLS,
+  NC_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/nc-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1232,6 +1241,45 @@ const MS_INCUMBENTS: Record<string, string> = {
   "02": "Bennie G. Thompson",
   "03": "Michael Guest",
   "04": "Mike Ezell",
+};
+
+/** Same shape as `kyDbRow`, but for NC entries. */
+function ncDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `nc-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? NC_HOUSE_SOURCE_URLS[0] : NC_SENATE_SOURCE_URLS[0],
+    retrievedAt: NC_RETRIEVED_AT,
+  };
+}
+
+const NC_HOUSE_DB_ROWS = NC_HOUSE_ROSTER_2026.map((e, i) =>
+  ncDbRow(e, i, "house"),
+);
+const NC_SENATE_DB_ROWS = NC_SENATE_ROSTER_2026.map((e, i) =>
+  ncDbRow(e, i, "senate"),
+);
+
+// No open US House seat in North Carolina this cycle — all 14 sitting
+// representatives filed for re-election and are their district's winning
+// nominee. No incumbent Senator (Tillis not seeking re-election).
+const NC_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Don Davis",
+  "03": "Greg Murphy",
+  "05": "Virginia Foxx",
+  "09": "Richard Hudson",
+  "12": "Alma S. Adams",
+  "14": "Tim Moore",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -6584,6 +6632,193 @@ describe("lookupChallengers — MS wiring (house + senate both covered)", () => 
     expect(out.senate.some((c) => c.name === "Cindy Hyde-Smith")).toBe(false);
     expect(out.senate.map((c) => c.name).sort()).toEqual(
       ["Scott Colom", "Ty Pinkins"].sort(),
+    );
+  });
+});
+
+describe("getOfficialRoster — NC narrowing", () => {
+  it("narrows house rows to the exact district for every NC district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NC_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+    ]) {
+      const out = await getOfficialRoster(
+        NC_STATE,
+        "house",
+        district,
+        NC_ELECTION_YEAR,
+      );
+      const expectedNames = NC_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 4 NC senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NC_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NC_STATE,
+      "senate",
+      null,
+      NC_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(NC_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...NC_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      NC_STATE,
+      "house",
+      "01",
+      NC_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every NC row is qualified_for_general_ballot — no runoff_pending anywhere (both North Carolina's March 3 primary and May 12 second primary are already resolved)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NC_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      NC_STATE,
+      "house",
+      "01",
+      NC_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(NC_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NC_STATE,
+      "senate",
+      null,
+      NC_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+
+  it("Green Party nominees (Dublin — Senate, Whitehead — NC-8) carry party GRE", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NC_HOUSE_DB_ROWS));
+    const d8 = await getOfficialRoster(
+      NC_STATE,
+      "house",
+      "08",
+      NC_ELECTION_YEAR,
+    );
+    expect(d8.find((r) => r.name === "Bo Whitehead")?.party).toBe("GRE");
+
+    mockedGetDb.mockReturnValue(makeDbMock(NC_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NC_STATE,
+      "senate",
+      null,
+      NC_ELECTION_YEAR,
+    );
+    expect(senate.find((r) => r.name === "Michael Dublin")?.party).toBe("GRE");
+  });
+});
+
+describe("isIncumbentSeekingReelection — NC", () => {
+  it("returns true for every sampled NC district — the winning nominee is the sitting incumbent (no open US House seat this cycle)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NC_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      NC_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          NC_STATE,
+          "house",
+          district,
+          NC_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for the US Senate seat — Tillis (sitting senator) did not file for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NC_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NC_STATE,
+        "senate",
+        null,
+        NC_ELECTION_YEAR,
+        "Thom Tillis",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — NC wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NC_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => ncDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, NC_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("NC", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Davis excluded; Buckhout (R) and Bailey (LIB) render.
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Laurie Buckhout", "Tom Bailey"].sort(),
+    );
+  });
+
+  it("NC-6 (a district with no Libertarian filer): both remaining filers render, incumbent excluded", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NC_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "06",
+    ).map((e, i) => ncDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NC_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NC", 6, 2026);
+
+    expect(out.house.map((c) => c.name)).toEqual(["Cyril Jefferson"]);
+    expect(out.house.some((c) => c.name === "Addison McDowell")).toBe(false);
+  });
+
+  it("senate: all four filers render as challengers, none excluded (open seat, no incumbent); Green Party nominee maps to display name Green", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NC_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => ncDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NC_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NC", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      NC_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "Roy Cooper")?.party).toBe(
+      "Democrat",
+    );
+    expect(out.senate.find((c) => c.name === "Michael Dublin")?.party).toBe(
+      "Green",
     );
   });
 });
