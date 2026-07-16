@@ -103,6 +103,16 @@ import {
   AR_SENATE_SOURCE_URLS,
   AR_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ar-official-roster-2026";
+import {
+  DE_HOUSE_ROSTER_2026,
+  DE_SENATE_ROSTER_2026,
+  DE_STATE,
+  DE_ELECTION_YEAR,
+  DE_HOUSE_DISTRICT,
+  DE_HOUSE_SOURCE_URLS,
+  DE_SENATE_SOURCE_URLS,
+  DE_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/de-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -380,6 +390,34 @@ const AR_INCUMBENT_SAMPLE: Record<string, string> = {
   "03": "Congressman Steve Womack",
   "04": "Congressman Bruce Westerman",
 };
+
+/** Same shape as `akDbRow`, but for DE entries — the House side uses
+ * district "00" (at-large), same convention as Alaska. */
+function deDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `de-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? DE_HOUSE_SOURCE_URLS[0] : DE_SENATE_SOURCE_URLS[0],
+    retrievedAt: DE_RETRIEVED_AT,
+  };
+}
+
+const DE_HOUSE_DB_ROWS = DE_HOUSE_ROSTER_2026.map((e, i) =>
+  deDbRow(e, i, "house"),
+);
+const DE_SENATE_DB_ROWS = DE_SENATE_ROSTER_2026.map((e, i) =>
+  deDbRow(e, i, "senate"),
+);
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -2314,6 +2352,177 @@ describe("lookupChallengers — AR wiring (house + senate both covered)", () => 
       ["Hallie Shoffner", "Jeff Wadlin"].sort(),
     );
     expect(out.senate.some((c) => c.name === "Senator Tom Cotton")).toBe(false);
+    for (const c of out.senate) {
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+});
+// ---------------------------------------------------------------------------
+// Delaware — eighth state built through this pipeline. At-large House seat
+// (district "00", same convention as Alaska). The September 15, 2026 primary
+// had not yet occurred at transcription time, so every contested-primary row
+// is "qualified_for_primary_ballot"; the sole unopposed House Democrat
+// (McBride) is "qualified_for_general_ballot" instead — no runoff_pending
+// rows (Delaware has no runoff). See
+// docs/operations/delaware-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — DE narrowing", () => {
+  it("returns all DE house rows for the at-large district key ('00'), none for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(DE_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      DE_STATE,
+      "house",
+      DE_HOUSE_DISTRICT,
+      DE_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [...DE_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const wrongDistrict = await getOfficialRoster(
+      DE_STATE,
+      "house",
+      "01",
+      DE_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+
+  it("returns all DE senate rows for (senate, null), none for the house district key in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(DE_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      DE_STATE,
+      "senate",
+      null,
+      DE_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(DE_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...DE_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      DE_STATE,
+      "house",
+      DE_HOUSE_DISTRICT,
+      DE_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every DE senate row is qualified_for_primary_ballot — the Sept 15, 2026 primary had not yet happened at transcription time", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(DE_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      DE_STATE,
+      "senate",
+      null,
+      DE_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+
+  it("DE house: McBride (unopposed within her party) is qualified_for_general_ballot; every contested REP primary filer is qualified_for_primary_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(DE_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      DE_STATE,
+      "house",
+      DE_HOUSE_DISTRICT,
+      DE_ELECTION_YEAR,
+    );
+    expect(house.find((r) => r.name === "Sarah McBride")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    const repFilers = house.filter((r) => r.name !== "Sarah McBride");
+    expect(repFilers.length).toBeGreaterThan(0);
+    expect(
+      repFilers.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — DE", () => {
+  it("returns true for the House seat — McBride (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(DE_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        DE_STATE,
+        "house",
+        DE_HOUSE_DISTRICT,
+        DE_ELECTION_YEAR,
+        "Sarah McBride",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns true for the Senate seat — Coons (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(DE_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        DE_STATE,
+        "senate",
+        null,
+        DE_ELECTION_YEAR,
+        "Chris Coons",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — DE wiring (at-large house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3); a numeric district of 0 resolves the at-large seat", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const dbMock = makeSequencedDbMock([DE_HOUSE_DB_ROWS, DE_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("DE", 0, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent McBride excluded from the house challenger list
+    expect(out.house.some((c) => c.name === "Sarah McBride")).toBe(false);
+    expect(out.house.length).toBe(DE_HOUSE_ROSTER_2026.length - 1);
+  });
+
+  it("house: the four contested REP primary filers render as challengers with mapped party name, none flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([DE_HOUSE_DB_ROWS, DE_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("DE", 0, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Earl Cooper",
+        "John J. Whalen",
+        'Joseph "Dr. Joe" Arminio',
+        "Lee Murphy",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.party).toBe("Republican");
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("senate: incumbent Coons excluded; the other five contested-primary filers render as challengers, none flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([DE_HOUSE_DB_ROWS, DE_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("DE", 0, 2026);
+
+    expect(out.senate.some((c) => c.name === "Chris Coons")).toBe(false);
+    expect(out.senate.length).toBe(DE_SENATE_ROSTER_2026.length - 1);
+    expect(
+      out.senate.find((c) => c.name === 'Michael "Dr. Mike" Katz')?.party,
+    ).toBe("Republican");
+    expect(out.senate.find((c) => c.name === "Jeff Appelhans")?.party).toBe(
+      "Democrat",
+    );
     for (const c of out.senate) {
       expect(c.isRunoffPending).toBe(false);
     }
