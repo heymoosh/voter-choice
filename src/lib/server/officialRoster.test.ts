@@ -129,6 +129,15 @@ import {
   HI_HOUSE_SOURCE_URLS,
   HI_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/hi-official-roster-2026";
+import {
+  ME_HOUSE_ROSTER_2026,
+  ME_SENATE_ROSTER_2026,
+  ME_STATE,
+  ME_ELECTION_YEAR,
+  ME_HOUSE_SOURCE_URLS,
+  ME_SENATE_SOURCE_URLS,
+  ME_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/me-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -513,6 +522,40 @@ const HI_HOUSE_DB_ROWS = HI_HOUSE_ROSTER_2026.map(hiDbRow);
 const HI_INCUMBENTS: Record<string, string> = {
   "01": "Ed Case",
   "02": "Jill N. Tokuda",
+};
+
+/** Same shape as `deDbRow`, but for ME entries. */
+function meDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `me-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? ME_HOUSE_SOURCE_URLS[0] : ME_SENATE_SOURCE_URLS[0],
+    retrievedAt: ME_RETRIEVED_AT,
+  };
+}
+
+const ME_HOUSE_DB_ROWS = ME_HOUSE_ROSTER_2026.map((e, i) =>
+  meDbRow(e, i, "house"),
+);
+const ME_SENATE_DB_ROWS = ME_SENATE_ROSTER_2026.map((e, i) =>
+  meDbRow(e, i, "senate"),
+);
+
+// CD1's winning nominee IS the sitting incumbent (Pingree). CD2 is an open
+// seat (Golden did not file for re-election) — no incumbent row exists for
+// CD2, exercised separately below rather than in this sample.
+const ME_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Chellie Pingree",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -3032,5 +3075,179 @@ describe("lookupChallengers — HI wiring (house-only, no senate contest)", () =
         "Randall Terry",
       ].sort(),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Maine (ME) — both chambers, general-stage (the June 9, 2026 primary is
+// already past). CD2 is an open seat (Golden did not file for re-election).
+// The Senate DEM slot has NO row — Platner won the primary outright but
+// withdrew 2026-07-10; the party's replacement-nomination deadline is
+// 2026-07-27, not yet resolved at fixture-transcription time. See the
+// fixture's own docblock and
+// docs/operations/maine-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — ME narrowing", () => {
+  it("narrows house rows to the exact district for both ME districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        ME_STATE,
+        "house",
+        district,
+        ME_ELECTION_YEAR,
+      );
+      const expectedNames = ME_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the single ME senate row (Collins) for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      ME_STATE,
+      "senate",
+      null,
+      ME_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(1);
+    expect(senate[0].name).toBe("Susan Collins");
+
+    const houseInSenateRowset = await getOfficialRoster(
+      ME_STATE,
+      "house",
+      "01",
+      ME_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("ME-01: both determined nominees present, incumbent Pingree carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      ME_STATE,
+      "house",
+      "01",
+      ME_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Chellie Pingree", "Ronald C. Russell"].sort(),
+    );
+    expect(out.find((r) => r.name === "Chellie Pingree")?.isIncumbent).toBe(
+      true,
+    );
+  });
+
+  it("ME-02 (open seat): both nominees present, neither carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      ME_STATE,
+      "house",
+      "02",
+      ME_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Matthew Dunlap", "Paul R. LePage"].sort(),
+    );
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — ME", () => {
+  it("returns true for ME-01 — the winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      ME_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          ME_STATE,
+          "house",
+          district,
+          ME_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for ME-02 — Golden (sitting rep) did not file for re-election, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        ME_STATE,
+        "house",
+        "02",
+        ME_ELECTION_YEAR,
+        "Jared Golden",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the US Senate seat — sitting Senator Collins is a determined nominee", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ME_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        ME_STATE,
+        "senate",
+        null,
+        ME_ELECTION_YEAR,
+        "Susan Collins",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — ME wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = ME_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => meDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, ME_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("ME", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Pingree excluded; the Republican nominee renders as a challenger
+    expect(out.house.map((c) => c.name)).toEqual(["Ronald C. Russell"]);
+  });
+
+  it("ME-02 (open seat): both party nominees render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = ME_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => meDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, ME_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("ME", 2, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Matthew Dunlap", "Paul R. LePage"].sort(),
+    );
+  });
+
+  it("senate: only Collins is a determined nominee — no phantom DEM challenger rendered", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = ME_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => meDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, ME_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("ME", 1, 2026);
+
+    // Collins is the incumbent — excluded from her own seat's challenger
+    // list, same contract as every other state. With no DEM row in the
+    // fixture (vacant pending party replacement), the senate challenger
+    // list is empty, not guessed.
+    expect(out.senate).toEqual([]);
   });
 });
