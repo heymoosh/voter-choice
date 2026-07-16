@@ -97,6 +97,9 @@ const PARTY_NAMES: Record<string, string> = {
   // candidate (Iowa vertical slice) — the Iowa SoS's official candidate
   // list literally prints "No Party", distinct from generic "IND".
   NPI: "No Party",
+  // The Kentucky Party (Kentucky vertical slice) — a real
+  // state-recognized minor party, not generic "IND".
+  KYP: "Kentucky Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

@@ -194,6 +194,15 @@ import {
   MD_HOUSE_SOURCE_URLS,
   MD_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/md-official-roster-2026";
+import {
+  KY_HOUSE_ROSTER_2026,
+  KY_SENATE_ROSTER_2026,
+  KY_STATE,
+  KY_ELECTION_YEAR,
+  KY_HOUSE_SOURCE_URLS,
+  KY_SENATE_SOURCE_URLS,
+  KY_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ky-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -850,6 +859,44 @@ const MD_INCUMBENTS: Record<string, string> = {
   "06": "April McClain Delaney",
   "07": "Kweisi Mfume",
   "08": "Jamie Raskin",
+};
+
+/** Same shape as `arDbRow`, but for KY entries. */
+function kyDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ky-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? KY_HOUSE_SOURCE_URLS[0] : KY_SENATE_SOURCE_URLS[0],
+    retrievedAt: KY_RETRIEVED_AT,
+  };
+}
+
+const KY_HOUSE_DB_ROWS = KY_HOUSE_ROSTER_2026.map((e, i) =>
+  kyDbRow(e, i, "house"),
+);
+const KY_SENATE_DB_ROWS = KY_SENATE_ROSTER_2026.map((e, i) =>
+  kyDbRow(e, i, "senate"),
+);
+
+// KY-4 and KY-6 are open seats (Massie lost his own primary; Barr filed
+// for Senate instead of re-election) — the other 4 districts' winning
+// nominee is the sitting incumbent. No incumbent Senator (McConnell not
+// seeking re-election).
+const KY_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "James R. Comer",
+  "02": "S. Brett Guthrie",
+  "03": "Morgan McGarvey",
+  "05": "Hal Rogers",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -4512,5 +4559,280 @@ describe("lookupChallengers — MD wiring (house-only, no senate contest)", () =
         "Mildred Marie Hall",
       ].sort(),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Kentucky — tenth state built through this pipeline. Not Civix-vended (a
+// plain server-rendered SoS portal); the "2026 General Election" filing
+// list is already the settled post-primary nominee set (May 19, 2026
+// primary already occurred). Two open seats for two different reasons:
+// KY-4 (sitting Rep. Massie lost his own primary to Gallrein) and KY-6
+// (sitting Rep. Barr filed for Senate instead). See
+// docs/operations/kentucky-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — KY narrowing", () => {
+  it("narrows house rows to the exact district for every KY district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06"]) {
+      const out = await getOfficialRoster(
+        KY_STATE,
+        "house",
+        district,
+        KY_ELECTION_YEAR,
+      );
+      const expectedNames = KY_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 4 KY senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      KY_STATE,
+      "senate",
+      null,
+      KY_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(KY_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...KY_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      KY_STATE,
+      "house",
+      "01",
+      KY_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every KY row is qualified_for_general_ballot, declared_general_ballot_intent, or write_in_qualified — no runoff_pending anywhere (KY has no federal runoff primary)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      KY_STATE,
+      "house",
+      "01",
+      KY_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) =>
+        [
+          "qualified_for_general_ballot",
+          "declared_general_ballot_intent",
+          "write_in_qualified",
+        ].includes(r.ballotStatus),
+      ),
+    ).toBe(true);
+  });
+
+  it("Kentucky Party nominees (Ahmad, Lynch, Campbell) carry party KYP", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    const d4 = await getOfficialRoster(
+      KY_STATE,
+      "house",
+      "04",
+      KY_ELECTION_YEAR,
+    );
+    expect(d4.find((r) => r.name === "Mohammad Wael Ahmad")?.party).toBe("KYP");
+    const d6 = await getOfficialRoster(
+      KY_STATE,
+      "house",
+      "06",
+      KY_ELECTION_YEAR,
+    );
+    expect(d6.find((r) => r.name === "Pete Lynch")?.party).toBe("KYP");
+
+    mockedGetDb.mockReturnValue(makeDbMock(KY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      KY_STATE,
+      "senate",
+      null,
+      KY_ELECTION_YEAR,
+    );
+    expect(senate.find((r) => r.name === "Christopher Campbell")?.party).toBe(
+      "KYP",
+    );
+  });
+
+  it("declared write-in candidates (Wilson KY-5, Quigley KY-6, Murphy Senate) carry party null and write_in_qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    const d5 = await getOfficialRoster(
+      KY_STATE,
+      "house",
+      "05",
+      KY_ELECTION_YEAR,
+    );
+    const wilson = d5.find((r) => r.name === "Billy Ray Wilson");
+    expect(wilson?.party).toBeNull();
+    expect(wilson?.ballotStatus).toBe("write_in_qualified");
+
+    const d6 = await getOfficialRoster(
+      KY_STATE,
+      "house",
+      "06",
+      KY_ELECTION_YEAR,
+    );
+    const quigley = d6.find((r) => r.name === "Robert Quigley");
+    expect(quigley?.party).toBeNull();
+    expect(quigley?.ballotStatus).toBe("write_in_qualified");
+
+    mockedGetDb.mockReturnValue(makeDbMock(KY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      KY_STATE,
+      "senate",
+      null,
+      KY_ELECTION_YEAR,
+    );
+    const murphy = senate.find((r) => r.name === "Thomas Michael Murphy");
+    expect(murphy?.party).toBeNull();
+    expect(murphy?.ballotStatus).toBe("write_in_qualified");
+  });
+});
+
+describe("isIncumbentSeekingReelection — KY", () => {
+  it("returns true for KY-1, KY-2, KY-3, KY-5 — the winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      KY_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          KY_STATE,
+          "house",
+          district,
+          KY_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for KY-4 — Massie (sitting rep) lost his own primary to Gallrein, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        KY_STATE,
+        "house",
+        "04",
+        KY_ELECTION_YEAR,
+        "Thomas Massie",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for KY-6 — Barr (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        KY_STATE,
+        "house",
+        "06",
+        KY_ELECTION_YEAR,
+        "Andy Barr",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — McConnell (sitting senator) did not file for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(KY_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        KY_STATE,
+        "senate",
+        null,
+        KY_ELECTION_YEAR,
+        "Mitch McConnell",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — KY wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => kyDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, KY_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("KY", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Comer excluded; the Democratic nominee is the sole
+    // challenger (no independent/minor-party filer in KY-1).
+    expect(out.house.map((c) => c.name)).toEqual(['John "Drew" Williams']);
+  });
+
+  it("KY-4 (open seat, incumbent defeated in primary): all 4 filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "04",
+    ).map((e, i) => kyDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, KY_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("KY", 4, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Ed Gallrein",
+        "Jeremy Todd",
+        "Melissa Claire Strange",
+        "Mohammad Wael Ahmad",
+      ].sort(),
+    );
+    expect(out.house.some((c) => c.name === "Thomas Massie")).toBe(false);
+  });
+
+  it("KY-6 (open seat, incumbent ran for Senate instead): all 5 filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "06",
+    ).map((e, i) => kyDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, KY_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("KY", 6, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Jay J Bowman",
+        "Pete Lynch",
+        "Ralph Alvarado",
+        "Robert Quigley",
+        "Zach Dembo",
+      ].sort(),
+    );
+    expect(out.house.some((c) => c.name === "Andy Barr")).toBe(false);
+  });
+
+  it("senate: all four filers render, none excluded (open seat, no incumbent), Barr's party maps to Republican not treated as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = KY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => kyDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, KY_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("KY", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      KY_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "Andy Barr")?.party).toBe(
+      "Republican",
+    );
+    expect(
+      out.senate.find((c) => c.name === "Christopher Campbell")?.party,
+    ).toBe("Kentucky Party");
   });
 });
