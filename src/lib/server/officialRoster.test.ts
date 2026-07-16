@@ -2001,6 +2001,9 @@ describe("getOfficialRoster — CT narrowing", () => {
     expect(cd1.find((r) => r.name === "Amy Chai")?.ballotStatus).toBe(
       "qualified_for_general_ballot",
     );
+    expect(cd1.find((r) => r.name === "Mary L. Sanders")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
 
     const cd2 = await getOfficialRoster(
       CT_STATE,
@@ -2031,7 +2034,7 @@ describe("isIncumbentSeekingReelection — CT", () => {
 });
 
 describe("lookupChallengers — CT wiring (house-only, mixed ballotStatus within one contest)", () => {
-  it("CD1: incumbent Larson excluded; the 3 other primary contestants (incl. petition-route Fortune) and uncontested Chai all render", async () => {
+  it("CD1: incumbent Larson excluded; the 3 other Dem primary contestants (incl. petition-route Fortune), uncontested Republican Chai, and Green nominee Sanders all render", async () => {
     vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
     const houseRows = CT_HOUSE_ROSTER_2026.filter(
       (e) => e.district === "01",
@@ -2044,7 +2047,13 @@ describe("lookupChallengers — CT wiring (house-only, mixed ballotStatus within
 
     expect(out.house.some((c) => c.name === "John B. Larson")).toBe(false);
     expect(out.house.map((c) => c.name).sort()).toEqual(
-      ["Luke Bronin", "Jillian Gilchrest", "Ruth Fortune", "Amy Chai"].sort(),
+      [
+        "Luke Bronin",
+        "Jillian Gilchrest",
+        "Ruth Fortune",
+        "Amy Chai",
+        "Mary L. Sanders",
+      ].sort(),
     );
     for (const c of out.house) {
       expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
