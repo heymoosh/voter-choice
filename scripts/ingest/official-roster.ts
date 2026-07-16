@@ -382,6 +382,16 @@ import {
   MI_HOUSE_ROSTER_2026,
   MI_SENATE_ROSTER_2026,
 } from "../congressional-rosters/mi-official-roster-2026";
+import {
+  NM_STATE,
+  NM_ELECTION_YEAR,
+  NM_STAGE,
+  NM_HOUSE_SOURCE_URLS,
+  NM_SENATE_SOURCE_URLS,
+  NM_RETRIEVED_AT,
+  NM_HOUSE_ROSTER_2026,
+  NM_SENATE_ROSTER_2026,
+} from "../congressional-rosters/nm-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1141,6 +1151,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: MI_SENATE_SOURCE_URLS[0],
       retrievedAt: MI_RETRIEVED_AT,
       entries: MI_SENATE_ROSTER_2026,
+    },
+  ],
+  NM: [
+    {
+      state: NM_STATE,
+      office: "house",
+      electionYear: NM_ELECTION_YEAR,
+      stage: NM_STAGE,
+      sourceUrl: NM_HOUSE_SOURCE_URLS[0],
+      retrievedAt: NM_RETRIEVED_AT,
+      entries: NM_HOUSE_ROSTER_2026,
+    },
+    {
+      state: NM_STATE,
+      office: "senate",
+      electionYear: NM_ELECTION_YEAR,
+      stage: NM_STAGE,
+      sourceUrl: NM_SENATE_SOURCE_URLS[0],
+      retrievedAt: NM_RETRIEVED_AT,
+      entries: NM_SENATE_ROSTER_2026,
     },
   ],
 };
