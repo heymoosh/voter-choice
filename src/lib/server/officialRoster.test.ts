@@ -351,6 +351,13 @@ import {
   NM_SENATE_SOURCE_URLS,
   NM_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/nm-official-roster-2026";
+import {
+  WI_HOUSE_ROSTER_2026,
+  WI_STATE,
+  WI_ELECTION_YEAR,
+  WI_HOUSE_SOURCE_URLS,
+  WI_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/wi-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1706,6 +1713,41 @@ const WA_INCUMBENTS: Record<string, string> = {
 };
 
 const WA_OPEN_SEAT_DISTRICTS = ["04"];
+
+/** Same shape as `moDbRow`, but for WI entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function wiDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `wi-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: WI_HOUSE_SOURCE_URLS[0],
+    retrievedAt: WI_RETRIEVED_AT,
+  };
+}
+
+const WI_HOUSE_DB_ROWS = WI_HOUSE_ROSTER_2026.map(wiDbRow);
+
+// Per house.gov, cross-checked against the WEC's own "Incumbent:" field on
+// its ballot access report (see the fixture's docblock — no discrepancy
+// found). District 07 has NO incumbent row — Tom Tiffany (the sitting rep)
+// filed for Governor instead of re-election, making it an open seat;
+// exercised separately below.
+const WI_INCUMBENTS: Record<string, string> = {
+  "01": "Bryan Steil",
+  "02": "Mark Pocan",
+  "03": "Derrick Van Orden",
+  "04": "Gwen Moore",
+  "05": "Scott Fitzgerald",
+  "06": "Glenn Grothman",
+  "08": "Tony Wied",
+};
+
+const WI_OPEN_SEAT_DISTRICTS = ["07"];
 const OK_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "JOSH BRECHEEN",
   "03": "FRANK D. LUCAS",
@@ -8854,5 +8896,153 @@ describe("lookupChallengers — NM wiring (house + senate both covered)", () => 
       "Republican",
     );
     expect(out.senate.some((c) => c.name === "Ben Ray Luján")).toBe(false);
+  });
+});
+
+describe("getOfficialRoster — WI narrowing", () => {
+  it("narrows house rows to the exact district for all 8 WI districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WI_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07", "08"]) {
+      const out = await getOfficialRoster(
+        WI_STATE,
+        "house",
+        district,
+        WI_ELECTION_YEAR,
+      );
+      const expectedNames = WI_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("WI-01: 5 rows, all qualified_for_primary_ballot; incumbent Bryan Steil present alongside 4 Democratic challengers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WI_STATE,
+      "house",
+      "01",
+      WI_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(5);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "Bryan Steil")?.isIncumbent).toBe(true);
+    expect(out.find((r) => r.name === "Lorenzo J. Santos")?.isIncumbent).toBe(
+      false,
+    );
+  });
+
+  it("WI-07: open seat — no row carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WI_STATE,
+      "house",
+      "07",
+      WI_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(8);
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+
+  it("WI-06: Wisconsin Green filer is qualified_for_primary_ballot (ballot-status party), independents are qualified_for_general_ballot (bypass the primary)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WI_STATE,
+      "house",
+      "06",
+      WI_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Matthew Arndt")).toMatchObject({
+      party: "WGR",
+      ballotStatus: "qualified_for_primary_ballot",
+    });
+    expect(out.find((r) => r.name === "Mike Thurow")).toMatchObject({
+      party: "IND",
+      ballotStatus: "qualified_for_general_ballot",
+    });
+    expect(
+      out.find((r) => r.name === "Elizabeth Anne Fitzgibbon"),
+    ).toMatchObject({
+      party: "IND",
+      ballotStatus: "qualified_for_general_ballot",
+    });
+  });
+
+  it("returns [] for (senate, null) — no WI senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      WI_STATE,
+      "senate",
+      null,
+      WI_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — WI", () => {
+  it("returns true for the 7 WI districts with a sitting incumbent seeking re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WI_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(WI_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          WI_STATE,
+          "house",
+          district,
+          WI_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for WI-07 — open seat, no sitting member among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WI_HOUSE_DB_ROWS));
+    for (const district of WI_OPEN_SEAT_DISTRICTS) {
+      const rows = WI_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — WI wiring (house-only, no senate contest)", () => {
+  it("WI-01: incumbent Bryan Steil excluded; the 4 other filers all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => wiDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (WI has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("WI", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Bryan Steil")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Lorenzo J. Santos",
+        "Peter Burgelis",
+        "Mitchell Berman",
+        "Miguel Aranda",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("WI-07 (open seat): no incumbent excluded, all 8 filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = WI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "07",
+    ).map((e, i) => wiDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("WI", 7, 2026);
+
+    expect(out.house).toHaveLength(8);
+    expect(out.house.some((c) => c.name === "Tom Tiffany")).toBe(false);
   });
 });

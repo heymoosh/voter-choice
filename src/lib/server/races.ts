@@ -117,6 +117,9 @@ const PARTY_NAMES: Record<string, string> = {
   // "WCP", to avoid colliding with Illinois's distinct Working Class Party
   // (same-named but separate state party org — disambiguated 2026-07-16).
   WCPM: "Working Class Party",
+  // Wisconsin Green (Wisconsin vertical slice) — one of WI's five
+  // ballot-status recognized parties, distinct from generic "GRE".
+  WGR: "Wisconsin Green",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

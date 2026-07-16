@@ -392,6 +392,14 @@ import {
   NM_HOUSE_ROSTER_2026,
   NM_SENATE_ROSTER_2026,
 } from "../congressional-rosters/nm-official-roster-2026";
+import {
+  WI_STATE,
+  WI_ELECTION_YEAR,
+  WI_STAGE,
+  WI_HOUSE_SOURCE_URLS,
+  WI_RETRIEVED_AT,
+  WI_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/wi-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1171,6 +1179,19 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: NM_SENATE_SOURCE_URLS[0],
       retrievedAt: NM_RETRIEVED_AT,
       entries: NM_SENATE_ROSTER_2026,
+    },
+  ],
+  // No Senate row — Wisconsin has no 2026 US Senate contest (Wis. Stat.
+  // § 8.25(2): neither Senate class's 6-year cycle lands on 2026).
+  WI: [
+    {
+      state: WI_STATE,
+      office: "house",
+      electionYear: WI_ELECTION_YEAR,
+      stage: WI_STAGE,
+      sourceUrl: WI_HOUSE_SOURCE_URLS[0],
+      retrievedAt: WI_RETRIEVED_AT,
+      entries: WI_HOUSE_ROSTER_2026,
     },
   ],
 };
