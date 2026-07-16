@@ -8,6 +8,50 @@ Date: 2026-07-15. Connecticut's 2026 primary (2026-08-11) has **not yet
 happened** as of this build — 27 days in the future. The general election is
 2026-11-03.
 
+## Correction (2026-07-16) — one candidate found missing on re-check
+
+Muxin's own post-merge review of the CD1 PDF found a candidate this build
+missed: **Mary L. Sanders**, the Green Party of Connecticut's certified CD1
+nominee (minor-party certification under CGS Sec. 9-452, received by SOTS
+2026-07-02), on page 9 of the CD1 Certificate-of-Endorsement PDF.
+
+**Root cause, confirmed from the original build's own transcript:** the
+build's first-pass `pypdf` text extraction correctly detected `cd1.pdf` has
+9 pages, and — the exact known failure mode this build's own docblock
+already flagged for Rep. Hayes' CD5 page — page index 8 (the Green Party
+letter) came back as empty text, indistinguishable from a blank spacer
+page. The mitigation for that failure mode (re-render every page as a
+bitmap and visually read it) was applied, but the worklist of pages to
+render was built FROM the pages pypdf had found text on
+(`cd1.pdf: [0, 2, 4, 6]`), not from the PDF's true full page range (all 9
+pages, 0-8). Page 8 was silently excluded before the visual-review step
+ever ran. CD5's own blank-looking pages got a second "verify blank" pass
+that caught the same issue there; CD1's did not get that second pass.
+**Lesson for future states:** never build a page-review worklist from
+which pages had extractable text — that is exactly the signal this
+failure mode corrupts. Get the true page count once per file and visually
+account for every page in that range, not just the ones text extraction
+already flagged as non-blank.
+
+**Fixed:** added Sanders as a `GRE` / `qualified_for_general_ballot` row
+(a minor-party nominee has no primary in CT, so — like Chai's uncontested
+Republican row — she goes straight to a determined general-ballot status).
+Re-verified against staging: re-imported (18 rows now, up from 17),
+confirmed by direct row-count query, and re-ran the `lookupChallengers`
+end-to-end check for CD1 — Sanders now renders correctly
+(`party: "Green"`, `rosterProvenance.sourceKind: "official_state_roster"`).
+`npm run check` re-run clean (3120 tests passing, up from 3099).
+
+**Re-check of the other 4 districts' PDFs**, prompted by this find: 2nd/3rd
+CD (2 candidates each) and 5th CD (3 candidates) all have even page counts
+matching content+blank-separator pairs exactly — no gap. 4th CD's page
+count (5, odd) is explained by one Docusign-native candidate page (Himes)
+having no blank spacer after it, not a missing candidate — all 3 expected
+CD4 filers (Himes, Goldstein, Meressi) are present. No further gaps found.
+
+The rest of this document is the original build's report, unedited except
+for the specific claims this correction supersedes (marked inline below).
+
 ## Bottom line
 
 **GO on the approach for a sixth state.** All 5 CT US House districts render
@@ -47,6 +91,7 @@ code or schema issue, purely an out-of-band credential rotation this build
 had to catch up to.
 
 ## How this was verified — a static PDF source with a real transcription
+
 hazard, plus an official-document coverage gap that required independent
 secondary corroboration
 
@@ -126,13 +171,13 @@ this fixture is `DEM` or `REP`.
 
 Connecticut has **5 US House districts and 0 US Senate contests in 2026.**
 
-| District | Democratic | Republican | Status |
-| --- | --- | --- | --- |
-| CD1 | Bronin, Gilchrest, Larson\* (incumbent), Fortune | Chai | Dem primary pending 8/11; Rep uncontested |
-| CD2 | Courtney\* (incumbent) | Austin | Both uncontested |
-| CD3 | DeLauro\* (incumbent) | Lancia | Both uncontested |
-| CD4 | Himes\* (incumbent) | Goldstein, Meressi | Dem uncontested; Rep primary pending 8/11 |
-| CD5 | Hayes\* (incumbent), Solomita, Taddeo-Waite | Shea, DeBarros | Both parties' primaries pending 8/11 |
+| District | Democratic                                       | Republican         | Status                                    |
+| -------- | ------------------------------------------------ | ------------------ | ----------------------------------------- |
+| CD1      | Bronin, Gilchrest, Larson\* (incumbent), Fortune | Chai               | Dem primary pending 8/11; Rep uncontested |
+| CD2      | Courtney\* (incumbent)                           | Austin             | Both uncontested                          |
+| CD3      | DeLauro\* (incumbent)                            | Lancia             | Both uncontested                          |
+| CD4      | Himes\* (incumbent)                              | Goldstein, Meressi | Dem uncontested; Rep primary pending 8/11 |
+| CD5      | Hayes\* (incumbent), Solomita, Taddeo-Waite      | Shea, DeBarros     | Both parties' primaries pending 8/11      |
 
 \* sitting incumbent, confirmed via clerk.house.gov, seeking re-election in
 every district — no open seats.
@@ -173,7 +218,7 @@ live index definition — no migration has been needed since 0016).
   3104 total.
 - Confirmed via a direct `pg`-backed query (Drizzle `db.execute`, not the
   importer's own count) that staging already has migration `0016`'s `NULLS
-  NOT DISTINCT` fix applied — no new migration was needed for this build.
+NOT DISTINCT` fix applied — no new migration was needed for this build.
 - CT's 17 rows imported to the isolated Neon **staging** branch
   (`ROSTER_STAGING_DATABASE_URL`, explicitly — never the ambient
   `DATABASE_URL`), re-imported, and confirmed idempotent by direct
@@ -217,7 +262,7 @@ live index definition — no migration has been needed since 0016).
   ```
 
   Every returned challenger carried `rosterProvenance.sourceKind ===
-  "official_state_roster"`. Every district's sitting incumbent was
+"official_state_roster"`. Every district's sitting incumbent was
   correctly excluded from that district's own challenger list (already
   shown as the seat's own card). The senate side returned empty for every
   district (CT has 0 senate contests; falls through to the unchanged,
