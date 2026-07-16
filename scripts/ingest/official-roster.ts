@@ -472,6 +472,16 @@ import {
   UT_RETRIEVED_AT,
   UT_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/ut-official-roster-2026";
+import {
+  WY_STATE,
+  WY_ELECTION_YEAR,
+  WY_STAGE,
+  WY_HOUSE_SOURCE_URLS,
+  WY_SENATE_SOURCE_URLS,
+  WY_RETRIEVED_AT,
+  WY_HOUSE_ROSTER_2026,
+  WY_SENATE_ROSTER_2026,
+} from "../congressional-rosters/wy-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1390,6 +1400,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: UT_HOUSE_SOURCE_URLS[0],
       retrievedAt: UT_RETRIEVED_AT,
       entries: UT_HOUSE_ROSTER_2026,
+    },
+  ],
+  WY: [
+    {
+      state: WY_STATE,
+      office: "house",
+      electionYear: WY_ELECTION_YEAR,
+      stage: WY_STAGE,
+      sourceUrl: WY_HOUSE_SOURCE_URLS[0],
+      retrievedAt: WY_RETRIEVED_AT,
+      entries: WY_HOUSE_ROSTER_2026,
+    },
+    {
+      state: WY_STATE,
+      office: "senate",
+      electionYear: WY_ELECTION_YEAR,
+      stage: WY_STAGE,
+      sourceUrl: WY_SENATE_SOURCE_URLS[0],
+      retrievedAt: WY_RETRIEVED_AT,
+      entries: WY_SENATE_ROSTER_2026,
     },
   ],
 };
