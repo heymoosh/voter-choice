@@ -717,6 +717,16 @@ empty/error page, or parser failure cannot create this state.
 
 ## Freshness and maintenance SLA
 
+**Status note (2026-07-16):** the automated daily-check pipeline described
+below is the long-term target and was never built — the epic's 2026-07-15
+pivot paused the automated fan-out in favor of the manual state-by-state
+track (see "Revision — state-by-state manual-first sequencing" above).
+Freshness within the 2026 cycle is currently handled per-state via the
+`NOT BEFORE` re-check card convention (backlog epic `c5a813bb`, "STANDING
+REQUIREMENT — NOT BEFORE DATE-GATE CONVENTION"), not this SLA. Freshness
+*across* cycles (2028, 2030, ...) is handled by that same epic's
+"SUCCESSOR" note — a brand-new epic per cycle, not a rollover of this one.
+
 “Always current” is an operational SLA relative to what the authority has
 published, not a guarantee that an authority has already published data.
 
