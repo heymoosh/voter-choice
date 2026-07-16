@@ -306,6 +306,15 @@ import {
   WA_HOUSE_SOURCE_URLS,
   WA_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/wa-official-roster-2026";
+import {
+  TN_HOUSE_ROSTER_2026,
+  TN_SENATE_ROSTER_2026,
+  TN_STATE,
+  TN_ELECTION_YEAR,
+  TN_HOUSE_SOURCE_URLS,
+  TN_SENATE_SOURCE_URLS,
+  TN_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/tn-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1391,6 +1400,47 @@ const OR_INCUMBENTS: Record<string, string> = {
   "04": "Val Hoyle",
   "05": "Janelle S Bynum",
   "06": "Andrea Salinas",
+};
+
+/** Same shape as `okDbRow`, but for TN entries. */
+function tnDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `tn-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? TN_HOUSE_SOURCE_URLS[0] : TN_SENATE_SOURCE_URLS[0],
+    retrievedAt: TN_RETRIEVED_AT,
+  };
+}
+
+const TN_HOUSE_DB_ROWS = TN_HOUSE_ROSTER_2026.map((e, i) =>
+  tnDbRow(e, i, "house"),
+);
+const TN_SENATE_DB_ROWS = TN_SENATE_ROSTER_2026.map((e, i) =>
+  tnDbRow(e, i, "senate"),
+);
+
+// Districts 06 (Rose running for Governor instead) and 09 (Cohen not
+// seeking re-election) are open seats — no incumbent row exists on either
+// seat; exercised separately below. The other 7 districts' sitting
+// incumbent is present and seeking re-election.
+const TN_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Diana Harshbarger",
+  "02": "Tim Burchett",
+  "03": "Chuck Fleischmann",
+  "04": "Scott DesJarlais",
+  "05": "Andy Ogles",
+  "07": "Matt Van Epps",
+  "08": "David Kustoff",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -7586,5 +7636,252 @@ describe("lookupChallengers — WA wiring (house-only, no senate contest)", () =
 
     expect(out.house).toHaveLength(11);
     expect(out.house.some((c) => c.name === "Dan Newhouse")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Tennessee (TN) — epic c5a813bb. Pre-primary build like AZ/MO: TN's August
+// 6, 2026 primary had not yet occurred at transcription time, so every
+// Republican/Democratic filer is qualified_for_primary_ballot, never
+// qualified_for_general_ballot. TN independents are the opposite case —
+// TN Code Ann. § 2-5-101 routes them straight to the November general
+// ballot with no primary round at all, so every IND row is already
+// qualified_for_general_ballot (see the fixture's docblock). No statutory
+// congressional primary runoff exists in Tennessee, so no runoff_pending
+// rows appear anywhere in this fixture. Districts 06 (Rose running for
+// Governor instead) and 09 (Cohen not seeking re-election) are open seats.
+// See scripts/congressional-rosters/tn-official-roster-2026.ts for the full
+// sourcing.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — TN narrowing", () => {
+  it("narrows house rows to the exact district for all 9 TN districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+    ]) {
+      const out = await getOfficialRoster(
+        TN_STATE,
+        "house",
+        district,
+        TN_ELECTION_YEAR,
+      );
+      const expectedNames = TN_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 14 TN senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      TN_STATE,
+      "senate",
+      null,
+      TN_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(TN_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...TN_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      TN_STATE,
+      "house",
+      "01",
+      TN_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("TN-01: Republican and Democratic filers are qualified_for_primary_ballot; independents are already qualified_for_general_ballot (no primary round for them)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      TN_STATE,
+      "house",
+      "01",
+      TN_ELECTION_YEAR,
+    );
+    const partisan = out.filter((r) => r.party === "REP" || r.party === "DEM");
+    expect(
+      partisan.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    const independents = out.filter((r) => r.party === "IND");
+    expect(independents).toHaveLength(5);
+    expect(
+      independents.every(
+        (r) => r.ballotStatus === "qualified_for_general_ballot",
+      ),
+    ).toBe(true);
+  });
+
+  it("TN-06 and TN-09 (open seats): no row carries isIncumbent true in either district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_HOUSE_DB_ROWS));
+    for (const district of ["06", "09"]) {
+      const out = await getOfficialRoster(
+        TN_STATE,
+        "house",
+        district,
+        TN_ELECTION_YEAR,
+      );
+      expect(out.length).toBeGreaterThan(0);
+      expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+
+  it("senate: incumbent Hagerty is qualified_for_primary_ballot; independents are already qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      TN_STATE,
+      "senate",
+      null,
+      TN_ELECTION_YEAR,
+    );
+    const hagerty = out.find((r) => r.name === "Bill Hagerty");
+    expect(hagerty?.isIncumbent).toBe(true);
+    expect(hagerty?.ballotStatus).toBe("qualified_for_primary_ballot");
+    const independents = out.filter((r) => r.party === "IND");
+    expect(independents.length).toBeGreaterThan(0);
+    expect(
+      independents.every(
+        (r) => r.ballotStatus === "qualified_for_general_ballot",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — TN", () => {
+  it("returns true for TN-01, 02, 03, 04, 05, 07, 08 — the documented incumbent is present and seeking re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      TN_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          TN_STATE,
+          "house",
+          district,
+          TN_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for TN-06 — Rose (sitting rep) is running for Governor instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        TN_STATE,
+        "house",
+        "06",
+        TN_ELECTION_YEAR,
+        "John Rose",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for TN-09 — Cohen (sitting rep) decided not to seek re-election, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        TN_STATE,
+        "house",
+        "09",
+        TN_ELECTION_YEAR,
+        "Steve Cohen",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the US Senate seat — Hagerty (sitting senator) is seeking re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(TN_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        TN_STATE,
+        "senate",
+        null,
+        TN_ELECTION_YEAR,
+        "Bill Hagerty",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — TN wiring (house + senate both covered)", () => {
+  it("TN-01: incumbent Harshbarger excluded from challengers; both official queries used, FEC skipped (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = TN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => tnDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, TN_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("TN", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    expect(out.house.some((c) => c.name === "Diana Harshbarger")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Kristi Burke",
+        "Hernan H. Garcia",
+        "David S. Kerr, Jr.",
+        "Joshua Ray Ashburn",
+        "Richard G. Baker",
+        "Chris Campbell",
+        "Billy Cody",
+        "Tyler Brice Mitchell McClain",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("TN-06 (open seat): no incumbent excluded, every filer renders as a challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = TN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "06",
+    ).map((e, i) => tnDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, TN_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("TN", 6, 2026);
+
+    expect(out.house).toHaveLength(
+      TN_HOUSE_ROSTER_2026.filter((e) => e.district === "06").length,
+    );
+    expect(out.house.some((c) => c.name === "John Rose")).toBe(false);
+  });
+
+  it("senate: incumbent Hagerty excluded, every other filer renders as a challenger with friendly party labels", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = TN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => tnDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, TN_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("TN", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "Bill Hagerty")).toBe(false);
+    expect(out.senate).toHaveLength(TN_SENATE_ROSTER_2026.length - 1);
+    expect(out.senate.find((c) => c.name === "Marquita Bradshaw")?.party).toBe(
+      "Democrat",
+    );
+    expect(out.senate.find((c) => c.name === "Tharon Chandler")?.party).toBe(
+      "Independent",
+    );
   });
 });

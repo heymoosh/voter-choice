@@ -334,6 +334,16 @@ import {
   WA_RETRIEVED_AT,
   WA_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/wa-official-roster-2026";
+import {
+  TN_STATE,
+  TN_ELECTION_YEAR,
+  TN_STAGE,
+  TN_HOUSE_SOURCE_URLS,
+  TN_SENATE_SOURCE_URLS,
+  TN_RETRIEVED_AT,
+  TN_HOUSE_ROSTER_2026,
+  TN_SENATE_ROSTER_2026,
+} from "../congressional-rosters/tn-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -927,6 +937,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: WA_HOUSE_SOURCE_URLS[0],
       retrievedAt: WA_RETRIEVED_AT,
       entries: WA_HOUSE_ROSTER_2026,
+    },
+  ],
+  TN: [
+    {
+      state: TN_STATE,
+      office: "house",
+      electionYear: TN_ELECTION_YEAR,
+      stage: TN_STAGE,
+      sourceUrl: TN_HOUSE_SOURCE_URLS[0],
+      retrievedAt: TN_RETRIEVED_AT,
+      entries: TN_HOUSE_ROSTER_2026,
+    },
+    {
+      state: TN_STATE,
+      office: "senate",
+      electionYear: TN_ELECTION_YEAR,
+      stage: TN_STAGE,
+      sourceUrl: TN_SENATE_SOURCE_URLS[0],
+      retrievedAt: TN_RETRIEVED_AT,
+      entries: TN_SENATE_ROSTER_2026,
     },
   ],
 };
