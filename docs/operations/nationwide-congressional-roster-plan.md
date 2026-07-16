@@ -98,7 +98,15 @@ nomination is already determined — an unaffiliated/minor-party
 petition-signature sufficiency deadline, a nomination-vacancy-fill deadline,
 or (the one date every state has) the state's own ballot-content
 certification deadline, after which the roster for that cycle is fully
-locked. List every such date found, in the same absolute-and-explicit style
+locked (and, added 2026-07-16 after AK's and DE's builds each independently
+caught this ad hoc: a **candidate-withdrawal deadline** — most states let a
+qualified/nominated candidate withdraw up to some cutoff, sometimes
+pre-primary, sometimes a separate post-primary window before the general; this
+is a materially different risk than an undetermined nomination, since it
+REMOVES a candidate already recorded `qualified_for_general_ballot`, rather
+than resolving one still open — find and record this date for every state, even
+when every nomination is already determined). List every such date found, in
+the same absolute-and-explicit style
 as (a)-(c) (e.g. "July 30, 2026 — deadline for the county DEO to issue a
 sufficiency/insufficiency notice on the 5 pending UAF House petitions;
 September 4, 2026 — ballot-content certification, after which no further
