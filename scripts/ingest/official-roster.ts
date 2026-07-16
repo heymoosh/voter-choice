@@ -410,6 +410,14 @@ import {
   MA_HOUSE_ROSTER_2026,
   MA_SENATE_ROSTER_2026,
 } from "../congressional-rosters/ma-official-roster-2026";
+import {
+  ND_STATE,
+  ND_ELECTION_YEAR,
+  ND_STAGE,
+  ND_HOUSE_SOURCE_URLS,
+  ND_RETRIEVED_AT,
+  ND_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/nd-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1222,6 +1230,17 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: MA_SENATE_SOURCE_URLS[0],
       retrievedAt: MA_RETRIEVED_AT,
       entries: MA_SENATE_ROSTER_2026,
+    },
+  ],
+  ND: [
+    {
+      state: ND_STATE,
+      office: "house",
+      electionYear: ND_ELECTION_YEAR,
+      stage: ND_STAGE,
+      sourceUrl: ND_HOUSE_SOURCE_URLS[0],
+      retrievedAt: ND_RETRIEVED_AT,
+      entries: ND_HOUSE_ROSTER_2026,
     },
   ],
 };
