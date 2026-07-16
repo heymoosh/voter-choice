@@ -165,6 +165,13 @@ export interface OfficialRosterEntry {
     // the two are different real-world entities that would otherwise collide
     // under one party code and render the wrong display name for one state.
     | "WCPM"
+    // Wisconsin Green — one of Wisconsin's five ballot-status recognized
+    // parties for 2026 (REP, DEM, CON, LIB, WGR per the WEC's own official
+    // ballot-order document), distinct from generic GRE (added building
+    // Wisconsin; "WGR" is the WEC's own literal party abbreviation, not an
+    // invented code, mirroring the AIP/AKP/NPP/PF/LPF/FFP/NPI/CST/KYP/LMN
+    // precedent of trusting an official source's own party label).
+    | "WGR"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
