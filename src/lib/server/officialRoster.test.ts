@@ -212,6 +212,13 @@ import {
   NE_SENATE_SOURCE_URLS,
   NE_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ne-official-roster-2026";
+import {
+  MO_HOUSE_ROSTER_2026,
+  MO_STATE,
+  MO_ELECTION_YEAR,
+  MO_HOUSE_SOURCE_URLS,
+  MO_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/mo-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -944,6 +951,39 @@ const NE_INCUMBENTS: Record<string, string> = {
   "03": "Adrian Smith",
 };
 
+/** Same shape as `inDbRow`, but for MO entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function moDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `mo-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: MO_HOUSE_SOURCE_URLS[0],
+    retrievedAt: MO_RETRIEVED_AT,
+  };
+}
+
+const MO_HOUSE_DB_ROWS = MO_HOUSE_ROSTER_2026.map(moDbRow);
+
+// Per house.gov, cross-checked against the SOS's active + withdrawn
+// candidate lists (see the fixture's docblock). District 06 has NO
+// incumbent row — Sam Graves (the sitting rep) withdrew his 2026
+// candidacy, making it an open seat; exercised separately below.
+const MO_INCUMBENTS: Record<string, string> = {
+  "01": "Wesley Bell",
+  "02": "Ann Wagner",
+  "03": "Bob Onder",
+  "04": "Mark Alford",
+  "05": "Emanuel Cleaver, II",
+  "07": "Eric W. Burlison",
+  "08": "Jason T. Smith",
+};
+
+const MO_OPEN_SEAT_DISTRICTS = ["06"];
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
@@ -5059,5 +5099,143 @@ describe("lookupChallengers — NE wiring (house + senate both covered)", () => 
     expect(out.senate.map((c) => c.name).sort()).toEqual(
       ["Cindy Burbank", "Mike Marvin", "Dan Osborn"].sort(),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Missouri (MO) — house-only, no US Senate contest exists in 2026 (Hawley's
+// Class 1 seat runs to 2031, Schmitt's Class 3 seat to 2029). All 8
+// districts' rows are PRE-primary (STAGE = "primary") — the August 4, 2026
+// primary has not yet occurred, so every row is qualified_for_primary_ballot,
+// never qualified_for_general_ballot. District 06 is a genuine open seat:
+// sitting incumbent Sam Graves withdrew his 2026 candidacy. See
+// docs/operations/missouri-vertical-slice-data-check.md for the full build,
+// including the SOS's own 61-candidate summary-table cross-check and the
+// house.gov incumbency cross-check (via browser automation — house.gov 403s
+// a plain fetch).
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MO narrowing", () => {
+  it("narrows house rows to the exact district for all 8 MO districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MO_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07", "08"]) {
+      const out = await getOfficialRoster(
+        MO_STATE,
+        "house",
+        district,
+        MO_ELECTION_YEAR,
+      );
+      const expectedNames = MO_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("MO-01: 8 rows, all qualified_for_primary_ballot; incumbent Wesley Bell present alongside challenger Cori Bush", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MO_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MO_STATE,
+      "house",
+      "01",
+      MO_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(8);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "Wesley Bell")?.isIncumbent).toBe(true);
+    expect(out.find((r) => r.name === "Cori Bush")?.isIncumbent).toBe(false);
+  });
+
+  it("MO-06: open seat — no row carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MO_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MO_STATE,
+      "house",
+      "06",
+      MO_ELECTION_YEAR,
+    );
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+
+  it("returns [] for (senate, null) — no MO senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      MO_STATE,
+      "senate",
+      null,
+      MO_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — MO", () => {
+  it("returns true for the 7 MO districts with a sitting incumbent seeking re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MO_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(MO_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MO_STATE,
+          "house",
+          district,
+          MO_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for MO-06 — open seat, no sitting member among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MO_HOUSE_DB_ROWS));
+    for (const district of MO_OPEN_SEAT_DISTRICTS) {
+      const rows = MO_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — MO wiring (house-only, no senate contest)", () => {
+  it("MO-01: incumbent Wesley Bell excluded; the 7 other filers (incl. challenger Cori Bush) all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MO_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => moDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (MO has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("MO", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Wesley Bell")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Paul Berry III",
+        "Andrew Jones",
+        "Alissa Murphy",
+        "Carl E. Harris Sr",
+        "Cori Bush",
+        "Carl Earnest Henderson",
+        "Tom Schmitz",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("MO-06 (open seat): no incumbent excluded, all 9 filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MO_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "06",
+    ).map((e, i) => moDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("MO", 6, 2026);
+
+    expect(out.house).toHaveLength(9);
+    expect(out.house.some((c) => c.name === "Sam Graves")).toBe(false);
   });
 });
