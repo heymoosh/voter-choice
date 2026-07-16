@@ -298,6 +298,16 @@ import {
   NC_HOUSE_ROSTER_2026,
   NC_SENATE_ROSTER_2026,
 } from "../congressional-rosters/nc-official-roster-2026";
+import {
+  OR_STATE,
+  OR_ELECTION_YEAR,
+  OR_STAGE,
+  OR_HOUSE_SOURCE_URLS,
+  OR_SENATE_SOURCE_URLS,
+  OR_RETRIEVED_AT,
+  OR_HOUSE_ROSTER_2026,
+  OR_SENATE_ROSTER_2026,
+} from "../congressional-rosters/or-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -825,6 +835,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: NC_SENATE_SOURCE_URLS[0],
       retrievedAt: NC_RETRIEVED_AT,
       entries: NC_SENATE_ROSTER_2026,
+    },
+  ],
+  OR: [
+    {
+      state: OR_STATE,
+      office: "house",
+      electionYear: OR_ELECTION_YEAR,
+      stage: OR_STAGE,
+      sourceUrl: OR_HOUSE_SOURCE_URLS[0],
+      retrievedAt: OR_RETRIEVED_AT,
+      entries: OR_HOUSE_ROSTER_2026,
+    },
+    {
+      state: OR_STATE,
+      office: "senate",
+      electionYear: OR_ELECTION_YEAR,
+      stage: OR_STAGE,
+      sourceUrl: OR_SENATE_SOURCE_URLS[0],
+      retrievedAt: OR_RETRIEVED_AT,
+      entries: OR_SENATE_ROSTER_2026,
     },
   ],
 };
