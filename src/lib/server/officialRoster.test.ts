@@ -342,6 +342,15 @@ import {
   MI_SENATE_SOURCE_URLS,
   MI_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/mi-official-roster-2026";
+import {
+  NM_HOUSE_ROSTER_2026,
+  NM_SENATE_ROSTER_2026,
+  NM_STATE,
+  NM_ELECTION_YEAR,
+  NM_HOUSE_SOURCE_URLS,
+  NM_SENATE_SOURCE_URLS,
+  NM_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/nm-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1159,6 +1168,42 @@ const KY_HOUSE_DB_ROWS = KY_HOUSE_ROSTER_2026.map((e, i) =>
 const KY_SENATE_DB_ROWS = KY_SENATE_ROSTER_2026.map((e, i) =>
   kyDbRow(e, i, "senate"),
 );
+
+/** Same shape as `kyDbRow`, but for NM entries. */
+function nmDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `nm-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? NM_HOUSE_SOURCE_URLS[0] : NM_SENATE_SOURCE_URLS[0],
+    retrievedAt: NM_RETRIEVED_AT,
+  };
+}
+
+const NM_HOUSE_DB_ROWS = NM_HOUSE_ROSTER_2026.map((e, i) =>
+  nmDbRow(e, i, "house"),
+);
+const NM_SENATE_DB_ROWS = NM_SENATE_ROSTER_2026.map((e, i) =>
+  nmDbRow(e, i, "senate"),
+);
+
+// All 3 NM House districts (Stansbury, Vasquez, Leger Fernandez) and the
+// Senate seat (Luján) are incumbent-defends races — no open seats this
+// cycle.
+const NM_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Melanie Ann Stansbury",
+  "02": "Gabriel Vasquez",
+  "03": "Teresa Leger Fernandez",
+};
 
 // KY-4 and KY-6 are open seats (Massie lost his own primary; Barr filed
 // for Senate instead of re-election) — the other 4 districts' winning
@@ -8640,5 +8685,174 @@ describe("lookupChallengers — MI wiring (house + senate both covered)", () => 
     for (const c of out.senate) {
       expect(c.isRunoffPending).toBe(false);
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// New Mexico — not Civix-vended (a plain server-rendered SoS SERVIS candidate
+// portal); the "2026 General Election" list (eid=2917) is already the
+// settled post-primary nominee set (June 2, 2026 primary already occurred).
+// All 4 races (3 House + Senate) are incumbent-defends, DEM vs. REP only —
+// two minor-party/independent Senate filers were disqualified for
+// insufficient petition signatures and are deliberately excluded from the
+// fixture. See docs/operations/new-mexico-vertical-slice-data-check.md for
+// the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — NM narrowing", () => {
+  it("narrows house rows to the exact district for every NM district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NM_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03"]) {
+      const out = await getOfficialRoster(
+        NM_STATE,
+        "house",
+        district,
+        NM_ELECTION_YEAR,
+      );
+      const expectedNames = NM_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 2 NM senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NM_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NM_STATE,
+      "senate",
+      null,
+      NM_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(NM_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...NM_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      NM_STATE,
+      "house",
+      "01",
+      NM_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every NM row is qualified_for_general_ballot — no runoff_pending, no declared/write-in filers (NM has no federal runoff primary, and the only non-major-party Senate filers were disqualified)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NM_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      NM_STATE,
+      "house",
+      "01",
+      NM_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(NM_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NM_STATE,
+      "senate",
+      null,
+      NM_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+
+  it("every NM row is party DEM or REP only — no minor-party/independent/write-in filer qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NM_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      NM_STATE,
+      "house",
+      "01",
+      NM_ELECTION_YEAR,
+    );
+    expect(house.every((r) => r.party === "DEM" || r.party === "REP")).toBe(
+      true,
+    );
+
+    mockedGetDb.mockReturnValue(makeDbMock(NM_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NM_STATE,
+      "senate",
+      null,
+      NM_ELECTION_YEAR,
+    );
+    expect(senate.every((r) => r.party === "DEM" || r.party === "REP")).toBe(
+      true,
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — NM", () => {
+  it("returns true for NM-1, NM-2, NM-3 — the winning nominee is the sitting incumbent in every district (no open House seats this cycle)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NM_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      NM_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          NM_STATE,
+          "house",
+          district,
+          NM_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the US Senate seat — Luján (sitting senator) is running for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NM_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NM_STATE,
+        "senate",
+        null,
+        NM_ELECTION_YEAR,
+        "Ben Ray Luján",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — NM wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NM_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => nmDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, NM_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("NM", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Stansbury excluded; the Republican nominee is the sole
+    // challenger (no independent/minor-party filer in NM-1).
+    expect(out.house.map((c) => c.name)).toEqual([
+      "Ndidiamaka Ekwua Charlene Okpareke",
+    ]);
+  });
+
+  it("senate: both filers render, incumbent Luján excluded, Marker's party maps to Republican", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NM_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => nmDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NM_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NM", 1, 2026);
+
+    expect(out.senate.map((c) => c.name)).toEqual(["Larry E. Marker"]);
+    expect(out.senate.find((c) => c.name === "Larry E. Marker")?.party).toBe(
+      "Republican",
+    );
+    expect(out.senate.some((c) => c.name === "Ben Ray Luján")).toBe(false);
   });
 });
