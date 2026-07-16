@@ -1,6 +1,46 @@
 /**
  * scripts/congressional-rosters/ct-official-roster-2026.ts
  *
+ * MINOR-PARTY CORRECTION (2026-07-16, found by Muxin's own post-merge
+ * review of the CD1 PDF): the original build's docblock claimed "no
+ * Green/Working Families/Independent congressional nomination has been
+ * certified yet" and transcribed only 4 CD1 candidates
+ * (Bronin/Gilchrest/Larson/Chai). Both claims were wrong: the CD1 PDF's 9th
+ * page is a Green Party of Connecticut minor-party certification (CGS Sec.
+ * 9-452), received by SOTS 2026-07-02, naming Mary L. Sanders as CD1's
+ * certified Green nominee for the Nov 3, 2026 general election.
+ *
+ * ROOT CAUSE (confirmed from the original build's own transcript, not
+ * guessed): its first pypdf text-extraction pass over cd1.pdf correctly
+ * reported `pages: 9` and — same known failure mode already flagged
+ * elsewhere in this file for Rep. Hayes' CD5 page — page index 8 (the
+ * Green Party letter) came back as empty text, just like every blank
+ * spacer page. When the build then constructed its worklist of pages to
+ * visually re-render as bitmaps (the documented mitigation for exactly
+ * this failure mode), it built that list FROM the pages that had
+ * non-empty extracted text (`cd1.pdf: [0, 2, 4, 6]`) rather than from the
+ * PDF's true full page range (0-8, all 9 pages). Page 8 was blank-text
+ * for the same reason Hayes' page was — a scanned/non-extractable page,
+ * not a non-candidate page — but unlike Hayes' page (which got caught
+ * because the build separately went back and visually verified CD5's
+ * blank-looking pages too), CD1's page 8 was silently dropped before the
+ * visual-render step ever ran, because the worklist itself was already
+ * filtered down to "pages pypdf found text on."
+ *
+ * AVOIDANCE FOR FUTURE STATES: never build a page worklist from which
+ * pages *had extractable text* — that's the exact signal this failure
+ * mode corrupts. Get the true page count (`len(pdf.pages)`) once per
+ * file, then visually render and account for EVERY page in that range
+ * (candidate, blank spacer, or other) before transcribing anything.
+ * "Blank text" must route a page INTO the visual-review queue, never out
+ * of it.
+ *
+ * A same-day re-check of the other 4 districts' PDFs (2nd/3rd/5th CD: even
+ * page counts, 2 pages per candidate, matching each district's known
+ * candidate count exactly; 4th CD: odd 5-page count explained by one
+ * Docusign-native page with no blank spacer, not a missing candidate) found
+ * no further gaps. Fixed by adding the Sanders row below; no other changes.
+ *
  * Connecticut's 2026 official congressional roster for the November 3, 2026
  * general election — covers all 5 US House districts. CT has 0 US Senate
  * contests in 2026 (Blumenthal's Class III seat runs to 2029, Murphy's
@@ -63,11 +103,16 @@
  *     contestants because the single strongest official document doesn't
  *     happen to cover their ballot-access route would itself be a
  *     completeness failure.
- *   - Every candidate below is a two-major-party (DEM/REP) filer. No
- *     Green/Working Families/Independent congressional nomination has been
- *     certified yet as of this fixture's retrieval — CT's minor-party
- *     nomination deadline is 2026-09-02, still in the future — so no new
- *     party codes were needed in types.ts for this build.
+ *   - CD1 has one certified minor-party filer: Mary L. Sanders (Green),
+ *     certified by the Green Party of Connecticut under CGS Sec. 9-452 and
+ *     received by SOTS 2026-07-02 — see the "MINOR-PARTY CORRECTION" note
+ *     at the top of this file. Every other candidate below is a
+ *     two-major-party (DEM/REP) filer; no other Green/Working
+ *     Families/Independent congressional nomination has been certified as
+ *     of this fixture's retrieval — CT's minor-party nomination deadline is
+ *     2026-09-02, still in the future. `GRE` already existed in
+ *     `types.ts` (added for a prior state), so no new party code was
+ *     needed for this fixup.
  *   - `ballotStatus` judgment call: CD2 (Courtney/Austin), CD3 (DeLauro/
  *     Lancia), and the uncontested sides of CD1 (Chai, R) and CD4 (Himes,
  *     D) have NO primary — each party's sole convention-endorsed candidate
@@ -105,13 +150,15 @@
  *     all 5 Democratic incumbents, all seeking re-election in 2026, no
  *     open seats. No senate.gov/Bioguide cross-check was needed since CT
  *     has no 2026 Senate contest.
- *   - No independent/write-in candidates exist yet for any CT congressional
- *     seat as of retrieval — CT's minor-party nomination deadline
- *     (2026-09-02) has not passed, and no separate independent-declaration
- *     document (comparable to TX's or OK's) was found; this fixture will
- *     need a follow-up update once minor-party/independent nominations are
- *     certified and once the August 11 primaries determine each contested
- *     race's actual general-ballot nominee.
+ *   - No independent/write-in candidates, and no further minor-party
+ *     filers beyond CD1's Sanders (Green), exist yet for any CT
+ *     congressional seat as of retrieval — CT's minor-party nomination
+ *     deadline (2026-09-02) has not passed, and no separate independent-
+ *     declaration document (comparable to TX's or OK's) was found; this
+ *     fixture will need a follow-up update once further minor-party/
+ *     independent nominations are certified and once the August 11
+ *     primaries determine each contested race's actual general-ballot
+ *     nominee.
  *
  * Sources:
  *   - https://portal.ct.gov/sots/election-services/certificate-of-endorsement/2026-certificate-of-endorsements
@@ -186,6 +233,19 @@ export const CT_HOUSE_ROSTER_2026: OfficialRosterEntry[] = [
     district: "01",
     name: "Amy Chai",
     party: "REP",
+    isIncumbent: false,
+    ballotStatus: "qualified_for_general_ballot",
+  },
+  // Green Party minor-party certification (CGS Sec. 9-452), page 9 of the
+  // CD1 PDF — a 9th, oddly-placed page after the 4 major-party candidate
+  // pages that the original build missed. Found via Muxin's own read of
+  // the source PDF post-merge; see the docblock's "MINOR-PARTY CORRECTION"
+  // note below. No primary applies to a minor-party nominee, so this is a
+  // determined general-ballot row like Chai's, not primary-pending.
+  {
+    district: "01",
+    name: "Mary L. Sanders",
+    party: "GRE",
     isIncumbent: false,
     ballotStatus: "qualified_for_general_ballot",
   },

@@ -92,7 +92,7 @@ from the state's own official election calendar (not just checked for —
 recorded, with the source date and what resolves on it) — added 2026-07-15
 after the Colorado build surfaced the gap: the existing "check for any
 still-undetermined nomination" requirement below (from the Oklahoma build)
-only covers *pending primaries/runoffs*, but a roster can still be
+only covers _pending primaries/runoffs_, but a roster can still be
 incomplete for other calendar-bound reasons even when every major-party
 nomination is already determined — an unaffiliated/minor-party
 petition-signature sufficiency deadline, a nomination-vacancy-fill deadline,
@@ -129,7 +129,7 @@ Texas's build (card `8530a468`, report at
 `docs/operations/texas-vertical-slice-data-check.md`) hit a materially harder
 case: a JS single-page-app candidate portal (`goelect.txelections.civixapps.com`,
 vended by Civix — `f03-source-inventory.ts` had already flagged this as
-`sourceFormat: "portal"`, `parserFamily: "rendered_portal"`, so the *category*
+`sourceFormat: "portal"`, `parserFamily: "rendered_portal"`, so the _category_
 of problem was pre-logged, but not the fine-grained navigation mechanics
 needed to actually work through it). **Civix serves multiple states' election
 systems**, so this playbook is written for reuse the next time a state's
@@ -157,7 +157,7 @@ reserved. POWERED BY gocivix.com".
    Election Night Results page's `(I)` superscript and Candidate
    Information's explicit `INCUMBENT: YES/NO` field both failed to flag a
    real sitting member (Al Green, TX-9) because he happened to run in a
-   *different* district that cycle — the field just wasn't populated
+   _different_ district that cycle — the field just wasn't populated
    correctly for that case, not a parsing bug on our end. **Cross-check
    incumbency against the U.S. House's own official member directory**
    (`https://www.house.gov/representatives`, "By State and District" tab,
@@ -171,7 +171,7 @@ reserved. POWERED BY gocivix.com".
    build (mid-July, general election in November), the portal's `Election`
    dropdown had no "GENERAL ELECTION" entry at all — only
    primary/runoff/special election filing records. The general-ballot
-   nominee per seat had to be *derived*: query the Election Night Results
+   nominee per seat had to be _derived_: query the Election Night Results
    sub-app (a different URL path, `ivis-enr-ui/races` vs. the Candidate
    Information app's `ivis-cbp-ui`) for certified primary/runoff vote
    totals, and take the winner. Check whether the state's primary/runoff
@@ -206,15 +206,50 @@ reserved. POWERED BY gocivix.com".
    flagged here as an unexplored shortcut, not a dead end.
 
 **Independent/write-in candidates:** look for an official
-"Declarations of Intent" or similar SoS-published PDF/list *separate* from
+"Declarations of Intent" or similar SoS-published PDF/list _separate_ from
 the Civix portal — Texas's independents (all offices, not just federal) were
 in one PDF at a stable-looking SoS URL
 (`sos.texas.gov/elections/forms/<year>-independent-declaration-tracking.pdf`),
-not inside Civix at all. This is a *declaration*-stage document (petition-
+not inside Civix at all. This is a _declaration_-stage document (petition-
 signature verification pending) — record it as such, don't over-claim
 `qualified_for_general_ballot` for filers sourced from it.
 
+### Scanned/image-only PDF page-enumeration gotcha (Muxin, 2026-07-16, found
+
+during a post-merge re-check of the Connecticut build)
+
+Connecticut's official source is a set of PDFs with a mix of native-text
+and scanned/image-only pages (see the CT build's own docblock in
+`scripts/congressional-rosters/ct-official-roster-2026.ts` for the
+full detail) — the CD1 build correctly guarded against a blank `pypdf`
+text-extraction result on individual candidate pages (Rep. Hayes' CD5
+page hit this too), but still missed a real candidate: Mary L. Sanders,
+a Green Party minor-party filer on CD1's 9th and final page. **Root
+cause, confirmed from that build's own transcript:** its text-extraction
+pass correctly reported the true page count (9 pages), and correctly
+flagged individual pages as blank-text where the source really was a
+scanned image — but when it then built its worklist of pages to visually
+re-render as bitmaps (the standard mitigation for a blank/misleading
+`pypdf` extraction), that worklist was built FROM the pages `pypdf` had
+already found non-empty text on, not from the PDF's true full page
+range. A page that returned blank text was silently excluded from visual
+review instead of being routed INTO it — the opposite of the intended
+mitigation.
+
+**Standing rule for every future state whose official source is a PDF,
+scanned or not:** get the true page count once per file
+(`len(pdf.pages)` / equivalent), then visually render and account for
+EVERY page in that range — candidate, blank spacer, cover page, or
+otherwise — before transcribing anything. Never derive a "pages worth
+reviewing" worklist from which pages had extractable text; that signal
+is exactly what a scanned/image-only page corrupts. A PDF whose page
+count doesn't cleanly divide into the number of candidates you expect
+(an odd page count, or one that doesn't match `n_candidates × 2` for a
+content+blank-spacer pattern) is a specific signal to look harder, not
+to round down to the nearest expected count.
+
 ## Revision — Oklahoma build: non-Civix pattern, runoff-pending status, and a
+
 new standing idea (2026-07-15)
 
 Oklahoma's build (card `d9b1ef86`, report at
@@ -254,7 +289,7 @@ and deliberately deferred:**
    per state. See the epic card's own "STANDING REQUIREMENT" bullet
    (`c5a813bb`) for the backlog-level statement of this rule. **Extended
    2026-07-15 after the Colorado build:** this check is narrower than it
-   looks — it catches an undetermined *nomination*, but not a determined
+   looks — it catches an undetermined _nomination_, but not a determined
    roster that can still change for other calendar-bound reasons (a pending
    petition-signature deadline, a ballot-certification cutoff). See the
    "Standing verification-deliverable requirement" section's new item (e)
@@ -267,6 +302,7 @@ and deliberately deferred:**
    outsized influence), a real CTA instead of a dead end, and a later
    follow-through loop ("how did the person you voted for in the runoff
    actually vote"). This needs its own design pass before any implementation:
+
    - A per-state, per-year election-calendar input, not just the 2026-only
      snapshots in `src/data/states/*.json` today.
    - A roster-schema concept for "which contest, which date resolves it,"
@@ -1335,30 +1371,30 @@ architecture blocker remains. Residual risks are official publication delay,
 authority-site access changes, and manual-source workload; each produces an
 honest non-selectable state rather than false completeness.
 
-| Risk | Persisted control |
-| --- | --- |
-| Plan exists only in chat/current branch | This document is the source of truth; merge it before worktrees are created. |
-| Mega-card is accidentally claimed | Backlog card is a parked, non-`To Do` epic with no `GROOMED` marker. |
-| Documentation update accidentally starts implementation | No child cards or queue quarantine are created until separate authorization. |
-| Unrelated work runs after authorization | Reversible P0 quarantine plus pre-batch eligibility audit and non-primary lanes. |
-| Prose priority lock is not machine-enforced | `PARKED` metadata, queue audit, lane isolation, and attended restoration. |
-| Board supports one dependency only | Gate cards are created only after the full preceding wave is Done. |
-| Parallel agents drift on shared semantics | Contract freeze precedes fanout; maximum two disjoint lanes. |
-| Plan fails only after national fanout | Foundation rehearsal, three named pilots, semantic pilots, and independent contract-freeze gates. |
-| Calendar changes silently | Fixed daily refresh, immutable revisions, stable identity, and Alabama regression. |
-| Official sources disagree | Contest-scoped `calendar_review_required`; no guessing or overwrite. |
-| Partial/error source replaces good data | Immutable raw artifacts, reconciliation, and atomic fail-closed promotion. |
-| Candidate removal slips through a threshold | Every removal requires official evidence or review; no silent shrink threshold. |
-| Identity matching hides someone | Official appearance remains visible without a finance link. |
-| Empty/error response becomes “not published” | Requires a successful timestamped official-channel check. |
-| Manual source freshness is overstated | Attended SLA queue and non-selectable stale state. |
-| Ballotpedia becomes an authority | Manual sample only; every mismatch adjudicated against official evidence. |
-| Ballotpedia comparison mixes stages | Aligned scope or `not_comparable`; no all-cycle list treated as certified general ballot. |
-| UI still truncates candidates | Official roster bypasses fundraising filter/cap and uses authoritative order. |
-| Territories remain hidden | Upcoming delegate contests are returned alongside honest representation status. |
-| Public systemic error | Shadow mode, national verifier, seven-day soak, attended cutover, one-setting rollback. |
-| Final unlock races with epic completion | Stop conductors and perform one attended locked closeout/restoration transition. |
-| Weak model makes an authority/release decision | Sol semantic/release tier and independent verification; weaker tiers have explicit boundaries. |
+| Risk                                                    | Persisted control                                                                                 |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| Plan exists only in chat/current branch                 | This document is the source of truth; merge it before worktrees are created.                      |
+| Mega-card is accidentally claimed                       | Backlog card is a parked, non-`To Do` epic with no `GROOMED` marker.                              |
+| Documentation update accidentally starts implementation | No child cards or queue quarantine are created until separate authorization.                      |
+| Unrelated work runs after authorization                 | Reversible P0 quarantine plus pre-batch eligibility audit and non-primary lanes.                  |
+| Prose priority lock is not machine-enforced             | `PARKED` metadata, queue audit, lane isolation, and attended restoration.                         |
+| Board supports one dependency only                      | Gate cards are created only after the full preceding wave is Done.                                |
+| Parallel agents drift on shared semantics               | Contract freeze precedes fanout; maximum two disjoint lanes.                                      |
+| Plan fails only after national fanout                   | Foundation rehearsal, three named pilots, semantic pilots, and independent contract-freeze gates. |
+| Calendar changes silently                               | Fixed daily refresh, immutable revisions, stable identity, and Alabama regression.                |
+| Official sources disagree                               | Contest-scoped `calendar_review_required`; no guessing or overwrite.                              |
+| Partial/error source replaces good data                 | Immutable raw artifacts, reconciliation, and atomic fail-closed promotion.                        |
+| Candidate removal slips through a threshold             | Every removal requires official evidence or review; no silent shrink threshold.                   |
+| Identity matching hides someone                         | Official appearance remains visible without a finance link.                                       |
+| Empty/error response becomes “not published”            | Requires a successful timestamped official-channel check.                                         |
+| Manual source freshness is overstated                   | Attended SLA queue and non-selectable stale state.                                                |
+| Ballotpedia becomes an authority                        | Manual sample only; every mismatch adjudicated against official evidence.                         |
+| Ballotpedia comparison mixes stages                     | Aligned scope or `not_comparable`; no all-cycle list treated as certified general ballot.         |
+| UI still truncates candidates                           | Official roster bypasses fundraising filter/cap and uses authoritative order.                     |
+| Territories remain hidden                               | Upcoming delegate contests are returned alongside honest representation status.                   |
+| Public systemic error                                   | Shadow mode, national verifier, seven-day soak, attended cutover, one-setting rollback.           |
+| Final unlock races with epic completion                 | Stop conductors and perform one attended locked closeout/restoration transition.                  |
+| Weak model makes an authority/release decision          | Sol semantic/release tier and independent verification; weaker tiers have explicit boundaries.    |
 
 ## Assumptions and explicit non-goals
 
