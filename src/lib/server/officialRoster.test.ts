@@ -417,6 +417,13 @@ import {
   RI_SENATE_SOURCE_URLS,
   RI_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ri-official-roster-2026";
+import {
+  UT_HOUSE_ROSTER_2026,
+  UT_STATE,
+  UT_ELECTION_YEAR,
+  UT_HOUSE_SOURCE_URLS,
+  UT_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ut-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1841,6 +1848,36 @@ const WV_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "RILEY MOORE",
 };
 
+/** Same shape as `moDbRow`, but for UT entries — house-only, no senate
+ * contest exists in 2026 (see the fixture's docblock). */
+function utDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `ut-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: UT_HOUSE_SOURCE_URLS[0],
+    retrievedAt: UT_RETRIEVED_AT,
+  };
+}
+
+const UT_HOUSE_DB_ROWS = UT_HOUSE_ROSTER_2026.map(utDbRow);
+
+// Per house.gov (matched by NAME, not old district number, since Utah's
+// court-ordered 2026 redistricting moved 3 of 4 sitting members into a
+// different district number — see the fixture's docblock). All 4 UT
+// districts have a determined nominee; District 1 is the only genuine open
+// seat (no sitting member runs there in 2026), exercised separately below.
+const UT_INCUMBENTS: Record<string, string> = {
+  "02": "Blake D. Moore",
+  "03": "Celeste Maloy",
+  "04": "Mike Kennedy",
+};
+
+const UT_OPEN_SEAT_DISTRICTS = ["01"];
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
@@ -10497,5 +10534,163 @@ describe("lookupChallengers — RI wiring", () => {
         "Michael Bahry",
       ].sort(),
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Utah (UT) — house-only, no US Senate contest exists in 2026 (Mike Lee's
+// Class 3 seat runs to 2029, next up 2028). All 4 districts' rows are
+// POST-primary/POST-convention (STAGE = "general") — Utah's June 23, 2026
+// primary is fully decided and District 4's convention-only nominations are
+// final, so every row is qualified_for_general_ballot. A court-ordered
+// mid-decade redistricting moved 3 of 4 sitting US Representatives into a
+// different district number for 2026 (Moore: old 1st -> new 2nd; Maloy: old
+// 2nd -> new 3rd; Kennedy: old 3rd -> new 4th); District 1 (new, Salt Lake
+// County-centered) is a genuine open seat — no sitting member runs there.
+// See docs/operations/utah-vertical-slice-data-check.md for the full build,
+// including the primary-result cross-check (electionresults.utah.gov) and
+// the house.gov incumbency cross-check (via browser automation, matched by
+// name not district number given the redistricting).
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — UT narrowing", () => {
+  it("narrows house rows to the exact district for all 4 UT districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(UT_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04"]) {
+      const out = await getOfficialRoster(
+        UT_STATE,
+        "house",
+        district,
+        UT_ELECTION_YEAR,
+      );
+      const expectedNames = UT_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("UT-02: 5 rows, all qualified_for_general_ballot; incumbent Blake D. Moore present alongside challengers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(UT_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      UT_STATE,
+      "house",
+      "02",
+      UT_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(5);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+    expect(out.find((r) => r.name === "Blake D. Moore")?.isIncumbent).toBe(
+      true,
+    );
+    expect(out.find((r) => r.name === "Peter Crosby")?.isIncumbent).toBe(false);
+  });
+
+  it("UT-01: open seat — no row carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(UT_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      UT_STATE,
+      "house",
+      "01",
+      UT_ELECTION_YEAR,
+    );
+    expect(out.length).toBeGreaterThan(0);
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+
+  it("spot-checks IAP and CST party codes come through verbatim (raw code, unmapped)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(UT_HOUSE_DB_ROWS));
+    const d02 = await getOfficialRoster(
+      UT_STATE,
+      "house",
+      "02",
+      UT_ELECTION_YEAR,
+    );
+    expect(d02.find((r) => r.name === "Carlton E. Bowen")?.party).toBe("UIAP");
+    const d03 = await getOfficialRoster(
+      UT_STATE,
+      "house",
+      "03",
+      UT_ELECTION_YEAR,
+    );
+    expect(d03.find((r) => r.name === "Cassie Easley")?.party).toBe("CST");
+  });
+
+  it("returns [] for (senate, null) — no UT senate rows exist in the fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      UT_STATE,
+      "senate",
+      null,
+      UT_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — UT", () => {
+  it("returns true for the 3 UT districts with a sitting incumbent seeking re-election (matched by name, not old district number)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(UT_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(UT_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          UT_STATE,
+          "house",
+          district,
+          UT_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for UT-01 — open seat, no sitting member among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(UT_HOUSE_DB_ROWS));
+    for (const district of UT_OPEN_SEAT_DISTRICTS) {
+      const rows = UT_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — UT wiring (house-only, no senate contest)", () => {
+  it("UT-02: incumbent Blake D. Moore excluded; the 4 other filers all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = UT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => utDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (UT has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("UT", 2, 2026);
+
+    expect(out.house.some((c) => c.name === "Blake D. Moore")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Peter Crosby",
+        "Daniel Cottam",
+        "Carlton E. Bowen",
+        "Robert M. Moesinger",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("UT-01 (open seat): no incumbent excluded, all 4 filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = UT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => utDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("UT", 1, 2026);
+
+    expect(out.house).toHaveLength(4);
+    expect(out.house.some((c) => c.name === "Blake D. Moore")).toBe(false);
   });
 });

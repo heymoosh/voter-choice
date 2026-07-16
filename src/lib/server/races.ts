@@ -124,6 +124,11 @@ const PARTY_NAMES: Record<string, string> = {
   // state-recognized minor party, not generic "IND" and NOT the same party
   // as Arizona's "AIP" despite the similar name.
   IAP: "Independent American Party",
+  // Utah's Independent American Party (Utah vertical slice) — a real
+  // state-recognized minor party, not generic "IND". Coded "UIAP", not the
+  // generic "IAP", to avoid colliding with Nevada's own, separately
+  // state-recognized "Independent American Party" (disambiguated 2026-07-16).
+  UIAP: "Independent American Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name
