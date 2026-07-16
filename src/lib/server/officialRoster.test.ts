@@ -424,6 +424,15 @@ import {
   UT_HOUSE_SOURCE_URLS,
   UT_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ut-official-roster-2026";
+import {
+  SC_HOUSE_ROSTER_2026,
+  SC_SENATE_ROSTER_2026,
+  SC_STATE,
+  SC_ELECTION_YEAR,
+  SC_HOUSE_SOURCE_URLS,
+  SC_SENATE_SOURCE_URLS,
+  SC_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/sc-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1878,6 +1887,46 @@ const UT_INCUMBENTS: Record<string, string> = {
 };
 
 const UT_OPEN_SEAT_DISTRICTS = ["01"];
+/** Same shape as `kyDbRow`, but for SC entries. */
+function scDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `sc-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? SC_HOUSE_SOURCE_URLS[0] : SC_SENATE_SOURCE_URLS[0],
+    retrievedAt: SC_RETRIEVED_AT,
+  };
+}
+
+const SC_HOUSE_DB_ROWS = SC_HOUSE_ROSTER_2026.map((e, i) =>
+  scDbRow(e, i, "house"),
+);
+const SC_SENATE_DB_ROWS = SC_SENATE_ROSTER_2026.map((e, i) =>
+  scDbRow(e, i, "senate"),
+);
+
+// SC-1 and SC-5 are open seats (Mace and Norman each ran for Governor
+// instead of House re-election); the other 5 districts' winning nominee is
+// the sitting incumbent. No incumbent Senate row at all (Graham, the
+// primary winner, died before the general — the Republican nomination is
+// entirely unresolved, so no Senate row is even the "incumbent's" row).
+const SC_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "Joe Wilson",
+  "03": "Sheri Biggs",
+  "04": "William Timmons",
+  "06": "James E Jim Clyburn",
+  "07": "Russell Fry",
+};
+
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
@@ -10692,5 +10741,233 @@ describe("lookupChallengers — UT wiring (house-only, no senate contest)", () =
 
     expect(out.house).toHaveLength(4);
     expect(out.house.some((c) => c.name === "Blake D. Moore")).toBe(false);
+  });
+});
+
+describe("getOfficialRoster — SC narrowing", () => {
+  it("narrows house rows to the exact district for every SC district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07"]) {
+      const out = await getOfficialRoster(
+        SC_STATE,
+        "house",
+        district,
+        SC_ELECTION_YEAR,
+      );
+      const expectedNames = SC_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 4 SC senate rows for (senate, null) — no Republican row, since Graham's nomination is unresolved", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      SC_STATE,
+      "senate",
+      null,
+      SC_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(SC_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...SC_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    expect(senate.some((r) => r.party === "REP")).toBe(false);
+
+    const houseInSenateRowset = await getOfficialRoster(
+      SC_STATE,
+      "house",
+      "01",
+      SC_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every SC row is qualified_for_general_ballot — no runoff_pending anywhere (SC's June 9 primary and June 23 runoff have both already occurred)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      SC_STATE,
+      "house",
+      "01",
+      SC_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(SC_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      SC_STATE,
+      "senate",
+      null,
+      SC_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+
+  it("SC's 4 new state-certified minor-party codes (SCA, SCC, SCF, SCW) are carried on the right candidates", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_HOUSE_DB_ROWS));
+    const d1 = await getOfficialRoster(
+      SC_STATE,
+      "house",
+      "01",
+      SC_ELECTION_YEAR,
+    );
+    expect(d1.find((r) => r.name === "Margo Ellis")?.party).toBe("SCA");
+
+    const d2 = await getOfficialRoster(
+      SC_STATE,
+      "house",
+      "02",
+      SC_ELECTION_YEAR,
+    );
+    expect(d2.find((r) => r.name === "Dayna Alane Smith")?.party).toBe("SCW");
+
+    const d5 = await getOfficialRoster(
+      SC_STATE,
+      "house",
+      "05",
+      SC_ELECTION_YEAR,
+    );
+    expect(d5.find((r) => r.name === "Andy Kaplan")?.party).toBe("SCF");
+
+    const d6 = await getOfficialRoster(
+      SC_STATE,
+      "house",
+      "06",
+      SC_ELECTION_YEAR,
+    );
+    expect(d6.find((r) => r.name === "Joseph Oddo")?.party).toBe("SCA");
+
+    mockedGetDb.mockReturnValue(makeDbMock(SC_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      SC_STATE,
+      "senate",
+      null,
+      SC_ELECTION_YEAR,
+    );
+    expect(senate.find((r) => r.name === "Mark Hackett")?.party).toBe("SCC");
+  });
+});
+
+describe("isIncumbentSeekingReelection — SC", () => {
+  it("returns true for SC-2, SC-3, SC-4, SC-6, SC-7 — the winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      SC_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          SC_STATE,
+          "house",
+          district,
+          SC_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for SC-1 — Mace (sitting rep) ran for Governor instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        SC_STATE,
+        "house",
+        "01",
+        SC_ELECTION_YEAR,
+        "Nancy Mace",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for SC-5 — Norman (sitting rep) ran for Governor instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        SC_STATE,
+        "house",
+        "05",
+        SC_ELECTION_YEAR,
+        "Ralph Norman",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Graham (sitting senator, won his own primary) died before the general, no incumbent row at all", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(SC_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        SC_STATE,
+        "senate",
+        null,
+        SC_ELECTION_YEAR,
+        "Lindsey Graham",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — SC wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = SC_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => scDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, SC_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("SC", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Wilson excluded; Democratic and SC Workers Party nominees
+    // are the remaining challengers.
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Dayna Alane Smith", "Zyon Khalifa"].sort(),
+    );
+  });
+
+  it("SC-1 (open seat, no incumbent filed): all 4 filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = SC_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => scDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, SC_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("SC", 1, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Bill Reeside",
+        "Jenny Costa Honeycutt",
+        "Margo Ellis",
+        "Nancy Lacore",
+      ].sort(),
+    );
+  });
+
+  it("senate: only the 4 determined nominees render, no Republican challenger appears (nomination unresolved)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = SC_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => scDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, SC_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("SC", 2, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      SC_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.some((c) => c.party === "Republican")).toBe(false);
+    expect(out.senate.find((c) => c.name === "Mark Hackett")?.party).toBe(
+      "Constitution Party",
+    );
   });
 });
