@@ -228,6 +228,44 @@ live index definition — no migration has been needed since 0016).
   anywhere persistent (not `.env.local`, not Vercel, not any committed
   file). No production migration, no production write, no flag flip.
 
+## Governing calendar dates (per plan doc item (e))
+
+Added 2026-07-16, as part of closing a gap the 2026-07-15 retroactive
+governing-calendar-dates sweep (which covered AZ/AL/OK/AK/CO/CA and
+separately confirmed TX/AR needed no card) missed — CT's PR landed in the
+same window as that sweep and wasn't included. Every date below is sourced
+directly from Connecticut's own official 2026 Election Calendar PDF
+(`portal.ct.gov/-/media/sots/electionservices/calendars/2026-elections/2026-election-calendar-122325.pdf`,
+rev. 05.28.26), confirmed 2026-07-16:
+
+- **2026-08-11** — the primary itself (already covered above).
+- **2026-08-13, 8:00pm** — Head Moderator's complete return filed with the
+  Secretary of the State (48 hours after polls close) — first complete,
+  but not yet uncontestable, vote count.
+- **2026-08-14** — last day for the head moderator to order a discrepancy
+  recount.
+- **2026-08-18** — deadline to conduct a close-vote or discrepancy recount
+  — the point the Aug 11 primary results become truly final and
+  uncontestable (§§ 9-310, 9-311, 9-311a, 9-311b, 9-370a, 9-445, 9-446).
+  This is the safe re-check date for CD1/CD4/CD5's pending nominations —
+  not the 8/13 "complete" return, which could still be overturned by a
+  recount ordered on 8/14.
+- **2026-08-19** — last day for a municipal clerk to forward "New Party"/
+  "No Party" nominating-petition pages (received by the clerk from
+  petitioners by 8/5) to the Secretary of the State (§§ 9-453i, 9-453n) —
+  the point at which any independent/no-party congressional petition
+  candidate, if one exists, becomes knowable. None was found as of this
+  build's retrieval date.
+- **2026-09-02** — Minor Party nomination & certification deadline (§§
+  9-372(6), 9-451–9-452a) — already noted inline above; repeated here for
+  completeness. No minor-party congressional filer exists yet as of
+  2026-07-16.
+- **2026-09-15** — the Secretary of the State sends the final list of
+  candidates for state and district offices (including US House) to every
+  municipal clerk (§ 9-462) — Connecticut's actual ballot-content-lock
+  date, after which no further change to the November 3 roster is
+  possible this cycle.
+
 ## Known gaps (explicit, not guessed — per the epic's SAFETY rule)
 
 - **3 of 17 candidates (Ruth Fortune, Winter Solomita, Jackson
