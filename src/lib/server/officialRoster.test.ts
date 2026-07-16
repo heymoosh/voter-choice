@@ -315,6 +315,16 @@ import {
   TN_SENATE_SOURCE_URLS,
   TN_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/tn-official-roster-2026";
+import {
+  OH_HOUSE_ROSTER_2026,
+  OH_SENATE_ROSTER_2026,
+  OH_SENATE_ROSTER_BUTLER,
+  OH_STATE,
+  OH_ELECTION_YEAR,
+  OH_RETRIEVED_AT,
+  OH_DISTRICT_SOURCE,
+  OH_SENATE_SOURCES,
+} from "../../../scripts/congressional-rosters/oh-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1441,6 +1451,62 @@ const TN_INCUMBENT_SAMPLE: Record<string, string> = {
   "05": "Andy Ogles",
   "07": "Matt Van Epps",
   "08": "David Kustoff",
+};
+
+/** Same shape as `kyDbRow`, but for OH entries — sourceUrl varies per
+ * district (Ohio has no unified statewide source; each row cites its own
+ * anchor county's document, see OH_DISTRICT_SOURCE) and, for the Senate,
+ * per filer (Levy's independent filing came from a different county
+ * document than the other three Senate candidates). */
+function ohDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  const sourceUrl =
+    office === "house"
+      ? OH_DISTRICT_SOURCE[entry.district as string]
+      : OH_SENATE_ROSTER_BUTLER.some((e) => e.name === entry.name)
+        ? OH_SENATE_SOURCES.BUTLER
+        : OH_SENATE_SOURCES.CUYAHOGA;
+  return {
+    id: `oh-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl,
+    retrievedAt: OH_RETRIEVED_AT,
+  };
+}
+
+const OH_HOUSE_DB_ROWS = OH_HOUSE_ROSTER_2026.map((e, i) =>
+  ohDbRow(e, i, "house"),
+);
+const OH_SENATE_DB_ROWS = OH_SENATE_ROSTER_2026.map((e, i) =>
+  ohDbRow(e, i, "senate"),
+);
+
+// All 15 OH House districts' winning nominee is the sitting incumbent — no
+// open seats (every incumbent sought re-election in 2026).
+const OH_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Greg Landsman",
+  "02": "David J. Taylor",
+  "03": "Joyce Beatty",
+  "04": "Jim Jordan",
+  "05": "Bob Latta",
+  "06": "Michael A. Rulli",
+  "07": "Max Miller",
+  "08": "Warren Davidson",
+  "09": "Marcy Kaptur",
+  "10": "Mike Turner",
+  "11": "Shontel M. Brown",
+  "12": "Troy Balderson",
+  "13": "Emilia Sykes",
+  "14": "David P. Joyce",
+  "15": "Mike Carey",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -7881,6 +7947,207 @@ describe("lookupChallengers — TN wiring (house + senate both covered)", () => 
       "Democrat",
     );
     expect(out.senate.find((c) => c.name === "Tharon Chandler")?.party).toBe(
+      "Independent",
+    );
+  });
+});
+
+describe("getOfficialRoster — OH narrowing", () => {
+  it("narrows house rows to the exact district for every OH district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+    ]) {
+      const out = await getOfficialRoster(
+        OH_STATE,
+        "house",
+        district,
+        OH_ELECTION_YEAR,
+      );
+      const expectedNames = OH_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 4 OH senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      OH_STATE,
+      "senate",
+      null,
+      OH_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(OH_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...OH_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      OH_STATE,
+      "house",
+      "01",
+      OH_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every OH row is qualified_for_general_ballot, declared_general_ballot_intent, or write_in_qualified — no runoff_pending anywhere (Ohio has no federal runoff primary)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      OH_STATE,
+      "house",
+      "01",
+      OH_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) =>
+        [
+          "qualified_for_general_ballot",
+          "declared_general_ballot_intent",
+          "write_in_qualified",
+        ].includes(r.ballotStatus),
+      ),
+    ).toBe(true);
+  });
+
+  it("write-in candidates (Asad, Martinichin OH-7; Ronan OH-15) carry party null and write_in_qualified", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_HOUSE_DB_ROWS));
+    const d7 = await getOfficialRoster(
+      OH_STATE,
+      "house",
+      "07",
+      OH_ELECTION_YEAR,
+    );
+    const asad = d7.find((r) => r.name === "Thahbia Asad");
+    expect(asad?.party).toBeNull();
+    expect(asad?.ballotStatus).toBe("write_in_qualified");
+    const martinichin = d7.find((r) => r.name === "Andrey Joseph Martinichin");
+    expect(martinichin?.party).toBeNull();
+    expect(martinichin?.ballotStatus).toBe("write_in_qualified");
+
+    const d15 = await getOfficialRoster(
+      OH_STATE,
+      "house",
+      "15",
+      OH_ELECTION_YEAR,
+    );
+    const ronan = d15.find((r) => r.name === "Samuel Ronan");
+    expect(ronan?.party).toBeNull();
+    expect(ronan?.ballotStatus).toBe("write_in_qualified");
+  });
+
+  it("Levy (Senate, independent) carries party IND and declared_general_ballot_intent, not qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      OH_STATE,
+      "senate",
+      null,
+      OH_ELECTION_YEAR,
+    );
+    const levy = senate.find((r) => r.name === "Gregory Lee Levy");
+    expect(levy?.party).toBe("IND");
+    expect(levy?.ballotStatus).toBe("declared_general_ballot_intent");
+  });
+});
+
+describe("isIncumbentSeekingReelection — OH", () => {
+  it("returns true for all 15 OH districts — every incumbent sought re-election, no open House seats", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      OH_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          OH_STATE,
+          "house",
+          district,
+          OH_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the US Senate seat — Husted (sitting appointed senator) is himself the Republican nominee", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(OH_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        OH_STATE,
+        "senate",
+        null,
+        OH_ELECTION_YEAR,
+        "Jon Husted",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — OH wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => ohDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, OH_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("OH", 3, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Beatty excluded; the Republican nominee is the sole
+    // challenger (no independent/minor-party filer in OH-3).
+    expect(out.house.map((c) => c.name)).toEqual(["Cleophus Dulaney"]);
+  });
+
+  it("OH-7 (write-ins present): incumbent excluded, the Democratic nominee and both write-ins render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "07",
+    ).map((e, i) => ohDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, OH_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("OH", 7, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Andrey Joseph Martinichin", "Brian Poindexter", "Thahbia Asad"].sort(),
+    );
+    expect(out.house.some((c) => c.name === "Max Miller")).toBe(false);
+  });
+
+  it("senate: Husted (incumbent AND the Republican nominee) excluded; Brown, Redpath, and Levy render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = OH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "03",
+    ).map((e, i) => ohDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, OH_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("OH", 3, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Gregory Lee Levy", "Sherrod Brown", "William B. Redpath"].sort(),
+    );
+    expect(out.senate.some((c) => c.name === "Jon Husted")).toBe(false);
+    expect(out.senate.find((c) => c.name === "Gregory Lee Levy")?.party).toBe(
       "Independent",
     );
   });
