@@ -88,6 +88,12 @@ export interface OfficialRosterEntry {
     // House district — its two 2026 federal filers went straight to the
     // general ballot (added building Idaho).
     | "CST"
+    // The Kentucky Party — a real state-recognized minor party under
+    // Kentucky law (listed in the KY SoS candidate-filings portal's own
+    // official Party Affiliation list), distinct from generic IND (added
+    // building Kentucky, mirroring the AIP/AKP/NPP/PF/LPF/FFP precedent
+    // for a state's own recognized minor party).
+    | "KYP"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
