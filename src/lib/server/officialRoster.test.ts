@@ -908,7 +908,6 @@ const KY_INCUMBENT_SAMPLE: Record<string, string> = {
   "05": "Hal Rogers",
 };
 
-
 /** Same shape as `meDbRow`, but for NE entries (house + senate both
  * covered — see the fixture's docblock). */
 function neDbRow(

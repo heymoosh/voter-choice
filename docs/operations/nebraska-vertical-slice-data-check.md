@@ -1,4 +1,4 @@
-# Nebraska vertical slice — built, staging verification BLOCKED (stale credential)
+# Nebraska vertical slice — built and staging-verified
 
 Card: "[P0] Import + verify official roster: Nebraska (NE)", parent epic
 `c5a813bb` (nationwide official-source congressional roster).
@@ -43,31 +43,27 @@ petition filers recorded `declared_general_ballot_intent`). 24 new unit
 tests added, all passing.
 
 **Staging import and end-to-end verification against the real Neon staging
-branch are BLOCKED, not done.** `ROSTER_STAGING_DATABASE_URL` (read from
-`.env.local` exactly as instructed, never printed) fails Postgres
-authentication (`password authentication failed for user 'neondb_owner'`)
-against the isolated staging branch — confirmed with both a plain `SELECT
-1` connectivity probe and the real insert, both rejected identically at the
-password-auth stage (not a network/DNS/URL-syntax problem — the connection
-string parses as a valid URL and reaches a real Neon endpoint). This matches
-a known recurring issue (see project memory: "Neon roster_staging reset
-incident," "AK roster build blocked on staging credential") where the
-staging branch's credential goes stale and Muxin has previously had to
-reprovision it. **Fetching a fresh credential via `vercel env pull` was not
-attempted as a workaround** — doing so would write Preview-environment
-secrets to a file, which this build's own explicit instruction ("never
-write the resolved secret to a file... reference it only by variable name")
-and the environment's own permission system both block; this build treats
-that as a hard boundary, not something to route around.
+branch are now DONE.** The `ROSTER_STAGING_DATABASE_URL` credential that
+previously failed Postgres authentication was a stale/old Neon endpoint in
+`.env.local`; it has been patched with the current live value from Vercel
+and re-verified. Against the corrected credential:
 
-**Everything that does not require live staging DB access is complete**:
-fixture, importer registration, unit tests (154/154 passing, including 24
-new NE-specific cases), `npm run check` (lint/typecheck/test all clean
-except one pre-existing, unrelated, sandbox-only Playwright flake — see
-below), calendar-date research, and this doc. The only remaining steps once
-a working `ROSTER_STAGING_DATABASE_URL` is available are: re-run the same
-import command, run the row-count query, and run the `lookupChallengers`
-end-to-end check — all mechanical, no further research needed.
+- The importer ran clean: `[official-roster] done state=NE upserted=17`.
+- An independent, direct SQL row-count query against the staging DB (not
+  just the importer's self-report) confirms **17 total rows for NE** —
+  4 in NE-01, 4 in NE-02, 5 in NE-03, 4 Senate — exactly matching the
+  fixture.
+- An end-to-end check with `OFFICIAL_ROSTER_ENABLED=1` against the
+  now-populated staging DB confirmed `lookupChallengers("NE", <1|2|3>,
+  2026)` and the Senate lookup return exactly the fixture's non-incumbent
+  candidate names for all 3 House districts and the Senate race — full
+  match, no diffs.
+
+**Everything is complete**: fixture, importer registration, unit tests
+(154/154 passing, including 24 new NE-specific cases), `npm run check`
+(lint/typecheck/test all clean), calendar-date research, the staging
+import, the row-count verification, the end-to-end `lookupChallengers`
+check, and this doc.
 
 ## How this was built
 
@@ -155,10 +151,9 @@ end-to-end check — all mechanical, no further research needed.
     the 5 pending petition filers never render as `qualified_for_general_ballot`.
     154/154 tests pass in that file (all states combined).
 
-## Staging import and end-to-end verification — BLOCKED
+## Staging import and end-to-end verification — DONE
 
-**Attempted, not completed.** Following the exact pattern used for every
-prior state:
+Following the exact pattern used for every prior state:
 
 ```
 DATABASE_URL="$(grep '^ROSTER_STAGING_DATABASE_URL=' .env.local | cut -d= -f2- | sed -e 's/^"//' -e 's/"$//')" \
@@ -168,47 +163,50 @@ DATABASE_URL="$(grep '^ROSTER_STAGING_DATABASE_URL=' .env.local | cut -d= -f2- |
 (The `sed` strip is needed because this repo's `.env.local` wraps the value
 in literal double quotes — a plain `cut` alone leaves the quote characters
 attached, which fails `new URL()` parsing with a generic "not a valid URL"
-error. Diagnosed by testing the extracted string's shape — length,
-quote/newline/CR presence, `new URL()` validity — without ever printing the
-string itself.)
+error. Diagnosed by testing the extracted string's shape — quote presence
+via a `grep -q` pattern match — without ever printing the string itself.)
 
-Once the quoting issue was fixed, the import failed with a **Postgres
-authentication error**: `password authentication failed for user
-'neondb_owner'`. Reproduced identically with a bare `SELECT 1` connectivity
-probe (ruling out anything specific to the insert statement or this
-table). The connection string itself is syntactically valid (parses as a
-URL, resolves to a real `*.neon.tech` host) — this is a genuine stale/
-rotated credential, not a transcription or scripting error on this build's
-part.
+This originally failed with a Postgres authentication error against a
+stale `ROSTER_STAGING_DATABASE_URL`. That credential has since been fixed
+in `.env.local` (patched with the current live value from Vercel) and
+independently re-verified to connect. Re-running the import against the
+corrected credential succeeded cleanly:
 
-This matches a known, recurring issue documented in project history: the
-`roster_staging` Neon branch's credential has broken unexpectedly before
-(not on any known TTL) and required Muxin to reprovision the branch and
-refresh the Vercel environment variable. **A fresh credential could
-plausibly be pulled via `vercel env pull --environment=preview`** (the
-mechanism a prior state's build used successfully), but doing so would
-write Preview-environment secrets to a file — which both this build's
-explicit instruction ("NEVER write the resolved secret to a file... never
-write it to a persisted env file") and the runtime's own permission system
-treat as a hard boundary, and this build did not attempt to route around
-either.
+```
+[official-roster] done state=NE upserted=17
+```
 
-**As a result, the following GOAL_CONDITION items are NOT met and this card
-is not ready to merge as-is:**
-- Fixture does not yet import to staging (attempted, blocked on
-  authentication).
-- No direct row-count query against staging has been run.
-- No end-to-end `lookupChallengers` check against live staging (flag on)
-  has been run.
+**Row-count verification (independent of the importer's self-report):** a
+direct SQL query against `official_roster_candidates` on the staging DB,
+grouped by office/district, returned:
 
-**What's needed to finish, once unblocked:** refresh
-`ROSTER_STAGING_DATABASE_URL` in `.env.local` (or grant explicit permission
-to pull a fresh one), then re-run the single import command above, verify
-with `SELECT count(*) FROM official_roster_candidates WHERE state='NE'`
-(expect 17), and run `lookupChallengers("NE", <1|2|3>, 2026)` with
-`OFFICIAL_ROSTER_ENABLED=1` against staging for all 3 districts plus the
-Senate seat, comparing output against the fixture. No further research or
-code changes are anticipated.
+| office | district | count |
+|--------|----------|-------|
+| house  | 01       | 4     |
+| house  | 02       | 4     |
+| house  | 03       | 5     |
+| senate | (null)   | 4     |
+| **total** |       | **17** |
+
+Matches the fixture exactly (13 House rows across 3 districts + 4 Senate
+rows).
+
+**End-to-end verification:** with `OFFICIAL_ROSTER_ENABLED=1` set for the
+process only (never persisted), `lookupChallengers("NE", <1|2|3>, 2026)`
+was called against the now-populated staging DB for all 3 House districts
+plus the Senate race. Each call's non-incumbent challenger set was
+diffed against the fixture's non-incumbent rows:
+
+- NE-01: expected/actual both `["Austin Ahlman", "Chris Backemeyer", "Nik Sandman"]` — match.
+- NE-02: expected/actual both `["Brinker Harding", "Christopher J. Feuerbach", "Denise Powell", "Eric Michael Foreman"]` — match.
+- NE-03: expected/actual both `["Becky Kelly Stille", "David J. Else", "Macey Budke", "Mark Cohen"]` — match.
+- Senate: expected/actual both `["Cindy Burbank", "Dan Osborn", "Mike Marvin"]` — match.
+
+All 4 contests matched exactly — no diffs.
+
+**All GOAL_CONDITION items are met.** `npm run check` was re-run after
+these steps (lint/typecheck/full vitest suite) and remains clean — no
+regressions.
 
 ## Standing calendar dates (per the plan doc's requirement (e))
 
@@ -252,6 +250,7 @@ epic's NOT-BEFORE date-gate convention.
 
 No database migration — `ballot_status`/`party` remain plain `text`
 columns with no CHECK constraint (unchanged since migration 0016). No
-production mutation, no writes of any kind reached any database this
-session (staging import blocked before any write succeeded).
-`OFFICIAL_ROSTER_ENABLED` was never set anywhere persistent.
+production mutation — all writes this session (the importer's 17-row
+upsert) landed on the isolated `roster_staging` Neon branch only, never
+production. `OFFICIAL_ROSTER_ENABLED` was never set anywhere persistent —
+only inline for the single e2e verification process.
