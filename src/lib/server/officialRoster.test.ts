@@ -80,6 +80,14 @@ import {
   CO_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/co-official-roster-2026";
 import {
+  CT_HOUSE_ROSTER_2026,
+  CT_STATE,
+  CT_OFFICE,
+  CT_ELECTION_YEAR,
+  CT_HOUSE_SOURCE_URLS,
+  CT_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ct-official-roster-2026";
+import {
   CA_HOUSE_ROSTER_2026,
   CA_STATE,
   CA_ELECTION_YEAR,
@@ -281,6 +289,33 @@ const CO_INCUMBENT_SAMPLE: Record<string, string> = {
   "06": "Jason Crow",
   "07": "Brittany Pettersen",
   "08": "Gabe Evans",
+};
+
+/** Same shape as `dbRow`, but for CT entries — house-only, like AZ. */
+function ctDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `ct-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: CT_OFFICE,
+    district: entry.district,
+    sourceUrl: CT_HOUSE_SOURCE_URLS[0],
+    retrievedAt: CT_RETRIEVED_AT,
+  };
+}
+
+const CT_HOUSE_DB_ROWS = CT_HOUSE_ROSTER_2026.map(ctDbRow);
+
+// All 5 CT districts' sitting incumbent (per clerk.house.gov) is running for
+// re-election in 2026 — no open seats.
+const CT_INCUMBENTS: Record<string, string> = {
+  "01": "John B. Larson",
+  "02": "Joe Courtney",
+  "03": "Rosa L. DeLauro",
+  "04": "Jim Himes",
+  "05": "Jahana Hayes",
 };
 
 /** Same shape as `dbRow`, but for CA entries — house-only fixture, no
@@ -1826,6 +1861,137 @@ describe("lookupChallengers — CO wiring (house + senate both covered)", () => 
     expect(out.senate.find((c) => c.name === "Mark Baisley")?.party).toBe(
       "Republican",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Connecticut — house-only (like AZ: 0 senate contests in 2026), the first
+// state through this track with two DIFFERENT ballotStatus values inside a
+// single "general"-stage fixture (contested primary-pending districts
+// alongside already-determined uncontested nominees). See
+// docs/operations/connecticut-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — CT narrowing", () => {
+  it("narrows to the exact (office, district) contest for each of the 5 CT districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CT_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05"]) {
+      const out = await getOfficialRoster(
+        CT_STATE,
+        CT_OFFICE,
+        district,
+        CT_ELECTION_YEAR,
+      );
+      const expectedNames = CT_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns no rows for a senate contest (CT has 0 in 2026)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CT_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      CT_STATE,
+      "senate",
+      null,
+      CT_ELECTION_YEAR,
+    );
+    expect(out).toEqual([]);
+  });
+
+  it("CD1 and CD5 Democratic primary rows carry qualified_for_primary_ballot; uncontested CD2/CD3 rows carry qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CT_HOUSE_DB_ROWS));
+    const cd1 = await getOfficialRoster(
+      CT_STATE,
+      CT_OFFICE,
+      "01",
+      CT_ELECTION_YEAR,
+    );
+    expect(cd1.find((r) => r.name === "Luke Bronin")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+    expect(cd1.find((r) => r.name === "Ruth Fortune")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+    expect(cd1.find((r) => r.name === "Amy Chai")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+
+    const cd2 = await getOfficialRoster(
+      CT_STATE,
+      CT_OFFICE,
+      "02",
+      CT_ELECTION_YEAR,
+    );
+    expect(cd2.find((r) => r.name === "Joe Courtney")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — CT", () => {
+  it("returns true for every CT district — no open seats in 2026", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(CT_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(CT_INCUMBENTS)) {
+      const out = await isIncumbentSeekingReelection(
+        CT_STATE,
+        CT_OFFICE,
+        district,
+        CT_ELECTION_YEAR,
+        incumbentName,
+      );
+      expect(out).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — CT wiring (house-only, mixed ballotStatus within one contest)", () => {
+  it("CD1: incumbent Larson excluded; the 3 other primary contestants (incl. petition-route Fortune) and uncontested Chai all render", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => ctDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (CT has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("CT", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "John B. Larson")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Luke Bronin", "Jillian Gilchrest", "Ruth Fortune", "Amy Chai"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("every CT district's sitting incumbent is excluded from that district's challenger list", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    for (const [district, incumbentName] of Object.entries(CT_INCUMBENTS)) {
+      const houseRows = CT_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e, i) => ctDbRow(e, i));
+      mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+      const out = await lookupChallengers("CT", Number(district), 2026);
+
+      expect(out.house.some((c) => c.name === incumbentName)).toBe(false);
+    }
+  });
+
+  it("CD2 (uncontested, determined): sole Republican Austin renders as the only challenger", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = CT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => ctDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("CT", 2, 2026);
+
+    expect(out.house.map((c) => c.name)).toEqual(["George Patrick Austin"]);
   });
 });
 

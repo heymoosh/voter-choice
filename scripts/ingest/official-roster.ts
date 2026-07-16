@@ -83,6 +83,14 @@ import {
   CO_SENATE_ROSTER_2026,
 } from "../congressional-rosters/co-official-roster-2026";
 import {
+  CT_STATE,
+  CT_ELECTION_YEAR,
+  CT_STAGE,
+  CT_HOUSE_SOURCE_URLS,
+  CT_RETRIEVED_AT,
+  CT_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/ct-official-roster-2026";
+import {
   CA_STATE,
   CA_ELECTION_YEAR,
   CA_STAGE,
@@ -211,6 +219,17 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: CO_SENATE_SOURCE_URLS[0],
       retrievedAt: CO_RETRIEVED_AT,
       entries: CO_SENATE_ROSTER_2026,
+    },
+  ],
+  CT: [
+    {
+      state: CT_STATE,
+      office: "house",
+      electionYear: CT_ELECTION_YEAR,
+      stage: CT_STAGE,
+      sourceUrl: CT_HOUSE_SOURCE_URLS[0],
+      retrievedAt: CT_RETRIEVED_AT,
+      entries: CT_HOUSE_ROSTER_2026,
     },
   ],
   CA: [
