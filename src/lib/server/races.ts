@@ -103,6 +103,11 @@ const PARTY_NAMES: Record<string, string> = {
   // Legal Marijuana Now (Nebraska vertical slice) — a real, state-
   // recognized minor party under Nebraska election law, not generic "IND".
   LMN: "Legal Marijuana Now",
+  // Minnesota's Democratic-Farmer-Labor party (Minnesota vertical slice) —
+  // the state's actual Democratic affiliate under Minnesota law, not
+  // generic "DEM"; the official candidates.sos.mn.gov portal lists this
+  // verbatim as the party name.
+  DFL: "Democratic-Farmer-Labor",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name

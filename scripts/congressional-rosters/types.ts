@@ -101,6 +101,13 @@ export interface OfficialRosterEntry {
     // AIP/AKP/NPP/PF/LPF/FFP precedent of trusting an official source's own
     // party label over inventing a generic bucket).
     | "LMN"
+    // Minnesota's Democratic-Farmer-Labor party — the state's actual
+    // Democratic affiliate under Minnesota law (M.S. 200.02, subd. 7), not
+    // a generic "DEM" — the official candidates.sos.mn.gov portal lists
+    // party as "Democratic-Farmer-Labor" verbatim, never "Democratic"
+    // (added building Minnesota, mirroring the AIP/AKP/NPP/PF/LPF/FFP
+    // precedent for a state's own recognized major/minor party).
+    | "DFL"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;

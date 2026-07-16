@@ -219,6 +219,15 @@ import {
   MO_HOUSE_SOURCE_URLS,
   MO_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/mo-official-roster-2026";
+import {
+  MN_HOUSE_ROSTER_2026,
+  MN_SENATE_ROSTER_2026,
+  MN_STATE,
+  MN_ELECTION_YEAR,
+  MN_HOUSE_SOURCE_URLS,
+  MN_SENATE_SOURCE_URLS,
+  MN_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/mn-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -984,6 +993,45 @@ const MO_INCUMBENTS: Record<string, string> = {
 };
 
 const MO_OPEN_SEAT_DISTRICTS = ["06"];
+
+function mnDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `mn-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? MN_HOUSE_SOURCE_URLS[0] : MN_SENATE_SOURCE_URLS[0],
+    retrievedAt: MN_RETRIEVED_AT,
+  };
+}
+
+const MN_HOUSE_DB_ROWS = MN_HOUSE_ROSTER_2026.map((e, i) =>
+  mnDbRow(e, i, "house"),
+);
+const MN_SENATE_DB_ROWS = MN_SENATE_ROSTER_2026.map((e, i) =>
+  mnDbRow(e, i, "senate"),
+);
+
+// MN-02 is the only open House seat (Craig filed for Senate instead of
+// re-election); every other district's sitting incumbent filed in the same
+// district per Congress.gov's 119th Congress member list.
+const MN_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Brad Finstad",
+  "03": "Kelly Morrison",
+  "04": "Betty McCollum",
+  "05": "Ilhan Omar",
+  "06": "Tom Emmer",
+  "07": "Michelle Fischbach",
+  "08": "Pete Stauber",
+};
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
@@ -5237,5 +5285,244 @@ describe("lookupChallengers — MO wiring (house-only, no senate contest)", () =
 
     expect(out.house).toHaveLength(9);
     expect(out.house.some((c) => c.name === "Sam Graves")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Minnesota (MN) — 8 US House districts + the 2026 US Senate race (Tina
+// Smith's open Class 2 seat). STAGE = "primary": Minnesota's August 11,
+// 2026 primary is still upcoming, so almost every contested party primary
+// (>1 filer) is recorded qualified_for_primary_ballot, not runoff_pending —
+// Minnesota has no runoff mechanism. A party with exactly one filer for a
+// seat has no primary contest and is recorded qualified_for_general_ballot
+// directly. MN-02 is the only open House seat (Craig filed for the open
+// Senate seat instead). See
+// docs/operations/minnesota-vertical-slice-data-check.md for the full
+// build, including the operational-navigation write-up for
+// candidates.sos.mn.gov (not Civix-vended).
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MN narrowing", () => {
+  it("narrows house rows to the exact district for all 8 MN districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04", "05", "06", "07", "08"]) {
+      const out = await getOfficialRoster(
+        MN_STATE,
+        "house",
+        district,
+        MN_ELECTION_YEAR,
+      );
+      const expectedNames = MN_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 17 MN senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      MN_STATE,
+      "senate",
+      null,
+      MN_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(MN_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...MN_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      MN_STATE,
+      "house",
+      "01",
+      MN_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("MN-01: incumbent Finstad and both primary challengers all carry qualified_for_primary_ballot — no nominee is yet determined", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MN_STATE,
+      "house",
+      "01",
+      MN_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(5);
+    expect(out.find((r) => r.name === "Brad Finstad")?.isIncumbent).toBe(true);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+
+  it("MN-02 (open seat): sole Republican filer Eric Pratt carries qualified_for_general_ballot; the 6-way contested DFL primary all carry qualified_for_primary_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MN_STATE,
+      "house",
+      "02",
+      MN_ELECTION_YEAR,
+    );
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    expect(out.find((r) => r.name === "Eric Pratt")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    const dflFilers = out.filter((r) => r.party === "DFL");
+    expect(dflFilers).toHaveLength(6);
+    expect(
+      dflFilers.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+
+  it("MN-05: sole Independent filer DeVelle L. Jackson carries qualified_for_general_ballot (not declared_general_ballot_intent) alongside incumbent Omar's contested DFL primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MN_STATE,
+      "house",
+      "05",
+      MN_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "DeVelle L. Jackson")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "Ilhan Omar")?.isIncumbent).toBe(true);
+    expect(out.find((r) => r.name === "Ilhan Omar")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+  });
+
+  it("senate: open seat (no isIncumbent row); Independent and Libertarian sole filers carry qualified_for_general_ballot, both major-party fields carry qualified_for_primary_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MN_STATE,
+      "senate",
+      null,
+      MN_ELECTION_YEAR,
+    );
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    expect(out.find((r) => r.name === "Marisa Simonetti")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "Rebecca Whiting")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(
+      out
+        .filter((r) => r.party === "REP" || r.party === "DFL")
+        .every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — MN", () => {
+  it("returns true for MN-01, MN-03, MN-04, MN-05, MN-06, MN-07, MN-08 — the sitting incumbent filed in the same district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      MN_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MN_STATE,
+          "house",
+          district,
+          MN_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for MN-02 — Craig (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MN_STATE,
+        "house",
+        "02",
+        MN_ELECTION_YEAR,
+        "Angie Craig",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Tina Smith (sitting senator) did not file for reelection", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MN_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MN_STATE,
+        "senate",
+        null,
+        MN_ELECTION_YEAR,
+        "Tina Smith",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — MN wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => mnDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, MN_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("MN", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Finstad excluded; every other filer (both parties'
+    // contested primaries) renders as a challenger.
+    expect(out.house.some((c) => c.name === "Brad Finstad")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Gregory A. Goetzman",
+        "Oliver R. Morlan",
+        "Alex Eaton",
+        "Jake Johnson",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("MN-02 (open seat): no incumbent excluded — the sole Republican filer and all 6 DFL primary filers all render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => mnDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MN_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MN", 2, 2026);
+
+    expect(out.house).toHaveLength(7);
+    expect(out.house.some((c) => c.name === "Eric Pratt")).toBe(true);
+  });
+
+  it("senate (open seat): no incumbent excluded — every filer across all 4 party lines renders as a challenger, none flagged isRunoffPending (MN has no runoff mechanism)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MN_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => mnDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MN_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MN", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      MN_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "Rebecca Whiting")?.party).toBe(
+      "Libertarian",
+    );
+    expect(out.senate.find((c) => c.name === "Marisa Simonetti")?.party).toBe(
+      "Independent",
+    );
+    expect(out.senate.every((c) => c.isRunoffPending === false)).toBe(true);
   });
 });
