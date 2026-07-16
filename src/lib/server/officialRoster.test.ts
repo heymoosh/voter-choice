@@ -228,6 +228,15 @@ import {
   MN_SENATE_SOURCE_URLS,
   MN_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/mn-official-roster-2026";
+import {
+  IL_HOUSE_ROSTER_2026,
+  IL_SENATE_ROSTER_2026,
+  IL_STATE,
+  IL_ELECTION_YEAR,
+  IL_HOUSE_SOURCE_URLS,
+  IL_SENATE_SOURCE_URLS,
+  IL_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/il-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1032,6 +1041,54 @@ const MN_INCUMBENT_SAMPLE: Record<string, string> = {
   "07": "Michelle Fischbach",
   "08": "Pete Stauber",
 };
+/** Same shape as `flDbRow`, but for IL entries. */
+function ilDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `il-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? IL_HOUSE_SOURCE_URLS[0] : IL_SENATE_SOURCE_URLS[0],
+    retrievedAt: IL_RETRIEVED_AT,
+  };
+}
+
+const IL_HOUSE_DB_ROWS = IL_HOUSE_ROSTER_2026.map((e, i) =>
+  ilDbRow(e, i, "house"),
+);
+const IL_SENATE_DB_ROWS = IL_SENATE_ROSTER_2026.map((e, i) =>
+  ilDbRow(e, i, "senate"),
+);
+
+// The 12 IL districts whose 2026 nominee is a sitting incumbent, cross-
+// checked by full name against house.gov (see fixture docblock).
+const IL_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Jonathan L. Jackson",
+  "03": "Delia Ramirez",
+  "05": "Mike Quigley",
+  "06": "Sean Casten",
+  "10": "Brad Schneider",
+  "11": "Bill Foster",
+  "12": "Mike Bost",
+  "13": "Nikki Budzinski",
+  "14": "Lauren Underwood",
+  "15": "Mary E. Miller",
+  "16": "Darin LaHood",
+  "17": "Eric Sorensen",
+};
+
+// IL districts with no incumbent row at all — sitting member is not on the
+// 2026 ballot for any federal office (see fixture docblock): 02 (Kelly), 04
+// (García), 07 (Davis), 08 (Krishnamoorthi), 09 (Schakowsky).
+const IL_OPEN_SEAT_DISTRICTS = ["02", "04", "07", "08", "09"];
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
@@ -5524,5 +5581,209 @@ describe("lookupChallengers — MN wiring (house + senate both covered)", () => 
       "Independent",
     );
     expect(out.senate.every((c) => c.isRunoffPending === false)).toBe(true);
+  });
+});
+
+describe("getOfficialRoster — IL narrowing", () => {
+  it("narrows house rows to the exact district for every one of the 17 IL districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_HOUSE_DB_ROWS));
+    const districts = Array.from({ length: 17 }, (_, i) =>
+      String(i + 1).padStart(2, "0"),
+    );
+    for (const district of districts) {
+      const out = await getOfficialRoster(
+        IL_STATE,
+        "house",
+        district,
+        IL_ELECTION_YEAR,
+      );
+      const expectedNames = IL_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 3 IL senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      IL_STATE,
+      "senate",
+      null,
+      IL_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(IL_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...IL_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      IL_STATE,
+      "house",
+      "01",
+      IL_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("IL-4's two independents with a pending ballot-access objection carry declared_general_ballot_intent, not qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      IL_STATE,
+      "house",
+      "04",
+      IL_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Mayra Macias")?.ballotStatus).toBe(
+      "declared_general_ballot_intent",
+    );
+    expect(out.find((r) => r.name === "Byron Sigcho Lopez")?.ballotStatus).toBe(
+      "declared_general_ballot_intent",
+    );
+    // Getty, the third IL-4 independent, has no pending objection — fully
+    // qualified.
+    expect(out.find((r) => r.name === "Chris Getty")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+  });
+
+  it("senate: Durbin's open seat has no incumbent row; the DEM nominee (sitting Lt. Governor Stratton) carries isIncumbent false for THIS Senate contest", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_SENATE_DB_ROWS));
+    const out = await getOfficialRoster(
+      IL_STATE,
+      "senate",
+      null,
+      IL_ELECTION_YEAR,
+    );
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+    expect(out.find((r) => r.name === "Juliana Stratton")).toBeDefined();
+  });
+});
+
+describe("isIncumbentSeekingReelection — IL", () => {
+  it("returns true for the sample of IL districts whose nominee is a sitting incumbent, cross-checked by full name against house.gov (not district number/surname alone — see the fixture's IL-4 Garcia near-miss)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      IL_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          IL_STATE,
+          "house",
+          district,
+          IL_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for the open-seat districts — the sitting member is not among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_HOUSE_DB_ROWS));
+    for (const district of IL_OPEN_SEAT_DISTRICTS) {
+      const rows = IL_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+
+  it("IL-4: checking against Jesús García (the district's former surname-sharing sitting member, NOT the DEM nominee Patty Garcia) returns false — no incumbent row exists for this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        IL_STATE,
+        "house",
+        "04",
+        IL_ELECTION_YEAR,
+        "Jesus Garcia",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Durbin (retiring) is not among the filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(IL_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        IL_STATE,
+        "senate",
+        null,
+        IL_ELECTION_YEAR,
+        "Dick Durbin",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — IL wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => ilDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, IL_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("IL", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Jackson excluded; the REP filer remains.
+    expect(out.house.some((c) => c.name === "Jonathan L. Jackson")).toBe(false);
+    expect(out.house.map((c) => c.name)).toEqual(["Christian Maxwell"]);
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("IL-4 (open seat, no incumbent): all 6 filers render as challengers, including the two independents with a pending ballot-access objection", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "04",
+    ).map((e, i) => ilDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, IL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("IL", 4, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Patty Garcia",
+        "Lupe Castillo",
+        "Ed Hershey",
+        "Chris Getty",
+        "Mayra Macias",
+        "Byron Sigcho Lopez",
+      ].sort(),
+    );
+  });
+
+  it("IL-12 (Bost, incumbent): Bost excluded; the DEM challenger renders", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "12",
+    ).map((e, i) => ilDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, IL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("IL", 12, 2026);
+
+    expect(out.house.some((c) => c.name === "Mike Bost")).toBe(false);
+    expect(out.house.map((c) => c.name)).toEqual(["Julie Fortier"]);
+  });
+
+  it("senate: Durbin's open seat has no incumbent to exclude; all 3 ballot-qualified filers render (Removed filer Muhammad is not in the fixture)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = IL_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => ilDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, IL_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("IL", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Juliana Stratton", "Don Tracy", "Whitfield Harrington Jr."].sort(),
+    );
   });
 });
