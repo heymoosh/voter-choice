@@ -255,6 +255,15 @@ import {
   NJ_SENATE_SOURCE_URLS,
   NJ_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/nj-official-roster-2026";
+import {
+  MS_HOUSE_ROSTER_2026,
+  MS_SENATE_ROSTER_2026,
+  MS_STATE,
+  MS_ELECTION_YEAR,
+  MS_HOUSE_SOURCE_URLS,
+  MS_SENATE_SOURCE_URLS,
+  MS_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ms-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1185,6 +1194,44 @@ const MT_SENATE_DB_ROWS = MT_SENATE_ROSTER_2026.map((e, i) =>
 // Senate seat (Daines withdrew) are both open — exercised separately below.
 const MT_INCUMBENT_SAMPLE: Record<string, string> = {
   "02": "Troy Downing",
+};
+
+/** Same shape as `meDbRow`, but for MS entries — both chambers covered. */
+function msDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ms-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? MS_HOUSE_SOURCE_URLS[0] : MS_SENATE_SOURCE_URLS[0],
+    retrievedAt: MS_RETRIEVED_AT,
+  };
+}
+
+const MS_HOUSE_DB_ROWS = MS_HOUSE_ROSTER_2026.map((e, i) =>
+  msDbRow(e, i, "house"),
+);
+const MS_SENATE_DB_ROWS = MS_SENATE_ROSTER_2026.map((e, i) =>
+  msDbRow(e, i, "senate"),
+);
+
+// Every one of MS's 4 sitting US Representatives (per house.gov) and the
+// sitting senator (per senate.gov) won their own party's primary in the
+// same seat they currently hold — no open seats, no redistricting
+// complications (see the fixture's docblock).
+const MS_INCUMBENTS: Record<string, string> = {
+  "01": "Trent Kelly",
+  "02": "Bennie G. Thompson",
+  "03": "Michael Guest",
+  "04": "Mike Ezell",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -6367,6 +6414,176 @@ describe("lookupChallengers — NJ wiring (house + senate both covered)", () => 
     expect(out.senate.some((c) => c.name === "CORY BOOKER")).toBe(false);
     expect(out.senate.map((c) => c.name).sort()).toEqual(
       ["JUSTIN MURPHY", "VERONICA FERNANDEZ", "JOANNE KUNIANSKY"].sort(),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Mississippi (MS) — both chambers, general-stage (the March 10, 2026
+// primary is already past, no runoff was needed for any congressional
+// race). Every sitting incumbent (4 House + 1 Senate) won their own
+// party's primary in their own seat — no open seats. See the fixture's own
+// docblock and docs/operations/mississippi-vertical-slice-data-check.md
+// for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MS narrowing", () => {
+  it("narrows house rows to the exact district for all 4 MS districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MS_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04"]) {
+      const out = await getOfficialRoster(
+        MS_STATE,
+        "house",
+        district,
+        MS_ELECTION_YEAR,
+      );
+      const expectedNames = MS_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 3 MS senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MS_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      MS_STATE,
+      "senate",
+      null,
+      MS_ELECTION_YEAR,
+    );
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      ["Cindy Hyde-Smith", "Scott Colom", "Ty Pinkins"].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      MS_STATE,
+      "house",
+      "01",
+      MS_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("MS-01: 3 rows (incumbent Trent Kelly + Democratic + Libertarian nominees), all qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MS_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MS_STATE,
+      "house",
+      "01",
+      MS_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Trent Kelly", "Cliff Johnson", "Johnny Baucom"].sort(),
+    );
+    expect(out.find((r) => r.name === "Trent Kelly")?.isIncumbent).toBe(true);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+
+  it("MS-04: Independent filer Carl Boyanton renders qualified_for_general_ballot with party IND", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MS_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MS_STATE,
+      "house",
+      "04",
+      MS_ELECTION_YEAR,
+    );
+    const boyanton = out.find((r) => r.name === "Carl Boyanton");
+    expect(boyanton?.party).toBe("IND");
+    expect(boyanton?.ballotStatus).toBe("qualified_for_general_ballot");
+  });
+});
+
+describe("isIncumbentSeekingReelection — MS", () => {
+  it("returns true for all 4 MS House districts' sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MS_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(MS_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MS_STATE,
+          "house",
+          district,
+          MS_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the US Senate seat — sitting Senator Hyde-Smith filed for and won re-nomination", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MS_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MS_STATE,
+        "senate",
+        null,
+        MS_ELECTION_YEAR,
+        "Cindy Hyde-Smith",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — MS wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MS_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => msDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, MS_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("MS", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Thompson excluded; the Republican nominee and the
+    // Independent filer both render as challengers
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Ron Eller", "Bennie Foster"].sort(),
+    );
+    // incumbent Hyde-Smith excluded; the other two senate filers render as
+    // challengers
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Scott Colom", "Ty Pinkins"].sort(),
+    );
+    for (const c of [...out.house, ...out.senate]) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("MS-01: incumbent Trent Kelly excluded; Cliff Johnson and Johnny Baucom render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MS_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => msDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MS_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MS", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Trent Kelly")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Cliff Johnson", "Johnny Baucom"].sort(),
+    );
+  });
+
+  it("senate: incumbent Hyde-Smith excluded; Scott Colom and Ty Pinkins render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MS_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => msDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MS_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MS", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "Cindy Hyde-Smith")).toBe(false);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Scott Colom", "Ty Pinkins"].sort(),
     );
   });
 });
