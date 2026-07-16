@@ -230,6 +230,14 @@ import {
   NE_HOUSE_ROSTER_2026,
   NE_SENATE_ROSTER_2026,
 } from "../congressional-rosters/ne-official-roster-2026";
+import {
+  MO_STATE,
+  MO_ELECTION_YEAR,
+  MO_STAGE,
+  MO_HOUSE_SOURCE_URLS,
+  MO_RETRIEVED_AT,
+  MO_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/mo-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -624,6 +632,19 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: NE_SENATE_SOURCE_URLS[0],
       retrievedAt: NE_RETRIEVED_AT,
       entries: NE_SENATE_ROSTER_2026,
+    },
+  ],
+  // No Senate row — Missouri has no 2026 US Senate contest (Hawley's Class 1
+  // seat runs to 2031, Schmitt's Class 3 seat to 2029).
+  MO: [
+    {
+      state: MO_STATE,
+      office: "house",
+      electionYear: MO_ELECTION_YEAR,
+      stage: MO_STAGE,
+      sourceUrl: MO_HOUSE_SOURCE_URLS[0],
+      retrievedAt: MO_RETRIEVED_AT,
+      entries: MO_HOUSE_ROSTER_2026,
     },
   ],
 };
