@@ -367,6 +367,14 @@ import {
   MA_SENATE_SOURCE_URLS,
   MA_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ma-official-roster-2026";
+import {
+  ND_HOUSE_ROSTER_2026,
+  ND_STATE,
+  ND_ELECTION_YEAR,
+  ND_HOUSE_SOURCE_URLS,
+  ND_RETRIEVED_AT,
+  ND_HOUSE_DISTRICT,
+} from "../../../scripts/congressional-rosters/nd-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -9293,6 +9301,114 @@ describe("lookupChallengers — MA wiring (house + senate both covered)", () => 
 
     expect(out.senate.map((c) => c.name).sort()).toEqual(
       ["John Deaton", "Seth Moulton"].sort(),
+    );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// North Dakota — house-only (no 2026 Senate race), single at-large seat
+// (district key "00", like Alaska and Wyoming). North Dakota's June 9, 2026
+// primary is fully certified, so this is a general-ballot state with
+// exactly two candidates: Julie Fedorchak (REP, incumbent) and Trygve
+// Hammer (DEM — North Dakota's "Democratic-NPL" ballot label collapses to
+// the existing DEM code, not a new party code). See
+// docs/operations/north-dakota-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+function ndDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `nd-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house",
+    district: entry.district,
+    sourceUrl: ND_HOUSE_SOURCE_URLS[0],
+    retrievedAt: ND_RETRIEVED_AT,
+  };
+}
+
+const ND_HOUSE_DB_ROWS = ND_HOUSE_ROSTER_2026.map(ndDbRow);
+
+describe("getOfficialRoster — ND narrowing", () => {
+  it("returns both ND house rows for the at-large district key ('00'), none for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ND_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      ND_STATE,
+      "house",
+      ND_HOUSE_DISTRICT,
+      ND_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Julie Fedorchak", "Trygve Hammer"].sort(),
+    );
+
+    const wrongDistrict = await getOfficialRoster(
+      ND_STATE,
+      "house",
+      "01",
+      ND_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+
+  it("returns none for (senate, null) — North Dakota has no Senate contest this cycle", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ND_HOUSE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      ND_STATE,
+      "senate",
+      null,
+      ND_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+
+  it("every ND row is qualified_for_general_ballot — both nominations were determined outright in the June 9 primary", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ND_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      ND_STATE,
+      "house",
+      ND_HOUSE_DISTRICT,
+      ND_ELECTION_YEAR,
+    );
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — ND", () => {
+  it("returns true — Fedorchak (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(ND_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        ND_STATE,
+        "house",
+        ND_HOUSE_DISTRICT,
+        ND_ELECTION_YEAR,
+        "Julie Fedorchak",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — ND wiring (house-only, at-large)", () => {
+  it("house covered by the official roster, no senate fixture to skip: a numeric district of 0 resolves the at-large seat, incumbent Fedorchak excluded, Hammer renders as the sole challenger with mapped party name", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    // Sequenced: official house query -> ND_HOUSE_DB_ROWS, official senate
+    // query -> [] (ND has 0 senate contests), FEC fallback (senate
+    // uncovered) -> [].
+    const dbMock = makeSequencedDbMock([ND_HOUSE_DB_ROWS, [], []]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("ND", 0, 2026);
+
+    expect(out.house.some((c) => c.name === "Julie Fedorchak")).toBe(false);
+    expect(out.house.map((c) => c.name)).toEqual(["Trygve Hammer"]);
+    expect(out.house.find((c) => c.name === "Trygve Hammer")?.party).toBe(
+      "Democrat",
     );
   });
 });
