@@ -126,6 +126,32 @@ export interface OfficialRosterEntry {
     // generic IND (added building New Jersey, mirroring the GRE/LIB/AIP/
     // AKP/NPP/PF/LPF/FFP precedent for a real recognized minor party).
     | "SWP"
+    // Washington's top-two primary law (I-872; RCW 29A.24.030-.050) is
+    // materially different from every party code above: a candidate may
+    // state ANY party preference of their choosing (up to 16 characters) on
+    // their declaration of candidacy — it need NOT correspond to a
+    // legally-recognized political party at all. The WA SoS's own candidate
+    // portal (voter.votewa.gov/CandidateList.aspx) prints these
+    // self-designated strings verbatim in its "Party Preference" column.
+    // The six codes below preserve WA's literal self-designated labels
+    // exactly as filed, per the same precedent as NPI/LMN/etc. (never
+    // invent a generic bucket for an official source's own literal label) —
+    // added building Washington. A future top-two-primary state build
+    // (Washington and California are both top-two; Louisiana is unbuilt as
+    // of this writing) should expect the same phenomenon and may need to
+    // add further one-off codes rather than reusing these WA-specific ones.
+    | "CAS" // "CASCADE" — the real, WA-registered Cascade Party.
+    | "SNP" // "STATES NO PARTY PREFERENCE" — WA's literal self-designated
+    // no-preference ballot label (RCW 29A.24.104); distinct from CA's NPP
+    // (a legal registration status, not a self-designated preference).
+    | "TRR" // "TRUMP REPUBLICAN" — a candidate's own self-designated
+    // preference text, not a registered party.
+    | "FTR" // "FIFTH REPUBLIC" — a candidate's own self-designated
+    // preference text, not a registered party.
+    | "SWP" // "SOCIALIST WORKERS" — corresponds to the real national
+    // Socialist Workers Party, self-designated per WA's system.
+    | "UNP" // "UNION" — a candidate's own self-designated preference text,
+    // not a registered party.
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;

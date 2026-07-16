@@ -326,6 +326,14 @@ import {
   SD_HOUSE_ROSTER_2026,
   SD_SENATE_ROSTER_2026,
 } from "../congressional-rosters/sd-official-roster-2026";
+import {
+  WA_STATE,
+  WA_ELECTION_YEAR,
+  WA_STAGE,
+  WA_HOUSE_SOURCE_URLS,
+  WA_RETRIEVED_AT,
+  WA_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/wa-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -904,6 +912,21 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: SD_SENATE_SOURCE_URLS[0],
       retrievedAt: SD_RETRIEVED_AT,
       entries: SD_SENATE_ROSTER_2026,
+    },
+  ],
+  // No Senate row — Washington has no 2026 US Senate contest (Murray's term
+  // runs to 2029, Cantwell's to 2031); confirmed both by term dates and by
+  // the SoS candidate list itself (no "U.S. Senator" race, only Legislative
+  // "State Senator" rows).
+  WA: [
+    {
+      state: WA_STATE,
+      office: "house",
+      electionYear: WA_ELECTION_YEAR,
+      stage: WA_STAGE,
+      sourceUrl: WA_HOUSE_SOURCE_URLS[0],
+      retrievedAt: WA_RETRIEVED_AT,
+      entries: WA_HOUSE_ROSTER_2026,
     },
   ],
 };
