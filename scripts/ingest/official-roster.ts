@@ -400,6 +400,16 @@ import {
   WI_RETRIEVED_AT,
   WI_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/wi-official-roster-2026";
+import {
+  MA_STATE,
+  MA_ELECTION_YEAR,
+  MA_STAGE,
+  MA_HOUSE_SOURCE_URLS,
+  MA_SENATE_SOURCE_URLS,
+  MA_RETRIEVED_AT,
+  MA_HOUSE_ROSTER_2026,
+  MA_SENATE_ROSTER_2026,
+} from "../congressional-rosters/ma-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1192,6 +1202,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: WI_HOUSE_SOURCE_URLS[0],
       retrievedAt: WI_RETRIEVED_AT,
       entries: WI_HOUSE_ROSTER_2026,
+    },
+  ],
+  MA: [
+    {
+      state: MA_STATE,
+      office: "house",
+      electionYear: MA_ELECTION_YEAR,
+      stage: MA_STAGE,
+      sourceUrl: MA_HOUSE_SOURCE_URLS[0],
+      retrievedAt: MA_RETRIEVED_AT,
+      entries: MA_HOUSE_ROSTER_2026,
+    },
+    {
+      state: MA_STATE,
+      office: "senate",
+      electionYear: MA_ELECTION_YEAR,
+      stage: MA_STAGE,
+      sourceUrl: MA_SENATE_SOURCE_URLS[0],
+      retrievedAt: MA_RETRIEVED_AT,
+      entries: MA_SENATE_ROSTER_2026,
     },
   ],
 };

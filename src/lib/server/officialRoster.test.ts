@@ -358,6 +358,15 @@ import {
   WI_HOUSE_SOURCE_URLS,
   WI_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/wi-official-roster-2026";
+import {
+  MA_HOUSE_ROSTER_2026,
+  MA_SENATE_ROSTER_2026,
+  MA_STATE,
+  MA_ELECTION_YEAR,
+  MA_HOUSE_SOURCE_URLS,
+  MA_SENATE_SOURCE_URLS,
+  MA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ma-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1644,6 +1653,47 @@ const OH_INCUMBENT_SAMPLE: Record<string, string> = {
   "13": "Emilia Sykes",
   "14": "David P. Joyce",
   "15": "Mike Carey",
+};
+
+/** Same shape as `meDbRow`, but for MA entries. */
+function maDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ma-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? MA_HOUSE_SOURCE_URLS[0] : MA_SENATE_SOURCE_URLS[0],
+    retrievedAt: MA_RETRIEVED_AT,
+  };
+}
+
+const MA_HOUSE_DB_ROWS = MA_HOUSE_ROSTER_2026.map((e, i) =>
+  maDbRow(e, i, "house"),
+);
+const MA_SENATE_DB_ROWS = MA_SENATE_ROSTER_2026.map((e, i) =>
+  maDbRow(e, i, "senate"),
+);
+
+// A sample of MA districts whose winning-so-far primary filer IS the sitting
+// incumbent — every district except the CD6 open seat (Moulton filed for
+// Senate instead of House re-election).
+const MA_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Richard E. Neal",
+  "02": "James P. McGovern",
+  "03": "Lori Loureiro Trahan",
+  "04": "Jake Auchincloss",
+  "05": "Katherine M. Clark",
+  "07": "Ayanna S. Pressley",
+  "08": "Stephen F. Lynch",
+  "09": "Bill Keating",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -9044,5 +9094,205 @@ describe("lookupChallengers — WI wiring (house-only, no senate contest)", () =
 
     expect(out.house).toHaveLength(8);
     expect(out.house.some((c) => c.name === "Tom Tiffany")).toBe(false);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Massachusetts (MA) — fourteenth state through this manual track. MA's
+// September 1, 2026 State Primary is still upcoming at transcription time
+// (2026-07-15), so every row is `qualified_for_primary_ballot` (primary
+// stage), unlike ME's already-past-primary general-stage build. MA-06 is an
+// open seat: sitting Rep. Seth Moulton (D) filed for US Senate instead of
+// House re-election. See the fixture's own docblock and
+// docs/operations/massachusetts-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MA narrowing", () => {
+  it("narrows house rows to the exact district for every MA district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_HOUSE_DB_ROWS));
+    for (const district of [
+      "01",
+      "02",
+      "03",
+      "04",
+      "05",
+      "06",
+      "07",
+      "08",
+      "09",
+    ]) {
+      const out = await getOfficialRoster(
+        MA_STATE,
+        "house",
+        district,
+        MA_ELECTION_YEAR,
+      );
+      const expectedNames = MA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns all 3 MA senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      MA_STATE,
+      "senate",
+      null,
+      MA_ELECTION_YEAR,
+    );
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      ["Edward J. Markey", "John Deaton", "Seth Moulton"].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      MA_STATE,
+      "house",
+      "01",
+      MA_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("MA-01: both primary filers present, incumbent Neal carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MA_STATE,
+      "house",
+      "01",
+      MA_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      ["Jeromie Whalen", "Richard E. Neal"].sort(),
+    );
+    expect(out.find((r) => r.name === "Richard E. Neal")?.isIncumbent).toBe(
+      true,
+    );
+  });
+
+  it("MA-06 (open seat): all 7 primary filers present, none carries isIncumbent true", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MA_STATE,
+      "house",
+      "06",
+      MA_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [
+        "Bethany Andres-Beck",
+        "John A. Beccia, III",
+        "Jamie Belsito",
+        "Dan Koh",
+        "Mariah L. Lancaster",
+        "Tram T. Nguyen",
+        "Micah Quinney Jones",
+      ].sort(),
+    );
+    expect(out.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+});
+
+describe("isIncumbentSeekingReelection — MA", () => {
+  it("returns true for every MA district whose sitting incumbent filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      MA_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MA_STATE,
+          "house",
+          district,
+          MA_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for MA-06 — Moulton (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MA_STATE,
+        "house",
+        "06",
+        MA_ELECTION_YEAR,
+        "Seth Moulton",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns true for the US Senate seat — sitting Senator Markey is a determined primary filer", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MA_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MA_STATE,
+        "senate",
+        null,
+        MA_ELECTION_YEAR,
+        "Edward J. Markey",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — MA wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => maDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, MA_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("MA", 1, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Neal excluded; the Democratic primary challenger renders
+    expect(out.house.map((c) => c.name)).toEqual(["Jeromie Whalen"]);
+  });
+
+  it("MA-06 (open seat): all 7 primary filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "06",
+    ).map((e, i) => maDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MA_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MA", 6, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        "Bethany Andres-Beck",
+        "John A. Beccia, III",
+        "Jamie Belsito",
+        "Dan Koh",
+        "Mariah L. Lancaster",
+        "Tram T. Nguyen",
+        "Micah Quinney Jones",
+      ].sort(),
+    );
+  });
+
+  it("senate: incumbent Markey excluded, Moulton + Deaton render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => maDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MA_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MA", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["John Deaton", "Seth Moulton"].sort(),
+    );
   });
 });
