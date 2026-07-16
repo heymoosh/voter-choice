@@ -94,6 +94,15 @@ import {
   CA_HOUSE_SOURCE_URLS,
   CA_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/ca-official-roster-2026";
+import {
+  AR_HOUSE_ROSTER_2026,
+  AR_SENATE_ROSTER_2026,
+  AR_STATE,
+  AR_ELECTION_YEAR,
+  AR_HOUSE_SOURCE_URLS,
+  AR_SENATE_SOURCE_URLS,
+  AR_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ar-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -335,6 +344,42 @@ function caDbRow(entry: OfficialRosterEntry, idx: number) {
 }
 
 const CA_HOUSE_DB_ROWS = CA_HOUSE_ROSTER_2026.map(caDbRow);
+
+/** Same shape as `akDbRow`, but for AR entries. */
+function arDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ar-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? AR_HOUSE_SOURCE_URLS[0] : AR_SENATE_SOURCE_URLS[0],
+    retrievedAt: AR_RETRIEVED_AT,
+  };
+}
+
+const AR_HOUSE_DB_ROWS = AR_HOUSE_ROSTER_2026.map((e, i) =>
+  arDbRow(e, i, "house"),
+);
+const AR_SENATE_DB_ROWS = AR_SENATE_ROSTER_2026.map((e, i) =>
+  arDbRow(e, i, "senate"),
+);
+
+// Every AR district's winning nominee is the sitting incumbent — no open
+// seats, no pending nominations (see the fixture's docblock).
+const AR_INCUMBENT_SAMPLE: Record<string, string> = {
+  "01": "Congressman Rick Crawford",
+  "02": "Congressman French Hill",
+  "03": "Congressman Steve Womack",
+  "04": "Congressman Bruce Westerman",
+};
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
@@ -2072,5 +2117,196 @@ describe("lookupChallengers — CA wiring (house-only, all 52 districts covered)
     expect(out03.house.find((c) => c.name === "Chris Richardson")?.party).toBe(
       "Green",
     );
+  });
+});
+// ---------------------------------------------------------------------------
+// Arkansas — sixth state built through this pipeline. Both the preferential
+// primary (2026-03-03) and primary runoff (2026-03-31) had already occurred
+// at transcription time, and every federal contest was decided by an
+// outright majority — every row is "qualified_for_general_ballot", no
+// runoff_pending rows, no open seats. See
+// docs/operations/arkansas-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — AR narrowing", () => {
+  it("narrows house rows to the exact district for every AR district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AR_HOUSE_DB_ROWS));
+    for (const district of ["01", "02", "03", "04"]) {
+      const out = await getOfficialRoster(
+        AR_STATE,
+        "house",
+        district,
+        AR_ELECTION_YEAR,
+      );
+      const expectedNames = AR_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns the 3 AR senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AR_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      AR_STATE,
+      "senate",
+      null,
+      AR_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(AR_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...AR_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      AR_STATE,
+      "house",
+      "01",
+      AR_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every AR row is qualified_for_general_ballot — no undetermined nominations, no runoff needed by any federal race", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AR_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      AR_STATE,
+      "house",
+      "01",
+      AR_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(AR_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      AR_STATE,
+      "senate",
+      null,
+      AR_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+  });
+
+  it("Libertarian nominees (AR-1 Parsons, AR-3 Wilson, Senate Wadlin) carry party LIB", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AR_HOUSE_DB_ROWS));
+    const d1 = await getOfficialRoster(
+      AR_STATE,
+      "house",
+      "01",
+      AR_ELECTION_YEAR,
+    );
+    expect(d1.find((r) => r.name === "Steve G. Parsons")?.party).toBe("LIB");
+    const d3 = await getOfficialRoster(
+      AR_STATE,
+      "house",
+      "03",
+      AR_ELECTION_YEAR,
+    );
+    expect(d3.find((r) => r.name === "Bobby Wilson")?.party).toBe("LIB");
+
+    mockedGetDb.mockReturnValue(makeDbMock(AR_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      AR_STATE,
+      "senate",
+      null,
+      AR_ELECTION_YEAR,
+    );
+    expect(senate.find((r) => r.name === "Jeff Wadlin")?.party).toBe("LIB");
+  });
+});
+
+describe("isIncumbentSeekingReelection — AR", () => {
+  it("returns true for every AR district — the winning nominee is the sitting incumbent in all 4", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AR_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      AR_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          AR_STATE,
+          "house",
+          district,
+          AR_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns true for the US Senate seat — Cotton (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(AR_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        AR_STATE,
+        "senate",
+        null,
+        AR_ELECTION_YEAR,
+        "Senator Tom Cotton",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — AR wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AR_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => arDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, AR_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("AR", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Hill excluded; the Democratic nominee renders as the sole
+    // challenger (no Libertarian filer in AR-2).
+    expect(out.house.map((c) => c.name)).toEqual(["Chris Jones"]);
+  });
+
+  it("AR-1: incumbent Crawford excluded; Democratic and Libertarian nominees both render as challengers, neither flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AR_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => arDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, AR_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AR", 1, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Steve G. Parsons", "Terri Yarbrough Green"].sort(),
+    );
+    expect(out.house.some((c) => c.name === "Congressman Rick Crawford")).toBe(
+      false,
+    );
+    for (const c of out.house) {
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("senate: all three nominees render, incumbent Cotton excluded, none flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = AR_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => arDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, AR_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("AR", 2, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      ["Hallie Shoffner", "Jeff Wadlin"].sort(),
+    );
+    expect(out.senate.some((c) => c.name === "Senator Tom Cotton")).toBe(false);
+    for (const c of out.senate) {
+      expect(c.isRunoffPending).toBe(false);
+    }
   });
 });
