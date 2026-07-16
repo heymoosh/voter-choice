@@ -237,6 +237,15 @@ import {
   IL_SENATE_SOURCE_URLS,
   IL_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/il-official-roster-2026";
+import {
+  MT_HOUSE_ROSTER_2026,
+  MT_SENATE_ROSTER_2026,
+  MT_STATE,
+  MT_ELECTION_YEAR,
+  MT_HOUSE_SOURCE_URLS,
+  MT_SENATE_SOURCE_URLS,
+  MT_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/mt-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1089,6 +1098,42 @@ const IL_INCUMBENT_SAMPLE: Record<string, string> = {
 // 2026 ballot for any federal office (see fixture docblock): 02 (Kelly), 04
 // (García), 07 (Davis), 08 (Krishnamoorthi), 09 (Schakowsky).
 const IL_OPEN_SEAT_DISTRICTS = ["02", "04", "07", "08", "09"];
+/** Same shape as `inDbRow`, but for MT entries — office/sourceUrl differ per
+ * chamber (MT registers separate house and senate fixtures), and district
+ * is nullable for the statewide senate contest. */
+function mtDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `mt-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? MT_HOUSE_SOURCE_URLS[0] : MT_SENATE_SOURCE_URLS[0],
+    retrievedAt: MT_RETRIEVED_AT,
+  };
+}
+
+const MT_HOUSE_DB_ROWS = MT_HOUSE_ROSTER_2026.map((e, i) =>
+  mtDbRow(e, i, "house"),
+);
+const MT_SENATE_DB_ROWS = MT_SENATE_ROSTER_2026.map((e, i) =>
+  mtDbRow(e, i, "senate"),
+);
+
+// MT-02 is the only House district with a defending incumbent (Troy
+// Downing, sole Republican primary filer). MT-01 (Zinke retired) and the
+// Senate seat (Daines withdrew) are both open — exercised separately below.
+const MT_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "Troy Downing",
+};
+
 // OK-1 is the only open House seat (Hern filed for Senate instead of
 // re-election); the other 4 districts' winning nominee is the sitting
 // incumbent.
@@ -5784,6 +5829,196 @@ describe("lookupChallengers — IL wiring (house + senate both covered)", () => 
 
     expect(out.senate.map((c) => c.name).sort()).toEqual(
       ["Juliana Stratton", "Don Tracy", "Whitfield Harrington Jr."].sort(),
+    );
+  });
+});
+
+// (candidatefiling.mt.gov) already carries a live NOMINATED/FILED/Withdrawn/
+// PENDING PETITION status per filer, and Montana has no primary-runoff
+// mechanism (src/data/states/MT.json's runoffRules.hasRunoff: false), so
+// every nomination below is fully determined — no runoff_pending rows. Two
+// open seats (MT-01, Senate) both stem from a real, non-obvious incumbency
+// finding: sitting Rep. Zinke and sitting Sen. Daines each declined to seek
+// re-election to their own seat, confirmed independently (never guessed) via
+// GovTrack/congress.gov. See
+// docs/operations/montana-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+describe("getOfficialRoster — MT narrowing", () => {
+  it("narrows house rows to the exact district for both MT districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        MT_STATE,
+        "house",
+        district,
+        MT_ELECTION_YEAR,
+      );
+      const expectedNames = MT_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("MT-01 (open seat): 3 rows, all qualified_for_general_ballot — no independent (Persico did not qualify, omitted from the fixture)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MT_STATE,
+      "house",
+      "01",
+      MT_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(3);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+    expect(out.some((r) => r.name === "Kimberly A Persico")).toBe(false);
+  });
+
+  it("MT-02: incumbent Troy Downing plus the certified independent Michael D Eisenhauer both render qualified_for_general_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      MT_STATE,
+      "house",
+      "02",
+      MT_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Troy Downing")?.isIncumbent).toBe(true);
+    const eisenhauer = out.find((r) => r.name === "Michael D Eisenhauer");
+    expect(eisenhauer?.party).toBe("IND");
+    expect(eisenhauer?.ballotStatus).toBe("qualified_for_general_ballot");
+  });
+
+  it("returns the 4 MT senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      MT_STATE,
+      "senate",
+      null,
+      MT_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(MT_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...MT_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    expect(senate.every((r) => r.isIncumbent === false)).toBe(true);
+
+    const houseInSenateRowset = await getOfficialRoster(
+      MT_STATE,
+      "house",
+      "01",
+      MT_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+});
+
+describe("isIncumbentSeekingReelection — MT", () => {
+  it("returns true for MT-02 — the winning nominee is the sitting incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      MT_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          MT_STATE,
+          "house",
+          district,
+          MT_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for MT-01 — Zinke (sitting rep) did not seek re-election, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MT_STATE,
+        "house",
+        "01",
+        MT_ELECTION_YEAR,
+        "Ryan Zinke",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Daines (sitting senator) withdrew before filing", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(MT_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        MT_STATE,
+        "senate",
+        null,
+        MT_ELECTION_YEAR,
+        "Steve Daines",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — MT wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => mtDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, MT_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("MT", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Downing excluded; the Democratic nominee, Libertarian
+    // nominee, and certified independent all render as challengers
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Brian J Miller", "Patrick McCracken", "Michael D Eisenhauer"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("MT-01 (open seat): all 3 nominees render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => mtDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MT_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MT", 1, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Aaron Flint", "Sam Forstag", "Nick Sheedy"].sort(),
+    );
+  });
+
+  it("senate (open seat): all 4 nominees, including the certified independent, render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = MT_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => mtDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, MT_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("MT", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      MT_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "Seth Bodnar")?.party).toBe(
+      "Independent",
+    );
+    expect(out.senate.find((c) => c.name === "Kurt Alme")?.party).toBe(
+      "Republican",
+    );
+    expect(out.senate.find((c) => c.name === "Alani Bankhead")?.party).toBe(
+      "Democrat",
     );
   });
 });
