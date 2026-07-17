@@ -1011,3 +1011,35 @@ export const memberCivicPositions = pgTable(
     index("member_civic_positions_filing_year_idx").on(t.filingYear),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// roster_feedback — user-submitted "Missing a rep? Something look wrong?"
+// reports from the results/roster surfaces (card "[P1] Ballot-accuracy
+// feedback intake"). Muxin's post-launch correction channel for roster/
+// ballot errors, replacing manual re-combing of state sites.
+//
+// No auth, no PII beyond whatever the voter types into `message`. state /
+// office / district / candidateRef are prefilled client-side from the
+// voter's existing address-resolution context but are freely editable
+// before submit — none of them are trustworthy identifiers, same posture
+// as the free-text message itself. See db/migrations/0017_add_roster_feedback.sql.
+// ---------------------------------------------------------------------------
+export const rosterFeedback = pgTable(
+  "roster_feedback",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    state: text("state"), // USPS code, e.g. "TX"; voter-editable prefill, not trusted
+    office: text("office"),
+    district: text("district"),
+    candidateRef: text("candidate_ref"), // free-text; not a foreign key
+    message: text("message").notNull(),
+    appContext: jsonb("app_context"), // optional client-supplied debugging context
+  },
+  (t) => [
+    index("roster_feedback_created_at_idx").on(t.createdAt),
+    index("roster_feedback_state_idx").on(t.state),
+  ],
+);

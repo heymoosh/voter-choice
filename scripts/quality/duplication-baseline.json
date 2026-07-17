@@ -64,10 +64,6 @@
       "clones": 2,
       "lines": 25
     },
-    "src/lib/server/counters-rate-limit.ts :: src/lib/server/polis/route-guard.ts": {
-      "clones": 1,
-      "lines": 6
-    },
     "src/lib/server/counters.ts :: src/lib/server/counters.ts": {
       "clones": 3,
       "lines": 30
@@ -80,14 +76,6 @@
       "clones": 1,
       "lines": 13
     },
-    "src/lib/server/polis/route-guard.ts :: src/lib/server/race-data-rate-limit.ts": {
-      "clones": 1,
-      "lines": 8
-    },
-    "src/lib/server/polis/route-guard.ts :: src/lib/server/research-spend-limit.ts": {
-      "clones": 1,
-      "lines": 6
-    },
     "src/lib/server/research-sub-agent.ts :: src/lib/server/research-sub-agent.ts": {
       "clones": 1,
       "lines": 23
@@ -98,7 +86,7 @@
     },
     "src/prototype/redesign/DelegationWorkspace.tsx :: src/prototype/redesign/ScorecardPrintView.tsx": {
       "clones": 2,
-      "lines": 31
+      "lines": 33
     },
     "src/prototype/redesign/EditIssuesModal.tsx :: src/prototype/redesign/IntakeView.tsx": {
       "clones": 1,

@@ -21,7 +21,7 @@
  */
 
 import { NextResponse, type NextRequest } from "next/server";
-import { isDurableStoreConfigured, redisCommand } from "../durable-store";
+import { createIpRateLimiter } from "../ip-rate-limiter";
 import { getClientIP } from "../client-ip";
 
 /**
@@ -33,14 +33,17 @@ import { getClientIP } from "../client-ip";
 export const POLIS_CACHE_CONTROL =
   "public, s-maxage=60, stale-while-revalidate=300";
 
-const WINDOW_SECONDS = 60;
-const MAX_READS_PER_IP_PER_MINUTE = 120;
-
-const memRateMap = new Map<string, { count: number; resetAt: number }>();
+// Dual-path (durable/in-memory) logic lives in ip-rate-limiter.ts, shared
+// with the other per-IP throttles in src/lib/server/.
+const limiter = createIpRateLimiter({
+  keyPrefix: "voter-choice:polis-rate",
+  windowSeconds: 60,
+  maxRequests: 120,
+});
 
 // Exposed for testing only.
 export function _resetPolisRateLimitForTesting(): void {
-  memRateMap.clear();
+  limiter._resetForTesting();
 }
 
 /**
@@ -61,28 +64,7 @@ export function validatePolisOrigin(request: NextRequest): boolean {
 }
 
 export async function checkPolisRateLimit(ip: string): Promise<boolean> {
-  if (isDurableStoreConfigured()) {
-    try {
-      const key = `voter-choice:polis-rate:${ip}`;
-      const count = Number((await redisCommand<number>(["INCR", key])) ?? 1);
-      if (count === 1) {
-        await redisCommand(["EXPIRE", key, WINDOW_SECONDS]);
-      }
-      return count <= MAX_READS_PER_IP_PER_MINUTE;
-    } catch {
-      // Fail open: a Redis hiccup must not break the polis panels.
-      return true;
-    }
-  }
-
-  const now = Date.now();
-  const entry = memRateMap.get(ip);
-  if (!entry || now > entry.resetAt) {
-    memRateMap.set(ip, { count: 1, resetAt: now + WINDOW_SECONDS * 1000 });
-    return true;
-  }
-  entry.count++;
-  return entry.count <= MAX_READS_PER_IP_PER_MINUTE;
+  return limiter.check(ip);
 }
 
 /**
