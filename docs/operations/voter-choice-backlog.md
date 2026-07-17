@@ -84,8 +84,9 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - IN SCOPE: decide (a) how a single Delegate/Resident Commissioner seat surfaces in the UI (RepCard is built around a House+Senate two-tier layout), (b) whether "no_representation" changes framing or a new status is added, (c) the shared code needed once decided — new office type in roster types/schema/reader, `DelegationSeat`-equivalent for a single delegate seat, route wiring, RepCard treatment, PR's distinct "Resident Commissioner" title + 4-year cycle. This card is the decision + scoping step; implementation is a separate follow-up card once Muxin rules on presentation.
 - OUT OF SCOPE: building any of the six territory cards under the existing self-vet-auto-merge authorization until this is decided — see BLOCKED notes on each.
 - BLOCKS: "[P0] Import + verify official roster: American Samoa (AS)", "District of Columbia (DC)", "Guam (GU)", "Northern Mariana Islands (MP)", "Puerto Rico (PR)", "U.S. Virgin Islands (VI)".
-- STATUS: Backlog
-- DECISION: none yet — needs Muxin's product call on how non-voting representation surfaces in the app (this is a UX/framing judgment, not a data-plumbing default). ATTENDED.
+- DECIDED (Muxin, 2026-07-16): v1 does NOT build delegate-seat support. Instead, show an honest roadmap message right after address input for the six non-voting jurisdictions, explaining why no representatives came back. IMPORTANT COPY CORRECTION (confirmed during the ruling): these territories DO vote for Congress — each elects a non-voting Delegate to the US House (Puerto Rico: a Resident Commissioner on a 4-year term); they have no US Senators and their delegate cannot vote on the House floor. So the message must NOT say "no Congress to vote on"; accurate framing is: "Your area elects a non-voting Delegate to the US House — we don't cover delegate races yet. Other representatives are on the roadmap, stay tuned." Implementation is the new "[P1] Territory/DC honest-state message" card; the six territory roster-import cards stay deferred (no longer ship-blocking).
+- STATUS: Done
+- DECISION: decided 2026-07-16 (message-first v1, accurate delegate framing) — see DECIDED line above.
 <!-- card-id: 8f2c4e91-6b3a-4d7f-9e12-3a5c8d9f0b1e -->
 
 ## Phase 1 — Assess Congress (no ballot)
@@ -202,7 +203,8 @@ CLARIFICATION (Muxin, 2026-07-12): we already have a redesigned app. I'll have t
 Methodology, which I think might be a bit of difficult word."
 - "A lot of the links repeat from the top bar. I would keep About, Rename Support to Contact, and Privacy Policy."
 - NOTE: complements existing nav/footer cards — reconcile at grooming.
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: b1a5f64a-cd8c-47a0-8cb5-d9eaf0794977 -->
@@ -210,7 +212,8 @@ Methodology, which I think might be a bit of difficult word."
 **[P2] Add a "Why Now?" page for the fact snippets + the larger case**
 - "I think another Page of Why Now? would be good where the fact snippets could live and you could make a larger case for the
 site."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 9031f1ce-e4f3-44c7-89c7-3bbb664be988 -->
 
@@ -220,7 +223,8 @@ site."
 - "I think Hold Congress to its record. is good for the website SEO, but it does not give me a sense of what this site is for. I
 think a stronger, clearer CTA that folds in what the site does would be stronger."
 - "While the 2 fact snippets are interesting, they clutter the visual and make the next action less clear."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: b4cc1c9e-b7c2-4442-ae5c-1a25af5272d3 -->
@@ -231,7 +235,8 @@ well as a popup if the question mark is clicked. I think I would only keep pull 
 Registered Address."
 - "Underneath that entry box, I would add Unsure? Read about how it work and how we use your data followed by 01 Enter your
 address in addition to the text that was in the popup, then followed by steps 2 and 3."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 1850349c-0bcd-46d0-8b76-970d964389ba -->
@@ -240,7 +245,8 @@ address in addition to the text that was in the popup, then followed by steps 2 
 
 **[P2] Make the "Lock These In" box bigger / more prominent**
 - "I think the Lock Theses In box could be bigger."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 4b7e5a66-4013-4274-ac67-183ba240b92a -->
@@ -250,7 +256,8 @@ address in addition to the text that was in the popup, then followed by steps 2 
 to the issues page previously would be clearer. I.e. These are your issues 1 (decided on state level), 2 (decided on federal
 level), etc."
 - NOTE: overlaps the Fed/State issue-label work — reconcile at grooming.
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 9143a622-82fc-4ab1-8a19-90823453856a -->
@@ -262,7 +269,8 @@ level), etc."
 issues you care about, how they are funded and influenced. You can also find alternative candidates running for the seat. At the
 bottom of the page, you will be asked to replace or keep the current representative. You will do this for all representatives and
 can then print out your scorecard. Let's move to the first candidate."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 0b9d40c9-82ca-40e5-bf82-9a23bb4769f5 -->
@@ -272,7 +280,8 @@ can then print out your scorecard. Let's move to the first candidate."
 on the right. Additionally, the progress bar is not necessary if you keep the current set up of Reviewing Now, Not Yet Reviewed,
 and Reviewed on the right."
 - "Remove see where you stand until it's ready, there is so much here already."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 335829af-98e9-454e-a014-42f41eb95c7d -->
@@ -280,7 +289,8 @@ and Reviewed on the right."
 **[P1] Make "Print My Scorecard" discoverable after the last rep**
 - "After you finish the third representative, it is not clear what to do next. You can miss easily miss the print my score card
 button."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 1f77c3eb-909d-4ff2-95a6-180e89603da7 -->
@@ -288,7 +298,8 @@ button."
 **[P2] Distinguish + de-emphasize non-2026 representatives**
 - "I am also not sure if it is worth adding the non-2026 representatives to the list. I would have a grey background instead of
 white and state earlier that they are not up for election. I would also not include them in the score card."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 97eda1e0-9894-405e-8284-de18b546d43b -->
@@ -331,7 +342,8 @@ the X/Y votes matched you would be better made into a percentage."
 - "All headings could be a lot bigger."
 - "I also think I would lead with the vote decisions rather than what I need to vote, my address, districts, etc."
 - "I would also really recommend a white background for the site, so the scorecard look better when printed."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 78f5ce94-9b47-4857-b13b-f148af45c491 -->
@@ -346,7 +358,8 @@ various sources, they're hidden unless you unhide the candidate, and it says 'Al
 sources - just not all at once."
 - NOTE: the "Aligned" vs "With you" label + source-display inconsistencies are also mechanical bugs; relates to "[P0] Design
 Candidates UX flow".
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 05b995c8-2ca9-418a-b872-3cbeb17d0b3f -->
@@ -356,7 +369,8 @@ Candidates UX flow".
 - Tip jar on far upper right corner
 - Add Support to the top as well
 - Footer - remove links, keep the voter choice and © 2025 Grey Bird LLC. All Rights Reserved.
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: c9891a1f-ba31-4dce-bd1b-0ce372c9de12 -->
 
@@ -371,7 +385,8 @@ Candidates UX flow".
   column).
   - Stay honest — explain the empty state, don't invent an address. Related to the existing Google Civic `voterinfo` /
   early-vote-site backlog cards.
-- STATUS: Review
+- TRIAGE (2026-07-16 ship-readiness review): found sitting in Review with no PR, no DECISION, and no merge path attached — orphaned. Re-queued to To Do. First step when picked up: re-verify against current main (the Keystone Round 3/4 merges rebuilt many surfaces) — may already be fixed or the render site may have moved.
+- STATUS: To Do
 <!-- card-id: 2d1e6f97-c0ce-4bc5-9179-1ee86d4d64ea -->
 
 **[P1] Editing issues doesn't propagate — no new highlight card, Polis unchanged**
@@ -384,12 +399,14 @@ Candidates UX flow".
   - Fix, two angles: (1) confirm an added issue actually flows into PolisClose's scope data; (2) fix the non-unique keys (card
   below).
   - Not caused by #134 (CSS-only); pre-existing in the edit-issues flow.
-- STATUS: Review
+- TRIAGE (2026-07-16 ship-readiness review): found sitting in Review with no PR, no DECISION, and no merge path attached — orphaned. Re-queued to To Do. First step when picked up: re-verify the repro against current main (Keystone Round 3/4 merges rebuilt the intake/edit-issues flow) — may already be fixed.
+- STATUS: To Do
 <!-- card-id: 8e4ef0f3-8475-404e-b54d-cbe1153e6bf0 -->
 
 **[P0] Edit Issues missing in Tablet Mode**
 - In both mobile and tablet screens, I cannot find the ‘left panel’ anywhere -no ability to edit my issues
-- STATUS: Review
+- TRIAGE (2026-07-16 ship-readiness review): a P0 found sitting in Review with no PR, no DECISION, and no merge path attached — orphaned. Re-queued to To Do. First step when picked up: re-verify on current main at mobile + tablet widths (Keystone Round 3/4 merges included responsive workspace fixes, e.g. PR #288) — may already be fixed; if not, this is a launch-blocking P0.
+- STATUS: To Do
 <!-- card-id: ef8d602c-223a-4188-828c-ed8126e404ab -->
 
 **[P0] Retrospective whole-app security audit**
@@ -975,8 +992,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - PASS CONDITION: Muxin confirms the app's displayed roster matches the official source for every tested contest (or the app honestly shows the not-yet-published state). Only then may fan-out/cutout cards proceed.
 - FAIL HANDLING: File exact correction cards; do not advance to fan-out/cutover until re-tested clean.
 - NOTE: This is the earlier, informal instance of what the plan later formalizes as Q27 (national Ballotpedia sample QA). Keep it — it gates the FIRST app-visible data, well before national QA.
-- STATUS: Backlog
-- DECISION: attended manual gate — do NOT auto-run or auto-merge; conductor stops and surfaces to Muxin for the app-vs-source comparison.
+- SIGNED OFF (Muxin, 2026-07-16): Muxin performed her own opportunistic sanity testing across the built states and is satisfied — "I did as much sanity testing as I could but I would want to rely on ppl to tell me if something seems off." Her ruling: flip `OFFICIAL_ROSTER_ENABLED` once the last state roster PR merges (see the new flag-flip card), and add a user-facing ballot-accuracy feedback intake as the ongoing correction channel (see the new feedback-intake card). This closes the gate.
+- STATUS: Done
+- DECISION: attended manual gate — SATISFIED 2026-07-16 by Muxin's sign-off above.
 <!-- card-id: 041eddfa-9c44-4a02-8945-e7acb8052a14 -->
 
 **[P0] Arizona vertical slice — full data-check (validate the official-source roster approach end-to-end before any fan-out)**
@@ -988,9 +1006,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: official-source reads only (no Ballotpedia, no access-control bypass); no writes to prod; a blocked/unpublished official source stays explicit, never guessed.
 - ATTENDED: yes — human-in-the-loop validation gate. Do NOT auto-merge. Produce the comparison + verdict and surface to Muxin.
 - GOAL_CONDITION: a written Arizona comparison (official vs ours) with every 2026 federal contest accounted for and a clear GO/NO-GO recommendation; no production writes.
-- STATUS: In Progress (built + verified live on staging; HOLD for Muxin's flag-flip sign-off before this is Done)
+- MERGED (2026-07-16 ship-readiness review): AZ landed on main via PR #322 (squash commit 8ce11c5c), consistent with the epic's 2026-07-15 "MERGE PROMPTLY" standing requirement that superseded this card's original HOLD-for-sign-off contract. The flag flip (`OFFICIAL_ROSTER_ENABLED` to real users) remains separately gated behind the MANUAL SANITY-TEST GATE (041eddfa) / C29 — unchanged. This card previously carried TWO STATUS lines (In Progress + Backlog), a board anomaly; resolved to Done.
 - OUTCOME UPDATE (2026-07-15): Scope expanded past a read-only comparison, per Muxin's direction, into a real build — this is now the reference implementation for the epic's manual state-by-state track. Built: `official_roster_candidates` table (additive migration 0015), AZ fixture (46 candidates, all 9 districts) + idempotent importer, flag-gated (`OFFICIAL_ROSTER_ENABLED`, default off) wiring in `lookupChallengers`/`isIncumbentSeekingReelection`/the delegation route, `AIP` added to the party taxonomy, a "not seeking re-election" badge for open seats (AZ-01/AZ-05). Verified: `npm run check` clean (3048 tests; 3 pre-existing unrelated sandbox-Chromium failures); migration + import applied to an ISOLATED NEON STAGING BRANCH (never production); end-to-end check against staging with the flag on shows all 9 AZ House districts match the official roster exactly, candidate-by-candidate (full output in `docs/operations/arizona-vertical-slice-data-check.md` Part C). Nothing merged; flag not enabled anywhere persistent; no backlog fan-out opened. Awaiting Muxin's review before any merge or flag flip to real users.
-- STATUS: Backlog
+- STATUS: Done
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: attended manual gate — official AZ SoS reads/transcription (per the epic SOURCE DECISION) plus additive/reversible code, applied only to isolated staging, never production. No candidate ingestion to prod, no production migrations, no fan-out, no flag flip. If run under a conductor, it claims the card, produces or surfaces the comparison/build, and STOPS for Muxin — never auto-merges.
 - GROOMED: ready: full-data-check scope, read-only safeguards, go/no-go goal — 2026-07-14; re-groomed 2026-07-15 for the expanded build-and-verify scope
@@ -1589,7 +1607,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - ATTENDED: build + verify (candidate-by-candidate against the official source, cross-checked against a second independent source when one exists) + self-vet, then MERGE DIRECTLY — per the epic's "STANDING REQUIREMENT — MERGE PROMPTLY, NO SEPARATE SIGN-OFF GATE" (2026-07-15). Do not let this branch sit unmerged waiting on Muxin — merge as soon as self-vet is clean. The flag flip (`OFFICIAL_ROSTER_ENABLED` going live for real users) is still a separate, gated decision, unaffected by this.
 - DELIVERABLE REQUIREMENT (Muxin, 2026-07-15): The final report/summary MUST state, in full (absolute file paths, untruncated URLs): (a) the full absolute file path to the doc holding the app's output/comparison (mirrors `docs/operations/oklahoma-vertical-slice-data-check.md`), (b) the full absolute file path to the fixture file holding the transcribed data, (c) the exact, full official South Carolina source URL(s) used, and (d) a written operational-navigation section — see the plan doc's "Standing verification-deliverable requirement" and "Civix portal operational playbook" sections (the latter only applies if South Carolina turns out to run Civix).
 - GOAL_CONDITION: `npm run check` passes; the new jurisdiction's fixture imports idempotently to staging (verify by direct row-count query, not just the importer's self-reported count); an end-to-end check against staging (flag on) shows the app's literal output matching the official roster for every *determined* contest (any undetermined nomination explicitly flagged as `runoff_pending`, not guessed), with the comparison + operational-navigation writeup for review, including the file-path/source-URL deliverable above.
-- STATUS: In Progress
+- STATUS: Done — code merged to main 2026-07-17 (PR #366 merged)
 - DECISION: self-vet auto-merge gate — same authorized scope as the AZ/TX/OK/AL cards, extended to one additional jurisdiction. Build + verify + self-vet, then merge directly (no separate Muxin sign-off before merge, per the epic's 2026-07-15 standing requirement). No production mutation, no flag flip, no fan-out beyond the chosen jurisdiction. No `DEPENDS ON` another state card — per Muxin's 2026-07-15 clarification, the manual track scopes each *session* to one state at a time, it does not block the *backlog* to one state at a time; any of these cards may be picked up and built in parallel, each from its own worktree cut from current `origin/main`.
 - GROOMED: ready: pattern proven four times (AZ, TX, OK, AL); Civix-playbook + strengthened deliverable-requirement + standing pending-election-tracking infrastructure + merge-promptly policy already in place; no pre-existing rehearsal data for this jurisdiction — the build's own research establishes the source from scratch, same as AZ/TX/OK originally — 2026-07-15
 
@@ -2419,7 +2437,8 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - EVIDENCE: https://github.com/advisories/GHSA-mg66-mrh9-m8jx (+6 sibling GHSA ids); local `npm audit --omit=dev` output (retrieved 2026-07-14)
 - HYPOTHESIS: same-major patch bump (15.5.12 -> 15.5.20) should be low-risk and closes all 6 flagged CVEs; uncertainty -- unverified whether the 15.5.13-15.5.20 patch range carries any breaking change for this app's usage (Cache Components / middleware / i18n); confirm with a full build+test pass before merge.
 - GOAL_CONDITION: npm audit --omit=dev reports zero Next.js advisories after the bump; npm run build and the full test suite pass at the new pinned version.
-- STATUS: Backlog
+- STATUS: To Do
+- DECISION: PROMOTED by Muxin 2026-07-16 (approved as part of the ship-runway housekeeping batch). Standard self-vet auto-merge once build + full test suite pass at the pinned version.
 <!-- card-id: 06e9e179-edf9-45c7-a030-c8a9515b9d72 -->
 
 **[idea] Evaluate whether ballot chat should hard-redirect election-logistics questions instead of answering via LLM**
@@ -2430,7 +2449,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - EVIDENCE: https://www.resultsense.com/news/2026-05-21-demos-electoral-commission-ai-chatbots-scottish-election/ ; https://ag.ny.gov/publications/protecting-new-york-voters-ai-generated-election-misinformation (retrieved 2026-07-14)
 - HYPOTHESIS: a small, bounded prompt/guard change routing logistics questions to the app's own Google-Civic-backed data (or an explicit official-source redirect) would close a plausible-but-unverified gap; uncertainty -- not yet confirmed the current prompt actually mishandles a logistics question in practice, and product scope may already exclude this by design; a manual eval should run before any code change.
 - GOAL_CONDITION: a short manual eval (N sample logistics questions run through the live chat) either confirms current behavior is already safe (card closes as not-needed) or a prompt change ships that verifiably redirects logistics questions rather than answering them from the model's own general knowledge.
-- STATUS: Backlog
+- DECIDED (Muxin, 2026-07-16): NOT a hard redirect. Her ruling verbatim: "we do our best attempt but always say, to be absolutely sure check these resources. Because ppl just want a general sense of when and where, at least I think so, for planning's sake." So: chat MAY give a best-attempt general answer to logistics questions (when/where, for planning), but every such answer MUST end with an explicit to-be-absolutely-sure pointer to official resources (the state election authority / the app's own Google-Civic-backed polling data where available). The eval in GOAL_CONDITION still runs first to check what current behavior is; the prompt change then implements best-attempt-plus-mandatory-official-pointer, not a refusal.
+- STATUS: To Do
+- DECISION: decided 2026-07-16 (best-attempt + mandatory official-source pointer; no hard redirect). Self-vet auto-merge; prompt-only change.
 <!-- card-id: 0467f878-9c34-41b2-80be-0c8add7cb246 -->
 
 **[P0] Source inventory: Arkansas (AR) — retry after ceiling kill**
@@ -3167,3 +3188,123 @@ SHIP: auto-pending-merge
 - NOT BEFORE: 2026-08-07 — the House non-primary-nominee party-certification deadline (Va. Code, per ELECT's 2026 Deadlines Calendar); by this date ELECT's long-overdue Senate/local non-primary posting (already ~3.5 weeks late as of build time) should also finally be live. If this card is picked before August 18, 2026 (the SBE's certification of the Aug 4 primary — Va. Code § 24.2-534), do step (1) only in that pass (fill in the 9 previously-omitted districts + Senate at whatever stage is accurate) and leave District 5/8 as primary-stage; a second pass after August 18 handles step (2)'s promotion. Source: `elections.virginia.gov/media/castyourballot/deadlines-calendars/2026-Deadlines-Calendar-(6-10-26).xlsx`, confirmed 2026-07-16.
 - DECISION: self-vet auto-merge gate, same authorized scope as the original VA card and the epic's standing merge-promptly requirement.
 - GROOMED: ready: two sequenced trigger dates (Aug 7 non-primary publication, Aug 18 primary certification), both sourced directly from ELECT's own 2026 Deadlines Calendar, no open questions — 2026-07-16
+
+**[P2] Re-check official roster: South Carolina (SC) — after special Senate primary**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-16, opened as part of South Carolina's own vertical-slice build per the epic's "NOT BEFORE DATE-GATE CONVENTION" standing requirement (every future manual-track build must open its own dated re-check card, not leave it to a retroactive sweep). SC's fixture (`scripts/congressional-rosters/sc-official-roster-2026.ts`, `docs/operations/south-carolina-vertical-slice-data-check.md`) was built at `SC_STAGE = "general"` — South Carolina's June 9, 2026 primary and June 23, 2026 runoff have both already occurred, so all 7 House districts' general-ballot nominees are already determined. The U.S. Senate race is the exception: sitting incumbent Lindsey Graham (R) won his own primary but died before the general election, triggering a brand-new Republican-only special filing period and special primary under S.C. Code § 7-11-55 (confirmed via the SC Election Commission's own press release, `scvotes.gov/u-s-senate-special-republican-party-filing-primary/`) — as of build time, no Republican candidate has even filed yet, so the fixture deliberately omits any Republican Senate row rather than guessing or misusing `runoff_pending` for a contest with no real already-filed finalist.
+- OUTCOME: SC's fixture is updated to add the Republican Senate nominee once the S.C. Code § 7-11-55 special process determines one, and re-verified for the House slate's and non-Republican Senate slate's formal certification and any post-certification withdrawal.
+- IN SCOPE: re-verify South Carolina's official source (`vrems.scvotes.sc.gov`, Office "U.S. Senate", 2026 General election) after the August 11, 2026 special primary (or August 25, 2026 if a runoff is necessary) for the determined Republican nominee; add that nominee's row to `sc-official-roster-2026.ts` as `qualified_for_general_ballot`, cross-checking incumbency is not applicable (Graham's seat, no incumbent on this special ballot) and independently confirming the nominee via a second official source if one exists; also re-verify the House slate and the already-determined Senate rows are formally CERTIFIED per South Carolina's August 17, 2026 noon deadline (deadline to certify petition/party candidates) — check for any newly-certified independent/petition federal filer not present in this build's VREMS snapshot; also check South Carolina's September 4, 2026, 5:00 p.m. candidate-withdrawal deadline for any already-determined nominee (House or Senate) per the epic's withdrawal-deadline standing requirement; re-run the importer against the isolated staging Neon branch if any change is found; update `south-carolina-vertical-slice-data-check.md` with the re-check result either way (a confirmed "no change" is still a required update, not a no-op); record any NEW governing calendar dates found and open a further `NOT BEFORE` follow-up card if anything is still undetermined (e.g. if the August 11 primary requires an August 25 runoff).
+- OUT OF SCOPE: any other jurisdiction; production database writes/migrations; enabling `OFFICIAL_ROSTER_ENABLED` anywhere persistent.
+- SAFETY: same as the original SC card — official-source reads only, no Ballotpedia as a primary source, never guess an undetermined nomination, cross-check incumbency independently (house.gov / senate.gov, never this app's own FEC-derived `candidates` table).
+- GOAL_CONDITION: `npm run check` passes; SC's fixture reflects the determined Republican Senate nominee (or, if the check finds the August 11 primary required a runoff, this card stays open with an updated `NOT BEFORE: 2026-08-26` instead of being closed); the House slate and non-Republican Senate rows are confirmed certified with no new petition filer or withdrawal; end-to-end verification against staging with the flag on shows correct candidate-by-candidate match; deliverable doc updated with the re-check result and any new governing dates.
+- STATUS: Backlog
+- NOT BEFORE: 2026-08-12 — the day after South Carolina's August 11, 2026 special Republican Senate primary; scvotes.gov posts election-night results same-day (source: `scvotes.gov/u-s-senate-special-republican-party-filing-primary/`, confirmed 2026-07-16). Note: if that primary requires an August 25, 2026 runoff (no majority winner), hold the final re-run until 2026-08-26 instead. Also note South Carolina's own August 17, 2026 noon certification deadline and September 4, 2026, 5:00 p.m. candidate-withdrawal deadline — if the August 12/26 check finds the Senate nominee determined but either of those later dates hasn't passed yet, a further check after whichever is later may still be warranted before calling the roster fully locked for the cycle.
+- DECISION: self-vet auto-merge gate, same authorized scope as the original SC card and the epic's standing merge-promptly requirement.
+- GROOMED: ready: single clear trigger date, sourced directly from the SC Election Commission's own press release and 2026 election calendar, no open questions — 2026-07-16
+
+**[P1] EPIC: Post-roster ship runway — everything left to ship once the state rosters land**
+- ORIGIN: 2026-07-16 ship-readiness review (Muxin-directed, this session). Full assessment with evidence, branch tables, and absolute paths: `docs/operations/ship-readiness-review-2026-07-16.md`. This epic exists so any future session can pick up the post-roster work with zero chat context.
+- WHAT THIS IS: the ordered runway between "all state roster PRs merged" and "app shipped." It cross-references existing cards by id — it does not duplicate them.
+- RUNWAY (in priority order):
+  1. **Restore the 24 PARKED cards** — every card marked `PARKED: P0 nationwide roster priority lock` gets its STATUS restored to its recorded `prior_status` (mostly To Do) once the roster epic (c5a813bb) closes. This is this epic's first concrete action.
+  2. **Territory delegate decision** (8f2c4e91, ATTENDED — Muxin) — unblocks the last 6 roster jurisdictions (DC, AS, GU, MP, PR, VI). SD (plain Backlog) also remains.
+  3. **MANUAL SANITY-TEST GATE** (041eddfa, ATTENDED — Muxin) + the separately-gated `OFFICIAL_ROSTER_ENABLED` flag flip.
+  4. **UX-batch review**: Muxin reviews the integrated design gallery (see the "[P1] Integrated design-review gallery" card below) covering the already-merged-but-never-reviewed Round 3/4 design changes plus the held branches; her verdicts close or re-open the ~16 Review-status UX cards whose DECISION is "stage — Muxin approves the combined UX batch".
+  5. **Restored P0 infrastructure**: test/staging environment (446b9327) → golden-address smoke (2baacd7e); bill-tagging cron off the front-end API key (c86714c6); retrospective security audit (850b1220).
+  6. **Go-live gate epic** (0054bb72): launch-flag convention (a09a77c8), lower chat limit (28bf87ec), reset Polis (1f5e2506), translations (2b325135, gated on UX finalized e18e65fd → Keystone EPIC c44193cf).
+  7. **Orphaned Review bugs re-queued 2026-07-16**: ef8d602c (P0 tablet Edit Issues), 8e4ef0f3 (edit-issues propagation), 2d1e6f97 (polling-place note) — re-verify against current main first.
+  8. **Housekeeping**: branch/worktree cleanup checklist card (below), Next.js CVE bump decision (06e9e179), tip-jar decision (below).
+- MUXIN'S VERDICTS (2026-07-16, all runway items ruled on the same evening): (1) OK pending the last state PR — NOTE South Dakota (SD) is still unclaimed Backlog and must be built for "all states" to be true. (2) Territory ruling DECIDED — message-first v1, see the territory-message card; 8f2c4e91 closed. (3) Sanity gate CLOSED by her sign-off; flag flips when the last state PR lands (new flip card); ballot-accuracy feedback intake approved (new card) as the ongoing correction channel. (4) Gallery APPROVED — 13 UX-batch cards closed Done; `.standing2` polis delta to land; note her Sunday 2026-07-12 feedback = the Round-4 lanes, already merged and included in what she approved. (5) OK — restore PARKED to To Do after epic closeout. (6) Go-live gate deliberately LAST — after beta/user feedback, which comes after everything else here. (7) OK. (8) OK — Next.js CVE bump promoted to To Do; tip jar approved YES; bold-flag default approved YES (new card).
+- STATUS: Backlog
+- DEPENDS ON: [P0] Nationwide official-source congressional candidate roster — every race, every candidate, always current
+
+**[P1] Round-4 responsive/a11y audit (Lane G) — findings were produced but LOST with the session scratchpad; re-run or fix from the preserved list**
+- PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
+- ORIGIN: 2026-07-16 ship-readiness review, corrected same day against session memory. Lane G DID run on 2026-07-12 (audit-only, no branch/PR by design): 12 verified findings + 8 paste-ready backlog cards, screenshots + findings.json — all written ONLY to that session's scratchpad, which has since been deleted. What survives (from session memory):
+  - 3 High: intake Send button overflows at 390px width; PolisStand kicker no-wrap drags the page 29px; home `.hp-sheet` bleeds 19px.
+  - 5 Medium: Terms page unstyled pre-redesign + real-nav odd-one-out; 40px nav links (touch target); sub-44px control cluster; 8.5px print-sheet caption explaining the verdict %; contrast-borderline tag token.
+  - 4 further findings unrecoverable.
+- TASK: either fix directly from the preserved list above (each is small + verifiable) and/or re-run the responsive/a11y sweep to recover the 4 lost findings; produce findings-report-first, no fix-as-you-find beyond the itemized list. Write outputs into docs/ this time, never scratchpad-only.
+- STATUS: Backlog
+
+**[P1] Fast-follow: H2H duel per-issue rows still use issuesForLevel — 3-line fix, now unblocked**
+- PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
+- ORIGIN: 2026-07-16 ship-readiness review, recovered from Round-4 session memory. PR #284 fixed the per-issue alignment rows by introducing `issuesForSeatCard()` (level-eligible OR actually-scored) at 3 call sites, but deliberately left the head-to-head duel call site (`src/prototype/redesign/App2.tsx` ~line 1015, may have drifted) on the old `issuesForLevel()` — a known gap that needed BOTH #284 and #287 merged first. Both merged 2026-07-12/13; the fast-follow was never filed. Symptom: a state-leaned issue (e.g. Education-AI) scored for a candidate is missing from the H2H duel rows while present on the seat card.
+- TASK: wire `issuesForSeatCard` into the duel call site, add/extend the test alongside the 3 existing call sites' coverage.
+- ALREADY SHIPPED (found 2026-07-16 overnight run): PR #290 ("fix(duel): head-to-head issue rows use the scored-aware issue join", merged 2026-07-12 23:59 UTC) landed exactly this — verified on current main, `src/prototype/redesign/App2.tsx:1023` reads `issuesForSeatCard(issues, duelSeat)`. This card was opened from a stale KNOWN-GAP note; the gap had closed the same night it was recorded. Complaint #6's known gap in `docs/operations/round4-retest-checklist-2026-07-16.md` is therefore ALSO already fixed — one less thing pending for Muxin's re-test.
+- STATUS: Done
+- DECISION: auto-eligible — resolved as already-shipped via PR #290, no new code.
+
+**[P1] DECISION NEEDED: tip jar — Stripe live payment links were never shipped**
+- ORIGIN: 2026-07-16 ship-readiness review. Two June-15 branches (`claude/tip-jar-work`, `claude/zealous-hoover-ead0b1-rebase`) swapped Stripe TEST → LIVE payment links ($3/$5/$10/$25 presets) but patched the now-dead legacy `VoterChoiceApp.tsx` and never merged. Current main's redesigned tip flow routes to a `tip` page with NO Stripe payment links at all. The intent (real tips) is unfulfilled — this is a product decision, not lost code.
+- ASK (Muxin): should live tips exist at launch? If yes, a fresh small card wires live Stripe links into the redesigned tip surface. If no, the two branches join the cleanup checklist.
+- APPROVED (Muxin, 2026-07-16): YES — live tips at launch. Scope: wire the live Stripe payment links ($3/$5/$10/$25 presets, from the June branches' intent — pull the actual live URLs from the old branch diffs or from Muxin's Stripe dashboard if they expired) into the REDESIGNED tip surface (the `tip` route), not the dead legacy `VoterChoiceApp.tsx`. Verify links are LIVE mode, not test mode, before merge.
+- ALREADY SHIPPED (found 2026-07-16 overnight run): this card's premise was wrong — main ALREADY has all four live-mode Stripe links (verified on main HEAD: 4 `buy.stripe.com` links, zero `test_` prefixes, in `TIP_AMOUNTS`/`TipJarPage` in `src/prototype/VoterChoiceApp.tsx`, which `App2.tsx` imports directly — the redesign wraps this component rather than replacing it). PR #111 landed the live links long ago; PR #252 (2026-07-10) gave the same TipJarPage its Bold Flag/Keystone design pass. Three live entry points navigate to it (nav link, BudgetModal budget-exhaustion handoff, ByokCard). Live tips are ALREADY functional in prod. The two June branches (`claude/tip-jar-work`, `claude/zealous-hoover-ead0b1-rebase`) are now fully superseded and deletable under Muxin's merged-content cleanup approval: `git branch -D claude/tip-jar-work claude/zealous-hoover-ead0b1-rebase`.
+- STATUS: Done
+- DECISION: approved 2026-07-16 — resolved as already-shipped (PRs #111 + #252), no new code.
+
+**[P1] Integrated design-review gallery — Rounds 3+4 (merged, unreviewed) + held design branches**
+- ORIGIN: 2026-07-16 ship-readiness review. Muxin never visually reviewed the Round 3 (PRs #267–#283) and Round 4 (PRs #284–#288, #290) design changes — they auto-merged to main. Per her standing preference, the review artifact is ONE integrated end-state gallery, by surface, with per-surface changelists — not per-PR galleries.
+- TASK: build an integration branch off current main merging the held/unmerged design work — `work-drilldown-r31`, `work-intake-r31`, `work-scorecard-r31` (Round-3.1 refinements, pushed to origin 2026-07-16), `wt/keystone-polis-report-redesign` (PR #266, held STOP-SHIP) — then run `npm run design:review-gallery` and deliver the gallery + per-surface changelist for Muxin's sign-off. `wt/apply-the-bold-flag-palette-as-the-default` (PR #241; local tip archived at `archive/bold-flag-local-20260716`) is stale vs the merged rounds — present separately or drop, noted in the changelist. NOTHING merges from this; it is a review artifact only.
+- Muxin's verdicts here close the ~16 UX-batch Review cards and decide the fate of the r31/polis/bold-flag branches.
+- BUILT (2026-07-16): branch `integration/ship-readiness-gallery-20260716` pushed to origin (tip 76def437). Gallery: `.claude/worktrees/ship-gallery/docs/design-review/index.html` (27/27 scenarios captured, tsc clean) + `CHANGELIST.md` alongside it. KEY FINDING from the merge: the three r31 branches and nearly all of the polis STOP-SHIP branch are ALREADY SUBSUMED by main (same logical changes landed via separately-squashed PRs, main's copies often newer/bug-fixed — verified per-conflict by direct diff, not guessed). The ONLY genuinely unmerged visual delta anywhere is the polis `.standing2` OKLCH cluster-hue token block in redesign2.css from wt/keystone-polis-report-redesign. So this gallery ≈ current main + that one polis delta; Muxin's review is effectively her first visual pass over what's already live.
+- APPROVED (Muxin, 2026-07-16): gallery signed off. Note recorded during approval: this gallery ≈ current main, which ALREADY INCLUDES Muxin's Sunday 2026-07-12 feedback fixes (the Round-4 lanes, PRs #284–#288 — workspace scroll, not-up seats, alignment rows, RepCard evidence hierarchy, H2H money). Her approval closes the 13 UX-batch Review cards (flipped Done 2026-07-16). Follow-on: land the `.standing2` polis palette delta (approved as part of this gallery), then the r31 + polis branches join the cleanup list.
+- STATUS: Done
+- DECISION: review artifact only — APPROVED by Muxin 2026-07-16.
+
+**[P2] Branch + worktree cleanup checklist — execute only on Muxin's approval**
+- ORIGIN: 2026-07-16 ship-readiness review. ~60 local branches are verified superseded (squash-merged content on main, or scratch): full evidence table in `docs/operations/ship-readiness-review-2026-07-16.md`. Also superseded: worktree `/Users/Muxin/Documents/GitHub/voter-choice-worktrees/ky-official-roster` (KY landed via another merge; PR #345 closed) and `.claude/worktrees/roster-babysit-2` (0 commits ahead).
+- EXCLUDED from deletion (live or pending decisions): the babysit lane's roster branches/worktrees; `work-*-r31` (pending gallery review); `wt/keystone-polis-report-redesign` (held STOP-SHIP); `wt/apply-the-bold-flag-palette-as-the-default` + `archive/bold-flag-local-20260716` (pending ruling); `claude/tip-jar-work` + `claude/zealous-hoover-ead0b1-rebase` (pending tip-jar decision).
+- UPDATE (2026-07-16, gallery build): the three `work-*-r31` branches were found SUBSUMED by main (byte-identical or superseded-with-fixes, verified per-file during the gallery integration), and `wt/keystone-polis-report-redesign` is subsumed except the `.standing2` polis palette block. Once Muxin's gallery review confirms nothing is missing, all four move to the safe-delete list (with the `.standing2` delta preserved on `integration/ship-readiness-gallery-20260716`).
+- HARD RULE: no `git branch -D` without Muxin's explicit go-ahead on the list. ATTENDED.
+- UPDATE (2026-07-16 evening): Muxin confirmed the KY worktree + roster-babysit-2 as superseded — both worktrees removed (branches untouched).
+- APPROVED (Muxin, 2026-07-16, later that evening): "yes, if it's already merged it makes sense to delete." Scope = merged/subsumed content only. EXECUTION BLOCKED by the session permission layer (`git branch -D` is hard-denied in auto mode regardless of verbal approval), so the exact approved command was written to `docs/operations/branch-cleanup-command-2026-07-16.sh` — 53 local branches (origin refs untouched; r31 + polis + bold-flag locals included since each is preserved on origin). Muxin (or an attended session) runs it directly. STILL EXCLUDED even after approval: `archive/*` snapshots (deliberate preservation refs, NOT merged content — Muxin has not ruled on these), `claude/tip-jar-work` + `claude/zealous-hoover-ead0b1-rebase` (delete only after the approved live-links card lands), and the entire babysit roster lane.
+- STATUS: Review
+- DECISION: approved 2026-07-16 (merged-content branches only); execution handed to Muxin via the script above because of the branch-delete deny rule. Card closes when the script has been run.
+
+**[P1] Territory/DC honest-state message after address input (AS, DC, GU, MP, PR, VI)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-16, Muxin's ruling on the non-voting-territory rendering decision (card 8f2c4e91, now Done). v1 = message, not delegate-seat support.
+- TASK: in `src/app/api/delegation/route.ts`, the six non-voting jurisdictions currently short-circuit to `{status: "no_representation"}`; surface that state in the UI as an honest roadmap message right after address input instead of an empty/blank result.
+- COPY (accuracy matters — do NOT say "no Congress to vote on"): these jurisdictions each elect a NON-VOTING Delegate to the US House (Puerto Rico: a Resident Commissioner, 4-year term); they have no US Senators. Message along the lines of: "Your area elects a non-voting Delegate to the US House. We only cover voting House + Senate races right now — delegate races and other representatives are on the roadmap, stay tuned." Muxin's intent: the user must understand WHY their address returned nothing.
+- GOAL_CONDITION: entering a DC/PR/GU/VI/AS/MP address shows the message (not a blank state); the geocoder path (`src/lib/server/census-geocode.ts` already resolves state + null district for all six) is unchanged; tests cover at least DC + PR.
+- STATUS: To Do
+- DECISION: approved by Muxin 2026-07-16 (message-first v1, accurate delegate framing). Self-vet auto-merge.
+
+**[P0] Flip OFFICIAL_ROSTER_ENABLED in production once the last state roster PR merges**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-16, Muxin's sign-off closing the MANUAL SANITY-TEST GATE (041eddfa): "we may as well flip it once the last state PR lands."
+- PRECONDITION: every per-state "[P0] Import + verify official roster" card is Done — including South Dakota (SD), which as of 2026-07-16 is still unclaimed Backlog and must be built first. The six territory cards are EXCLUDED (deferred per the 2026-07-16 territory ruling — the message card covers them).
+- TASK: set `OFFICIAL_ROSTER_ENABLED` on in the production Vercel env and redeploy (fresh `vercel --prod`, NOT `vercel redeploy` — redeploy reuses old env). Verify post-flip with 2-3 golden addresses across different states that roster-backed candidates render.
+- SAFETY NET: the ballot-accuracy feedback intake card (below) is the ongoing correction channel Muxin is relying on post-flip — prefer landing it before or with the flip.
+- STATUS: To Do
+- DEPENDS ON: [P0] Import + verify official roster: South Dakota (SD)
+- DECISION: pre-authorized by Muxin 2026-07-16, contingent ONLY on the last state PR merging. ATTENDED-lite: prod env change — surface the exact commands + verification output when executing.
+
+**[P1] Ballot-accuracy feedback intake — "Missing a rep? Help us improve"**
+- ORIGIN: 2026-07-16, Muxin's ask alongside the flag-flip sign-off: a cheap correction channel so users report roster errors instead of her re-combing state sites manually.
+- TASK: a lightweight feedback form reachable from the results/roster surfaces ("Missing a rep? Something look wrong? Help us improve our ballot accuracy"). Capture: free-text description + WHICH STATE and ideally WHICH RACE/POSITION it concerns — prefill state/district from the user's existing address resolution context rather than asking again; let them correct it. No auth, no PII beyond what they type.
+- STORAGE: new additive table (e.g. `roster_feedback`: id, created_at, state, office, district, seat/candidate ref if derivable, message, app-context snapshot) — additive migration per the no-backup-needed convention; plus a simple way for Muxin to review submissions (a `scripts/ops/` reader is enough for v1, no admin UI required).
+- ABUSE GUARD: rate-limit per session like the existing counter endpoints; length-cap the message.
+- GOAL_CONDITION: form submits from a roster surface, row lands in the table with state+office populated, Muxin can list submissions with one ops command; tests cover the API route.
+- BUILT + HELD (2026-07-17 overnight): PR #383 (https://github.com/heymoosh/voter-choice/pull/383) — form on both DelegationWorkspace views with state/office prefill, POST /api/roster-feedback (10/IP/hour rate limit, 2000-char cap, honest 503 when DB unconfigured), additive migration `db/migrations/0017_add_roster_feedback.sql`, ops reader `scripts/ops/list-roster-feedback.ts`, EN+ES i18n, 16 new tests, full suite green. **AUTO-MERGE DELIBERATELY DISABLED**: the deploy-time schema-drift check fails EVERY deploy once 0017 is referenced but unapplied, and the overnight session's permission rules (correctly) block unattended prod-DB writes. MORNING STEP (Muxin): apply 0017 to prod (exact one-liner in the PR #383 hold comment), then re-arm with `gh pr merge --auto --squash 383`.
+- STATUS: Review
+- DECISION: approved by Muxin 2026-07-16. Additive migration OK (existing convention); held ONLY on the migration-before-merge ordering above.
+
+**[P1] Apply the Bold Flag palette as the app-wide default**
+- PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
+- ORIGIN: 2026-07-16, Muxin's ruling on the held branch `wt/apply-the-bold-flag-palette-as-the-default` (PR #241, closed draft; local tip preserved at `origin/archive/bold-flag-local-20260716`): YES — Bold Flag becomes the default.
+- TASK: fresh implementation against CURRENT main (the archived branch is stale vs the merged Round 3/4 work — use it as intent reference, not a rebase base). Verify what main already carries (Bold Flag tokens exist in `public/redesign2.css` scoped to specific surfaces; the app-wide default may still be the civic mood) and make Bold Flag the default palette everywhere, reconciling with the merged parity surfaces so nothing regresses.
+- VERIFY: parity-gate/design-gallery run after the change + before/after screenshots for Muxin (per the visual-self-vet rule, a code-reading claim is not visual proof).
+- STATUS: To Do
+- DECISION: approved by Muxin 2026-07-16. FE design-experience change — build + visual evidence, then standard self-vet merge (Muxin already ruled the direction; the evidence is for regression-catching, not a new design hold).
+
+**[P1] ATTENDED: Muxin's Round-4 UI/UX re-test — run when everything is ready, not before**
+- ORIGIN: 2026-07-16. Muxin's 2026-07-12 (Sunday) 13-problem prod critique was built and merged as the Round-4 lanes (PRs #284–#288, #290), but she never re-tested against her own complaints — and deliberately wants to wait until ALL related fixes are in before doing one pass, not test piecemeal.
+- THE TWO REFERENCE FILES (the point of this card — hand these to Muxin whenever she asks to do this test):
+  - `docs/operations/round4-verbatim-feedback-2026-07-12.md` — her verbatim critique, recovered from the session transcript.
+  - `docs/operations/round4-retest-checklist-2026-07-16.md` — the 18-row complaint→fix→how-to-retest map.
+- READY WHEN all three known gaps have landed: (1) the H2H duel per-issue fast-follow card (To Do); (2) the Lane-G responsive/a11y findings card; (3) the `OFFICIAL_ROSTER_ENABLED` flag flip (covers her challenger-accuracy complaints #12/#16). When those are Done, surface this card to Muxin with both file paths.
+- STATUS: Backlog
+- DEPENDS ON: [P0] Flip OFFICIAL_ROSTER_ENABLED in production once the last state roster PR merges
+- DECISION: ATTENDED — this is Muxin's own test session; agents only prepare and surface it, never run it.

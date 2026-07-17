@@ -129,6 +129,18 @@ const PARTY_NAMES: Record<string, string> = {
   // generic "IAP", to avoid colliding with Nevada's own, separately
   // state-recognized "Independent American Party" (disambiguated 2026-07-16).
   UIAP: "Independent American Party",
+  // The Alliance Party, South Carolina chapter (South Carolina vertical
+  // slice) — a real state-certified minor party, not generic "IND".
+  SCA: "Alliance Party",
+  // The Constitution Party, South Carolina chapter (South Carolina vertical
+  // slice) — a real state-certified minor party, not generic "IND".
+  SCC: "Constitution Party",
+  // The Forward Party, South Carolina chapter (South Carolina vertical
+  // slice) — a real state-certified minor party, not generic "IND".
+  SCF: "Forward Party",
+  // The South Carolina Workers Party (South Carolina vertical slice) — a
+  // real state-certified minor party, not generic "IND".
+  SCW: "South Carolina Workers Party",
 };
 
 /** Exported so officialRoster.ts's mapper can apply the same display-name
