@@ -408,6 +408,15 @@ import {
   WV_SENATE_SOURCE_URLS,
   WV_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/wv-official-roster-2026";
+import {
+  RI_HOUSE_ROSTER_2026,
+  RI_SENATE_ROSTER_2026,
+  RI_STATE,
+  RI_ELECTION_YEAR,
+  RI_HOUSE_SOURCE_URLS,
+  RI_SENATE_SOURCE_URLS,
+  RI_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ri-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -10237,5 +10246,256 @@ describe("lookupChallengers — WV wiring (house + senate both covered)", () => 
     for (const c of out.senate) {
       expect(c.isRunoffPending).toBeFalsy();
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Rhode Island — ninth state built through this pipeline. RI's September 9,
+// 2026 primary had not yet happened at transcription time (2026-07-16, the
+// state's own certify-nomination-papers deadline day), so RI is a
+// mixed-status build: RIGL § 17-15-11 promotes each party's sole,
+// unopposed federal primary filer straight to "qualified_for_general_ballot"
+// (McKay/Senate, Amo/District 1, Keenan/District 1), while every genuinely
+// contested primary filer (Reed/Burbridge/Munoz for Senate,
+// Magaziner/Dickinson and Skoly/Mellor for District 2) stays
+// "qualified_for_primary_ballot". Bahry (Senate) and DeSouza (District 1)
+// filed directly for the general-election track as Independents and carry
+// "declared_general_ballot_intent" (signature verification still pending),
+// same status TX's/CO's independent tracks use. No runoff_pending rows — RI
+// federal primaries have no runoff. See
+// docs/operations/rhode-island-vertical-slice-data-check.md for the full
+// build.
+// ---------------------------------------------------------------------------
+
+function riDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `ri-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? RI_HOUSE_SOURCE_URLS[0] : RI_SENATE_SOURCE_URLS[0],
+    retrievedAt: RI_RETRIEVED_AT,
+  };
+}
+
+const RI_HOUSE_DB_ROWS = RI_HOUSE_ROSTER_2026.map((e, i) =>
+  riDbRow(e, i, "house"),
+);
+const RI_SENATE_DB_ROWS = RI_SENATE_ROSTER_2026.map((e, i) =>
+  riDbRow(e, i, "senate"),
+);
+
+describe("getOfficialRoster — RI narrowing", () => {
+  it("narrows house rows to the exact district for both RI districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        RI_STATE,
+        "house",
+        district,
+        RI_ELECTION_YEAR,
+      );
+      const expectedNames = RI_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns all RI senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      RI_STATE,
+      "senate",
+      null,
+      RI_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(RI_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...RI_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      RI_STATE,
+      "house",
+      "01",
+      RI_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("RI-1: Amo (unopposed D) and Keenan (unopposed R) are qualified_for_general_ballot; DeSouza (Independent) is declared_general_ballot_intent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      RI_STATE,
+      "house",
+      "01",
+      RI_ELECTION_YEAR,
+    );
+    expect(out.find((r) => r.name === "Gabe Amo")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "Kellie Keenan")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(out.find((r) => r.name === "Pedro DeSouza")?.ballotStatus).toBe(
+      "declared_general_ballot_intent",
+    );
+  });
+
+  it("RI-2: Magaziner/Dickinson (D) and Skoly/Mellor (R) are all contested — qualified_for_primary_ballot", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      RI_STATE,
+      "house",
+      "02",
+      RI_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(4);
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+
+  it("RI senate: Reed/Burbridge/Munoz (contested D primary) stay qualified_for_primary_ballot; McKay (unopposed R) is qualified_for_general_ballot; Bahry (Independent) is declared_general_ballot_intent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      RI_STATE,
+      "senate",
+      null,
+      RI_ELECTION_YEAR,
+    );
+    const primaryFilers = [
+      "John F. Reed",
+      "Connor Burbridge",
+      "Luis Daniel Munoz",
+    ];
+    for (const name of primaryFilers) {
+      expect(senate.find((r) => r.name === name)?.ballotStatus).toBe(
+        "qualified_for_primary_ballot",
+      );
+    }
+    expect(senate.find((r) => r.name === "Raymond McKay")?.ballotStatus).toBe(
+      "qualified_for_general_ballot",
+    );
+    expect(senate.find((r) => r.name === "Michael Bahry")?.ballotStatus).toBe(
+      "declared_general_ballot_intent",
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — RI", () => {
+  it("returns true for RI-1 — Amo (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        RI_STATE,
+        "house",
+        "01",
+        RI_ELECTION_YEAR,
+        "Gabe Amo",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns true for RI-2 — Magaziner (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        RI_STATE,
+        "house",
+        "02",
+        RI_ELECTION_YEAR,
+        "Seth Magaziner",
+      ),
+    ).toBe(true);
+  });
+
+  it("returns true for the Senate seat — Reed (sitting senator) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(RI_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        RI_STATE,
+        "senate",
+        null,
+        RI_ELECTION_YEAR,
+        "John F. Reed",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("lookupChallengers — RI wiring", () => {
+  it("RI-1: incumbent Amo excluded from challengers; Keenan and DeSouza render with mapped party names", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = RI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => riDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, RI_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("RI", 1, 2026);
+
+    expect(out.house.some((c) => c.name === "Gabe Amo")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Kellie Keenan", "Pedro DeSouza"].sort(),
+    );
+    expect(out.house.find((c) => c.name === "Kellie Keenan")?.party).toBe(
+      "Republican",
+    );
+    expect(out.house.find((c) => c.name === "Pedro DeSouza")?.party).toBe(
+      "Independent",
+    );
+  });
+
+  it("RI-2: incumbent Magaziner excluded; Dickinson, Skoly, and Mellor render as challengers, none flagged pending (no runoff in RI)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = RI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => riDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, RI_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("RI", 2, 2026);
+
+    expect(out.house.some((c) => c.name === "Seth Magaziner")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Spencer Dickinson", "Stephen Skoly", "Victor Mellor"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.isRunoffPending).toBe(false);
+    }
+  });
+
+  it("senate: incumbent Reed excluded; Burbridge, Munoz, McKay, and Bahry render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = RI_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => riDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, RI_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("RI", 1, 2026);
+
+    expect(out.senate.some((c) => c.name === "John F. Reed")).toBe(false);
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      [
+        "Connor Burbridge",
+        "Luis Daniel Munoz",
+        "Raymond McKay",
+        "Michael Bahry",
+      ].sort(),
+    );
   });
 });
