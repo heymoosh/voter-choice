@@ -38,10 +38,14 @@ permissions:
 jobs:
   mutation:
     runs-on: ubuntu-latest
-    # Stryker's scoped run takes ~45 min, so a 45-min cap left zero headroom —
-    # any run that ran a hair long was cancelled at the wall, turning the
-    # required `mutation` check red and jamming auto-merge. 60 gives margin.
-    timeout-minutes: 60
+    # Stryker's scoped run has grown with the mutate scope: ~45 min when the
+    # 45-min cap was first raised to 60, but by 2026-07 the full prompt-fleet
+    # scope reached ~85 min (a run stalled at 67% when the 60-min wall killed
+    # it, turning the required `mutation` check red and jamming auto-merge —
+    # the same failure mode 45→60 was meant to fix). 120 restores real margin
+    # over the current ~85-min run. Revisit (scope trim or concurrency) if it
+    # keeps climbing.
+    timeout-minutes: 120
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
