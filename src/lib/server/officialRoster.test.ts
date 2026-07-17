@@ -375,6 +375,15 @@ import {
   ND_RETRIEVED_AT,
   ND_HOUSE_DISTRICT,
 } from "../../../scripts/congressional-rosters/nd-official-roster-2026";
+import {
+  NH_HOUSE_ROSTER_2026,
+  NH_SENATE_ROSTER_2026,
+  NH_STATE,
+  NH_ELECTION_YEAR,
+  NH_HOUSE_SOURCE_URLS,
+  NH_SENATE_SOURCE_URLS,
+  NH_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/nh-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -1702,6 +1711,40 @@ const MA_INCUMBENT_SAMPLE: Record<string, string> = {
   "07": "Ayanna S. Pressley",
   "08": "Stephen F. Lynch",
   "09": "Bill Keating",
+};
+
+/** Same shape as `okDbRow`, but for NH entries. */
+function nhDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `nh-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? NH_HOUSE_SOURCE_URLS[0] : NH_SENATE_SOURCE_URLS[0],
+    retrievedAt: NH_RETRIEVED_AT,
+  };
+}
+
+const NH_HOUSE_DB_ROWS = NH_HOUSE_ROSTER_2026.map((e, i) =>
+  nhDbRow(e, i, "house"),
+);
+const NH_SENATE_DB_ROWS = NH_SENATE_ROSTER_2026.map((e, i) =>
+  nhDbRow(e, i, "senate"),
+);
+
+// NH-2 is the only district with a sitting incumbent seeking re-election
+// (Goodlander); NH-1 is open (Pappas filed for Senate instead) and the
+// Senate seat is open (Shaheen did not file) — see the fixture's docblock.
+const NH_INCUMBENT_SAMPLE: Record<string, string> = {
+  "02": "Maggie Goodlander",
 };
 
 // OK-1 is the only open House seat (Hern filed for Senate instead of
@@ -9409,6 +9452,205 @@ describe("lookupChallengers — ND wiring (house-only, at-large)", () => {
     expect(out.house.map((c) => c.name)).toEqual(["Trygve Hammer"]);
     expect(out.house.find((c) => c.name === "Trygve Hammer")?.party).toBe(
       "Democrat",
+    );
+  });
+});
+
+describe("getOfficialRoster — NH narrowing", () => {
+  it("narrows house rows to the exact district for both NH districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_HOUSE_DB_ROWS));
+    for (const district of ["01", "02"]) {
+      const out = await getOfficialRoster(
+        NH_STATE,
+        "house",
+        district,
+        NH_ELECTION_YEAR,
+      );
+      const expectedNames = NH_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns all NH senate rows for (senate, null), none for a house district in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NH_STATE,
+      "senate",
+      null,
+      NH_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(NH_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...NH_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+
+    const houseInSenateRowset = await getOfficialRoster(
+      NH_STATE,
+      "house",
+      "01",
+      NH_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+
+  it("every NH-01 and Senate row is qualified_for_primary_ballot or declared_general_ballot_intent — the Sept 8, 2026 primary had not yet happened at transcription time", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_HOUSE_DB_ROWS));
+    const house01 = await getOfficialRoster(
+      NH_STATE,
+      "house",
+      "01",
+      NH_ELECTION_YEAR,
+    );
+    expect(
+      house01.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+
+    mockedGetDb.mockReturnValue(makeDbMock(NH_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      NH_STATE,
+      "senate",
+      null,
+      NH_ELECTION_YEAR,
+    );
+    const senateStatuses = new Set(senate.map((r) => r.ballotStatus));
+    expect(senateStatuses).toEqual(
+      new Set([
+        "qualified_for_primary_ballot",
+        "declared_general_ballot_intent",
+      ]),
+    );
+  });
+
+  it("NH-02: the 3 declared-intent independents come through with that exact ballotStatus alongside the contested-primary filers", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NH_STATE,
+      "house",
+      "02",
+      NH_ELECTION_YEAR,
+    );
+    const declared = out.filter(
+      (r) => r.ballotStatus === "declared_general_ballot_intent",
+    );
+    expect(declared.map((r) => r.name).sort()).toEqual(
+      ["Scott Matthew Black", "Robbie Mahrou", "Sterling Thomas Sykes"].sort(),
+    );
+    expect(out.find((r) => r.name === "Maggie Goodlander")?.ballotStatus).toBe(
+      "qualified_for_primary_ballot",
+    );
+  });
+});
+
+describe("isIncumbentSeekingReelection — NH", () => {
+  it("returns true for NH-02 — Goodlander (sitting rep) filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(
+      NH_INCUMBENT_SAMPLE,
+    )) {
+      expect(
+        await isIncumbentSeekingReelection(
+          NH_STATE,
+          "house",
+          district,
+          NH_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+
+  it("returns false for NH-01 — Pappas (sitting rep) filed for Senate instead, no incumbent row on this seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NH_STATE,
+        "house",
+        "01",
+        NH_ELECTION_YEAR,
+        "Chris Pappas",
+      ),
+    ).toBe(false);
+  });
+
+  it("returns false for the US Senate seat — Shaheen (sitting senator) did not file for election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NH_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        NH_STATE,
+        "senate",
+        null,
+        NH_ELECTION_YEAR,
+        "Jeanne Shaheen",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("lookupChallengers — NH wiring (house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).map((e, i) => nhDbRow(e, i, "house"));
+    const dbMock = makeSequencedDbMock([houseRows, NH_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+
+    const out = await lookupChallengers("NH", 2, 2026);
+
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // incumbent Goodlander excluded; the other 8 NH-2 filers (2 DEM + 4 REP
+    // + 3 declared-intent IND, minus Goodlander herself) render as
+    // challengers.
+    expect(out.house.some((c) => c.name === "Maggie Goodlander")).toBe(false);
+    const nh02Count = NH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "02",
+    ).length;
+    expect(out.house.length).toBe(nh02Count - 1);
+  });
+
+  it("NH-01 (open seat): all 14 filers render as challengers, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => nhDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NH_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NH", 1, 2026);
+
+    expect(out.house).toHaveLength(14);
+    expect(
+      out.house.every(
+        (c) => c.rosterProvenance.sourceKind === "official_state_roster",
+      ),
+    ).toBe(true);
+  });
+
+  it("senate (open seat): all 13 party filers + 4 declared-intent independents render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NH_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => nhDbRow(e, i, "house"));
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([houseRows, NH_SENATE_DB_ROWS]),
+    );
+
+    const out = await lookupChallengers("NH", 1, 2026);
+
+    expect(out.senate.map((c) => c.name).sort()).toEqual(
+      NH_SENATE_ROSTER_2026.map((e) => e.name).sort(),
+    );
+    expect(out.senate.find((c) => c.name === "John E. Sununu")?.party).toBe(
+      "Republican",
+    );
+    expect(out.senate.find((c) => c.name === "Chris Pappas")?.party).toBe(
+      "Democrat",
+    );
+    expect(out.senate.find((c) => c.name === "Tim Harris")?.party).toBe(
+      "Independent",
     );
   });
 });
