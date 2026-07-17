@@ -3274,8 +3274,9 @@ SHIP: auto-pending-merge
 - STORAGE: new additive table (e.g. `roster_feedback`: id, created_at, state, office, district, seat/candidate ref if derivable, message, app-context snapshot) — additive migration per the no-backup-needed convention; plus a simple way for Muxin to review submissions (a `scripts/ops/` reader is enough for v1, no admin UI required).
 - ABUSE GUARD: rate-limit per session like the existing counter endpoints; length-cap the message.
 - GOAL_CONDITION: form submits from a roster surface, row lands in the table with state+office populated, Muxin can list submissions with one ops command; tests cover the API route.
-- STATUS: To Do
-- DECISION: approved by Muxin 2026-07-16. Additive migration OK (existing convention); self-vet auto-merge. Prefer shipping before/with the roster flag flip.
+- BUILT + HELD (2026-07-17 overnight): PR #383 (https://github.com/heymoosh/voter-choice/pull/383) — form on both DelegationWorkspace views with state/office prefill, POST /api/roster-feedback (10/IP/hour rate limit, 2000-char cap, honest 503 when DB unconfigured), additive migration `db/migrations/0017_add_roster_feedback.sql`, ops reader `scripts/ops/list-roster-feedback.ts`, EN+ES i18n, 16 new tests, full suite green. **AUTO-MERGE DELIBERATELY DISABLED**: the deploy-time schema-drift check fails EVERY deploy once 0017 is referenced but unapplied, and the overnight session's permission rules (correctly) block unattended prod-DB writes. MORNING STEP (Muxin): apply 0017 to prod (exact one-liner in the PR #383 hold comment), then re-arm with `gh pr merge --auto --squash 383`.
+- STATUS: Review
+- DECISION: approved by Muxin 2026-07-16. Additive migration OK (existing convention); held ONLY on the migration-before-merge ordering above.
 
 **[P1] Apply the Bold Flag palette as the app-wide default**
 - PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
