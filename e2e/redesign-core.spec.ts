@@ -338,7 +338,29 @@ test.describe("honest failure states", () => {
       .getByRole("button", { name: "Pull my representatives →" })
       .click();
     await expect(page.locator(".err-banner")).toContainText(
-      "no voting member of Congress",
+      "elects a non-voting Delegate",
+    );
+    await expect(page.locator(".err-banner")).toContainText("roadmap");
+  });
+
+  test("Puerto Rico gets the Resident Commissioner variant", async ({
+    page,
+  }) => {
+    await mockDelegationFailure(page, "no_representation", {
+      stateCode: "PR",
+      territoryName: "Puerto Rico",
+    });
+    await page.goto("/");
+    await page.evaluate(() => localStorage.clear());
+    await page.goto("/");
+    await page
+      .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
+      .fill("San Juan, PR 00901");
+    await page
+      .getByRole("button", { name: "Pull my representatives →" })
+      .click();
+    await expect(page.locator(".err-banner")).toContainText(
+      "elects a non-voting Resident Commissioner",
     );
   });
 });

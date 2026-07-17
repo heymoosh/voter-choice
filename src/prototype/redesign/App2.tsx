@@ -376,7 +376,11 @@ function App2Inner() {
       return;
     }
     if (result.status === "no_representation") {
-      setFailure({ kind: "norep", territoryName: result.territoryName });
+      setFailure({
+        kind: "norep",
+        stateCode: result.stateCode,
+        territoryName: result.territoryName,
+      });
       setStage("norep");
       return;
     }
@@ -862,12 +866,22 @@ function App2Inner() {
       );
     }
     if (stage === "norep") {
+      // Puerto Rico's non-voting delegate holds the distinct title of
+      // Resident Commissioner (also a 4-year term, vs. 2 years for the
+      // other five areas) — every other covered jurisdiction just elects a
+      // Delegate. See the 2026-07-16 territory-copy ruling.
+      const repTitle = t(
+        failure?.stateCode === "PR"
+          ? "delegationError.repTitleResidentCommissioner"
+          : "delegationError.repTitleDelegate",
+      );
       return (
         <DelegationErrorView
           tone="warn"
           title={t("delegationError.noRepTitle", {
             territory:
               failure?.territoryName || t("delegationError.noRepTitleFallback"),
+            repTitle,
           })}
           body={t("delegationError.noRepBody")}
           onEditAddress={() => setStage("home")}

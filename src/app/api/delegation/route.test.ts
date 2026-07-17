@@ -139,6 +139,26 @@ describe("POST /api/delegation — geocode outcomes", () => {
     });
     expect(mockedResolve).not.toHaveBeenCalled();
   });
+
+  it("returns no_representation for Puerto Rico", async () => {
+    mockedGeocode.mockResolvedValue({
+      status: "ok",
+      result: {
+        stateCode: "PR",
+        stateName: "Puerto Rico",
+        county: "San Juan Municipio",
+        district: null,
+        matchedAddress: "SAN JUAN PR",
+      },
+    });
+    const res = await POST(makeRequest({ address: "San Juan, PR 00901" }));
+    expect(await res.json()).toEqual({
+      status: "no_representation",
+      stateCode: "PR",
+      territoryName: "Puerto Rico",
+    });
+    expect(mockedResolve).not.toHaveBeenCalled();
+  });
 });
 
 describe("POST /api/delegation — resolution outcomes", () => {
