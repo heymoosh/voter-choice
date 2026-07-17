@@ -183,9 +183,9 @@ textarea {
 }
 /* Bold Flag / Keystone: canvas's nav sits on the same white/navy/red ground
    as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the App2
-   redesign via the .bf-app ancestor (set in src/app/page.tsx, see
-   redesign2.css) rather than the nav's own data-current attribute -- now
-   that Bold Flag white is the app-wide default for App2 (redesign2.css
+   redesign via the .bf-app ancestor (set on <body> in src/app/layout.tsx,
+   see redesign2.css) rather than the nav's own data-current attribute --
+   now that Bold Flag white is the app-wide default (redesign2.css
    .bf-app), the nav should read consistently on every route, not just
    home. The legacy ballot app has no .bf-app ancestor, so it still gets
    the base civic-styled nav below unchanged (src/app/civic-default.test.tsx

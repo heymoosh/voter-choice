@@ -6,9 +6,10 @@
    shipped prototype.css / prototype-c.css untouched.
    ==================================================== */
 
-/* ---- app-wide Bold Flag / Keystone default (#root.bf-app, set in
-   src/app/page.tsx, scoped to App2 only — the legacy ballot app under
-   NEXT_PUBLIC_BALLOT_ENABLED keeps the civic default from layout.tsx).
+/* ---- app-wide Bold Flag / Keystone default (body.bf-app, set in
+   src/app/layout.tsx — every route shares one class, including the static
+   content pages that render outside App2's own #root; the legacy ballot
+   app under NEXT_PUBLIC_BALLOT_ENABLED keeps the civic default instead).
    Same white/navy/red palette .hp-hero (prototype.css) and .ori-body
    (below) already scope locally, promoted to the whole app so every
    shared component that reads --paper/--ink/etc. picks it up for free.
@@ -1496,7 +1497,7 @@
    Bold Flag white ground.
    --brand/--brand-2 point at the app-wide --bf-brand/--bf-brand-2 tokens
    (.bf-app above) rather than --civic: this screen only ever renders
-   inside App2, which is always under #root.bf-app, so --bf-brand is
+   inside App2, always under body.bf-app, so --bf-brand is
    already in scope. --civic was the pre-foundation choice (PR #237
    predates .bf-app, built on the same "remap --civic locally" pattern
    candidates.css's HeadToHead uses) but .bf-app's own comment is explicit
@@ -3795,7 +3796,7 @@
 .delegation {
   /* --brand/--brand-2/--brand-soft point at the app-wide --bf-brand/
      --bf-brand-2 tokens (.bf-app above), not --civic: this scope only
-     ever renders inside App2, always under #root.bf-app, so --bf-brand
+     ever renders inside App2, always under body.bf-app, so --bf-brand
      is already in scope. --civic was the pre-.bf-app-foundation choice
      (same "remap --civic locally" pattern candidates.css's HeadToHead
      uses) but .bf-app's own comment is explicit that --civic is LEFT
