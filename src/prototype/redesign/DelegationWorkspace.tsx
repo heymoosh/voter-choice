@@ -23,6 +23,7 @@ import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { DelegationOverview } from "./DelegationOverview";
+import { RosterFeedbackWidget } from "./RosterFeedback";
 import { issuesForLevel, issuesForSeatCard } from "./delegationData";
 import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
@@ -331,6 +332,12 @@ export function DelegationWorkspace({
           onOpen={onOpenSeat}
           onPrint={onPrint}
         />
+        <div className="rf-affordance-row">
+          <RosterFeedbackWidget
+            stateCode={stateData?.stateCode}
+            contextLabel="delegation-overview"
+          />
+        </div>
         <AppFooter compact />
       </div>
     );
@@ -519,6 +526,14 @@ export function DelegationWorkspace({
             onEditIssues={onEditIssues}
           />
         </aside>
+      </div>
+      <div className="rf-affordance-row">
+        <RosterFeedbackWidget
+          stateCode={stateData?.stateCode}
+          office={activeSeat.office}
+          district={activeSeat.districtLabel}
+          contextLabel="delegation-workspace"
+        />
       </div>
       <AppFooter compact />
     </div>
