@@ -3282,3 +3282,13 @@ SHIP: auto-pending-merge
 - VERIFY: parity-gate/design-gallery run after the change + before/after screenshots for Muxin (per the visual-self-vet rule, a code-reading claim is not visual proof).
 - STATUS: To Do
 - DECISION: approved by Muxin 2026-07-16. FE design-experience change — build + visual evidence, then standard self-vet merge (Muxin already ruled the direction; the evidence is for regression-catching, not a new design hold).
+
+**[P1] ATTENDED: Muxin's Round-4 UI/UX re-test — run when everything is ready, not before**
+- ORIGIN: 2026-07-16. Muxin's 2026-07-12 (Sunday) 13-problem prod critique was built and merged as the Round-4 lanes (PRs #284–#288, #290), but she never re-tested against her own complaints — and deliberately wants to wait until ALL related fixes are in before doing one pass, not test piecemeal.
+- THE TWO REFERENCE FILES (the point of this card — hand these to Muxin whenever she asks to do this test):
+  - `docs/operations/round4-verbatim-feedback-2026-07-12.md` — her verbatim critique, recovered from the session transcript.
+  - `docs/operations/round4-retest-checklist-2026-07-16.md` — the 18-row complaint→fix→how-to-retest map.
+- READY WHEN all three known gaps have landed: (1) the H2H duel per-issue fast-follow card (To Do); (2) the Lane-G responsive/a11y findings card; (3) the `OFFICIAL_ROSTER_ENABLED` flag flip (covers her challenger-accuracy complaints #12/#16). When those are Done, surface this card to Muxin with both file paths.
+- STATUS: Backlog
+- DEPENDS ON: [P0] Flip OFFICIAL_ROSTER_ENABLED in production once the last state roster PR merges
+- DECISION: ATTENDED — this is Muxin's own test session; agents only prepare and surface it, never run it.
