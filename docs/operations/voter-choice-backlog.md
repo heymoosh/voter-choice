@@ -371,7 +371,8 @@ Candidates UX flow".
   column).
   - Stay honest — explain the empty state, don't invent an address. Related to the existing Google Civic `voterinfo` /
   early-vote-site backlog cards.
-- STATUS: Review
+- TRIAGE (2026-07-16 ship-readiness review): found sitting in Review with no PR, no DECISION, and no merge path attached — orphaned. Re-queued to To Do. First step when picked up: re-verify against current main (the Keystone Round 3/4 merges rebuilt many surfaces) — may already be fixed or the render site may have moved.
+- STATUS: To Do
 <!-- card-id: 2d1e6f97-c0ce-4bc5-9179-1ee86d4d64ea -->
 
 **[P1] Editing issues doesn't propagate — no new highlight card, Polis unchanged**
@@ -384,12 +385,14 @@ Candidates UX flow".
   - Fix, two angles: (1) confirm an added issue actually flows into PolisClose's scope data; (2) fix the non-unique keys (card
   below).
   - Not caused by #134 (CSS-only); pre-existing in the edit-issues flow.
-- STATUS: Review
+- TRIAGE (2026-07-16 ship-readiness review): found sitting in Review with no PR, no DECISION, and no merge path attached — orphaned. Re-queued to To Do. First step when picked up: re-verify the repro against current main (Keystone Round 3/4 merges rebuilt the intake/edit-issues flow) — may already be fixed.
+- STATUS: To Do
 <!-- card-id: 8e4ef0f3-8475-404e-b54d-cbe1153e6bf0 -->
 
 **[P0] Edit Issues missing in Tablet Mode**
 - In both mobile and tablet screens, I cannot find the ‘left panel’ anywhere -no ability to edit my issues
-- STATUS: Review
+- TRIAGE (2026-07-16 ship-readiness review): a P0 found sitting in Review with no PR, no DECISION, and no merge path attached — orphaned. Re-queued to To Do. First step when picked up: re-verify on current main at mobile + tablet widths (Keystone Round 3/4 merges included responsive workspace fixes, e.g. PR #288) — may already be fixed; if not, this is a launch-blocking P0.
+- STATUS: To Do
 <!-- card-id: ef8d602c-223a-4188-828c-ed8126e404ab -->
 
 **[P0] Retrospective whole-app security audit**
@@ -988,9 +991,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - SAFETY: official-source reads only (no Ballotpedia, no access-control bypass); no writes to prod; a blocked/unpublished official source stays explicit, never guessed.
 - ATTENDED: yes — human-in-the-loop validation gate. Do NOT auto-merge. Produce the comparison + verdict and surface to Muxin.
 - GOAL_CONDITION: a written Arizona comparison (official vs ours) with every 2026 federal contest accounted for and a clear GO/NO-GO recommendation; no production writes.
-- STATUS: In Progress (built + verified live on staging; HOLD for Muxin's flag-flip sign-off before this is Done)
+- MERGED (2026-07-16 ship-readiness review): AZ landed on main via PR #322 (squash commit 8ce11c5c), consistent with the epic's 2026-07-15 "MERGE PROMPTLY" standing requirement that superseded this card's original HOLD-for-sign-off contract. The flag flip (`OFFICIAL_ROSTER_ENABLED` to real users) remains separately gated behind the MANUAL SANITY-TEST GATE (041eddfa) / C29 — unchanged. This card previously carried TWO STATUS lines (In Progress + Backlog), a board anomaly; resolved to Done.
 - OUTCOME UPDATE (2026-07-15): Scope expanded past a read-only comparison, per Muxin's direction, into a real build — this is now the reference implementation for the epic's manual state-by-state track. Built: `official_roster_candidates` table (additive migration 0015), AZ fixture (46 candidates, all 9 districts) + idempotent importer, flag-gated (`OFFICIAL_ROSTER_ENABLED`, default off) wiring in `lookupChallengers`/`isIncumbentSeekingReelection`/the delegation route, `AIP` added to the party taxonomy, a "not seeking re-election" badge for open seats (AZ-01/AZ-05). Verified: `npm run check` clean (3048 tests; 3 pre-existing unrelated sandbox-Chromium failures); migration + import applied to an ISOLATED NEON STAGING BRANCH (never production); end-to-end check against staging with the flag on shows all 9 AZ House districts match the official roster exactly, candidate-by-candidate (full output in `docs/operations/arizona-vertical-slice-data-check.md` Part C). Nothing merged; flag not enabled anywhere persistent; no backlog fan-out opened. Awaiting Muxin's review before any merge or flag flip to real users.
-- STATUS: Backlog
+- STATUS: Done
 - DEPENDS ON: F07 — Official-source semantic combination invariants
 - DECISION: attended manual gate — official AZ SoS reads/transcription (per the epic SOURCE DECISION) plus additive/reversible code, applied only to isolated staging, never production. No candidate ingestion to prod, no production migrations, no fan-out, no flag flip. If run under a conductor, it claims the card, produces or surfaces the comparison/build, and STOPS for Muxin — never auto-merges.
 - GROOMED: ready: full-data-check scope, read-only safeguards, go/no-go goal — 2026-07-14; re-groomed 2026-07-15 for the expanded build-and-verify scope
@@ -3167,3 +3170,44 @@ SHIP: auto-pending-merge
 - NOT BEFORE: 2026-08-12 — the day after South Carolina's August 11, 2026 special Republican Senate primary; scvotes.gov posts election-night results same-day (source: `scvotes.gov/u-s-senate-special-republican-party-filing-primary/`, confirmed 2026-07-16). Note: if that primary requires an August 25, 2026 runoff (no majority winner), hold the final re-run until 2026-08-26 instead. Also note South Carolina's own August 17, 2026 noon certification deadline and September 4, 2026, 5:00 p.m. candidate-withdrawal deadline — if the August 12/26 check finds the Senate nominee determined but either of those later dates hasn't passed yet, a further check after whichever is later may still be warranted before calling the roster fully locked for the cycle.
 - DECISION: self-vet auto-merge gate, same authorized scope as the original SC card and the epic's standing merge-promptly requirement.
 - GROOMED: ready: single clear trigger date, sourced directly from the SC Election Commission's own press release and 2026 election calendar, no open questions — 2026-07-16
+
+**[P1] EPIC: Post-roster ship runway — everything left to ship once the state rosters land**
+- ORIGIN: 2026-07-16 ship-readiness review (Muxin-directed, this session). Full assessment with evidence, branch tables, and absolute paths: `docs/operations/ship-readiness-review-2026-07-16.md`. This epic exists so any future session can pick up the post-roster work with zero chat context.
+- WHAT THIS IS: the ordered runway between "all state roster PRs merged" and "app shipped." It cross-references existing cards by id — it does not duplicate them.
+- RUNWAY (in priority order):
+  1. **Restore the 24 PARKED cards** — every card marked `PARKED: P0 nationwide roster priority lock` gets its STATUS restored to its recorded `prior_status` (mostly To Do) once the roster epic (c5a813bb) closes. This is this epic's first concrete action.
+  2. **Territory delegate decision** (8f2c4e91, ATTENDED — Muxin) — unblocks the last 6 roster jurisdictions (DC, AS, GU, MP, PR, VI). SD (plain Backlog) also remains.
+  3. **MANUAL SANITY-TEST GATE** (041eddfa, ATTENDED — Muxin) + the separately-gated `OFFICIAL_ROSTER_ENABLED` flag flip.
+  4. **UX-batch review**: Muxin reviews the integrated design gallery (see the "[P1] Integrated design-review gallery" card below) covering the already-merged-but-never-reviewed Round 3/4 design changes plus the held branches; her verdicts close or re-open the ~16 Review-status UX cards whose DECISION is "stage — Muxin approves the combined UX batch".
+  5. **Restored P0 infrastructure**: test/staging environment (446b9327) → golden-address smoke (2baacd7e); bill-tagging cron off the front-end API key (c86714c6); retrospective security audit (850b1220).
+  6. **Go-live gate epic** (0054bb72): launch-flag convention (a09a77c8), lower chat limit (28bf87ec), reset Polis (1f5e2506), translations (2b325135, gated on UX finalized e18e65fd → Keystone EPIC c44193cf).
+  7. **Orphaned Review bugs re-queued 2026-07-16**: ef8d602c (P0 tablet Edit Issues), 8e4ef0f3 (edit-issues propagation), 2d1e6f97 (polling-place note) — re-verify against current main first.
+  8. **Housekeeping**: branch/worktree cleanup checklist card (below), Next.js CVE bump decision (06e9e179), tip-jar decision (below).
+- STATUS: Backlog
+- DEPENDS ON: [P0] Nationwide official-source congressional candidate roster — every race, every candidate, always current
+
+**[P1] Run the Round-4 a11y audit lane — planned but never built**
+- PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
+- ORIGIN: 2026-07-16 ship-readiness review. The Round-4 UX batch (2026-07-12) planned 6 lanes; 5 merged (PRs #284, #285, #286, #287, #288) but the a11y-audit lane has no branch, PR, or artifact anywhere — it was never started.
+- TASK: run an accessibility audit over the merged redesign surfaces (keyboard navigation, focus management, contrast against the Bold Flag palette, screen-reader landmarks/labels on RepCard, workspace, intake, scorecard, polis) and produce a findings report + follow-up cards, same shape as the security-audit card (850b1220): report first, no fix-as-you-find.
+- STATUS: Backlog
+
+**[P1] DECISION NEEDED: tip jar — Stripe live payment links were never shipped**
+- ORIGIN: 2026-07-16 ship-readiness review. Two June-15 branches (`claude/tip-jar-work`, `claude/zealous-hoover-ead0b1-rebase`) swapped Stripe TEST → LIVE payment links ($3/$5/$10/$25 presets) but patched the now-dead legacy `VoterChoiceApp.tsx` and never merged. Current main's redesigned tip flow routes to a `tip` page with NO Stripe payment links at all. The intent (real tips) is unfulfilled — this is a product decision, not lost code.
+- ASK (Muxin): should live tips exist at launch? If yes, a fresh small card wires live Stripe links into the redesigned tip surface. If no, the two branches join the cleanup checklist.
+- STATUS: Backlog
+- DECISION: none yet — ATTENDED, needs Muxin's product call.
+
+**[P1] Integrated design-review gallery — Rounds 3+4 (merged, unreviewed) + held design branches**
+- ORIGIN: 2026-07-16 ship-readiness review. Muxin never visually reviewed the Round 3 (PRs #267–#283) and Round 4 (PRs #284–#288, #290) design changes — they auto-merged to main. Per her standing preference, the review artifact is ONE integrated end-state gallery, by surface, with per-surface changelists — not per-PR galleries.
+- TASK: build an integration branch off current main merging the held/unmerged design work — `work-drilldown-r31`, `work-intake-r31`, `work-scorecard-r31` (Round-3.1 refinements, pushed to origin 2026-07-16), `wt/keystone-polis-report-redesign` (PR #266, held STOP-SHIP) — then run `npm run design:review-gallery` and deliver the gallery + per-surface changelist for Muxin's sign-off. `wt/apply-the-bold-flag-palette-as-the-default` (PR #241; local tip archived at `archive/bold-flag-local-20260716`) is stale vs the merged rounds — present separately or drop, noted in the changelist. NOTHING merges from this; it is a review artifact only.
+- Muxin's verdicts here close the ~16 UX-batch Review cards and decide the fate of the r31/polis/bold-flag branches.
+- STATUS: In Progress
+- DECISION: review artifact only — no merge, no deploy; ATTENDED review by Muxin at the end.
+
+**[P2] Branch + worktree cleanup checklist — execute only on Muxin's approval**
+- ORIGIN: 2026-07-16 ship-readiness review. ~60 local branches are verified superseded (squash-merged content on main, or scratch): full evidence table in `docs/operations/ship-readiness-review-2026-07-16.md`. Also superseded: worktree `/Users/Muxin/Documents/GitHub/voter-choice-worktrees/ky-official-roster` (KY landed via another merge; PR #345 closed) and `.claude/worktrees/roster-babysit-2` (0 commits ahead).
+- EXCLUDED from deletion (live or pending decisions): the babysit lane's roster branches/worktrees; `work-*-r31` (pending gallery review); `wt/keystone-polis-report-redesign` (held STOP-SHIP); `wt/apply-the-bold-flag-palette-as-the-default` + `archive/bold-flag-local-20260716` (pending ruling); `claude/tip-jar-work` + `claude/zealous-hoover-ead0b1-rebase` (pending tip-jar decision).
+- HARD RULE: no `git branch -D` without Muxin's explicit go-ahead on the list. ATTENDED.
+- STATUS: Backlog
+- DECISION: none yet — ATTENDED; deletions only after Muxin approves the doc's table.
