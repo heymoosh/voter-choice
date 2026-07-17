@@ -464,6 +464,14 @@ import {
   RI_HOUSE_ROSTER_2026,
   RI_SENATE_ROSTER_2026,
 } from "../congressional-rosters/ri-official-roster-2026";
+import {
+  UT_STATE,
+  UT_ELECTION_YEAR,
+  UT_STAGE,
+  UT_HOUSE_SOURCE_URLS,
+  UT_RETRIEVED_AT,
+  UT_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/ut-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1369,6 +1377,19 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: RI_SENATE_SOURCE_URLS[0],
       retrievedAt: RI_RETRIEVED_AT,
       entries: RI_SENATE_ROSTER_2026,
+    },
+  ],
+  // No Senate row — Utah has no 2026 US Senate contest (Mike Lee's Class 3
+  // seat runs to 2029, next up 2028).
+  UT: [
+    {
+      state: UT_STATE,
+      office: "house",
+      electionYear: UT_ELECTION_YEAR,
+      stage: UT_STAGE,
+      sourceUrl: UT_HOUSE_SOURCE_URLS[0],
+      retrievedAt: UT_RETRIEVED_AT,
+      entries: UT_HOUSE_ROSTER_2026,
     },
   ],
 };

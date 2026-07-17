@@ -89,7 +89,13 @@ export interface OfficialRosterEntry {
     // went straight to the general ballot). Reused (not a new per-state
     // code) for West Virginia's US Senate candidate S. Marshall Wilson,
     // per candidates.wvsos.gov's official "CONSTITUTION" party label — the
-    // same national Constitution Party, not a distinct state party.
+    // same national Constitution Party, not a distinct state party. Also
+    // reused verbatim for Utah's Constitution Party (one of vote.utah.gov's
+    // 8 recognized parties, literally printed as "Constitution" on Utah's
+    // own candidate-filing list) — same national-affiliate party name,
+    // unlike the AIP/AKP/IAP precedent of state-specific one-off parties,
+    // so this code is intentionally shared across states rather than
+    // re-minted.
     | "CST"
     // The Kentucky Party — a real state-recognized minor party under
     // Kentucky law (listed in the KY SoS candidate-filings portal's own
@@ -184,6 +190,21 @@ export interface OfficialRosterEntry {
     // building Nevada, mirroring the AKP/NPP/PF/LPF/FFP precedent of a new
     // code per state's own distinctly-named party).
     | "IAP"
+    // Utah's Independent American Party — a real, state-recognized minor
+    // party (one of 8 parties on vote.utah.gov's official 2026 recognized-
+    // parties list), distinct from generic IND AND distinct from Arizona's
+    // AIP ("Americans Independent Party" — a different, unrelated legal
+    // entity despite the superficially similar name/word order; added
+    // building Utah, mirroring the AIP/AKP precedent of not collapsing a
+    // state's own distinctly-named minor party into an existing code).
+    // Coded "UIAP" rather than the generic "IAP" — Nevada's build
+    // independently claimed "IAP" for its own, separately state-recognized
+    // "Independent American Party"; neither build's own source material
+    // asserts the two are the same registered legal entity (unlike WA's
+    // SWP, which explicitly ties to the national Socialist Workers Party),
+    // so disambiguated during the UT/NV merge (2026-07-16) rather than
+    // risk conflating two possibly-distinct state organizations.
+    | "UIAP"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
