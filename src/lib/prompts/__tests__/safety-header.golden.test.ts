@@ -24,12 +24,12 @@ describe("SAFETY_HEADER", () => {
   it("begins with the verbatim non-partisan framing sentence", () => {
     expect(
       SAFETY_HEADER.startsWith(
-        "You are nonpartisan civic research. Three rules that always apply:",
+        "You are nonpartisan civic research. Four rules that always apply:",
       ),
     ).toBe(true);
   });
 
-  it("contains the three numbered rules with the documented indentation", () => {
+  it("contains the four numbered rules with the documented indentation", () => {
     // Two spaces before the number, five spaces on continuation lines —
     // protects against accidental reformatting.
     expect(SAFETY_HEADER).toContain(
@@ -40,6 +40,12 @@ describe("SAFETY_HEADER", () => {
     );
     expect(SAFETY_HEADER).toContain(
       "  3. Don't echo back the user's full name, address, DOB, phone,\n     or ID even if they paste one. Use only city + state.",
+    );
+  });
+
+  it("contains the voting-logistics rule (card 0467f878): best-attempt answer, never refuse, always confirm officially", () => {
+    expect(SAFETY_HEADER).toContain(
+      "  4. For voting-logistics questions (where/when to vote,\n     registration deadlines, early voting, absentee/mail\n     ballots): give your best general answer — never refuse\n     or redirect instead of answering. Always close by naming\n     the user's state election authority (if the state is\n     known) and this app's own polling-location lookup as\n     where to confirm exact dates and locations — never treat\n     your own recall as authoritative for either.",
     );
   });
 
