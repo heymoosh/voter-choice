@@ -84,8 +84,9 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - IN SCOPE: decide (a) how a single Delegate/Resident Commissioner seat surfaces in the UI (RepCard is built around a House+Senate two-tier layout), (b) whether "no_representation" changes framing or a new status is added, (c) the shared code needed once decided — new office type in roster types/schema/reader, `DelegationSeat`-equivalent for a single delegate seat, route wiring, RepCard treatment, PR's distinct "Resident Commissioner" title + 4-year cycle. This card is the decision + scoping step; implementation is a separate follow-up card once Muxin rules on presentation.
 - OUT OF SCOPE: building any of the six territory cards under the existing self-vet-auto-merge authorization until this is decided — see BLOCKED notes on each.
 - BLOCKS: "[P0] Import + verify official roster: American Samoa (AS)", "District of Columbia (DC)", "Guam (GU)", "Northern Mariana Islands (MP)", "Puerto Rico (PR)", "U.S. Virgin Islands (VI)".
-- STATUS: Backlog
-- DECISION: none yet — needs Muxin's product call on how non-voting representation surfaces in the app (this is a UX/framing judgment, not a data-plumbing default). ATTENDED.
+- DECIDED (Muxin, 2026-07-16): v1 does NOT build delegate-seat support. Instead, show an honest roadmap message right after address input for the six non-voting jurisdictions, explaining why no representatives came back. IMPORTANT COPY CORRECTION (confirmed during the ruling): these territories DO vote for Congress — each elects a non-voting Delegate to the US House (Puerto Rico: a Resident Commissioner on a 4-year term); they have no US Senators and their delegate cannot vote on the House floor. So the message must NOT say "no Congress to vote on"; accurate framing is: "Your area elects a non-voting Delegate to the US House — we don't cover delegate races yet. Other representatives are on the roadmap, stay tuned." Implementation is the new "[P1] Territory/DC honest-state message" card; the six territory roster-import cards stay deferred (no longer ship-blocking).
+- STATUS: Done
+- DECISION: decided 2026-07-16 (message-first v1, accurate delegate framing) — see DECIDED line above.
 <!-- card-id: 8f2c4e91-6b3a-4d7f-9e12-3a5c8d9f0b1e -->
 
 ## Phase 1 — Assess Congress (no ballot)
@@ -202,7 +203,8 @@ CLARIFICATION (Muxin, 2026-07-12): we already have a redesigned app. I'll have t
 Methodology, which I think might be a bit of difficult word."
 - "A lot of the links repeat from the top bar. I would keep About, Rename Support to Contact, and Privacy Policy."
 - NOTE: complements existing nav/footer cards — reconcile at grooming.
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: b1a5f64a-cd8c-47a0-8cb5-d9eaf0794977 -->
@@ -210,7 +212,8 @@ Methodology, which I think might be a bit of difficult word."
 **[P2] Add a "Why Now?" page for the fact snippets + the larger case**
 - "I think another Page of Why Now? would be good where the fact snippets could live and you could make a larger case for the
 site."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 9031f1ce-e4f3-44c7-89c7-3bbb664be988 -->
 
@@ -220,7 +223,8 @@ site."
 - "I think Hold Congress to its record. is good for the website SEO, but it does not give me a sense of what this site is for. I
 think a stronger, clearer CTA that folds in what the site does would be stronger."
 - "While the 2 fact snippets are interesting, they clutter the visual and make the next action less clear."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: b4cc1c9e-b7c2-4442-ae5c-1a25af5272d3 -->
@@ -231,7 +235,8 @@ well as a popup if the question mark is clicked. I think I would only keep pull 
 Registered Address."
 - "Underneath that entry box, I would add Unsure? Read about how it work and how we use your data followed by 01 Enter your
 address in addition to the text that was in the popup, then followed by steps 2 and 3."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 1850349c-0bcd-46d0-8b76-970d964389ba -->
@@ -240,7 +245,8 @@ address in addition to the text that was in the popup, then followed by steps 2 
 
 **[P2] Make the "Lock These In" box bigger / more prominent**
 - "I think the Lock Theses In box could be bigger."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 4b7e5a66-4013-4274-ac67-183ba240b92a -->
@@ -250,7 +256,8 @@ address in addition to the text that was in the popup, then followed by steps 2 
 to the issues page previously would be clearer. I.e. These are your issues 1 (decided on state level), 2 (decided on federal
 level), etc."
 - NOTE: overlaps the Fed/State issue-label work — reconcile at grooming.
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 9143a622-82fc-4ab1-8a19-90823453856a -->
@@ -262,7 +269,8 @@ level), etc."
 issues you care about, how they are funded and influenced. You can also find alternative candidates running for the seat. At the
 bottom of the page, you will be asked to replace or keep the current representative. You will do this for all representatives and
 can then print out your scorecard. Let's move to the first candidate."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 0b9d40c9-82ca-40e5-bf82-9a23bb4769f5 -->
@@ -272,7 +280,8 @@ can then print out your scorecard. Let's move to the first candidate."
 on the right. Additionally, the progress bar is not necessary if you keep the current set up of Reviewing Now, Not Yet Reviewed,
 and Reviewed on the right."
 - "Remove see where you stand until it's ready, there is so much here already."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 335829af-98e9-454e-a014-42f41eb95c7d -->
@@ -280,7 +289,8 @@ and Reviewed on the right."
 **[P1] Make "Print My Scorecard" discoverable after the last rep**
 - "After you finish the third representative, it is not clear what to do next. You can miss easily miss the print my score card
 button."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 1f77c3eb-909d-4ff2-95a6-180e89603da7 -->
@@ -288,7 +298,8 @@ button."
 **[P2] Distinguish + de-emphasize non-2026 representatives**
 - "I am also not sure if it is worth adding the non-2026 representatives to the list. I would have a grey background instead of
 white and state earlier that they are not up for election. I would also not include them in the score card."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 97eda1e0-9894-405e-8284-de18b546d43b -->
@@ -331,7 +342,8 @@ the X/Y votes matched you would be better made into a percentage."
 - "All headings could be a lot bigger."
 - "I also think I would lead with the vote decisions rather than what I need to vote, my address, districts, etc."
 - "I would also really recommend a white background for the site, so the scorecard look better when printed."
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 78f5ce94-9b47-4857-b13b-f148af45c491 -->
@@ -346,7 +358,8 @@ various sources, they're hidden unless you unhide the candidate, and it says 'Al
 sources - just not all at once."
 - NOTE: the "Aligned" vs "With you" label + source-display inconsistencies are also mechanical bugs; relates to "[P0] Design
 Candidates UX flow".
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DEPENDS ON: Claude Design session — results-flow clarity, visual hierarchy & color system (user test 2026-06-16)
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: 05b995c8-2ca9-418a-b872-3cbeb17d0b3f -->
@@ -356,7 +369,8 @@ Candidates UX flow".
 - Tip jar on far upper right corner
 - Add Support to the top as well
 - Footer - remove links, keep the voter choice and © 2025 Grey Bird LLC. All Rights Reserved.
-- STATUS: Review
+- APPROVED (Muxin, 2026-07-16): combined UX batch signed off via the integrated design-gallery review (branch integration/ship-readiness-gallery-20260716; see docs/operations/ship-readiness-review-2026-07-16.md). The underlying change merged to main in the Round 3/4 PRs.
+- STATUS: Done
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
 <!-- card-id: c9891a1f-ba31-4dce-bd1b-0ce372c9de12 -->
 
@@ -978,8 +992,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - PASS CONDITION: Muxin confirms the app's displayed roster matches the official source for every tested contest (or the app honestly shows the not-yet-published state). Only then may fan-out/cutout cards proceed.
 - FAIL HANDLING: File exact correction cards; do not advance to fan-out/cutover until re-tested clean.
 - NOTE: This is the earlier, informal instance of what the plan later formalizes as Q27 (national Ballotpedia sample QA). Keep it — it gates the FIRST app-visible data, well before national QA.
-- STATUS: Backlog
-- DECISION: attended manual gate — do NOT auto-run or auto-merge; conductor stops and surfaces to Muxin for the app-vs-source comparison.
+- SIGNED OFF (Muxin, 2026-07-16): Muxin performed her own opportunistic sanity testing across the built states and is satisfied — "I did as much sanity testing as I could but I would want to rely on ppl to tell me if something seems off." Her ruling: flip `OFFICIAL_ROSTER_ENABLED` once the last state roster PR merges (see the new flag-flip card), and add a user-facing ballot-accuracy feedback intake as the ongoing correction channel (see the new feedback-intake card). This closes the gate.
+- STATUS: Done
+- DECISION: attended manual gate — SATISFIED 2026-07-16 by Muxin's sign-off above.
 <!-- card-id: 041eddfa-9c44-4a02-8945-e7acb8052a14 -->
 
 **[P0] Arizona vertical slice — full data-check (validate the official-source roster approach end-to-end before any fan-out)**
@@ -2422,7 +2437,8 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - EVIDENCE: https://github.com/advisories/GHSA-mg66-mrh9-m8jx (+6 sibling GHSA ids); local `npm audit --omit=dev` output (retrieved 2026-07-14)
 - HYPOTHESIS: same-major patch bump (15.5.12 -> 15.5.20) should be low-risk and closes all 6 flagged CVEs; uncertainty -- unverified whether the 15.5.13-15.5.20 patch range carries any breaking change for this app's usage (Cache Components / middleware / i18n); confirm with a full build+test pass before merge.
 - GOAL_CONDITION: npm audit --omit=dev reports zero Next.js advisories after the bump; npm run build and the full test suite pass at the new pinned version.
-- STATUS: Backlog
+- STATUS: To Do
+- DECISION: PROMOTED by Muxin 2026-07-16 (approved as part of the ship-runway housekeeping batch). Standard self-vet auto-merge once build + full test suite pass at the pinned version.
 <!-- card-id: 06e9e179-edf9-45c7-a030-c8a9515b9d72 -->
 
 **[idea] Evaluate whether ballot chat should hard-redirect election-logistics questions instead of answering via LLM**
@@ -3183,6 +3199,7 @@ SHIP: auto-pending-merge
   6. **Go-live gate epic** (0054bb72): launch-flag convention (a09a77c8), lower chat limit (28bf87ec), reset Polis (1f5e2506), translations (2b325135, gated on UX finalized e18e65fd → Keystone EPIC c44193cf).
   7. **Orphaned Review bugs re-queued 2026-07-16**: ef8d602c (P0 tablet Edit Issues), 8e4ef0f3 (edit-issues propagation), 2d1e6f97 (polling-place note) — re-verify against current main first.
   8. **Housekeeping**: branch/worktree cleanup checklist card (below), Next.js CVE bump decision (06e9e179), tip-jar decision (below).
+- MUXIN'S VERDICTS (2026-07-16, all runway items ruled on the same evening): (1) OK pending the last state PR — NOTE South Dakota (SD) is still unclaimed Backlog and must be built for "all states" to be true. (2) Territory ruling DECIDED — message-first v1, see the territory-message card; 8f2c4e91 closed. (3) Sanity gate CLOSED by her sign-off; flag flips when the last state PR lands (new flip card); ballot-accuracy feedback intake approved (new card) as the ongoing correction channel. (4) Gallery APPROVED — 13 UX-batch cards closed Done; `.standing2` polis delta to land; note her Sunday 2026-07-12 feedback = the Round-4 lanes, already merged and included in what she approved. (5) OK — restore PARKED to To Do after epic closeout. (6) Go-live gate deliberately LAST — after beta/user feedback, which comes after everything else here. (7) OK. (8) OK — Next.js CVE bump promoted to To Do; tip jar approved YES; bold-flag default approved YES (new card).
 - STATUS: Backlog
 - DEPENDS ON: [P0] Nationwide official-source congressional candidate roster — every race, every candidate, always current
 
@@ -3205,21 +3222,60 @@ SHIP: auto-pending-merge
 **[P1] DECISION NEEDED: tip jar — Stripe live payment links were never shipped**
 - ORIGIN: 2026-07-16 ship-readiness review. Two June-15 branches (`claude/tip-jar-work`, `claude/zealous-hoover-ead0b1-rebase`) swapped Stripe TEST → LIVE payment links ($3/$5/$10/$25 presets) but patched the now-dead legacy `VoterChoiceApp.tsx` and never merged. Current main's redesigned tip flow routes to a `tip` page with NO Stripe payment links at all. The intent (real tips) is unfulfilled — this is a product decision, not lost code.
 - ASK (Muxin): should live tips exist at launch? If yes, a fresh small card wires live Stripe links into the redesigned tip surface. If no, the two branches join the cleanup checklist.
-- STATUS: Backlog
-- DECISION: none yet — ATTENDED, needs Muxin's product call.
+- APPROVED (Muxin, 2026-07-16): YES — live tips at launch. Scope: wire the live Stripe payment links ($3/$5/$10/$25 presets, from the June branches' intent — pull the actual live URLs from the old branch diffs or from Muxin's Stripe dashboard if they expired) into the REDESIGNED tip surface (the `tip` route), not the dead legacy `VoterChoiceApp.tsx`. Verify links are LIVE mode, not test mode, before merge.
+- STATUS: To Do
+- DECISION: approved 2026-07-16 — build against the redesigned tip surface; self-vet auto-merge; the two June branches join the cleanup list once this lands.
 
 **[P1] Integrated design-review gallery — Rounds 3+4 (merged, unreviewed) + held design branches**
 - ORIGIN: 2026-07-16 ship-readiness review. Muxin never visually reviewed the Round 3 (PRs #267–#283) and Round 4 (PRs #284–#288, #290) design changes — they auto-merged to main. Per her standing preference, the review artifact is ONE integrated end-state gallery, by surface, with per-surface changelists — not per-PR galleries.
 - TASK: build an integration branch off current main merging the held/unmerged design work — `work-drilldown-r31`, `work-intake-r31`, `work-scorecard-r31` (Round-3.1 refinements, pushed to origin 2026-07-16), `wt/keystone-polis-report-redesign` (PR #266, held STOP-SHIP) — then run `npm run design:review-gallery` and deliver the gallery + per-surface changelist for Muxin's sign-off. `wt/apply-the-bold-flag-palette-as-the-default` (PR #241; local tip archived at `archive/bold-flag-local-20260716`) is stale vs the merged rounds — present separately or drop, noted in the changelist. NOTHING merges from this; it is a review artifact only.
 - Muxin's verdicts here close the ~16 UX-batch Review cards and decide the fate of the r31/polis/bold-flag branches.
 - BUILT (2026-07-16): branch `integration/ship-readiness-gallery-20260716` pushed to origin (tip 76def437). Gallery: `.claude/worktrees/ship-gallery/docs/design-review/index.html` (27/27 scenarios captured, tsc clean) + `CHANGELIST.md` alongside it. KEY FINDING from the merge: the three r31 branches and nearly all of the polis STOP-SHIP branch are ALREADY SUBSUMED by main (same logical changes landed via separately-squashed PRs, main's copies often newer/bug-fixed — verified per-conflict by direct diff, not guessed). The ONLY genuinely unmerged visual delta anywhere is the polis `.standing2` OKLCH cluster-hue token block in redesign2.css from wt/keystone-polis-report-redesign. So this gallery ≈ current main + that one polis delta; Muxin's review is effectively her first visual pass over what's already live.
-- STATUS: Review
-- DECISION: review artifact only — no merge, no deploy; ATTENDED review by Muxin at the end.
+- APPROVED (Muxin, 2026-07-16): gallery signed off. Note recorded during approval: this gallery ≈ current main, which ALREADY INCLUDES Muxin's Sunday 2026-07-12 feedback fixes (the Round-4 lanes, PRs #284–#288 — workspace scroll, not-up seats, alignment rows, RepCard evidence hierarchy, H2H money). Her approval closes the 13 UX-batch Review cards (flipped Done 2026-07-16). Follow-on: land the `.standing2` polis palette delta (approved as part of this gallery), then the r31 + polis branches join the cleanup list.
+- STATUS: Done
+- DECISION: review artifact only — APPROVED by Muxin 2026-07-16.
 
 **[P2] Branch + worktree cleanup checklist — execute only on Muxin's approval**
 - ORIGIN: 2026-07-16 ship-readiness review. ~60 local branches are verified superseded (squash-merged content on main, or scratch): full evidence table in `docs/operations/ship-readiness-review-2026-07-16.md`. Also superseded: worktree `/Users/Muxin/Documents/GitHub/voter-choice-worktrees/ky-official-roster` (KY landed via another merge; PR #345 closed) and `.claude/worktrees/roster-babysit-2` (0 commits ahead).
 - EXCLUDED from deletion (live or pending decisions): the babysit lane's roster branches/worktrees; `work-*-r31` (pending gallery review); `wt/keystone-polis-report-redesign` (held STOP-SHIP); `wt/apply-the-bold-flag-palette-as-the-default` + `archive/bold-flag-local-20260716` (pending ruling); `claude/tip-jar-work` + `claude/zealous-hoover-ead0b1-rebase` (pending tip-jar decision).
 - UPDATE (2026-07-16, gallery build): the three `work-*-r31` branches were found SUBSUMED by main (byte-identical or superseded-with-fixes, verified per-file during the gallery integration), and `wt/keystone-polis-report-redesign` is subsumed except the `.standing2` polis palette block. Once Muxin's gallery review confirms nothing is missing, all four move to the safe-delete list (with the `.standing2` delta preserved on `integration/ship-readiness-gallery-20260716`).
 - HARD RULE: no `git branch -D` without Muxin's explicit go-ahead on the list. ATTENDED.
+- UPDATE (2026-07-16 evening): Muxin confirmed the KY worktree + roster-babysit-2 as superseded — both worktrees removed (branches untouched). Tip-jar branches now have a successor card (live-links approved), so they join the safe-delete list once that lands; r31 + polis branches join once the `.standing2` delta lands. The ~60-branch delete table itself STILL awaits Muxin's explicit go-ahead.
 - STATUS: Backlog
-- DECISION: none yet — ATTENDED; deletions only after Muxin approves the doc's table.
+- DECISION: none yet — ATTENDED; branch deletions only after Muxin approves the doc's table.
+
+**[P1] Territory/DC honest-state message after address input (AS, DC, GU, MP, PR, VI)**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-16, Muxin's ruling on the non-voting-territory rendering decision (card 8f2c4e91, now Done). v1 = message, not delegate-seat support.
+- TASK: in `src/app/api/delegation/route.ts`, the six non-voting jurisdictions currently short-circuit to `{status: "no_representation"}`; surface that state in the UI as an honest roadmap message right after address input instead of an empty/blank result.
+- COPY (accuracy matters — do NOT say "no Congress to vote on"): these jurisdictions each elect a NON-VOTING Delegate to the US House (Puerto Rico: a Resident Commissioner, 4-year term); they have no US Senators. Message along the lines of: "Your area elects a non-voting Delegate to the US House. We only cover voting House + Senate races right now — delegate races and other representatives are on the roadmap, stay tuned." Muxin's intent: the user must understand WHY their address returned nothing.
+- GOAL_CONDITION: entering a DC/PR/GU/VI/AS/MP address shows the message (not a blank state); the geocoder path (`src/lib/server/census-geocode.ts` already resolves state + null district for all six) is unchanged; tests cover at least DC + PR.
+- STATUS: To Do
+- DECISION: approved by Muxin 2026-07-16 (message-first v1, accurate delegate framing). Self-vet auto-merge.
+
+**[P0] Flip OFFICIAL_ROSTER_ENABLED in production once the last state roster PR merges**
+- PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
+- ORIGIN: 2026-07-16, Muxin's sign-off closing the MANUAL SANITY-TEST GATE (041eddfa): "we may as well flip it once the last state PR lands."
+- PRECONDITION: every per-state "[P0] Import + verify official roster" card is Done — including South Dakota (SD), which as of 2026-07-16 is still unclaimed Backlog and must be built first. The six territory cards are EXCLUDED (deferred per the 2026-07-16 territory ruling — the message card covers them).
+- TASK: set `OFFICIAL_ROSTER_ENABLED` on in the production Vercel env and redeploy (fresh `vercel --prod`, NOT `vercel redeploy` — redeploy reuses old env). Verify post-flip with 2-3 golden addresses across different states that roster-backed candidates render.
+- SAFETY NET: the ballot-accuracy feedback intake card (below) is the ongoing correction channel Muxin is relying on post-flip — prefer landing it before or with the flip.
+- STATUS: To Do
+- DEPENDS ON: [P0] Import + verify official roster: South Dakota (SD)
+- DECISION: pre-authorized by Muxin 2026-07-16, contingent ONLY on the last state PR merging. ATTENDED-lite: prod env change — surface the exact commands + verification output when executing.
+
+**[P1] Ballot-accuracy feedback intake — "Missing a rep? Help us improve"**
+- ORIGIN: 2026-07-16, Muxin's ask alongside the flag-flip sign-off: a cheap correction channel so users report roster errors instead of her re-combing state sites manually.
+- TASK: a lightweight feedback form reachable from the results/roster surfaces ("Missing a rep? Something look wrong? Help us improve our ballot accuracy"). Capture: free-text description + WHICH STATE and ideally WHICH RACE/POSITION it concerns — prefill state/district from the user's existing address resolution context rather than asking again; let them correct it. No auth, no PII beyond what they type.
+- STORAGE: new additive table (e.g. `roster_feedback`: id, created_at, state, office, district, seat/candidate ref if derivable, message, app-context snapshot) — additive migration per the no-backup-needed convention; plus a simple way for Muxin to review submissions (a `scripts/ops/` reader is enough for v1, no admin UI required).
+- ABUSE GUARD: rate-limit per session like the existing counter endpoints; length-cap the message.
+- GOAL_CONDITION: form submits from a roster surface, row lands in the table with state+office populated, Muxin can list submissions with one ops command; tests cover the API route.
+- STATUS: To Do
+- DECISION: approved by Muxin 2026-07-16. Additive migration OK (existing convention); self-vet auto-merge. Prefer shipping before/with the roster flag flip.
+
+**[P1] Apply the Bold Flag palette as the app-wide default**
+- PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
+- ORIGIN: 2026-07-16, Muxin's ruling on the held branch `wt/apply-the-bold-flag-palette-as-the-default` (PR #241, closed draft; local tip preserved at `origin/archive/bold-flag-local-20260716`): YES — Bold Flag becomes the default.
+- TASK: fresh implementation against CURRENT main (the archived branch is stale vs the merged Round 3/4 work — use it as intent reference, not a rebase base). Verify what main already carries (Bold Flag tokens exist in `public/redesign2.css` scoped to specific surfaces; the app-wide default may still be the civic mood) and make Bold Flag the default palette everywhere, reconciling with the merged parity surfaces so nothing regresses.
+- VERIFY: parity-gate/design-gallery run after the change + before/after screenshots for Muxin (per the visual-self-vet rule, a code-reading claim is not visual proof).
+- STATUS: To Do
+- DECISION: approved by Muxin 2026-07-16. FE design-experience change — build + visual evidence, then standard self-vet merge (Muxin already ruled the direction; the evidence is for regression-catching, not a new design hold).
