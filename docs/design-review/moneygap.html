@@ -49,22 +49,22 @@
 </head>
 <body>
   <h1>Keystone review — Money-gap</h1>
-  <div class="sub">ref: <code>HEAD (fd8d4905)</code> &middot; generated 2026-07-11T16:03:23.843Z</div>
+  <div class="sub">ref: <code>HEAD (90f66480)</code> &middot; generated 2026-07-17T14:23:31.985Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (fd8d4905))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (90f66480))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">11a-fieldmoneygap</div>
-          <div class="label">Money-gap — whole field on one scale</div>
-          
-          <span class="tag no">not automatable</span>
-          <div class="note">NOT AUTOMATABLE: the canvas's 'whole field' (3+ candidates on one scale) is not wired — confirmed by reading RepCard.tsx: it calls &lt;MoneyGapScale subject=... peer=...&gt; WITHOUT a `field` prop, so only the single subject row ever renders in the card. A prior 'proxy' capture reused 02b's single-subject funding-expanded panel and pixel-diffed it against the real whole-field canvas ref — a structurally different screen — which silently false-passed (STOP-SHIP 2026-07-09 finding). Genuinely not gradable until the field prop is wired.</div>
+          <div class="label">Money-gap — subject vs the median (field rows moved to the duel)</div>
+          <span class="badge unchanged">unchanged since base</span>
+          <span class="tag yes">automated</span>
+          <div class="note">REWRITTEN 2026-07-12 (Round-4 problem #10): the incumbent card's scale is subject-vs-median ONLY — the `field` challenger rows the 2026-07-11 ruling wired here were removed again by Muxin's Round-4 review (challenger money bars don't belong on the incumbent's own card); the whole-field comparison relocates to the head-to-head duel ('Everyone running for this seat', feat/headtohead-money-clarity). The canvas artboard (refFile) still shows the whole-field composition; subject-only renders as a strict subset of it, inside the coarse visual threshold — the marker probe in parity-gate.ts is the binding check for the removal. mockDelegationWithChallengers stays in this capture ON PURPOSE: the mock supplies funded challengers so a regressed tree that re-wires `field` would genuinely render the rows the probe asserts are gone.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11a-fieldmoneygap.png" alt="reference artboard"></td>
-        <td class="shot"><div class="not-automatable">not automatable — see note</div></td>
+        <td class="shot"><img src="screenshots/repo/11a-fieldmoneygap.png" alt="repo screenshot"></td>
       </tr>
 
       <tr>

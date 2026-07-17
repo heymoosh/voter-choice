@@ -183,9 +183,9 @@ textarea {
 }
 /* Bold Flag / Keystone: canvas's nav sits on the same white/navy/red ground
    as the hero (design-handoff/.../screens.css .sc-nav). Scoped to the App2
-   redesign via the .bf-app ancestor (set in src/app/page.tsx, see
-   redesign2.css) rather than the nav's own data-current attribute -- now
-   that Bold Flag white is the app-wide default for App2 (redesign2.css
+   redesign via the .bf-app ancestor (set on <body> in src/app/layout.tsx,
+   see redesign2.css) rather than the nav's own data-current attribute --
+   now that Bold Flag white is the app-wide default (redesign2.css
    .bf-app), the nav should read consistently on every route, not just
    home. The legacy ballot app has no .bf-app ancestor, so it still gets
    the base civic-styled nav below unchanged (src/app/civic-default.test.tsx
@@ -1565,6 +1565,12 @@ body[data-treatment="inkwell"] .ws-rail .race-list li.active .ind {
   padding: 7px 12px;
   border-radius: 999px;
   cursor: pointer;
+  /* Suggested-question chip row — a cluster of tap targets in the seat
+     chat panel; the 7px/12.5px padding alone renders ~35px tall, short of
+     the 44px touch-target minimum used elsewhere in this file. */
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
 }
 .ws-input .chip:hover {
   color: var(--ink);
@@ -3512,7 +3518,9 @@ body[data-treatment="inkwell"] .cv2-iss-row.open {
   .app-nav .links a {
     display: inline-flex;
     align-items: center;
-    min-height: 40px;
+    /* Apple HIG / Material both call 44px the minimum touch target (see the
+       prototype-c.css touch-target section) — this was 40px. */
+    min-height: 44px;
   }
   .app-nav .lang-wrap {
     display: none;
