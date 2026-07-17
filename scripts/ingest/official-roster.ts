@@ -473,15 +473,23 @@ import {
   UT_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/ut-official-roster-2026";
 import {
-  WY_STATE,
-  WY_ELECTION_YEAR,
-  WY_STAGE,
-  WY_HOUSE_SOURCE_URLS,
-  WY_SENATE_SOURCE_URLS,
-  WY_RETRIEVED_AT,
-  WY_HOUSE_ROSTER_2026,
-  WY_SENATE_ROSTER_2026,
-} from "../congressional-rosters/wy-official-roster-2026";
+  SC_STATE,
+  SC_ELECTION_YEAR,
+  SC_STAGE,
+  SC_HOUSE_SOURCE_URLS,
+  SC_SENATE_SOURCE_URLS,
+  SC_RETRIEVED_AT,
+  SC_HOUSE_ROSTER_2026,
+  SC_SENATE_ROSTER_2026,
+} from "../congressional-rosters/sc-official-roster-2026";
+import {
+  VA_STATE,
+  VA_ELECTION_YEAR,
+  VA_STAGE,
+  VA_HOUSE_SOURCE_URLS,
+  VA_RETRIEVED_AT,
+  VA_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/va-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1402,6 +1410,44 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       entries: UT_HOUSE_ROSTER_2026,
     },
   ],
+  SC: [
+    {
+      state: SC_STATE,
+      office: "house",
+      electionYear: SC_ELECTION_YEAR,
+      stage: SC_STAGE,
+      sourceUrl: SC_HOUSE_SOURCE_URLS[0],
+      retrievedAt: SC_RETRIEVED_AT,
+      entries: SC_HOUSE_ROSTER_2026,
+    },
+    {
+      state: SC_STATE,
+      office: "senate",
+      electionYear: SC_ELECTION_YEAR,
+      stage: SC_STAGE,
+      sourceUrl: SC_SENATE_SOURCE_URLS[0],
+      retrievedAt: SC_RETRIEVED_AT,
+      entries: SC_SENATE_ROSTER_2026,
+    },
+  ],
+  // House-only, and only 2 of 11 districts (05, 08) — 9 districts + the 2026
+  // US Senate race are deliberately omitted; VA's official non-primary
+  // nominee list (which would confirm the sitting incumbent's own-party
+  // status for those seats) is unpublished as of retrieval. See
+  // va-official-roster-2026.ts's docblock for the full finding. Omitted
+  // seats fall through to the pre-existing FEC-derived path, same as
+  // Louisiana's House omission above.
+  VA: [
+    {
+      state: VA_STATE,
+      office: "house",
+      electionYear: VA_ELECTION_YEAR,
+      stage: VA_STAGE,
+      sourceUrl: VA_HOUSE_SOURCE_URLS[0],
+      retrievedAt: VA_RETRIEVED_AT,
+      entries: VA_HOUSE_ROSTER_2026,
+    },
+  ],
   WY: [
     {
       state: WY_STATE,
@@ -1512,3 +1558,14 @@ if (isDirectRun) {
     process.exit(1);
   });
 }
+
+import {
+  WY_STATE,
+  WY_ELECTION_YEAR,
+  WY_STAGE,
+  WY_HOUSE_SOURCE_URLS,
+  WY_SENATE_SOURCE_URLS,
+  WY_RETRIEVED_AT,
+  WY_HOUSE_ROSTER_2026,
+  WY_SENATE_ROSTER_2026,
+} from "../congressional-rosters/wy-official-roster-2026";
