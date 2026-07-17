@@ -4359,3 +4359,99 @@
   background: var(--replace);
   color: var(--paper-2);
 }
+
+/* ---- Roster feedback ("Missing a rep? Something look wrong?") ----
+   RosterFeedback.tsx — net-new surface, not a design-canvas port. Reuses
+   the existing .be-modal-overlay/.be-modal chrome (HandoffModal.tsx/
+   BudgetModal.tsx) for the dialog; these rules cover only the trigger row
+   and the form fields that chrome doesn't already style. */
+.rf-affordance-row {
+  display: flex;
+  justify-content: center;
+  padding: 10px 16px;
+}
+.rf-trigger {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  background: none;
+  border: none;
+  border-bottom: 1px dashed var(--rule);
+  cursor: pointer;
+  padding: 2px 0;
+}
+.rf-trigger:hover {
+  color: var(--brand);
+  border-bottom-color: var(--brand);
+}
+.rf-form {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+}
+.rf-row {
+  display: flex;
+  gap: 12px;
+}
+.rf-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+.rf-field-narrow {
+  flex: 0 0 72px;
+}
+.rf-field-lab {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.rf-textarea,
+.rf-input {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 8px;
+  padding: 8px 10px;
+}
+.rf-textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+.rf-textarea:focus,
+.rf-input:focus {
+  outline: none;
+  border-color: var(--brand);
+  box-shadow: 0 0 0 3px var(--brand-soft);
+}
+.rf-submit {
+  align-self: flex-start;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  color: var(--paper-2);
+  background: var(--brand);
+  border: none;
+  border-radius: 999px;
+  padding: 9px 18px;
+  cursor: pointer;
+}
+.rf-submit:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.rf-success {
+  color: var(--civic-2);
+  font-weight: 600;
+}
+.rf-error {
+  color: var(--vote-red);
+  font-size: 13px;
+}
