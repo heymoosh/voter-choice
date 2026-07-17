@@ -52,6 +52,14 @@ export const metadata: Metadata = {
   robots: { index: true, follow: true },
 };
 
+// Experience flag (build-time inlined): mirrors src/app/page.tsx's own
+// BALLOT_ENABLED check. The legacy ballot-centric experience keeps the civic
+// default below; every other route (the congress-assessment app AND the
+// static content pages — about/methodology/privacy/terms — which render
+// outside App2's own root) gets the Bold Flag / Keystone palette by sharing
+// one class here instead of each route wrapping its own root in it.
+const BALLOT_ENABLED = process.env.NEXT_PUBLIC_BALLOT_ENABLED === "true";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -95,8 +103,17 @@ export default function RootLayout({
         />
       </head>
       {/* Prototype visual defaults — Civic mood / Civic palette / Daylight
-          treatment. prototype.css consumes these via body[data-mood="civic"]. */}
-      <body data-mood="civic" data-palette="civic" data-treatment="daylight">
+          treatment. prototype.css consumes these via body[data-mood="civic"].
+          The mood/font-family axis stays civic app-wide (PR A1,
+          civic-default.test.tsx) — orthogonal to the Bold Flag color-token
+          axis below; data-palette="civic" has no matching CSS selector
+          today, it's inert. */}
+      <body
+        data-mood="civic"
+        data-palette="civic"
+        data-treatment="daylight"
+        className={BALLOT_ENABLED ? undefined : "bf-app"}
+      >
         <a className="skip-link" href="#main-content">
           Skip to main content
         </a>

@@ -21,7 +21,7 @@
    highlight all rendered civic-green instead of the canvas's navy. Repointed
    at --bf-brand/--bf-brand-2 (same fix, same reasoning, as redesign2.css's
    .pe-screen for PolisEntry): HeadToHead.tsx only ever renders inside App2,
-   which is always under #root.bf-app, so --bf-brand is already in scope.
+   always under body.bf-app, so --bf-brand is already in scope.
    --brand-soft's hue is fixed to match (was hue 170, the old civic-teal
    hue; now hue 262, the same navy tint --bf-brand-soft/--civic-soft use
    elsewhere). --keep/--replace are unaffected — already independent fixed
