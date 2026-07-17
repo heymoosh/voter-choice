@@ -384,6 +384,14 @@ import {
   NH_SENATE_SOURCE_URLS,
   NH_RETRIEVED_AT,
 } from "../../../scripts/congressional-rosters/nh-official-roster-2026";
+import {
+  NY_HOUSE_ROSTER_2026,
+  NY_STATE,
+  NY_OFFICE,
+  NY_ELECTION_YEAR,
+  NY_HOUSE_SOURCE_URLS,
+  NY_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/ny-official-roster-2026";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -9652,5 +9660,191 @@ describe("lookupChallengers — NH wiring (house + senate both covered)", () => 
     expect(out.senate.find((c) => c.name === "Tim Harris")?.party).toBe(
       "Independent",
     );
+  });
+});
+
+// ---------------------------------------------------------------------------
+// New York — house-only (no 2026 US Senate race), all 26 districts, every
+// nomination already determined (June 23, 2026 primary already occurred).
+// No runoff_pending anywhere (New York has no runoff mechanism). See
+// docs/operations/new-york-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+
+/** Same shape as `dbRow`, but for NY entries — house-only, like CT/CA. */
+function nyDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `ny-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: NY_OFFICE,
+    district: entry.district,
+    sourceUrl: NY_HOUSE_SOURCE_URLS[0],
+    retrievedAt: NY_RETRIEVED_AT,
+  };
+}
+
+const NY_HOUSE_DB_ROWS = NY_HOUSE_ROSTER_2026.map(nyDbRow);
+
+// The sitting incumbent seeking re-election in 2026, per district — only
+// districts with no open seat and no incumbent-defeated-in-primary outcome.
+// CD-07/12/21 are open seats (incumbent not running); CD-10/13's incumbent
+// lost their own primary — none of the 5 appear here.
+const NY_INCUMBENTS: Record<string, string> = {
+  "01": "Nicholas J. LaLota",
+  "02": "Andrew R. Garbarino",
+  "03": "Thomas R. Suozzi",
+  "04": "Laura Gillen",
+  "05": "Gregory Meeks",
+  "06": "Grace Meng",
+  "08": "Hakeem Jeffries",
+  "09": "Yvette Clarke",
+  "11": "Nicole Malliotakis",
+  "14": "Alexandria Ocasio-Cortez",
+  "15": "Ritchie Torres",
+  "16": "George S. Latimer",
+  "17": "Mike Lawler",
+  "18": "Pat Ryan",
+  "19": "Josh Riley",
+  "20": "Paul D. Tonko",
+  "22": "John W. Mannion",
+  "23": "Nicholas A. Langworthy",
+  "24": "Claudia Tenney",
+  "25": "Joseph D. Morelle",
+  "26": "Timothy M. Kennedy",
+};
+
+const NY_ALL_DISTRICTS = Array.from({ length: 26 }, (_, i) =>
+  String(i + 1).padStart(2, "0"),
+);
+
+describe("getOfficialRoster — NY narrowing", () => {
+  it("narrows to the exact (office, district) contest for each of the 26 NY districts", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NY_HOUSE_DB_ROWS));
+    for (const district of NY_ALL_DISTRICTS) {
+      const out = await getOfficialRoster(
+        NY_STATE,
+        NY_OFFICE,
+        district,
+        NY_ELECTION_YEAR,
+      );
+      const expectedNames = NY_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+
+  it("returns no rows for a senate contest (NY has 0 in 2026)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NY_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      NY_STATE,
+      "senate",
+      null,
+      NY_ELECTION_YEAR,
+    );
+    expect(out).toEqual([]);
+  });
+
+  it("every NY row carries qualified_for_general_ballot — no runoff_pending anywhere (NY has no runoff mechanism)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NY_HOUSE_DB_ROWS));
+    const cd12 = await getOfficialRoster(
+      NY_STATE,
+      NY_OFFICE,
+      "12",
+      NY_ELECTION_YEAR,
+    );
+    expect(
+      cd12.every((r) => r.ballotStatus === "qualified_for_general_ballot"),
+    ).toBe(true);
+    expect(cd12.find((r) => r.name === "Micah Lasher")).toBeDefined();
+  });
+});
+
+describe("isIncumbentSeekingReelection — NY", () => {
+  it("returns true for every district with a sitting incumbent seeking re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NY_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(NY_INCUMBENTS)) {
+      const out = await isIncumbentSeekingReelection(
+        NY_STATE,
+        NY_OFFICE,
+        district,
+        NY_ELECTION_YEAR,
+        incumbentName,
+      );
+      expect(out).toBe(true);
+    }
+  });
+
+  it("CD-07/12/21 (open seats) and CD-10/13 (incumbent defeated in primary): no candidate is flagged incumbent", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(NY_HOUSE_DB_ROWS));
+    for (const district of ["07", "10", "12", "13", "21"]) {
+      const rows = NY_HOUSE_ROSTER_2026.filter((e) => e.district === district);
+      expect(rows.every((r) => r.isIncumbent === false)).toBe(true);
+    }
+  });
+});
+
+describe("lookupChallengers — NY wiring (house-only, all 26 districts, no runoff_pending anywhere)", () => {
+  it("CD-10: neither Goldman (lost primary) nor an incumbent flag renders; Lander and Moore render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "10",
+    ).map((e, i) => nyDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (NY has 0 senate contests), FEC fallback (senate uncovered) -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("NY", 10, 2026);
+
+    expect(out.house.some((c) => c.name === "Dan Goldman")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Brad Lander", "Jennifer Moore"].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+
+  it("every NY district's sitting incumbent is excluded from that district's own challenger list", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    for (const [district, incumbentName] of Object.entries(NY_INCUMBENTS)) {
+      const houseRows = NY_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e, i) => nyDbRow(e, i));
+      mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+      const out = await lookupChallengers("NY", Number(district), 2026);
+
+      expect(out.house.some((c) => c.name === incumbentName)).toBe(false);
+    }
+  });
+
+  it("CD-12 (open seat, 8-candidate plurality primary): Lasher renders as a challenger alongside Shinkle, none excluded as incumbent", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "12",
+    ).map((e, i) => nyDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("NY", 12, 2026);
+
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      ["Micah Lasher", "Caroline Shinkle"].sort(),
+    );
+    expect(out.house.every((c) => c.isRunoffPending === false)).toBe(true);
+  });
+
+  it("senate side returns empty for NY (0 senate contests in 2026)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = NY_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "01",
+    ).map((e, i) => nyDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+
+    const out = await lookupChallengers("NY", 1, 2026);
+
+    expect(out.senate).toEqual([]);
   });
 });
