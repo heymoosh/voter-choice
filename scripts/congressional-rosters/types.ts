@@ -80,13 +80,16 @@ export interface OfficialRosterEntry {
     // label, preserved rather than collapsed into the generic bucket;
     // added building Iowa).
     | "NPI"
-    // Constitution Party of Idaho — a real state-recognized minor party
-    // under Idaho law, distinct from generic IND; unlike Idaho's
-    // Democratic/Republican/Libertarian primaries (all three appeared as
-    // contests on results.voteidaho.gov's official May 19, 2026 primary
-    // results), no Constitution Party primary contest existed for either US
-    // House district — its two 2026 federal filers went straight to the
-    // general ballot (added building Idaho).
+    // Constitution Party — a real state-recognized minor party, distinct
+    // from generic IND; added building Idaho ("Constitution Party of
+    // Idaho": unlike Idaho's Democratic/Republican/Libertarian primaries,
+    // all three appearing as contests on results.voteidaho.gov's official
+    // May 19, 2026 primary results, no Constitution Party primary contest
+    // existed for either US House district — its two 2026 federal filers
+    // went straight to the general ballot). Reused (not a new per-state
+    // code) for West Virginia's US Senate candidate S. Marshall Wilson,
+    // per candidates.wvsos.gov's official "CONSTITUTION" party label — the
+    // same national Constitution Party, not a distinct state party.
     | "CST"
     // The Kentucky Party — a real state-recognized minor party under
     // Kentucky law (listed in the KY SoS candidate-filings portal's own
