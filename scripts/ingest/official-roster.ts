@@ -436,6 +436,14 @@ import {
   NY_RETRIEVED_AT,
   NY_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/ny-official-roster-2026";
+import {
+  NV_STATE,
+  NV_ELECTION_YEAR,
+  NV_STAGE,
+  NV_HOUSE_SOURCE_URLS,
+  NV_RETRIEVED_AT,
+  NV_HOUSE_ROSTER_2026,
+} from "../congressional-rosters/nv-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1290,6 +1298,17 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: NY_HOUSE_SOURCE_URLS[0],
       retrievedAt: NY_RETRIEVED_AT,
       entries: NY_HOUSE_ROSTER_2026,
+    },
+  ],
+  NV: [
+    {
+      state: NV_STATE,
+      office: "house",
+      electionYear: NV_ELECTION_YEAR,
+      stage: NV_STAGE,
+      sourceUrl: NV_HOUSE_SOURCE_URLS[0],
+      retrievedAt: NV_RETRIEVED_AT,
+      entries: NV_HOUSE_ROSTER_2026,
     },
   ],
 };

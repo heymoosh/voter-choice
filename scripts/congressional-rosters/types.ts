@@ -172,6 +172,15 @@ export interface OfficialRosterEntry {
     // invented code, mirroring the AIP/AKP/NPP/PF/LPF/FFP/NPI/CST/KYP/LMN
     // precedent of trusting an official source's own party label).
     | "WGR"
+    // Nevada's Independent American Party — a real, Nevada-recognized minor
+    // party under Nevada election law, distinct from generic IND. NOT the
+    // same code as "AIP" (which is specifically Arizona's own
+    // identically-patterned party, per races.ts's PARTY_NAMES display-name
+    // map) — despite the near-identical party name, reusing AIP would
+    // display "Arizona Independent Party" on a Nevada candidate (added
+    // building Nevada, mirroring the AKP/NPP/PF/LPF/FFP precedent of a new
+    // code per state's own distinctly-named party).
+    | "IAP"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;
