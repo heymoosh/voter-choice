@@ -205,6 +205,27 @@ export interface OfficialRosterEntry {
     // so disambiguated during the UT/NV merge (2026-07-16) rather than
     // risk conflating two possibly-distinct state organizations.
     | "UIAP"
+    // The Alliance Party (of South Carolina) — one of the SC Election
+    // Commission's 9 certified political parties (scvotes.gov's own
+    // "Certified Political Parties of South Carolina" page), distinct from
+    // generic IND per the AIP/AKP/NPP/PF/LPF/FFP/CST/KYP precedent (added
+    // building South Carolina).
+    | "SCA"
+    // Constitution Party (of South Carolina) — scconstitutionparty.com, one
+    // of SC's 9 certified parties; distinct from Idaho's own CST code since
+    // each state's chapter is a separately certified state party under that
+    // state's own law, mirroring how FFP (Florida) and CST (Idaho) each got
+    // their own code rather than sharing one across states (added building
+    // South Carolina).
+    | "SCC"
+    // Forward Party (South Carolina chapter) — southcarolinaforwardparty.com,
+    // one of SC's 9 certified parties; distinct from Florida's FFP code for
+    // the same reason as SCC above (added building South Carolina).
+    | "SCF"
+    // South Carolina Workers Party — scworkersparty.org, one of SC's 9
+    // certified parties (a state-specific party, not the national "Workers
+    // Party of America") (added building South Carolina).
+    | "SCW"
     | null;
   isIncumbent: boolean;
   ballotStatus: OfficialBallotStatus;

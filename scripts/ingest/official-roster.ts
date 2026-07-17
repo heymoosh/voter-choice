@@ -472,6 +472,16 @@ import {
   UT_RETRIEVED_AT,
   UT_HOUSE_ROSTER_2026,
 } from "../congressional-rosters/ut-official-roster-2026";
+import {
+  SC_STATE,
+  SC_ELECTION_YEAR,
+  SC_STAGE,
+  SC_HOUSE_SOURCE_URLS,
+  SC_SENATE_SOURCE_URLS,
+  SC_RETRIEVED_AT,
+  SC_HOUSE_ROSTER_2026,
+  SC_SENATE_ROSTER_2026,
+} from "../congressional-rosters/sc-official-roster-2026";
 
 export interface OfficialRosterFixture {
   state: string;
@@ -1390,6 +1400,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       sourceUrl: UT_HOUSE_SOURCE_URLS[0],
       retrievedAt: UT_RETRIEVED_AT,
       entries: UT_HOUSE_ROSTER_2026,
+    },
+  ],
+  SC: [
+    {
+      state: SC_STATE,
+      office: "house",
+      electionYear: SC_ELECTION_YEAR,
+      stage: SC_STAGE,
+      sourceUrl: SC_HOUSE_SOURCE_URLS[0],
+      retrievedAt: SC_RETRIEVED_AT,
+      entries: SC_HOUSE_ROSTER_2026,
+    },
+    {
+      state: SC_STATE,
+      office: "senate",
+      electionYear: SC_ELECTION_YEAR,
+      stage: SC_STAGE,
+      sourceUrl: SC_SENATE_SOURCE_URLS[0],
+      retrievedAt: SC_RETRIEVED_AT,
+      entries: SC_SENATE_ROSTER_2026,
     },
   ],
 };
