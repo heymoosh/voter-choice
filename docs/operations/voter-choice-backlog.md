@@ -3218,8 +3218,9 @@ SHIP: auto-pending-merge
 - PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
 - ORIGIN: 2026-07-16 ship-readiness review, recovered from Round-4 session memory. PR #284 fixed the per-issue alignment rows by introducing `issuesForSeatCard()` (level-eligible OR actually-scored) at 3 call sites, but deliberately left the head-to-head duel call site (`src/prototype/redesign/App2.tsx` ~line 1015, may have drifted) on the old `issuesForLevel()` — a known gap that needed BOTH #284 and #287 merged first. Both merged 2026-07-12/13; the fast-follow was never filed. Symptom: a state-leaned issue (e.g. Education-AI) scored for a candidate is missing from the H2H duel rows while present on the seat card.
 - TASK: wire `issuesForSeatCard` into the duel call site, add/extend the test alongside the 3 existing call sites' coverage.
-- STATUS: To Do
-- DECISION: auto-eligible — small, spec'd by PR #284's own KNOWN GAP note, standard self-vet auto-merge. (Queued behind the roster epic's priority lock like everything else.)
+- ALREADY SHIPPED (found 2026-07-16 overnight run): PR #290 ("fix(duel): head-to-head issue rows use the scored-aware issue join", merged 2026-07-12 23:59 UTC) landed exactly this — verified on current main, `src/prototype/redesign/App2.tsx:1023` reads `issuesForSeatCard(issues, duelSeat)`. This card was opened from a stale KNOWN-GAP note; the gap had closed the same night it was recorded. Complaint #6's known gap in `docs/operations/round4-retest-checklist-2026-07-16.md` is therefore ALSO already fixed — one less thing pending for Muxin's re-test.
+- STATUS: Done
+- DECISION: auto-eligible — resolved as already-shipped via PR #290, no new code.
 
 **[P1] DECISION NEEDED: tip jar — Stripe live payment links were never shipped**
 - ORIGIN: 2026-07-16 ship-readiness review. Two June-15 branches (`claude/tip-jar-work`, `claude/zealous-hoover-ead0b1-rebase`) swapped Stripe TEST → LIVE payment links ($3/$5/$10/$25 presets) but patched the now-dead legacy `VoterChoiceApp.tsx` and never merged. Current main's redesigned tip flow routes to a `tip` page with NO Stripe payment links at all. The intent (real tips) is unfulfilled — this is a product decision, not lost code.
