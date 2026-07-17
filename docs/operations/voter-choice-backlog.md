@@ -3294,9 +3294,10 @@ SHIP: auto-pending-merge
 - TASK: set `OFFICIAL_ROSTER_ENABLED` on in the production Vercel env and redeploy (fresh `vercel --prod`, NOT `vercel redeploy` — redeploy reuses old env). Verify post-flip with 2-3 golden addresses across different states that roster-backed candidates render.
 - SAFETY NET: the ballot-accuracy feedback intake card (below) is the ongoing correction channel Muxin is relying on post-flip — prefer landing it before or with the flip.
 - EXECUTED (2026-07-17, attended — Muxin approved each prod step; full sequence in `docs/operations/morning-runbook-2026-07-17.md`): migrations 0015/0016/0017 applied to prod · all 50 states imported (1,884 rows, all imports clean) · `OFFICIAL_ROSTER_ENABLED=true` set in production env · deploy went out via CI (direct `vercel --prod` CLI upload kept AbortError-ing; the on-push deploy carries the new env). Remaining: golden-address verification on the live app, then flip this card to Done.
-- STATUS: Review
+- VERIFIED (2026-07-17): golden-address check passed live — AZ (Phoenix), TX (Austin), AL (Montgomery) all return roster-backed candidates matching the official fixtures name-for-name (AZ 3/3, TX 4/4 sampled, AL 9/9 sampled). Deploy 90f66480 green (first green deploy since 07-15).
+- STATUS: Done
 - DEPENDS ON: [P0] Import + verify official roster: South Dakota (SD)
-- DECISION: pre-authorized by Muxin 2026-07-16; executed attended 2026-07-17. Closes on golden-address verification.
+- DECISION: pre-authorized by Muxin 2026-07-16; executed attended + verified 2026-07-17.
 
 **[P1] Ballot-accuracy feedback intake — "Missing a rep? Help us improve"**
 - ORIGIN: 2026-07-16, Muxin's ask alongside the flag-flip sign-off: a cheap correction channel so users report roster errors instead of her re-combing state sites manually.
