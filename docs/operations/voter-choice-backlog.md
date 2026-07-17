@@ -73,8 +73,9 @@ Ballot upload/parse is too much friction for the target user, so the product shi
 - STANDING REQUIREMENT — CANDIDATE-WITHDRAWAL DEADLINE TRACKING (Muxin, 2026-07-16): a qualified/nominated candidate withdrawing from a race changes the ballot in the OPPOSITE direction from an undetermined nomination or a pending UAF/write-in filing — it REMOVES a candidate already recorded `qualified_for_general_ballot` (or otherwise determined), rather than resolving one still open. AK's and DE's builds each independently caught and handled their own state's withdrawal window ad hoc (see their cards) before this was a formal rule; the plan doc's item (e) now names this explicitly as its own governing-calendar-date category, not folded into the primary/runoff/certification examples. **Every future roster build AND every re-check in this manual track MUST find and record that state's candidate-withdrawal deadline(s) as one of the item-(e) governing dates** — check whether the window is still open at build/re-check time, and if so, treat it exactly like any other still-pending calendar item: note it in Known Gaps, and if the fixture won't be re-checked again before that date passes, open (or extend) a dated `NOT BEFORE` follow-up card for it per the convention above. Applied retroactively 2026-07-16 to the AZ/AL/OK/CO/CA/CT/FL re-check cards, none of which had captured this until now (AK and DE already had).
 - SUCCESSOR (Muxin, 2026-07-16): this epic is scoped to the 2026 congressional cycle only — it is NOT a standing/evergreen mechanism, and nothing here should be read as automatically covering 2028, 2030, or any later cycle. Every state's official roster is legally locked once that state's own ballot-content-certification date passes for 2026 (see each state's `NOT BEFORE`/re-check card and the plan doc's item (e) dates); after that, this epic's job is done and its data goes stale by design as soon as candidates start filing for the NEXT cycle. **Before roughly mid-2027** (giving a full ~18 months' runway before the 2028 federal primaries begin, mirroring this epic's own 2026-07-14 start relative to 2026's primaries), a future session or Muxin should open a **new** `[P0]` epic for the 2028 cycle, cloning this epic's shape (same PARENT/state-card pattern, same manual-track-first sequencing, same NOT BEFORE convention) — built fresh from each state's own 2028 official source, never by copying/aging-forward this epic's 2026 data. No automated reminder exists for this (a scheduled routine was considered and explicitly declined 2026-07-16 in favor of this documented convention) — a future planning/grooming session re-reading this epic is the trigger.
 - GOAL_CONDITION: After separately authorized implementation, `npm run verify:congressional-rosters -- --year 2026` passes with every expected federal contest mapped to either a complete official qualified roster for the exact election stage or an evidenced `official_roster_not_yet_published` state; the address-to-upcoming-race app flow shows every qualified candidate from the latest verified complete official snapshot; and zero FEC-only, filed-only, defeated, withdrawn, disqualified, stale, unknown, or calendar-conflicted appearances are selectable.
-- STATUS: Backlog
-- DECISION: #1 PRIORITY / QUEUE LOCK — implementation AUTHORIZED (2026-07-14), RE-SCOPED (2026-07-15). Waves 1–2 built (F01-F07, F03/F04 Done). The Wave-3/4 unattended auto-chain (I05–I11 → I12 → M13 → M14 → M15) is PAUSED per the 2026-07-15 pivot above — do not resume without Muxin's explicit re-authorization. Current authorized work is the manual state-by-state track: build + verify one state at a time (AZ done), following card 637c2583's pattern. Nothing else in the backlog may be implemented until this epic is finished.
+- CLOSED (2026-07-17): **EPIC COMPLETE — 50/50 states merged and CUT OVER TO PRODUCTION.** WY (#371) was the final state (merged 04:53Z after hand-resolved shared-file conflicts). Cutover executed attended with Muxin approving each prod step (2026-07-17 morning, per `docs/operations/morning-runbook-2026-07-17.md`): migrations 0015/0016 applied to prod (they had never left staging — every deploy since ~07-15 had been failing on the schema-drift guard, now green), all 50 states imported to prod (1,884 roster rows), `OFFICIAL_ROSTER_ENABLED` set in production env. Remaining roster work lives in independent cards: the dated NOT-BEFORE re-check cards (Backlog, date-gated), the six territory jurisdictions (deferred per the 2026-07-16 message-first ruling — the honest-state message shipped in #382), and the paused Wave-3/4 automation chain (still paused; revisit only if the manual track's re-checks become burdensome). The 24 PARKED cards were restored to their prior statuses at closeout. PRIORITY LOCK LIFTED.
+- STATUS: Done
+- DECISION: #1 PRIORITY / QUEUE LOCK — completed and closed 2026-07-17; lock lifted. (History: implementation AUTHORIZED 2026-07-14, RE-SCOPED 2026-07-15 to the manual state-by-state track.)
 <!-- card-id: c5a813bb-9223-4dc1-95aa-65637eb6940b -->
 
 **[P1] DECISION NEEDED: non-voting-territory delegate rendering (blocks AS, DC, GU, MP, PR, VI)**
@@ -107,9 +108,9 @@ CLARIFICATION (Muxin, 2026-07-12): I rely on your judgement on how to make codeb
 - Build steps: (1) create a Neon `test`/`staging` branch; (2) set preview-scoped Vercel env (`DATABASE_URL` → test branch + non-prod flag defaults); (3) confirm preview deploys are enabled per-branch; (4) document the workflow + a re-branch cadence to refresh test data. ATTENDED (needs Vercel + Neon dashboard access).
 - Enables: safe DB-migration testing (apply to the test branch first), the golden-address smoke (run against the test branch), pre-launch dogfooding on a private URL.
 - Trade-offs (accepted): extra env surface (guard against a preview pointing at prod DB); Neon branch drifts from prod until re-branched; preview ≠ 100% prod mirror (Redis/rate-limit/cold-starts differ); SSO-gated so external testers need access.
-- STATUS: Backlog
+- STATUS: To Do
 - DECISION: defer (unattended) — ATTENDED (Vercel + Neon dashboard setup); do not auto-run.
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 446b9327-0e99-42ae-9924-589749281854 -->
 
 **[P0] Replace the Sunday bill-tagging cron with a /schedule cloud cron (off the front-end API key)**
@@ -150,9 +151,9 @@ CLARIFICATION (Muxin, 2026-07-12): I rely on your judgement on how to make codeb
   `workflow_dispatch` for manual backfill), and either wire or retire
   `scripts/ops/tagging-reminder.sh` since the cadence is automated again.
 - DECISION (2026-07-01): write target = DIRECT to prod `issue_tags`, gated by the `_retag-gold-check.ts` gold gate before persisting each batch. Scope INCLUDES writing a net-new general untagged-bill tagging workflow (subagent path, modeled on `_pole-retag.workflow.js`) — the existing workflows are specific re-tags, and the only general tagger today is the metered `tag-bills.ts`, which we are NOT using.
-- STATUS: Backlog
+- STATUS: To Do
 - DECISION: defer (unattended) — ATTENDED build (cloud routine + Neon role/network setup needs your Claude/Neon dashboards); do not auto-run.
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: c86714c6-d3d7-4019-a03d-4d4c6816f7e4 -->
 
 ### General
@@ -168,8 +169,8 @@ CLARIFICATION (Muxin, 2026-07-12): I rely on your judgement on how to make codeb
 - DECISION (2026-07-01, Muxin): APPROVED to record content-free per-session Haiku usage — call counts, token totals, endpoint, timestamp; NO message text, NO PII — AND update the privacy-page copy ("no analytics/telemetry" / "IPs not logged") so it stays truthful. Instrument-half should COORDINATE with held PR #151 (which adds `chat_usage_metrics` but misses the research sub-agent — see cross-cutting card), not build a parallel path.
 - AGENT-FIRST (reclassified 2026-07-01): an agent RUNS the metric spec + builds the content-free per-session instrumentation (stacking on / folding into #151's `chat_usage_metrics`, incl. the research sub-agent path) + drafts the privacy-copy edit, all in a PR. Your step = review that PR, especially the privacy-page wording — a PR review, NOT a mid-run stall. Must NOT deploy or mutate prod.
 - GOAL_CONDITION: a PR adds per-session content-free usage capture (call count / tokens / endpoint / timestamp; NO text, NO PII) covering the chat + research-sub-agent paths, plus the matching privacy-page copy edit; tsc/tests green; nothing deployed. (Sequenced with #151 — don't fork a parallel metrics path.)
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: c160abf1-890d-4222-a8f6-6ee21b70ea29 -->
 
 **[P1] Settings button has no functionality**
@@ -181,10 +182,10 @@ CLARIFICATION (Muxin, 2026-07-12): I rely on your judgement on how to make codeb
 
 **Finish Spanish coverage for remaining redesign surfaces**
 - After PR #168 wired the main body, these still render English: tier-intro paragraphs (Federal/Executive), SeatChat / RepCard / HandoffModal / ScorecardPrintView, App2 stage error strings (geocodefail/norep/dberror), IssueConversation refinement fallbacks. Add t() keys + ES.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Spanish translation covers only the top bar
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 7855fddd-e389-483c-9e55-163a4c011870 -->
 
 **[P3] Decide tablet/mobile Edit-Issues prominence**
@@ -316,8 +317,8 @@ white and state earlier that they are not up for election. I would also not incl
 - GROOMED (2026-06-30): CONFIRMED — do the research SPIKE first; the ingest BUILD is a follow-on card scoped from the spike's output. Build deferred to spike findings.
 - AGENT-FIRST (reclassified 2026-07-01): the spike RUNS unattended — an agent produces the two-track source inventory (formats, license/terms found, per-member match feasibility) + a go/no-go recommendation per track, in a PR. The licensing/product judgment (redistribution OK? surface lobbying?) rides on the FOLLOW-ON build card the spike scopes, not here — so nothing stalls waiting on you until that build card.
 - GOAL_CONDITION: a findings doc inventories Track A (FD "Positions Held") + Track B (LDA LD-2) — source format, license/terms, per-member match feasibility each answered — with a go/no-go per track + a drafted follow-on build card. Research only; no ingest, no prod write.
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 797088b2-4667-4835-ad6c-a2b59a8cac06 -->
 
 **[P2] Include stock transactions**
@@ -331,8 +332,8 @@ white and state earlier that they are not up for election. I would also not incl
   - Validate before building (fail-open, like congress-press): confirm the Stock Watcher datasets are still live + license permits redistribution.
   - Scope: ingest job + member_stock_transactions table + a scorecard influence-section render. Incumbents only.
 - GROOMED (2026-07-01): AUTO may BUILD (migration + ingest code) + open a PR, but must NOT apply the migration or run the ingest against prod unattended — the prod write + Stock Watcher fetch is a human step. GOAL_CONDITION: `member_stock_transactions` migration + ingest script exist + tsc/tests green (no prod mutation).
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: f4ed7ab6-bc45-482d-84d6-6bf014b2d355 -->
 
 **[P1] Scorecard layout + print-quality overhaul**
@@ -416,8 +417,8 @@ Candidates UX flow".
 - GOAL_CONDITION: a findings report doc (e.g. `docs/security/audit-2026-07.md`) exists covering every listed surface, each finding rated + paired with a proposed follow-up card; tsc/tests unaffected (analysis only — no app-code fix, no prod access).
 - DECISION (updated 2026-07-01): AUTO MAY run the analysis pass + open the report PR; it must NOT fix-as-you-find and must NOT access prod. The per-PR /security-review stays as-is in the orchestrator.
 - DECISION (2026-07-01): deliverable = findings REPORT + one triaged follow-up card per real issue; do NOT fix-as-you-find (keeps the orchestrator light, fixes reviewed individually). METHOD (attended single-pass vs multi-agent fan-out) is NOT pre-decided — Step 1 is to scope/triage the attack surface, and that breadth decides the method.
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 850b1220-9de9-4aee-814f-470b8096f164 -->
 
 **[P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)**
@@ -435,8 +436,8 @@ CLARIFICATION (Muxin, 2026-07-12): good question - so we do not go live until I 
 - Pairs with the test-env card (test OFF prod) and the Go-live launch gate EPIC (the checklist); this is the on-prod "keep it dark" layer.
 - AGENT-FIRST (reclassified 2026-07-01): an agent RUNS the codebase inventory + defines the `LAUNCH_*` convention (default-OFF) + drafts the flip-list in a PR, flagging each surface it's unsure is "pre-launch". Your step = confirm/prune the pre-launch set in that PR review — NOT a mid-run stall.
 - GOAL_CONDITION: a PR adds a single `LAUNCH_*` flag helper/module (default-OFF in prod) + a documented flip-list enumerating every candidate not-yet-launched surface (each marked confirmed/uncertain), wired to the Go-live gate EPIC; tsc/tests green; no flag flipped ON.
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: a09a77c8-b3b7-4315-a1b3-dbc03a881cff -->
 
 **[P0] Reset Polis count to 0 before launch**
@@ -445,7 +446,7 @@ CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - a
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — do NOT execute. Pin the exact reset mechanism (store/keys/script) read-only and surface a one-command action for launch. No prod mutation overnight.
 - GROOMED: Ready/deferred: identify dirty-test Polis storage and prepare a reviewed one-command launch reset; no prod mutation overnight — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 1f5e2506-106d-4d72-97ec-d85a2d8c214d -->
 
 **[P0] Lower `CHAT_DAILY_SESSION_LIMIT` from 100 back to 10 before public launch**
@@ -472,7 +473,7 @@ CLARIFICATION (Muxin, 2026-07-12): No idea, I rely on you to figure this out - a
 - DEPENDS ON: [P1] EPIC: Go-live launch gate (do these ONLY when flipping to public)
 - DECISION: defer — out-of-band Vercel env change; surface the `vercel env rm CHAT_DAILY_SESSION_LIMIT production` + redeploy commands for Muxin to run at launch.
 - GROOMED: Ready: launch-time env removal, redeploy, and verification are explicit; attended/deferred, no overnight execution — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 28bf87ec-8587-4d1f-acc7-ab5ff7467cf4 -->
 
 **[P1] Translations to major languages**
@@ -498,7 +499,7 @@ CLARIFICATION (Muxin, 2026-07-12): I'm currently working through this. We did a 
 - STATUS: To Do
 - DEPENDS ON: [P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED
 - GROOMED: Ready as attended milestone: close only after Keystone debugging is complete and Muxin is satisfied with UX/UI — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: e18e65fd-faf8-4aaf-8c4f-cee2111725c6 -->
 
 **[P1] EPIC: Complete Alignment work**
@@ -814,15 +815,15 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 - Found 2026-06-30 reviewing held PR #175 (in-chat pole disambiguation). The shared question-cap counter (`IssueConversation.tsx:159-165`) only increments when the model reply has NO theme fence (`askedAQuestion = !themes && /\?\s*$/`), but the refinement prompt ALWAYS returns the full theme array. So a turn that asks a pole question leaves `themes` non-null → the counter never increments → `atCap` never trips → the pole-disambiguation block is never suppressed. The advertised "count against budget / lock in at cap" hard-stop likely never engages — risking the exact "6+ annoying turns" failure the cap was built to prevent (only the soft one-per-turn / never-re-ask guard remains).
 - Fix: make pole-disambiguation questions increment the cap counter. Prereq for shipping #175 safely.
 - GROOMED (2026-07-01): CONFIRMED live bug — the `!themes` gate at `IssueConversation.tsx:158-165` means the cap counter never increments; this ALSO breaks the existing novel-concept disambiguation cap in shipped code. Ship as a STANDALONE PR against `IssueConversation.tsx` (NOT folded into #175, whose diff doesn't touch that file). This fix UNBLOCKS held PR #175. Auto-eligible.
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 5d124201-b1ef-4065-a0a2-88d2004155a9 -->
 
 **[P2] #146 empty k-means cluster silently suppresses all consensus statements**
 - Found 2026-06-30 reviewing held PR #146 (polis clustering). `findConsensusStatements` (`src/lib/polis/clustering.ts:342-345`) treats an empty cluster (size 0) as a hard consensus failure (`allClear=false; break`), so with `DEFAULT_K=3` any empty cluster silently suppresses ALL consensus statements — the report's headline feature. Inconsistent with `detectDividedState` (`clustering.ts:412`) which correctly filters `c.size > 0`. Inert today (surface unwired); fix BEFORE wiring the Polis report surface. (Also `reportAssembly.ts:194` emits size-0 phantom clusters.)
 - STATUS: To Do
 - GROOMED: Ready: empty-cluster consensus and phantom-cluster behavior are pinpointed and regression-testable — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 174c8798-b17b-4d40-b17f-a317810ab423 -->
 
 **[P0] Fix #171 polling-place note crash — `t(...) is not a function`**
@@ -840,8 +841,8 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 **[P2] Budget modal: link to the Anthropic Console for BYOK key creation**
 - Surfaced 2026-06-30 reviewing PR #170 (budget-exhausted modal). The "Have an Anthropic API key? Use it directly in Voter Choice" section asks users to paste a key but doesn't link where to get one. Add a link to where users create a key — https://console.anthropic.com/settings/keys (label e.g. "Get a key →") — keeping the existing "free to create, you only pay for what you use" framing.
 - GROOMED (2026-07-01): READY — add the link to BOTH BYOK sections (live `redesign/ByokCard.tsx` + legacy `VoterChoiceApp.tsx`). NOTE: the exact "free to create, you only pay for what you use" wording doesn't exist in code today; just add the link near the current sub-copy. Auto-eligible.
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: a4a5215e-c5bd-4b52-89af-0b4d2e862873 -->
 
 **[P1] Bill-summary generation pipeline - subscription subagents, batched, ongoing**
@@ -851,9 +852,9 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 - IMPORTANT - the per-vote DISPLAYED summary must combine BOTH pieces to be USEFUL: (1) what the bill is about (this card) AND (2) how/why the rep voted = the synthesized rationale (f9cc6279). They're composed in the Unified vote explainer (8ea00aad). The same subscription-subagent batched-pipeline approach applies to f9cc6279's rationale generation.
 - Style: plain language, active voice, <=2 sentences, no title repetition, no trailing ellipsis, self-contained (rendering shows it in full or shows nothing).
 - NOTE (automation only): the auto-run/ongoing piece reuses the /schedule cloud-cron-runs-subscription-with-DB pattern proven by the tagging-cron card (formal dep below). The one-time generation RUN does NOT block on this — run it via subscription subagents anytime.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: [P0] Replace the Sunday bill-tagging cron with a /schedule cloud cron (off the front-end API key)
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: cf55573b-7d28-467e-b15b-3e07a0f5202f -->
 
 **Unified vote explainer - bill summary + how they voted + why**
@@ -861,9 +862,9 @@ so I can triage what happens if I see a big spike in usage? That's what the poin
 - Degrade gracefully: when no rationale exists for a vote (common - members explain contested/messaging votes, rarely party-line/procedural ones), show 'no stated reason found' - never imply silence = no position (show-thin-records principle).
 - DEPENDS ON both the bill-summary work and the rationale layer (f9cc6279). The rationale layer is DONE (PR #145); the open upstream is the bill-summary RUN — formal dep below.
 - RESCOPED (2026-07-01, Muxin): the 3-part composition (bill summary + WITH/AGAINST roll-call badge + labeled memberRationale with source links) is ALREADY LIVE in `ContributingVoteCard` (`VoterChoiceApp.tsx` ~1310-1390). ONLY remaining piece = render an explicit "no stated reason found" element when a vote has no rationale (today the block is silently omitted). Reduce this card to that small UI addition. The bill-summary DEPENDS ON only affects the "what the bill was about" line for un-summarized bills — soft, non-blocking.
-- STATUS: Backlog
+- STATUS: To Do
 - DEPENDS ON: Bill-summary generation pipeline - subscription subagents, batched, ongoing
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 8ea00aad-bbaf-4482-875b-eb65d57b895a -->
 
 **[P1] EPIC: Implement the Keystone redesign (port design_handoff) — BACKEND-GATED**
@@ -889,23 +890,23 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - STATUS: To Do
 - DEPENDS ON: [P2] Simplify the Registered Address entry box
 - GROOMED: Ready/resolved: redesigned HomeView no longer renders the standalone walkthrough; verify and close with no product change — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 8807920f-0f26-4430-878e-6c012f03835b -->
 
 **[P2] Spanish/i18n for new redesign copy (Why Now? page, orientation screen)**
 - Surfaced by PRs #155 (Why Now? page) and #160 (orientation screen).
 - New page/screen body copy is English-only; nav labels were translated (en+es) but page bodies were not, matching existing static pages.
 - Add ES (and other supported locales) when the redesign adopts t() keys for body copy.
-- STATUS: Backlog
+- STATUS: To Do
 - DECISION: stage — UX batch: include a before/after HTML comparison covering the changed state(s); do not merge or deploy this card independently. Muxin approves the combined UX batch before any merge.
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 694cfc22-9c20-47e9-b559-4667b9923bf7 -->
 
 **[P2] CSS housekeeping: prune orphaned .addr-why-* and unused .lvl-tag rules**
 - Surfaced by PRs #157 (address box) and #159 (jurisdiction inline).
 - The (?) popup classes (.addr-why-btn/.addr-why-modal/.addr-why-close, .addr-card label .privacy) and the removed jurisdiction-chip .lvl-tag rules are now unused. Left in place to stay surgical; prune in a cleanup pass.
-- STATUS: Backlog
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- STATUS: To Do
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 1ec90ed1-9222-4e81-a15e-2460767f0581 -->
 
 **[P2] Add Playwright visual snapshots to key redesign surfaces**
@@ -917,7 +918,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
  - DECISION: stage — Build a review-only before/after HTML/contact-sheet harness. Visual differences inform human batch review only; do not make broad pixel diffs a merge blocker.
 - STATUS: To Do
 - GROOMED: Ready attended: four screenshot surfaces and non-required Ubuntu CI leg are specified; human baseline review remains required — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: d1d54852-fcda-40d1-9487-f0910383a8a2 -->
 
 **[P0] Golden-address alignment smoke test (Cornyn / healthcare_affordability) — defense-in-depth on the drift guard**
@@ -928,7 +929,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - STATUS: To Do
 - DEPENDS ON: We need a deployment/test environment/server/branch?
 - GROOMED: Ready but blocked: seeded-Neon Cornyn healthcare assertion is explicit; waits on test environment — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 2baacd7e-901d-4407-8dcb-26ce56ed9fbc -->
 
 **[P2] Harden check-schema-drift parser: strip SQL comments before splitting on `;`**
@@ -937,7 +938,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 - Why it matters: a mis-parsed `CREATE TABLE` leaves that object out of the expected schema, so the drift guard FAILS OPEN on it — the exact prod-behind failure the guard exists to catch.
 - STATUS: To Do
 - GROOMED: Ready: parser reorder and semicolon-in-comment regression test define a concrete proof — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: a06b360f-5017-45fc-b6c8-5ca67126b72d -->
 
 **[P1] Set up phase gating — gate Phase 2/3 behind [GATE] epic cards**
@@ -954,7 +955,7 @@ CLARIFICATION (Muxin, 2026-07-12): I don't really know what that means. Is there
 CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are mislabeled. Is that what this gating setup claims? Anyway, between all of these, this is just a way to make sure that the orchestrator doesn't accidentally start working on something that's not on the current roadmap. I want it to only focus on phase one cards, which is why there's this gait where we don't even want to touch phase two cards unless phase one is done. I think I also have to give it approval because I'm not ready to start working on anything in phase two, Even if phase one is done, I think I need some validation and market feedback to tell me whether or not this project is even worth additional investment into phase two, if that makes sense.
 - STATUS: To Do
 - GROOMED: Ready attended: gate current Phase 2/3 sections; Phase 2 opens only after validation and explicit Muxin approval — 2026-07-12
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 6970765b-bce5-4850-94a5-f0e7e662f77e -->
 
 **[GATE] Phase 1 complete → open Phase 2**
@@ -978,9 +979,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - Follow-up from PR #289 (issue-consistency gate + duplication ratchet). Investigating why 3 same-day PRs (#285, #286, #287) failed Design Parity CI on 2026-07-12 found the failures were the gate's own stale expectations, not real regressions (10a's e2e journey drifted from a duplicated inline copy; 05b flagged a data-dependent party-color class as missing structural vocabulary; 11a's marker probe asserted a ruling Round-4 reversed). Also addressed: component-level duplication (jscpd) only catches literal clones, not two independently-built components serving the same UI function — the exact thing that caused 11a's field-scale logic existing in both RepCard and HeadToHead.
 - STATUS AT PAUSE (2026-07-12, branch `claude/visual-ci-gate-strategy-217oxv`, PR #289): (A) parity-gate expectation fixes for 05b/10a/11a — DONE, committed (`f093d99`), verified against the actual #285/#286/#287 branches via disposable worktree merges (all 3 go green). (B) jscpd scope widened to include e2e/helpers + scripts/design, new component-inventory.md + blocking inventory-gate script + advisory AI overlap-review workflow — code complete, unit-tested, committed as WIP (`9536bd5`), NOT yet verified end-to-end via e2e (build/e2e run was interrupted by the pause) and the advisory AI workflow has never been smoke-tested against a real ANTHROPIC_API_KEY secret. (C) reconciling with the parallel PR #284 (`fix/issue-alignment-rows`, different fix for the same "issues drop off surfaces" bug family) — not started.
 - RESUME FROM: full engineering detail (files touched, exact verification done/not-done, next steps) is in the session's plan file (`so-are-we-checking-indexed-willow.md`) — ask to have that context re-loaded, or read the PR #289 diff + its description once updated. Immediate next steps: re-run e2e (`redesign-core`, `redesign-issue-consistency`, `redesign-record`, `redesign-issues` specs) against the refactored `e2e/helpers/redesign-mocks.ts`; smoke-test or drop `component-review.yml`; do the #284/#289 reconciliation; update PR #289's description.
-- STATUS: Backlog
+- STATUS: To Do
 - DECISION: stage — Propose/build a risk-based UI gate: hard-fail only deterministic critical-flow, semantic, and accessibility regressions; produce HTML/contact-sheet diffs for human review; measure false positives and do not block intended design changes on pixel baselines.
-- PARKED: P0 nationwide roster priority lock; prior_status=To Do; restore after epic closeout
+- RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
 <!-- card-id: 4a714dcb-b50e-4177-9a4f-0ca78ebc5fe9 -->
 
 **[P0] MANUAL SANITY-TEST GATE — app-vs-official-source accuracy check before roster fan-out/cutover**
@@ -2450,8 +2451,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - EVIDENCE: https://github.com/advisories/GHSA-mg66-mrh9-m8jx (+6 sibling GHSA ids); local `npm audit --omit=dev` output (retrieved 2026-07-14)
 - HYPOTHESIS: same-major patch bump (15.5.12 -> 15.5.20) should be low-risk and closes all 6 flagged CVEs; uncertainty -- unverified whether the 15.5.13-15.5.20 patch range carries any breaking change for this app's usage (Cache Components / middleware / i18n); confirm with a full build+test pass before merge.
 - GOAL_CONDITION: npm audit --omit=dev reports zero Next.js advisories after the bump; npm run build and the full test suite pass at the new pinned version.
-- STATUS: To Do
-- DECISION: PROMOTED by Muxin 2026-07-16 (approved as part of the ship-runway housekeeping batch). Standard self-vet auto-merge once build + full test suite pass at the pinned version.
+- SHIPPED (2026-07-17): PR #381 merged — 15.5.12 → 15.5.20 exact-pinned, all flagged advisories closed, full suite green.
+- STATUS: Done
+- DECISION: PROMOTED by Muxin 2026-07-16; shipped via PR #381.
 <!-- card-id: 06e9e179-edf9-45c7-a030-c8a9515b9d72 -->
 
 **[idea] Evaluate whether ballot chat should hard-redirect election-logistics questions instead of answering via LLM**
@@ -3281,8 +3283,9 @@ SHIP: auto-pending-merge
 - TASK: in `src/app/api/delegation/route.ts`, the six non-voting jurisdictions currently short-circuit to `{status: "no_representation"}`; surface that state in the UI as an honest roadmap message right after address input instead of an empty/blank result.
 - COPY (accuracy matters — do NOT say "no Congress to vote on"): these jurisdictions each elect a NON-VOTING Delegate to the US House (Puerto Rico: a Resident Commissioner, 4-year term); they have no US Senators. Message along the lines of: "Your area elects a non-voting Delegate to the US House. We only cover voting House + Senate races right now — delegate races and other representatives are on the roadmap, stay tuned." Muxin's intent: the user must understand WHY their address returned nothing.
 - GOAL_CONDITION: entering a DC/PR/GU/VI/AS/MP address shows the message (not a blank state); the geocoder path (`src/lib/server/census-geocode.ts` already resolves state + null district for all six) is unchanged; tests cover at least DC + PR.
-- STATUS: To Do
-- DECISION: approved by Muxin 2026-07-16 (message-first v1, accurate delegate framing). Self-vet auto-merge.
+- SHIPPED (2026-07-17): PR #382 merged — accurate Delegate/Resident-Commissioner copy, EN+ES, stateCode threaded for the PR variant.
+- STATUS: Done
+- DECISION: approved by Muxin 2026-07-16 (message-first v1, accurate delegate framing). Shipped via PR #382.
 
 **[P0] Flip OFFICIAL_ROSTER_ENABLED in production once the last state roster PR merges**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
@@ -3290,9 +3293,10 @@ SHIP: auto-pending-merge
 - PRECONDITION: every per-state "[P0] Import + verify official roster" card is Done — including South Dakota (SD), which as of 2026-07-16 is still unclaimed Backlog and must be built first. The six territory cards are EXCLUDED (deferred per the 2026-07-16 territory ruling — the message card covers them).
 - TASK: set `OFFICIAL_ROSTER_ENABLED` on in the production Vercel env and redeploy (fresh `vercel --prod`, NOT `vercel redeploy` — redeploy reuses old env). Verify post-flip with 2-3 golden addresses across different states that roster-backed candidates render.
 - SAFETY NET: the ballot-accuracy feedback intake card (below) is the ongoing correction channel Muxin is relying on post-flip — prefer landing it before or with the flip.
-- STATUS: To Do
+- EXECUTED (2026-07-17, attended — Muxin approved each prod step; full sequence in `docs/operations/morning-runbook-2026-07-17.md`): migrations 0015/0016/0017 applied to prod · all 50 states imported (1,884 rows, all imports clean) · `OFFICIAL_ROSTER_ENABLED=true` set in production env · deploy went out via CI (direct `vercel --prod` CLI upload kept AbortError-ing; the on-push deploy carries the new env). Remaining: golden-address verification on the live app, then flip this card to Done.
+- STATUS: Review
 - DEPENDS ON: [P0] Import + verify official roster: South Dakota (SD)
-- DECISION: pre-authorized by Muxin 2026-07-16, contingent ONLY on the last state PR merging. ATTENDED-lite: prod env change — surface the exact commands + verification output when executing.
+- DECISION: pre-authorized by Muxin 2026-07-16; executed attended 2026-07-17. Closes on golden-address verification.
 
 **[P1] Ballot-accuracy feedback intake — "Missing a rep? Help us improve"**
 - ORIGIN: 2026-07-16, Muxin's ask alongside the flag-flip sign-off: a cheap correction channel so users report roster errors instead of her re-combing state sites manually.
@@ -3301,8 +3305,9 @@ SHIP: auto-pending-merge
 - ABUSE GUARD: rate-limit per session like the existing counter endpoints; length-cap the message.
 - GOAL_CONDITION: form submits from a roster surface, row lands in the table with state+office populated, Muxin can list submissions with one ops command; tests cover the API route.
 - BUILT + HELD (2026-07-17 overnight): PR #383 (https://github.com/heymoosh/voter-choice/pull/383) — form on both DelegationWorkspace views with state/office prefill, POST /api/roster-feedback (10/IP/hour rate limit, 2000-char cap, honest 503 when DB unconfigured), additive migration `db/migrations/0017_add_roster_feedback.sql`, ops reader `scripts/ops/list-roster-feedback.ts`, EN+ES i18n, 16 new tests, full suite green. **AUTO-MERGE DELIBERATELY DISABLED**: the deploy-time schema-drift check fails EVERY deploy once 0017 is referenced but unapplied, and the overnight session's permission rules (correctly) block unattended prod-DB writes. MORNING STEP (Muxin): apply 0017 to prod (exact one-liner in the PR #383 hold comment), then re-arm with `gh pr merge --auto --squash 383`.
+- UN-HELD (2026-07-17): migration 0017 applied to prod during the attended cutover — auto-merge re-armed; card closes when #383 merges and deploys.
 - STATUS: Review
-- DECISION: approved by Muxin 2026-07-16. Additive migration OK (existing convention); held ONLY on the migration-before-merge ordering above.
+- DECISION: approved by Muxin 2026-07-16. Hold released 2026-07-17 (0017 applied); auto-merge re-armed.
 
 **[P1] Apply the Bold Flag palette as the app-wide default**
 - PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
