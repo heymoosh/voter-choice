@@ -25,7 +25,7 @@ Remaining roster human gates: the **MANUAL SANITY-TEST GATE** (`041eddfa`, atten
 - Round 3 parity: PRs #267 (Keystone integration + `docs/design-review/` gallery), #268–#283 (results/intake/scorecard parity lanes, blind-card copy ruling in #280, rep-card evidence row #272, moneygap #271, bold-flag token leaks #273).
 - Round 4: #284 (alignment-rows data bug), #285 (RepCard canvas port), #286 (not-up seats), #287 (H2H money), #288 (workspace scroll), #290 (duel issue rows).
 
-**Built but unmerged / held** (verified real diffs vs `origin/main`):
+**Built but unmerged / held** — CORRECTED by the 2026-07-16 gallery build: the raw three-dot diffs below overstate. Per-conflict verification during the gallery integration found the three r31 branches fully SUBSUMED by main (same changes landed via separately-squashed PRs, main's copies often newer/bug-fixed) and the polis branch subsumed except one real delta: the `.standing2` OKLCH cluster-hue token block in `public/redesign2.css`. Gallery + evidence: branch `integration/ship-readiness-gallery-20260716` (tip 76def437), `docs/design-review/CHANGELIST.md` on it.
 | Branch | Diff vs main | PR | State | Preserved 2026-07-16 |
 |---|---|---|---|---|
 | `work-drilldown-r31` | ~652 lines (RepCard/drilldown Round-3.1) | none | held draft | pushed to origin |
