@@ -14,6 +14,7 @@ import { getDb, DB_NOT_CONFIGURED } from "../../../../db/client";
 import { rosterFeedback } from "../../../../db/schema";
 import { checkRosterFeedbackRateLimit } from "../../../lib/server/roster-feedback-rate-limit";
 import { getClientIP } from "../../../lib/server/client-ip";
+import { gateRateLimitedJsonRequest } from "../../../lib/server/rate-limited-json-route";
 
 // ---------------------------------------------------------------------------
 // Validation
@@ -81,31 +82,14 @@ function validateBody(body: unknown): RosterFeedbackBody | null {
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const ip = getClientIP(request);
 
-  const rateLimitOk = await checkRosterFeedbackRateLimit(ip);
-  if (!rateLimitOk) {
-    return NextResponse.json(
-      { ok: false, error: "Rate limit exceeded." },
-      { status: 429 },
-    );
-  }
-
-  let rawBody: unknown;
-  try {
-    rawBody = await request.json();
-  } catch {
-    return NextResponse.json(
-      { ok: false, error: "Invalid JSON." },
-      { status: 400 },
-    );
-  }
-
-  const body = validateBody(rawBody);
-  if (!body) {
-    return NextResponse.json(
-      { ok: false, error: "Invalid request body." },
-      { status: 400 },
-    );
-  }
+  const gated = await gateRateLimitedJsonRequest(
+    request,
+    ip,
+    checkRosterFeedbackRateLimit,
+    validateBody,
+  );
+  if (!gated.ok) return gated.response;
+  const body = gated.body;
 
   const db = getDb();
   if (db === DB_NOT_CONFIGURED) {
