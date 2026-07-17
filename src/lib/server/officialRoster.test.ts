@@ -10971,3 +10971,388 @@ describe("lookupChallengers — SC wiring (house + senate both covered)", () => 
     );
   });
 });
+import {
+  VA_HOUSE_ROSTER_2026,
+  VA_STATE,
+  VA_ELECTION_YEAR,
+  VA_HOUSE_SOURCE_URLS,
+  VA_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/va-official-roster-2026";
+/** Same shape as `moDbRow`, but for VA entries — house-only in this
+ * fixture (2 of 11 districts only; see the fixture's docblock for why the
+ * other 9 districts and the Senate race are omitted). */
+function vaDbRow(entry: OfficialRosterEntry, idx: number) {
+  return {
+    id: `va-${entry.district}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office: "house" as const,
+    district: entry.district,
+    sourceUrl: VA_HOUSE_SOURCE_URLS[0],
+    retrievedAt: VA_RETRIEVED_AT,
+  };
+}
+const VA_HOUSE_DB_ROWS = VA_HOUSE_ROSTER_2026.map(vaDbRow);
+// District 05: both parties contested, incumbent John J. McGuire III
+// (R) present. District 08: Democratic side only, incumbent Donald S.
+// Beyer, Jr. present; no Republican row (unpublished — see docblock).
+const VA_INCUMBENTS: Record<string, string> = {
+  "05": "John J. McGuire III",
+  "08": "Donald S. Beyer, Jr.",
+};
+// ---------------------------------------------------------------------------
+// Virginia (VA) — house-only in THIS fixture, and only 2 of 11 districts (05,
+// 08). Virginia's Aug 4, 2026 primary had not yet occurred at transcription
+// time, so every row is qualified_for_primary_ballot. The other 9 House
+// districts and the 2026 US Senate race (Mark Warner's seat) are
+// deliberately omitted — VA's official non-primary nominee list, which
+// would confirm the sitting incumbent's own-party status for those seats,
+// is unpublished as of retrieval; importing only the known (opposing-party)
+// side for those seats would falsely signal the incumbent isn't seeking
+// re-election. District 08 itself is partial (Democratic side only, no
+// published Republican row) but safe to include because incumbent Beyer's
+// own row IS present. See docs/operations/virginia-vertical-slice-data-check.md
+// and the fixture's own docblock for the full finding.
+// ---------------------------------------------------------------------------
+describe("getOfficialRoster — VA narrowing", () => {
+  it("narrows house rows to the exact district for VA's 2 covered districts (05, 08)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    for (const district of ["05", "08"]) {
+      const out = await getOfficialRoster(
+        VA_STATE,
+        "house",
+        district,
+        VA_ELECTION_YEAR,
+      );
+      const expectedNames = VA_HOUSE_ROSTER_2026.filter(
+        (e) => e.district === district,
+      ).map((e) => e.name);
+      expect(out.map((r) => r.name).sort()).toEqual([...expectedNames].sort());
+    }
+  });
+  it("returns [] for a district this fixture deliberately omits (e.g. 01) — falls through to the FEC path, not a false open-seat signal", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      VA_STATE,
+      "house",
+      "01",
+      VA_ELECTION_YEAR,
+    );
+    expect(out).toEqual([]);
+  });
+  it("returns [] for (senate, null) — the 2026 US Senate race is deliberately omitted from this fixture", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    const senate = await getOfficialRoster(
+      VA_STATE,
+      "senate",
+      null,
+      VA_ELECTION_YEAR,
+    );
+    expect(senate).toEqual([]);
+  });
+  it("every VA row is qualified_for_primary_ballot — the Aug 4, 2026 primary had not yet happened at transcription time", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      VA_STATE,
+      "house",
+      "05",
+      VA_ELECTION_YEAR,
+    );
+    expect(
+      out.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+  });
+  it("VA-05: 5 rows (3 DEM, 2 REP), incumbent McGuire present alongside challenger Lucero", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      VA_STATE,
+      "house",
+      "05",
+      VA_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(5);
+    expect(out.find((r) => r.name === "John J. McGuire III")?.isIncumbent).toBe(
+      true,
+    );
+    expect(out.find((r) => r.name === "Melanie V. Lucero")?.isIncumbent).toBe(
+      false,
+    );
+  });
+  it("VA-08: 5 rows, all Democratic (no Republican row published), incumbent Beyer present", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      VA_STATE,
+      "house",
+      "08",
+      VA_ELECTION_YEAR,
+    );
+    expect(out).toHaveLength(5);
+    expect(out.every((r) => r.party === "DEM")).toBe(true);
+    expect(
+      out.find((r) => r.name === "Donald S. Beyer, Jr.")?.isIncumbent,
+    ).toBe(true);
+  });
+});
+describe("isIncumbentSeekingReelection — VA", () => {
+  it("returns true for VA-05 and VA-08 — McGuire and Beyer (sitting reps) each filed for re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    for (const [district, incumbentName] of Object.entries(VA_INCUMBENTS)) {
+      expect(
+        await isIncumbentSeekingReelection(
+          VA_STATE,
+          "house",
+          district,
+          VA_ELECTION_YEAR,
+          incumbentName,
+        ),
+      ).toBe(true);
+    }
+  });
+  it("returns null for an omitted district (e.g. 01) — no roster covers this seat, so no override happens (never a false 'not seeking re-election' signal)", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(VA_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        VA_STATE,
+        "house",
+        "01",
+        VA_ELECTION_YEAR,
+        "Robert Wittman",
+      ),
+    ).toBeNull();
+  });
+  it("returns null for the Senate seat — no roster covers this race, so Warner's re-election status is never overridden", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([]));
+    expect(
+      await isIncumbentSeekingReelection(
+        VA_STATE,
+        "senate",
+        null,
+        VA_ELECTION_YEAR,
+        "Mark Warner",
+      ),
+    ).toBeNull();
+  });
+});
+describe("lookupChallengers — VA wiring (house-only, only 2 of 11 districts covered)", () => {
+  it("VA-05: incumbent McGuire excluded; the other 4 filers render as challengers with mapped party names, none flagged pending", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = VA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "05",
+    ).map((e, i) => vaDbRow(e, i));
+    // Sequenced: official house query -> houseRows, official senate query ->
+    // [] (this fixture has no Senate rows), FEC fallback (senate uncovered)
+    // -> [].
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+    const out = await lookupChallengers("VA", 5, 2026);
+    expect(out.house.some((c) => c.name === "John J. McGuire III")).toBe(false);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [
+        'Rob W. "T-ski" Tracinski',
+        'Suzanne K. "Dr. K" Krzyzanowski',
+        "Tom S. P. Perriello",
+        "Melanie V. Lucero",
+      ].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.isRunoffPending).toBe(false);
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+    expect(out.house.find((c) => c.name === "Melanie V. Lucero")?.party).toBe(
+      "Republican",
+    );
+  });
+  it("VA-08: incumbent Beyer excluded; the other 4 Democratic filers render as challengers", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const houseRows = VA_HOUSE_ROSTER_2026.filter(
+      (e) => e.district === "08",
+    ).map((e, i) => vaDbRow(e, i));
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([houseRows, [], []]));
+    const out = await lookupChallengers("VA", 8, 2026);
+    expect(out.house.some((c) => c.name === "Donald S. Beyer, Jr.")).toBe(
+      false,
+    );
+    expect(out.house).toHaveLength(4);
+    for (const c of out.house) {
+      expect(c.party).toBe("Democrat");
+    }
+  });
+  it("VA-01 (omitted district): falls through to the FEC path — official house query returns [], not treated as an official-covered empty seat", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    // Sequenced: official house query -> [] (not covered), official senate
+    // query -> [] (not covered), FEC fallback query -> [] (no FEC rows in
+    // this mock).
+    mockedGetDb.mockReturnValue(makeSequencedDbMock([[], [], []]));
+    const out = await lookupChallengers("VA", 1, 2026);
+    expect(out.house).toEqual([]);
+  });
+});
+import {
+  WY_HOUSE_ROSTER_2026,
+  WY_SENATE_ROSTER_2026,
+  WY_STATE,
+  WY_ELECTION_YEAR,
+  WY_HOUSE_DISTRICT,
+  WY_HOUSE_SOURCE_URLS,
+  WY_SENATE_SOURCE_URLS,
+  WY_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/wy-official-roster-2026";
+/** Same shape as `akDbRow`, but for WY entries — the House side uses
+ * district "00" (at-large), never null (see the WY fixture's docblock). */
+function wyDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `wy-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? WY_HOUSE_SOURCE_URLS[0] : WY_SENATE_SOURCE_URLS[0],
+    retrievedAt: WY_RETRIEVED_AT,
+  };
+}
+const WY_HOUSE_DB_ROWS = WY_HOUSE_ROSTER_2026.map((e, i) =>
+  wyDbRow(e, i, "house"),
+);
+const WY_SENATE_DB_ROWS = WY_SENATE_ROSTER_2026.map((e, i) =>
+  wyDbRow(e, i, "senate"),
+);
+// ---------------------------------------------------------------------------
+// Wyoming (WY) — at-large House seat + Class II Senate seat, BOTH open in
+// 2026 (Sen. Lummis retiring; Rep. Hageman filed for the open Senate seat
+// instead of House re-election, per this fixture's own docblock). All 19
+// federal rows are PRE-primary (STAGE = "primary") — the Aug 18, 2026
+// primary has not yet occurred, so every row is qualified_for_primary_ballot,
+// never qualified_for_general_ballot. See
+// docs/operations/wyoming-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+describe("getOfficialRoster — WY narrowing", () => {
+  it("returns all WY house rows for the at-large district key ('00'), none for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      WY_HOUSE_DISTRICT,
+      WY_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [...WY_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    const wrongDistrict = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      "01",
+      WY_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+  it("returns all WY senate rows for (senate, null), none for the house district key in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      WY_STATE,
+      "senate",
+      null,
+      WY_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(WY_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...WY_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    const houseInSenateRowset = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      WY_HOUSE_DISTRICT,
+      WY_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+  it("every WY row is qualified_for_primary_ballot and isIncumbent false — both seats open, Aug 18, 2026 primary not yet held", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      WY_HOUSE_DISTRICT,
+      WY_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(house.every((r) => r.isIncumbent === false)).toBe(true);
+    mockedGetDb.mockReturnValue(makeDbMock(WY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      WY_STATE,
+      "senate",
+      null,
+      WY_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(senate.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+});
+describe("isIncumbentSeekingReelection — WY", () => {
+  it("returns false for the House seat — Hageman (sitting rep) filed for Senate, not House re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        WY_STATE,
+        "house",
+        WY_HOUSE_DISTRICT,
+        WY_ELECTION_YEAR,
+        "Harriet Hageman",
+      ),
+    ).toBe(false);
+  });
+  it("returns false for the Senate seat — Lummis (sitting senator) is retiring, did not file", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        WY_STATE,
+        "senate",
+        null,
+        WY_ELECTION_YEAR,
+        "Cynthia Lummis",
+      ),
+    ).toBe(false);
+  });
+});
+describe("lookupChallengers — WY wiring (at-large house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3); a numeric district of 0 resolves the at-large seat", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const dbMock = makeSequencedDbMock([WY_HOUSE_DB_ROWS, WY_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+    const out = await lookupChallengers("WY", 0, 2026);
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // open seat: no incumbent excluded, all 12 House filers render
+    expect(out.house).toHaveLength(WY_HOUSE_ROSTER_2026.length);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [...WY_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+  it("senate: open seat, all 7 filers render as challengers, Hageman included (she filed for Senate, not House)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([WY_HOUSE_DB_ROWS, WY_SENATE_DB_ROWS]),
+    );
+    const out = await lookupChallengers("WY", 0, 2026);
+    expect(out.senate).toHaveLength(WY_SENATE_ROSTER_2026.length);
+    expect(out.senate.some((c) => c.name === "HARRIET HAGEMAN")).toBe(true);
+    expect(out.senate.find((c) => c.name === "HARRIET HAGEMAN")?.party).toBe(
+      "Republican",
+    );
+    expect(out.senate.find((c) => c.name === "JAMES BYRD")?.party).toBe(
+      "Democrat",
+    );
+  });
+});

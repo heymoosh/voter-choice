@@ -1767,7 +1767,49 @@
   white-space: nowrap;
 }
 
-/* ---- standing (polis) stage ---- */
+/* ============================================================
+   STANDING (polis) stage — KEYSTONE "Where you stand" report
+   Ported from design-handoff/design_handoff_voter_choice_redesign/
+   polis.css (the `.pr-*`, `.pm-*`, `.conv-*` vocabulary), migrated
+   onto the Bold Flag palette and made PARTY-FREE (DECISION #116):
+   one population overlap cloud, single-track agreement bars, an
+   honest agree-vs-disagree split — no D/R/I dots, chips, or clusters.
+
+   The whole surface flips to the Bold Flag WHITE ground here (scoped
+   to .standing2 so the rest of the app keeps its warm `--civic`
+   base). The named accent tokens (--brand/--keep/--replace…) are
+   defined globally in globals.css.
+   ============================================================ */
+.standing2 {
+  /* White ballot ground + Bold Flag (Palette B) accents, ported from the
+     Keystone design-handoff and scoped to this surface so the rest of the app
+     keeps its warm `--civic` base. Defined HERE (not globals.css) on purpose:
+     redesign2.css is served verbatim from public/, so these survive the CSS
+     minifier's unused-custom-property pruning that drops them from globals. */
+  --paper: oklch(1 0 0);
+  --paper-2: oklch(0.985 0.003 258);
+  --ink: oklch(0.2 0.035 260);
+  --ink-2: oklch(0.37 0.032 260);
+  --ink-3: oklch(0.54 0.026 260);
+  --rule: oklch(0.88 0.006 260);
+  --rule-2: oklch(0.93 0.005 260);
+  --gold: oklch(0.72 0.125 76);
+  --brand: oklch(0.4 0.155 262); /* bold navy-royal — primary action */
+  --brand-2: oklch(0.31 0.145 262);
+  --brand-soft: oklch(0.94 0.04 262);
+  --keep: oklch(0.44 0.115 159); /* agreement green */
+  --keep-soft: oklch(0.93 0.045 159);
+  --replace: oklch(0.53 0.205 27); /* flag red */
+  --replace-soft: oklch(0.94 0.05 27);
+  /* Opinion-map cluster hues — NEUTRAL, party-free (DECISION #116). Three
+     distinct Bold-Flag-family tones (indigo / teal / violet) assigned to
+     Group A/B/C by SIZE, never to any party. Deliberately NOT the canvas's
+     red-vs-blue pairing so the map can never be misread as D-vs-R. */
+  --cluster-a: oklch(0.52 0.16 264); /* indigo */
+  --cluster-b: oklch(0.58 0.11 195); /* teal */
+  --cluster-c: oklch(0.55 0.16 320); /* violet */
+  background: var(--paper);
+}
 .standing2-wrap {
   max-width: 860px;
   margin: 0 auto;
