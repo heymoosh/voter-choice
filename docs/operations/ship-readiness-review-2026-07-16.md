@@ -34,7 +34,9 @@ Remaining roster human gates: the **MANUAL SANITY-TEST GATE** (`041eddfa`, atten
 | `wt/keystone-polis-report-redesign` | ~3,452 lines (3-cluster polis opinion map) | #266 | CLOSED draft, **HELD STOP-SHIP** for visual sign-off | already on origin |
 | `wt/apply-the-bold-flag-palette-as-the-default` | ~1,856 lines; pre-dates Round 3/4 merges, likely part-superseded/conflicting | #241 | CLOSED draft, held | local tip → `archive/bold-flag-local-20260716` |
 
-**Never built:** the Round-4 **a11y audit** lane — no branch, PR, or artifact exists. New card opened.
+**Lane G (responsive/a11y audit) — ran but its output was LOST:** the audit produced 12 verified findings + 8 draft cards on 2026-07-12, written only to that session's scratchpad (since deleted). 8 of 12 findings were preserved in session memory and are now itemized on the re-opened board card; 4 are unrecoverable without a re-run.
+
+**Recovered fast-follow:** PR #284's own KNOWN GAP — the H2H duel call site (`src/prototype/redesign/App2.tsx` ~1015) still uses `issuesForLevel()` instead of #284's `issuesForSeatCard()`; it was waiting on #284+#287, both merged 2026-07-12/13, and the follow-up was never filed. Now a To Do card (3-line fix).
 
 **Review artifact gap:** `docs/design-review/index.html` on main is the Round-3-era gallery (generated 2026-07-11 from `fd8d4905`) — it predates the Round-4 merges and the held branches. Generator: `scripts/design/review-gallery.ts` (`npm run design:review-gallery`). The integrated gallery covering current main + held branches is being built under the new "[P1] Integrated design-review gallery" card.
 

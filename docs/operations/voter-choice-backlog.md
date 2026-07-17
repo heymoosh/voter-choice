@@ -3186,11 +3186,21 @@ SHIP: auto-pending-merge
 - STATUS: Backlog
 - DEPENDS ON: [P0] Nationwide official-source congressional candidate roster — every race, every candidate, always current
 
-**[P1] Run the Round-4 a11y audit lane — planned but never built**
+**[P1] Round-4 responsive/a11y audit (Lane G) — findings were produced but LOST with the session scratchpad; re-run or fix from the preserved list**
 - PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
-- ORIGIN: 2026-07-16 ship-readiness review. The Round-4 UX batch (2026-07-12) planned 6 lanes; 5 merged (PRs #284, #285, #286, #287, #288) but the a11y-audit lane has no branch, PR, or artifact anywhere — it was never started.
-- TASK: run an accessibility audit over the merged redesign surfaces (keyboard navigation, focus management, contrast against the Bold Flag palette, screen-reader landmarks/labels on RepCard, workspace, intake, scorecard, polis) and produce a findings report + follow-up cards, same shape as the security-audit card (850b1220): report first, no fix-as-you-find.
+- ORIGIN: 2026-07-16 ship-readiness review, corrected same day against session memory. Lane G DID run on 2026-07-12 (audit-only, no branch/PR by design): 12 verified findings + 8 paste-ready backlog cards, screenshots + findings.json — all written ONLY to that session's scratchpad, which has since been deleted. What survives (from session memory):
+  - 3 High: intake Send button overflows at 390px width; PolisStand kicker no-wrap drags the page 29px; home `.hp-sheet` bleeds 19px.
+  - 5 Medium: Terms page unstyled pre-redesign + real-nav odd-one-out; 40px nav links (touch target); sub-44px control cluster; 8.5px print-sheet caption explaining the verdict %; contrast-borderline tag token.
+  - 4 further findings unrecoverable.
+- TASK: either fix directly from the preserved list above (each is small + verifiable) and/or re-run the responsive/a11y sweep to recover the 4 lost findings; produce findings-report-first, no fix-as-you-find beyond the itemized list. Write outputs into docs/ this time, never scratchpad-only.
 - STATUS: Backlog
+
+**[P1] Fast-follow: H2H duel per-issue rows still use issuesForLevel — 3-line fix, now unblocked**
+- PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
+- ORIGIN: 2026-07-16 ship-readiness review, recovered from Round-4 session memory. PR #284 fixed the per-issue alignment rows by introducing `issuesForSeatCard()` (level-eligible OR actually-scored) at 3 call sites, but deliberately left the head-to-head duel call site (`src/prototype/redesign/App2.tsx` ~line 1015, may have drifted) on the old `issuesForLevel()` — a known gap that needed BOTH #284 and #287 merged first. Both merged 2026-07-12/13; the fast-follow was never filed. Symptom: a state-leaned issue (e.g. Education-AI) scored for a candidate is missing from the H2H duel rows while present on the seat card.
+- TASK: wire `issuesForSeatCard` into the duel call site, add/extend the test alongside the 3 existing call sites' coverage.
+- STATUS: To Do
+- DECISION: auto-eligible — small, spec'd by PR #284's own KNOWN GAP note, standard self-vet auto-merge. (Queued behind the roster epic's priority lock like everything else.)
 
 **[P1] DECISION NEEDED: tip jar — Stripe live payment links were never shipped**
 - ORIGIN: 2026-07-16 ship-readiness review. Two June-15 branches (`claude/tip-jar-work`, `claude/zealous-hoover-ead0b1-rebase`) swapped Stripe TEST → LIVE payment links ($3/$5/$10/$25 presets) but patched the now-dead legacy `VoterChoiceApp.tsx` and never merged. Current main's redesigned tip flow routes to a `tip` page with NO Stripe payment links at all. The intent (real tips) is unfulfilled — this is a product decision, not lost code.
