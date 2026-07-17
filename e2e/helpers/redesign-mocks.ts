@@ -143,13 +143,14 @@ export async function mockDelegationWithChallengers(page: Page): Promise<void> {
 export async function mockDelegationFailure(
   page: Page,
   status: "geocode_failed" | "no_representation" | "db_unavailable",
+  overrides?: { stateCode?: string; territoryName?: string },
 ): Promise<void> {
   const bodies: Record<string, Json> = {
     geocode_failed: { status: "geocode_failed" },
     no_representation: {
       status: "no_representation",
-      stateCode: "DC",
-      territoryName: "District of Columbia",
+      stateCode: overrides?.stateCode ?? "DC",
+      territoryName: overrides?.territoryName ?? "District of Columbia",
     },
     db_unavailable: {
       status: "db_unavailable",

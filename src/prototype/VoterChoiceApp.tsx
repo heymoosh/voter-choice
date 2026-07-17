@@ -424,10 +424,12 @@ const TRANSLATIONS = {
       geocodeFailTitle: "We couldn't place that address",
       geocodeFailBody:
         'Try the full street address, city, and ZIP — the district lookup needs a real street address to find your representatives.',
-      noRepTitle: '{territory} has no voting member of Congress',
+      noRepTitle: '{territory} elects a non-voting {repTitle} to the US House',
       noRepTitleFallback: 'Your area',
+      repTitleDelegate: 'Delegate',
+      repTitleResidentCommissioner: 'Resident Commissioner',
       noRepBody:
-        "Residents here aren't represented by a voting House member or Senators — that's a fact about the system, not your address. We'd rather say so than fake a delegation.",
+        'We only cover voting House and Senate races right now — delegate races and other representatives are on the roadmap. Stay tuned.',
       dbErrorTitle: 'Our records are unavailable right now',
       dbErrorBody:
         "We found your district but couldn't load the delegation records. Try again in a minute.",
@@ -1020,10 +1022,12 @@ const TRANSLATIONS = {
       geocodeFailTitle: 'No pudimos ubicar esa dirección',
       geocodeFailBody:
         'Prueba con la dirección completa, ciudad y código postal — la búsqueda de distrito necesita una dirección real para encontrar a tus representantes.',
-      noRepTitle: '{territory} no tiene un miembro con voto en el Congreso',
+      noRepTitle: '{territory} elige un {repTitle} sin voto a la Cámara de Representantes de EE. UU.',
       noRepTitleFallback: 'Tu área',
+      repTitleDelegate: 'Delegado',
+      repTitleResidentCommissioner: 'Comisionado Residente',
       noRepBody:
-        'Los residentes aquí no están representados por un miembro con voto de la Cámara ni por senadores — eso es un hecho del sistema, no de tu dirección. Preferimos decirlo así a inventar una delegación.',
+        'Por ahora solo cubrimos las contiendas de la Cámara y el Senado con derecho a voto — las contiendas de delegados y otros representantes están en camino. Mantente al tanto.',
       dbErrorTitle: 'Nuestros registros no están disponibles en este momento',
       dbErrorBody:
         'Encontramos tu distrito, pero no pudimos cargar los registros de la delegación. Intenta de nuevo en un minuto.',
