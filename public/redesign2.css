@@ -667,7 +667,9 @@
 }
 .print-wrap .br-score-lab {
   font-family: var(--mono);
-  font-size: 8.5px;
+  /* Was 8.5px — too small to read even in print; 10px matches this same
+     sheet's other mono uppercase captions (.sheet-section-lab above). */
+  font-size: 10px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -1260,6 +1262,17 @@
   font-weight: 600;
   color: var(--brand);
   white-space: nowrap;
+}
+@media (max-width: 480px) {
+  /* The kicker copy ("Your scorecard's ready · this part's optional") is
+     wider than a narrow phone's content column; nowrap let it bleed past
+     the viewport (ink overflow, invisible to the span's own layout box)
+     instead of wrapping onto a second line. .ps-k is already display:block
+     with its own margin-bottom, so a wrap here is a plain 2-line kicker,
+     not a layout break. */
+  .polisstand2 .kick {
+    white-space: normal;
+  }
 }
 .polisstand2 .kick .star {
   color: var(--replace);
@@ -3175,7 +3188,12 @@
 .rep-card .cv2-sub.blind .cv2-tag {
   background: var(--tag-bg);
   border-color: var(--rule);
-  color: var(--ink-3);
+  /* --ink-3 (the base .cv2-tag color, prototype.css) is ~5:1 against
+     --paper but only ~4.4:1 against this pill's --tag-bg fill — just under
+     WCAG AA's 4.5:1 for normal text. Scoped, slightly darker override
+     (same hue/chroma family) instead of touching the shared --ink-3 token,
+     which is fine everywhere else it's used. */
+  color: oklch(0.5 0.026 260);
   font-family: var(--mono);
   font-size: 9.5px;
   letter-spacing: 0.08em;

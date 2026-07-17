@@ -1807,6 +1807,18 @@ Bumps
     grid-template-columns: 1fr !important;
     gap: 36px;
   }
+  /* .hp-stack (prototype.css) is a fixed 380px-wide decorative card-stack
+     mockup, absolute-positioned inside .hp-preview and pixel-perfect ported
+     from the desktop illustration — .hp-sheet's own `right: -6px` bleeds it
+     a further 6px past .hp-stack's edge. Below ~900px the hero column no
+     longer has 380px+ to give it, so the stack (and its own bleed) pushed
+     the whole page ~19px past the viewport at narrow widths. The preview is
+     aria-hidden (purely decorative — see App2's HomeView render), so
+     clipping to .hp-preview's actual box removes the page-level overflow
+     without touching the desktop-sized illustration itself. */
+  .hp-preview {
+    overflow: hidden;
+  }
   .hp-hero h1 {
     font-size: 56px !important;
   }
@@ -3947,6 +3959,13 @@ Bumps
   /* Literal 14px — the base .co-input .send rule (prototype.css) sets
      13.5px. */
   font-size: 14px;
+  /* The ≤640px `.co-input .send { width: 100% }` rule below (this file,
+     legacy stacked-column composer) has lower specificity but no width
+     reset here previously let it leak into this flex row: the button's
+     flex-basis (auto) then resolved from that 100% width against the
+     composer's own box, forcing it to claim the full row and pushing the
+     textarea to ~0, overflowing the viewport at mobile widths. */
+  width: auto;
 }
 @media (max-width: 640px) {
   .bf-app .coldopen .co-input {
