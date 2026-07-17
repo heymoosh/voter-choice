@@ -2449,7 +2449,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - EVIDENCE: https://www.resultsense.com/news/2026-05-21-demos-electoral-commission-ai-chatbots-scottish-election/ ; https://ag.ny.gov/publications/protecting-new-york-voters-ai-generated-election-misinformation (retrieved 2026-07-14)
 - HYPOTHESIS: a small, bounded prompt/guard change routing logistics questions to the app's own Google-Civic-backed data (or an explicit official-source redirect) would close a plausible-but-unverified gap; uncertainty -- not yet confirmed the current prompt actually mishandles a logistics question in practice, and product scope may already exclude this by design; a manual eval should run before any code change.
 - GOAL_CONDITION: a short manual eval (N sample logistics questions run through the live chat) either confirms current behavior is already safe (card closes as not-needed) or a prompt change ships that verifiably redirects logistics questions rather than answering them from the model's own general knowledge.
-- STATUS: Backlog
+- DECIDED (Muxin, 2026-07-16): NOT a hard redirect. Her ruling verbatim: "we do our best attempt but always say, to be absolutely sure check these resources. Because ppl just want a general sense of when and where, at least I think so, for planning's sake." So: chat MAY give a best-attempt general answer to logistics questions (when/where, for planning), but every such answer MUST end with an explicit to-be-absolutely-sure pointer to official resources (the state election authority / the app's own Google-Civic-backed polling data where available). The eval in GOAL_CONDITION still runs first to check what current behavior is; the prompt change then implements best-attempt-plus-mandatory-official-pointer, not a refusal.
+- STATUS: To Do
+- DECISION: decided 2026-07-16 (best-attempt + mandatory official-source pointer; no hard redirect). Self-vet auto-merge; prompt-only change.
 <!-- card-id: 0467f878-9c34-41b2-80be-0c8add7cb246 -->
 
 **[P0] Source inventory: Arkansas (AR) — retry after ceiling kill**
@@ -3240,9 +3242,10 @@ SHIP: auto-pending-merge
 - EXCLUDED from deletion (live or pending decisions): the babysit lane's roster branches/worktrees; `work-*-r31` (pending gallery review); `wt/keystone-polis-report-redesign` (held STOP-SHIP); `wt/apply-the-bold-flag-palette-as-the-default` + `archive/bold-flag-local-20260716` (pending ruling); `claude/tip-jar-work` + `claude/zealous-hoover-ead0b1-rebase` (pending tip-jar decision).
 - UPDATE (2026-07-16, gallery build): the three `work-*-r31` branches were found SUBSUMED by main (byte-identical or superseded-with-fixes, verified per-file during the gallery integration), and `wt/keystone-polis-report-redesign` is subsumed except the `.standing2` polis palette block. Once Muxin's gallery review confirms nothing is missing, all four move to the safe-delete list (with the `.standing2` delta preserved on `integration/ship-readiness-gallery-20260716`).
 - HARD RULE: no `git branch -D` without Muxin's explicit go-ahead on the list. ATTENDED.
-- UPDATE (2026-07-16 evening): Muxin confirmed the KY worktree + roster-babysit-2 as superseded — both worktrees removed (branches untouched). Tip-jar branches now have a successor card (live-links approved), so they join the safe-delete list once that lands; r31 + polis branches join once the `.standing2` delta lands. The ~60-branch delete table itself STILL awaits Muxin's explicit go-ahead.
-- STATUS: Backlog
-- DECISION: none yet — ATTENDED; branch deletions only after Muxin approves the doc's table.
+- UPDATE (2026-07-16 evening): Muxin confirmed the KY worktree + roster-babysit-2 as superseded — both worktrees removed (branches untouched).
+- APPROVED (Muxin, 2026-07-16, later that evening): "yes, if it's already merged it makes sense to delete." Scope = merged/subsumed content only. EXECUTION BLOCKED by the session permission layer (`git branch -D` is hard-denied in auto mode regardless of verbal approval), so the exact approved command was written to `docs/operations/branch-cleanup-command-2026-07-16.sh` — 53 local branches (origin refs untouched; r31 + polis + bold-flag locals included since each is preserved on origin). Muxin (or an attended session) runs it directly. STILL EXCLUDED even after approval: `archive/*` snapshots (deliberate preservation refs, NOT merged content — Muxin has not ruled on these), `claude/tip-jar-work` + `claude/zealous-hoover-ead0b1-rebase` (delete only after the approved live-links card lands), and the entire babysit roster lane.
+- STATUS: Review
+- DECISION: approved 2026-07-16 (merged-content branches only); execution handed to Muxin via the script above because of the branch-delete deny rule. Card closes when the script has been run.
 
 **[P1] Territory/DC honest-state message after address input (AS, DC, GU, MP, PR, VI)**
 - PARENT: c5a813bb-9223-4dc1-95aa-65637eb6940b
