@@ -1448,6 +1448,26 @@ const FIXTURES: Record<string, OfficialRosterFixture[]> = {
       entries: VA_HOUSE_ROSTER_2026,
     },
   ],
+  WY: [
+    {
+      state: WY_STATE,
+      office: "house",
+      electionYear: WY_ELECTION_YEAR,
+      stage: WY_STAGE,
+      sourceUrl: WY_HOUSE_SOURCE_URLS[0],
+      retrievedAt: WY_RETRIEVED_AT,
+      entries: WY_HOUSE_ROSTER_2026,
+    },
+    {
+      state: WY_STATE,
+      office: "senate",
+      electionYear: WY_ELECTION_YEAR,
+      stage: WY_STAGE,
+      sourceUrl: WY_SENATE_SOURCE_URLS[0],
+      retrievedAt: WY_RETRIEVED_AT,
+      entries: WY_SENATE_ROSTER_2026,
+    },
+  ],
 };
 
 export interface OfficialRosterImportCounts {
@@ -1538,3 +1558,14 @@ if (isDirectRun) {
     process.exit(1);
   });
 }
+
+import {
+  WY_STATE,
+  WY_ELECTION_YEAR,
+  WY_STAGE,
+  WY_HOUSE_SOURCE_URLS,
+  WY_SENATE_SOURCE_URLS,
+  WY_RETRIEVED_AT,
+  WY_HOUSE_ROSTER_2026,
+  WY_SENATE_ROSTER_2026,
+} from "../congressional-rosters/wy-official-roster-2026";

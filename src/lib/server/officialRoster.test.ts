@@ -11188,3 +11188,171 @@ describe("lookupChallengers — VA wiring (house-only, only 2 of 11 districts co
     expect(out.house).toEqual([]);
   });
 });
+import {
+  WY_HOUSE_ROSTER_2026,
+  WY_SENATE_ROSTER_2026,
+  WY_STATE,
+  WY_ELECTION_YEAR,
+  WY_HOUSE_DISTRICT,
+  WY_HOUSE_SOURCE_URLS,
+  WY_SENATE_SOURCE_URLS,
+  WY_RETRIEVED_AT,
+} from "../../../scripts/congressional-rosters/wy-official-roster-2026";
+/** Same shape as `akDbRow`, but for WY entries — the House side uses
+ * district "00" (at-large), never null (see the WY fixture's docblock). */
+function wyDbRow(
+  entry: OfficialRosterEntry,
+  idx: number,
+  office: "house" | "senate",
+) {
+  return {
+    id: `wy-${entry.district ?? "senate"}-${idx}`,
+    name: entry.name,
+    party: entry.party,
+    isIncumbent: entry.isIncumbent,
+    ballotStatus: entry.ballotStatus,
+    office,
+    district: entry.district,
+    sourceUrl:
+      office === "house" ? WY_HOUSE_SOURCE_URLS[0] : WY_SENATE_SOURCE_URLS[0],
+    retrievedAt: WY_RETRIEVED_AT,
+  };
+}
+const WY_HOUSE_DB_ROWS = WY_HOUSE_ROSTER_2026.map((e, i) =>
+  wyDbRow(e, i, "house"),
+);
+const WY_SENATE_DB_ROWS = WY_SENATE_ROSTER_2026.map((e, i) =>
+  wyDbRow(e, i, "senate"),
+);
+// ---------------------------------------------------------------------------
+// Wyoming (WY) — at-large House seat + Class II Senate seat, BOTH open in
+// 2026 (Sen. Lummis retiring; Rep. Hageman filed for the open Senate seat
+// instead of House re-election, per this fixture's own docblock). All 19
+// federal rows are PRE-primary (STAGE = "primary") — the Aug 18, 2026
+// primary has not yet occurred, so every row is qualified_for_primary_ballot,
+// never qualified_for_general_ballot. See
+// docs/operations/wyoming-vertical-slice-data-check.md for the full build.
+// ---------------------------------------------------------------------------
+describe("getOfficialRoster — WY narrowing", () => {
+  it("returns all WY house rows for the at-large district key ('00'), none for a bogus numbered district", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_HOUSE_DB_ROWS));
+    const out = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      WY_HOUSE_DISTRICT,
+      WY_ELECTION_YEAR,
+    );
+    expect(out.map((r) => r.name).sort()).toEqual(
+      [...WY_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    const wrongDistrict = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      "01",
+      WY_ELECTION_YEAR,
+    );
+    expect(wrongDistrict).toEqual([]);
+  });
+  it("returns all WY senate rows for (senate, null), none for the house district key in the same rowset", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      WY_STATE,
+      "senate",
+      null,
+      WY_ELECTION_YEAR,
+    );
+    expect(senate).toHaveLength(WY_SENATE_ROSTER_2026.length);
+    expect(senate.map((r) => r.name).sort()).toEqual(
+      [...WY_SENATE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    const houseInSenateRowset = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      WY_HOUSE_DISTRICT,
+      WY_ELECTION_YEAR,
+    );
+    expect(houseInSenateRowset).toEqual([]);
+  });
+  it("every WY row is qualified_for_primary_ballot and isIncumbent false — both seats open, Aug 18, 2026 primary not yet held", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_HOUSE_DB_ROWS));
+    const house = await getOfficialRoster(
+      WY_STATE,
+      "house",
+      WY_HOUSE_DISTRICT,
+      WY_ELECTION_YEAR,
+    );
+    expect(
+      house.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(house.every((r) => r.isIncumbent === false)).toBe(true);
+    mockedGetDb.mockReturnValue(makeDbMock(WY_SENATE_DB_ROWS));
+    const senate = await getOfficialRoster(
+      WY_STATE,
+      "senate",
+      null,
+      WY_ELECTION_YEAR,
+    );
+    expect(
+      senate.every((r) => r.ballotStatus === "qualified_for_primary_ballot"),
+    ).toBe(true);
+    expect(senate.every((r) => r.isIncumbent === false)).toBe(true);
+  });
+});
+describe("isIncumbentSeekingReelection — WY", () => {
+  it("returns false for the House seat — Hageman (sitting rep) filed for Senate, not House re-election", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_HOUSE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        WY_STATE,
+        "house",
+        WY_HOUSE_DISTRICT,
+        WY_ELECTION_YEAR,
+        "Harriet Hageman",
+      ),
+    ).toBe(false);
+  });
+  it("returns false for the Senate seat — Lummis (sitting senator) is retiring, did not file", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock(WY_SENATE_DB_ROWS));
+    expect(
+      await isIncumbentSeekingReelection(
+        WY_STATE,
+        "senate",
+        null,
+        WY_ELECTION_YEAR,
+        "Cynthia Lummis",
+      ),
+    ).toBe(false);
+  });
+});
+describe("lookupChallengers — WY wiring (at-large house + senate both covered)", () => {
+  it("both chambers covered by the official roster: skips the FEC query entirely (2 calls, not 3); a numeric district of 0 resolves the at-large seat", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    const dbMock = makeSequencedDbMock([WY_HOUSE_DB_ROWS, WY_SENATE_DB_ROWS]);
+    mockedGetDb.mockReturnValue(dbMock);
+    const out = await lookupChallengers("WY", 0, 2026);
+    expect(dbMock.select).toHaveBeenCalledTimes(2); // official house + official senate, FEC skipped
+    // open seat: no incumbent excluded, all 12 House filers render
+    expect(out.house).toHaveLength(WY_HOUSE_ROSTER_2026.length);
+    expect(out.house.map((c) => c.name).sort()).toEqual(
+      [...WY_HOUSE_ROSTER_2026.map((e) => e.name)].sort(),
+    );
+    for (const c of out.house) {
+      expect(c.rosterProvenance.sourceKind).toBe("official_state_roster");
+    }
+  });
+  it("senate: open seat, all 7 filers render as challengers, Hageman included (she filed for Senate, not House)", async () => {
+    vi.stubEnv("OFFICIAL_ROSTER_ENABLED", "1");
+    mockedGetDb.mockReturnValue(
+      makeSequencedDbMock([WY_HOUSE_DB_ROWS, WY_SENATE_DB_ROWS]),
+    );
+    const out = await lookupChallengers("WY", 0, 2026);
+    expect(out.senate).toHaveLength(WY_SENATE_ROSTER_2026.length);
+    expect(out.senate.some((c) => c.name === "HARRIET HAGEMAN")).toBe(true);
+    expect(out.senate.find((c) => c.name === "HARRIET HAGEMAN")?.party).toBe(
+      "Republican",
+    );
+    expect(out.senate.find((c) => c.name === "JAMES BYRD")?.party).toBe(
+      "Democrat",
+    );
+  });
+});
