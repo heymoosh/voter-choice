@@ -23,6 +23,9 @@ Entries for deleted files fail the gate too; remove them in the same PR.
   canonical locked-issues state.
 - `BudgetModal.tsx` — community-budget-exhausted modal (continuity options
   when the shared LLM budget runs out).
+- `RosterFeedback.tsx` — "Missing a rep? Something look wrong?" ballot-accuracy
+  feedback trigger + modal; reuses the shared `.be-modal-overlay`/`.be-modal`
+  chrome from BudgetModal/HandoffModal rather than a new modal system.
 - `ByokCard.tsx` — bring-your-own-key entry card; shared by the budget and
   handoff modals rather than duplicated into each.
 - `DelegationOverview.tsx` — the "everyone who represents you — scored"
