@@ -2465,8 +2465,9 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - HYPOTHESIS: a small, bounded prompt/guard change routing logistics questions to the app's own Google-Civic-backed data (or an explicit official-source redirect) would close a plausible-but-unverified gap; uncertainty -- not yet confirmed the current prompt actually mishandles a logistics question in practice, and product scope may already exclude this by design; a manual eval should run before any code change.
 - GOAL_CONDITION: a short manual eval (N sample logistics questions run through the live chat) either confirms current behavior is already safe (card closes as not-needed) or a prompt change ships that verifiably redirects logistics questions rather than answering them from the model's own general knowledge.
 - DECIDED (Muxin, 2026-07-16): NOT a hard redirect. Her ruling verbatim: "we do our best attempt but always say, to be absolutely sure check these resources. Because ppl just want a general sense of when and where, at least I think so, for planning's sake." So: chat MAY give a best-attempt general answer to logistics questions (when/where, for planning), but every such answer MUST end with an explicit to-be-absolutely-sure pointer to official resources (the state election authority / the app's own Google-Civic-backed polling data where available). The eval in GOAL_CONDITION still runs first to check what current behavior is; the prompt change then implements best-attempt-plus-mandatory-official-pointer, not a refusal.
-- STATUS: To Do
-- DECISION: decided 2026-07-16 (best-attempt + mandatory official-source pointer; no hard redirect). Self-vet auto-merge; prompt-only change.
+- BUILT + MERGING (2026-07-17): PR #384 (https://github.com/heymoosh/voter-choice/pull/384). Eval finding: docs/BALLOT_PROMPT.md is now a legacy offline-handoff doc, superseded by the live six-prompt fleet in src/lib/prompts/* whose router had NO logistics handling. Fix added rule 4 to `SAFETY_HEADER` (src/lib/prompts/safety-header.ts) — the block that prepends to EVERY chat turn regardless of view/builder/flag: best-attempt general answer, never refuse/redirect, always close by naming the user's state election authority + the app's own Google-Civic polling lookup (src/lib/civic-logistics.ts), never treat model recall as authoritative for dates/locations. Mirrored in the canonical prompts.md §0 + golden fixture + golden test. 187/187 prompt tests. AUTO-MERGE ARMED — merging under the new 120-min Stryker ceiling from #387 (its earlier attempts were killed at the old 60-min wall — a CI-infra limit, not a code issue).
+- STATUS: Review
+- DECISION: decided 2026-07-16 (best-attempt + mandatory official-source pointer; no hard redirect). Built + armed 2026-07-17 via PR #384; flips to Done on merge.
 <!-- card-id: 0467f878-9c34-41b2-80be-0c8add7cb246 -->
 
 **[P0] Source inventory: Arkansas (AR) — retry after ceiling kill**
@@ -3240,7 +3241,8 @@ SHIP: auto-pending-merge
   - 5 Medium: Terms page unstyled pre-redesign + real-nav odd-one-out; 40px nav links (touch target); sub-44px control cluster; 8.5px print-sheet caption explaining the verdict %; contrast-borderline tag token.
   - 4 further findings unrecoverable.
 - TASK: either fix directly from the preserved list above (each is small + verifiable) and/or re-run the responsive/a11y sweep to recover the 4 lost findings; produce findings-report-first, no fix-as-you-find beyond the itemized list. Write outputs into docs/ this time, never scratchpad-only.
-- STATUS: Backlog
+- SHIPPED (2026-07-17): PR #386 merged — all 8 preserved findings re-verified against current main (all still reproduced) and fixed: intake Send overflow (stale mobile width:100% leaking into flex composer), PolisStand kicker nowrap, home .hp-sheet bleed, Terms page restyled onto the shared statics shell, 40px→44px nav touch targets, sub-44px seat-chat chip cluster, 8.5px print caption, and a contrast-borderline tag token (numerically verified 4.40:1→AA-passing via a purpose-built OKLCH→WCAG calculator). The 4 unrecoverable findings were not pursued (no source to re-derive them from). A dup-gate follow-up in the same PR extracted the shared statics-page shell into `src/app/_components/StaticsPage.tsx` (about/methodology/privacy/terms all consume it; net −45 lines).
+- STATUS: Done
 
 **[P1] Fast-follow: H2H duel per-issue rows still use issuesForLevel — 3-line fix, now unblocked**
 - PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
@@ -3307,16 +3309,18 @@ SHIP: auto-pending-merge
 - GOAL_CONDITION: form submits from a roster surface, row lands in the table with state+office populated, Muxin can list submissions with one ops command; tests cover the API route.
 - BUILT + HELD (2026-07-17 overnight): PR #383 (https://github.com/heymoosh/voter-choice/pull/383) — form on both DelegationWorkspace views with state/office prefill, POST /api/roster-feedback (10/IP/hour rate limit, 2000-char cap, honest 503 when DB unconfigured), additive migration `db/migrations/0017_add_roster_feedback.sql`, ops reader `scripts/ops/list-roster-feedback.ts`, EN+ES i18n, 16 new tests, full suite green. **AUTO-MERGE DELIBERATELY DISABLED**: the deploy-time schema-drift check fails EVERY deploy once 0017 is referenced but unapplied, and the overnight session's permission rules (correctly) block unattended prod-DB writes. MORNING STEP (Muxin): apply 0017 to prod (exact one-liner in the PR #383 hold comment), then re-arm with `gh pr merge --auto --squash 383`.
 - UN-HELD (2026-07-17): migration 0017 applied to prod during the attended cutover — auto-merge re-armed; card closes when #383 merges and deploys.
-- STATUS: Review
-- DECISION: approved by Muxin 2026-07-16. Hold released 2026-07-17 (0017 applied); auto-merge re-armed.
+- SHIPPED (2026-07-17): PR #383 merged. The `roster_feedback` table is live in prod (migration 0017 applied), the "Report a ballot issue" affordance is on both DelegationWorkspace views, and `scripts/ops/list-roster-feedback.ts` reads submissions. A dup-gate follow-up in the same PR generalized the durable-Redis/in-memory rate-limiter that was hand-rolled in FIVE places (counters, polis-guard, race-data, research-spend, roster-feedback) into one shared `createIpRateLimiter` factory + a `gateRateLimitedJsonRequest` route helper — net −141 lines, with the billing limiter's fail-CLOSED posture preserved. This is Muxin's post-launch ballot-accuracy correction channel.
+- STATUS: Done
+- DECISION: approved by Muxin 2026-07-16. Shipped via PR #383 (2026-07-17).
 
 **[P1] Apply the Bold Flag palette as the app-wide default**
 - PARENT: c44193cf-134d-4685-8e98-159ab411cbd7
 - ORIGIN: 2026-07-16, Muxin's ruling on the held branch `wt/apply-the-bold-flag-palette-as-the-default` (PR #241, closed draft; local tip preserved at `origin/archive/bold-flag-local-20260716`): YES — Bold Flag becomes the default.
 - TASK: fresh implementation against CURRENT main (the archived branch is stale vs the merged Round 3/4 work — use it as intent reference, not a rebase base). Verify what main already carries (Bold Flag tokens exist in `public/redesign2.css` scoped to specific surfaces; the app-wide default may still be the civic mood) and make Bold Flag the default palette everywhere, reconciling with the merged parity surfaces so nothing regresses.
 - VERIFY: parity-gate/design-gallery run after the change + before/after screenshots for Muxin (per the visual-self-vet rule, a code-reading claim is not visual proof).
-- STATUS: To Do
-- DECISION: approved by Muxin 2026-07-16. FE design-experience change — build + visual evidence, then standard self-vet merge (Muxin already ruled the direction; the evidence is for regression-catching, not a new design hold).
+- SHIPPED (2026-07-17): PR #385 merged. KEY FINDING: the app was ALREADY mostly Bold Flag from the merged Round 3/4 parity work — the `.bf-app` token remap existed but was scoped to the congress-assessment app's #root div, leaving the four static routes (/about, /methodology, /privacy, /terms) on the old cream/civic palette. Fix moved `.bf-app` up to `<body>` in layout.tsx (one shared remap point, still gated by NEXT_PUBLIC_BALLOT_ENABLED), so every route inherits Bold Flag. 5 files, token-level only, no per-component edits; regenerated design-review gallery committed on the branch as before/after evidence (biggest deltas: about/how-it-works/privacy flip cream→white/navy). data-mood typography axis left untouched (orthogonal).
+- STATUS: Done
+- DECISION: approved by Muxin 2026-07-16. Shipped via PR #385 (2026-07-17).
 
 **[P1] ATTENDED: Muxin's Round-4 UI/UX re-test — run when everything is ready, not before**
 - ORIGIN: 2026-07-16. Muxin's 2026-07-12 (Sunday) 13-problem prod critique was built and merged as the Round-4 lanes (PRs #284–#288, #290), but she never re-tested against her own complaints — and deliberately wants to wait until ALL related fixes are in before doing one pass, not test piecemeal.
