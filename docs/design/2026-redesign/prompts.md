@@ -11,7 +11,7 @@
 Prepend to every system prompt regardless of task. Centralizes the rules that absolutely cannot drift.
 
 ```
-You are nonpartisan civic research. Three rules that always apply:
+You are nonpartisan civic research. Four rules that always apply:
 
   1. Never recommend a candidate or party unless the user
      explicitly asks. Surface evidence, not verdicts.
@@ -19,6 +19,14 @@ You are nonpartisan civic research. Three rules that always apply:
      If you don't know, name one public source the user can check.
   3. Don't echo back the user's full name, address, DOB, phone,
      or ID even if they paste one. Use only city + state.
+  4. For voting-logistics questions (where/when to vote,
+     registration deadlines, early voting, absentee/mail
+     ballots): give your best general answer — never refuse
+     or redirect instead of answering. Always close by naming
+     the user's state election authority (if the state is
+     known) and this app's own polling-location lookup as
+     where to confirm exact dates and locations — never treat
+     your own recall as authoritative for either.
 ```
 
 ---
@@ -54,6 +62,7 @@ Rules:
 ```
 
 **Expected output shape:**
+
 ```json
 [
   {
@@ -120,11 +129,11 @@ Rules:
 {
   "system": "<the prompt above>",
   "messages": [
-    { "role": "user",      "content": "What about her donors?" },
+    { "role": "user", "content": "What about her donors?" },
     { "role": "assistant", "content": "Hartman's top donor industry is..." },
-    { "role": "user",      "content": "Has she ever taken oil & gas money?" }
+    { "role": "user", "content": "Has she ever taken oil & gas money?" },
     // ...keeps growing as the user keeps asking
-  ]
+  ],
 }
 ```
 
@@ -260,11 +269,13 @@ Max 400 words. No formatting beyond this block.
 **Scope is per-race.** Each race (or proposition) starts a fresh conversation in the chat panel — the user's prior questions about an unrelated race don't pollute the context. When the user switches the active race via the left rail, the chat history clears and a new greeting renders.
 
 **Why per-race instead of session-wide:**
+
 - Haiku's context window stays clean — no 20-message history about Senate races leaking into a school-board discussion.
 - The user's mental model is already per-race (each card is its own decision).
 - If they really want to compare across races, the chat can call out "you decided Allred for Senate — same logic might apply here" because `<decided>` is in the system prompt every turn.
 
 **Rebuild the system prompt every turn.** Between message N and N+1, the user might have:
+
 - Decided the current race (so `<decided>` grew)
 - Amended their themes (so `<priorities>` changed)
 - Switched the active race entirely (so `<race>` and `<candidates>` are different)
@@ -272,6 +283,7 @@ Max 400 words. No formatting beyond this block.
 So: each API call ships the freshly-templated system prompt + the accumulating user/assistant message array. Cheap on input tokens because the prompt body is small (~290 tokens for race deep-dive); the variable cost is the message history, which is what you actually want growing.
 
 **Resetting history:**
+
 - User switches active race → clear messages, fresh system prompt with new `<race>`.
 - User amends themes → keep messages, rebuild system prompt with new `<priorities>`. (The AI sees "the priorities changed" implicitly via the system prompt; no message needs to announce it.)
 - User picks a candidate → keep messages, rebuild system prompt with updated `<decided>`. The AI's next reply naturally acknowledges the pick.
@@ -282,20 +294,22 @@ So: each API call ships the freshly-templated system prompt + the accumulating u
 
 **Routing logic** — which prompt to use:
 
-| User context                              | System prompt to send       |
-| ----------------------------------------- | --------------------------- |
-| Cold open · user just submitted message   | safety + theme extraction   |
-| Workspace · active race is `choice`       | safety + race deep-dive     |
-| Workspace · active race is `proposition`  | safety + proposition        |
-| User triggers theme amend (rail or chat)  | safety + theme amendment    |
-| User hits "Continue elsewhere" or budget  | safety + handoff generation |
+| User context                             | System prompt to send       |
+| ---------------------------------------- | --------------------------- |
+| Cold open · user just submitted message  | safety + theme extraction   |
+| Workspace · active race is `choice`      | safety + race deep-dive     |
+| Workspace · active race is `proposition` | safety + proposition        |
+| User triggers theme amend (rail or chat) | safety + theme amendment    |
+| User hits "Continue elsewhere" or budget | safety + handoff generation |
 
 **Context injection** — server-side, before sending:
+
 - Read app state (themes, decisions, active race, ballot context from party gate)
 - Stuff into the `<tag>` placeholders in the chosen prompt template
 - Strip PII (full address, name, DOB) before injection — only city + state ever go to the model
 
 **Cost / latency notes:**
+
 - Theme extraction runs once per session (~500 input + 300 output tokens)
 - Race deep-dive runs N times per race the user asks about (~800 input + 200 output)
 - Handoff runs once at the end (~600 input + 300 output)
