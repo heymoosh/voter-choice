@@ -29,14 +29,22 @@ import { chromium } from "@playwright/test";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
-import { parseArgs } from "node:util";
 import { SCENARIOS } from "./parity-gallery-scenarios";
-import { neutralizeScrollTraps, VIEWPORT } from "./capture-shared";
+import {
+  collectAssetStylesheetHrefs,
+  defaultBundleDir,
+  finishSummary,
+  logCheckResult,
+  neutralizeScrollTraps,
+  parseCommonCliArgs,
+  repoRootFromScriptUrl,
+  runCli,
+  VIEWPORT,
+} from "./capture-shared";
 import { getFreePort, startNextDev } from "./dev-server";
 
-const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
-const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
-const DEFAULT_BUNDLE_DIR = path.resolve(REPO_ROOT, "../design-sync-bundle");
+const REPO_ROOT = repoRootFromScriptUrl(import.meta.url);
+const DEFAULT_BUNDLE_DIR = defaultBundleDir(REPO_ROOT);
 
 const THIN_HEIGHT_PX = 120; // a real page shorter than this is almost certainly broken
 
@@ -138,26 +146,9 @@ ${cap.bodyInner}
 }
 
 function parseCliArgs() {
-  const { values } = parseArgs({
-    options: {
-      only: { type: "string" },
-      list: { type: "boolean", default: false },
-      "bundle-dir": { type: "string" },
-      headed: { type: "boolean", default: false },
-    },
-  });
-  return {
-    only: values.only
-      ? (values.only as string).split(",").map((s) => s.trim())
-      : undefined,
-    list: values.list as boolean,
-    bundleDir: path.resolve(
-      (values["bundle-dir"] as string | undefined) ||
-        process.env.DESIGN_SYNC_BUNDLE_DIR ||
-        DEFAULT_BUNDLE_DIR,
-    ),
-    headed: values.headed as boolean,
-  };
+  const { only, list, bundleDir, headed } =
+    parseCommonCliArgs(DEFAULT_BUNDLE_DIR);
+  return { only, list, bundleDir, headed };
 }
 
 interface PageCheck {
@@ -238,11 +229,7 @@ async function verifyScreen(
       waitUntil: "load",
       timeout: 20_000,
     });
-    const hrefs: string[] = await page.evaluate(() =>
-      Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-        .map((l) => (l as HTMLLinkElement).href)
-        .filter((h) => h.includes("/assets/") && h.endsWith(".css")),
-    );
+    const hrefs = await collectAssetStylesheetHrefs(page);
     for (const href of hrefs) {
       const status = assetResponses.get(href);
       if (status === undefined) issues.push(`stylesheet no response: ${href}`);
@@ -273,10 +260,7 @@ async function verifyScreen(
       : height > 0 && height < THIN_HEIGHT_PX
         ? "thin"
         : "ok";
-  const tag = status === "ok" ? "✓" : status === "thin" ? "~" : "✗";
-  console.log(
-    `  ${tag} ${id} (${width}×${height})${issues.length ? " — " + issues.join("; ") : ""}`,
-  );
+  logCheckResult(id, status, width, height, issues);
   return {
     id,
     group: groupFor(id),
@@ -362,11 +346,7 @@ async function main(): Promise<void> {
     ),
   );
   console.log(`\n${checks.length} pages · ${bad} bad · ${thin} thin`);
-  console.log(`Summary written to ${summaryPath}`);
-  if (bad > 0) process.exitCode = 1;
+  finishSummary(summaryPath, bad);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+runCli(main);

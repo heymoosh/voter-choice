@@ -16,6 +16,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import os from "node:os";
+import { parseArgs } from "node:util";
 import { type AppInstance, getFreePort, startNextDev } from "./dev-server";
 import { type Scenario } from "./parity-gallery-scenarios";
 
@@ -23,6 +24,125 @@ const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
 
 export const VIEWPORT = { width: 1180, height: 1000 };
+
+// ---------------------------------------------------------------------------
+// design-sync bundle CLI/entry helpers — shared by design-sync-extract.ts,
+// design-sync-page-extract.ts, and design-sync-render-check.ts, each of
+// which drives a different capture pass over the same on-disk bundle.
+// ---------------------------------------------------------------------------
+
+/** repo root, derived from a script's own `import.meta.url` (every
+ *  design-sync script lives directly under scripts/design/). */
+export function repoRootFromScriptUrl(importMetaUrl: string): string {
+  const scriptDir = path.dirname(new URL(importMetaUrl).pathname);
+  return path.resolve(scriptDir, "../..");
+}
+
+export function defaultBundleDir(repoRoot: string): string {
+  return path.resolve(repoRoot, "../design-sync-bundle");
+}
+
+/** Resolve --bundle-dir → $DESIGN_SYNC_BUNDLE_DIR → the repo-relative
+ *  default, in that order. */
+export function resolveBundleDirArg(
+  bundleDirArg: string | undefined,
+  defaultDir: string,
+): string {
+  return path.resolve(
+    bundleDirArg || process.env.DESIGN_SYNC_BUNDLE_DIR || defaultDir,
+  );
+}
+
+export interface CommonCliArgs {
+  only: string[] | undefined;
+  list: boolean;
+  bundleDir: string;
+  headed: boolean;
+}
+
+/** The --only/--list/--bundle-dir/--headed flags every design-sync capture
+ *  script accepts. Extra parseArgs `options` (e.g. extract.ts's --help)
+ *  merge in via `extraOptions`; the caller reads those off the returned raw
+ *  `values` object. */
+export function parseCommonCliArgs(
+  defaultDir: string,
+  extraOptions: Record<
+    string,
+    { type: "string" | "boolean"; default?: string | boolean }
+  > = {},
+): CommonCliArgs & { values: Record<string, unknown> } {
+  const { values } = parseArgs({
+    options: {
+      only: { type: "string" },
+      list: { type: "boolean", default: false },
+      "bundle-dir": { type: "string" },
+      headed: { type: "boolean", default: false },
+      ...extraOptions,
+    },
+  });
+  return {
+    values,
+    only: values.only
+      ? (values.only as string).split(",").map((s) => s.trim())
+      : undefined,
+    list: values.list as boolean,
+    bundleDir: resolveBundleDirArg(
+      values["bundle-dir"] as string | undefined,
+      defaultDir,
+    ),
+    headed: values.headed as boolean,
+  };
+}
+
+/** Stylesheet <link> hrefs pointing at the bundle's own copied CSS
+ *  (…/assets/*.css) — checked against network-response status to confirm
+ *  each sheet actually loaded. Shared by the off-disk render checker
+ *  (components) and page checker (full screens). */
+export async function collectAssetStylesheetHrefs(
+  page: Page,
+): Promise<string[]> {
+  return page.evaluate(() =>
+    Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
+      .map((l) => (l as HTMLLinkElement).href)
+      .filter((h) => h.includes("/assets/") && h.endsWith(".css")),
+  );
+}
+
+export type CheckStatus = "ok" | "thin" | "bad";
+
+export function statusTag(status: CheckStatus): string {
+  return status === "ok" ? "✓" : status === "thin" ? "~" : "✗";
+}
+
+/** One-line "  ✓ id (WxH) — issue; issue" progress log, shared by every
+ *  bundle checker. */
+export function logCheckResult(
+  id: string,
+  status: CheckStatus,
+  width: number,
+  height: number,
+  issues: string[],
+): void {
+  console.log(
+    `  ${statusTag(status)} ${id} (${width}×${height})${issues.length ? " — " + issues.join("; ") : ""}`,
+  );
+}
+
+/** Common CLI-entry tail: log where the summary landed, and set the
+ *  process's exit code non-zero when anything came back "bad". */
+export function finishSummary(summaryPath: string, bad: number): void {
+  console.log(`Summary written to ${summaryPath}`);
+  if (bad > 0) process.exitCode = 1;
+}
+
+/** Run a script's async main() with the standard top-level error handler
+ *  every design-sync script's `main().catch(...)` tail uses. */
+export function runCli(main: () => Promise<void>): void {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
 
 // ---------------------------------------------------------------------------
 // git helpers
