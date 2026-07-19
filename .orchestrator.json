@@ -7,5 +7,26 @@
     "mode": "deploy",
     "workflow": "deploy.yml",
     "verify": { "type": "workflow" }
+  },
+  "merge_policy": {
+    "schema_version": 1,
+    "merge_mechanics": "auto-when-green",
+    "reviewer_model": true,
+    "auto_merge_categories": [
+      "docs",
+      "tooling",
+      "backend",
+      "config",
+      "test",
+      "chore"
+    ],
+    "always_hold_categories": [
+      "security",
+      "irreversible",
+      "production-mutation",
+      "product-direction",
+      "visual"
+    ],
+    "guardrail_paths": []
   }
 }
