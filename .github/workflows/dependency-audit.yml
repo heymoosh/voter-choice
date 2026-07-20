@@ -1,0 +1,49 @@
+name: Dependency Audit
+
+# Class C dependency-scan loop (docs/maintenance.md / shared rubric): weekly,
+# plus every PR/push so a newly-introduced high-severity dependency is caught
+# before merge, not just on the weekly cadence.
+#
+# NOT yet added to branch protection's required status checks — that's an
+# admin-only repo-settings action left to Muxin (same convention as other
+# branch-protection edits in this org). See this workflow's introducing PR
+# body for why: at introduction time, `npm audit --omit=dev --audit-level=high`
+# already reports pre-existing high-severity findings with no fix available
+# yet, so making this required today would block every PR.
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 9 * * 1" # Mondays 09:00 UTC
+  workflow_dispatch: {}
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: npm audit (production deps, block on high/critical)
+        run: npm audit --omit=dev --audit-level=high

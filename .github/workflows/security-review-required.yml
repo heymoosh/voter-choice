@@ -1,0 +1,63 @@
+name: Security Review Required
+
+# Class C "deep security review, mandatory pre-merge on sensitive PRs" loop
+# (docs/maintenance.md / shared rubric). This job is the DETERMINISTIC half
+# only: detect whether a PR touches a security-sensitive path, and if so,
+# require a human/agent security sign-off (the `security-reviewed` label)
+# before the check passes. It never performs the review itself — the
+# judgment half (who reviews, on what, how deep) is a Backlog card
+# (ORIGIN: maintenance-audit 2026-07-20), not this workflow.
+#
+# NOT yet added to branch protection's required status checks — admin-only
+# repo-settings action left to Muxin, same as dependency-audit.yml.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+    branches:
+      - main
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Detect security-sensitive changes
+        id: filter
+        uses: dorny/paths-filter@d1c1ffe0248fe513906c8e24db8ea791d46f8590 # v3
+        with:
+          filters: |
+            sensitive:
+              - 'src/app/api/**'
+              - 'db/**'
+              - '.env*'
+              - '**/*secret*'
+              - '**/*auth*'
+              - '**/*token*'
+              - '**/*session*'
+
+      - name: Require security-reviewed label on sensitive PRs
+        if: steps.filter.outputs.sensitive == 'true'
+        env:
+          LABELS: ${{ toJson(github.event.pull_request.labels.*.name) }}
+        run: |
+          if echo "$LABELS" | grep -q '"security-reviewed"'; then
+            echo "::notice::Sensitive paths changed; security-reviewed label present. OK."
+          else
+            echo "::error::This PR touches security-sensitive paths (auth/secrets/data handling under src/app/api, db, or matching *secret*/*auth*/*token*/*session*). Get a security review, then add the 'security-reviewed' label to unblock this check."
+            exit 1
+          fi
+
+      - name: No sensitive paths changed
+        if: steps.filter.outputs.sensitive != 'true'
+        run: echo "::notice::No security-sensitive paths changed; check passes."
