@@ -2954,6 +2954,12 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
                     <span className="sw" style={{ background: issuePACSwatch(relevantIssue) }} />
                     <b>{formatDollars(p.amount)}</b> {p.label}
                   </span>
+                  {p.fullName && p.fullName !== p.label && (
+                    <div className="fp-pac-full">{p.fullName}</div>
+                  )}
+                  {p.advocates && (
+                    <div className="fp-pac-advocates">{p.advocates}</div>
+                  )}
                   {showAlignment && (
                     <div className={"fp-pac-flag " + (conflictsWithUser ? 'conflict' : 'align')}>
                       <span className="ic">{conflictsWithUser ? '⚠' : '✓'}</span>

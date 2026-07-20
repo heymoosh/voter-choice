@@ -223,7 +223,9 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     // the small/large/PAC %s render once, in the expanded FunderBars panel
     // below, not duplicated here (Muxin, 2026-07-19).
     expect(container.querySelector(".rc-money-bars")).not.toBeNull();
-    expect(container.querySelector(".rc-money-glance .rc-money-legend")).toBeNull();
+    expect(
+      container.querySelector(".rc-money-glance .rc-money-legend"),
+    ).toBeNull();
   });
 
   it("moves 'see all votes' inside the align-band and drops the detached card-evidence row", () => {
@@ -274,6 +276,45 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
 
     expect(screen.getByText(/Worth keeping/)).toBeInTheDocument();
     expect(screen.getByText("Time to replace")).toBeInTheDocument();
+  });
+
+  it("named-PAC pills show the full legal name, the advocates line, and the alignment flag — not just name + amount", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: [
+          {
+            label: "Affordable Meds PAC",
+            fullName: "Affordable Medicines Political Action Committee",
+            advocates:
+              "Funds candidates who back lower prescription-drug prices",
+            amount: 25_000,
+            isIssuePAC: true,
+            alignsWith: "healthcare_affordability",
+            pacStance: "with",
+          },
+        ],
+        peerComparison: peer,
+      },
+    });
+    const { container } = renderCard(seat);
+
+    const pac = container.querySelector(".fp-pac-wrap");
+    expect(pac).not.toBeNull();
+    expect(pac?.textContent).toContain("Affordable Meds PAC");
+    expect(container.querySelector(".fp-pac-full")?.textContent).toBe(
+      "Affordable Medicines Political Action Committee",
+    );
+    expect(container.querySelector(".fp-pac-advocates")?.textContent).toBe(
+      "Funds candidates who back lower prescription-drug prices",
+    );
+    expect(container.querySelector(".fp-pac-flag.align")).not.toBeNull();
   });
 });
 

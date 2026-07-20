@@ -3682,6 +3682,21 @@
   font-weight: 700;
   color: var(--civic);
 }
+/* full legal name + "what they advocate for" — compact one-liners under the
+   pill, same density as .fp-pac-flag below (legacy stacked card's wider
+   .cv2-pac-full/.cv2-pac-advocates equivalents, shrunk to fit the pill). */
+.rep-card .fp-pac-full {
+  font-size: 11px;
+  color: var(--ink-3);
+  font-style: italic;
+  padding: 0 4px;
+}
+.rep-card .fp-pac-advocates {
+  font-size: 11px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  padding: 0 4px;
+}
 /* compact one-line conflict/alignment note under the pill (was a padded,
    bordered box — .cv2-pac-flag in the legacy stacked card). */
 .rep-card .fp-pac-flag {
