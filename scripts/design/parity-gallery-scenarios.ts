@@ -163,6 +163,18 @@ async function mockSeatRaceDataMedian(page: Page): Promise<void> {
               amount: 2_000_000,
             },
             { label: "PACs", percent: 60, amount: 3_000_000 },
+            // Named issue-PAC slice — the design-sync rep-card-expanded
+            // card is extracted from this fixture (see design-sync-extract.ts
+            // TARGETS), and without a slice here it never exercises the
+            // FunderBars canvas .fp-pac-advocates line (SPEC-3A round-3).
+            {
+              label: "Affordable Meds PAC",
+              amount: 25_000,
+              isIssuePAC: true,
+              alignsWith: "healthcare_affordability",
+              advocates:
+                "Funds candidates who back lower prescription-drug prices",
+            },
           ],
           donorSource: { name: "fec", url: "https://www.fec.gov/" },
           totalRaised: 5_000_000,
