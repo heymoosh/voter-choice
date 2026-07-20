@@ -278,7 +278,7 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     expect(screen.getByText("Time to replace")).toBeInTheDocument();
   });
 
-  it("named-PAC pills show the full legal name, the advocates line, and the alignment flag — not just name + amount", () => {
+  it("named-PAC pills show the advocates line and the alignment flag — not just name + amount", () => {
     const seat = mkSeat({
       candidate: {
         id: "federal-TEST1",
@@ -308,9 +308,9 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     const pac = container.querySelector(".fp-pac-wrap");
     expect(pac).not.toBeNull();
     expect(pac?.textContent).toContain("Affordable Meds PAC");
-    expect(container.querySelector(".fp-pac-full")?.textContent).toBe(
-      "Affordable Medicines Political Action Committee",
-    );
+    // Option A (advocates only) — the full legal name never renders on the
+    // compact canvas pill, even when the data carries `fullName`.
+    expect(container.querySelector(".fp-pac-full")).toBeNull();
     expect(container.querySelector(".fp-pac-advocates")?.textContent).toBe(
       "Funds candidates who back lower prescription-drug prices",
     );
