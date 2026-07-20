@@ -3331,3 +3331,13 @@ SHIP: auto-pending-merge
 - STATUS: Backlog
 - DEPENDS ON: [P0] Flip OFFICIAL_ROSTER_ENABLED in production once the last state roster PR merges
 - DECISION: ATTENDED — this is Muxin's own test session; agents only prepare and surface it, never run it.
+
+**[P2] Audit Vercel Development-environment secrets vs Production/Preview**
+- ORIGIN: 2026-07-19/20 overnight session. Local dev (`npm run dev`) was silently broken in two ways because secrets that exist for Production/Preview were never scoped to Development: `NEXT_PUBLIC_GOOGLE_PLACES_API_KEY` (address autofill did nothing) and `DATABASE_URL` (every delegation/candidate lookup honestly degraded to empty — no crash, no error, just "can't find delegation" for a real address). Both were fixed live by adding Development scope on Vercel and re-pulling `.env.local`, but there was no clear signal pointing at the actual cause — it took manual `vercel env ls` comparison to find.
+- TASK: (1) audit the full `vercel env ls` list for any other var present on Production/Preview but missing Development, add what local dev actually needs; (2) consider a startup check/warning (not just a silent empty result) when `DATABASE_URL` (or other DB-dependent env vars) is unset in dev, so this doesn't require debugging from scratch again.
+- STATUS: Backlog
+
+**[P2] Vet the 9.8GB `2026-05-public.pgdump` at repo root before deciding to move/delete it**
+- ORIGIN: 2026-07-19/20 overnight session. A stray, untracked (properly `.gitignore`'d — `*.pgdump`, never committed) 9.8GB Postgres dump sitting at the repo root since May 12 inflated a plain `vercel deploy` to a 10GB upload, which failed with EPIPE — worked around with a new `.vercelignore` (PR #392, merged). The dump itself is untouched; its purpose/whether it's still needed is unknown.
+- TASK: figure out what `2026-05-public.pgdump` is for (a pre-migration backup? an ad hoc restore point?) and whether it's still needed anywhere, THEN decide to keep it somewhere out of the live repo checkout, or delete it. Do not delete without that check — Muxin explicitly does not want it removed outright until vetted.
+- STATUS: Backlog
