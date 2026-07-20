@@ -24,10 +24,18 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
+import {
+  collectAssetStylesheetHrefs,
+  defaultBundleDir,
+  finishSummary,
+  logCheckResult,
+  repoRootFromScriptUrl,
+  resolveBundleDirArg,
+  runCli,
+} from "./capture-shared";
 
-const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
-const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
-const DEFAULT_BUNDLE_DIR = path.resolve(REPO_ROOT, "../design-sync-bundle");
+const REPO_ROOT = repoRootFromScriptUrl(import.meta.url);
+const DEFAULT_BUNDLE_DIR = defaultBundleDir(REPO_ROOT);
 
 // Below this height (px), a card is flagged "thin" (informational — some
 // components, e.g. MedianChip, are legitimately small pills) rather than
@@ -53,10 +61,9 @@ function parseCliArgs() {
     },
   });
   return {
-    bundleDir: path.resolve(
-      (values["bundle-dir"] as string | undefined) ||
-        process.env.DESIGN_SYNC_BUNDLE_DIR ||
-        DEFAULT_BUNDLE_DIR,
+    bundleDir: resolveBundleDirArg(
+      values["bundle-dir"] as string | undefined,
+      DEFAULT_BUNDLE_DIR,
     ),
     headed: values.headed as boolean,
   };
@@ -129,11 +136,7 @@ async function main(): Promise<void> {
           waitUntil: "load",
           timeout: 15_000,
         });
-        const expectedAssetHrefs: string[] = await page.evaluate(() =>
-          Array.from(document.querySelectorAll('link[rel="stylesheet"]'))
-            .map((l) => (l as HTMLLinkElement).href)
-            .filter((h) => h.includes("/assets/") && h.endsWith(".css")),
-        );
+        const expectedAssetHrefs = await collectAssetStylesheetHrefs(page);
         for (const href of expectedAssetHrefs) {
           const status = assetResponses.get(href);
           if (status === undefined) {
@@ -207,10 +210,7 @@ async function main(): Promise<void> {
         contentHash,
         issues,
       });
-      const tag = status === "ok" ? "✓" : status === "thin" ? "~" : "✗";
-      console.log(
-        `  ${tag} ${id} (${width}×${height})${issues.length ? " — " + issues.join("; ") : ""}`,
-      );
+      logCheckResult(id, status, width, height, issues);
     }
   } finally {
     await browser.close();
@@ -261,11 +261,7 @@ async function main(): Promise<void> {
     );
     for (const g of variantsIdentical) console.log(`  ${g.join(" == ")}`);
   }
-  console.log(`Summary written to ${summaryPath}`);
-  if (bad > 0) process.exitCode = 1;
+  finishSummary(summaryPath, bad);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+runCli(main);

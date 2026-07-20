@@ -39,14 +39,18 @@
 import { chromium, type Page } from "@playwright/test";
 import fs from "node:fs";
 import path from "node:path";
-import { parseArgs } from "node:util";
 import { SCENARIOS, scenarioById } from "./parity-gallery-scenarios";
-import { neutralizeScrollTraps, VIEWPORT } from "./capture-shared";
+import {
+  defaultBundleDir,
+  neutralizeScrollTraps,
+  parseCommonCliArgs,
+  repoRootFromScriptUrl,
+  VIEWPORT,
+} from "./capture-shared";
 import { getFreePort, startNextDev } from "./dev-server";
 
-const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
-const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
-const DEFAULT_BUNDLE_DIR = path.resolve(REPO_ROOT, "../design-sync-bundle");
+const REPO_ROOT = repoRootFromScriptUrl(import.meta.url);
+const DEFAULT_BUNDLE_DIR = defaultBundleDir(REPO_ROOT);
 
 // ---------------------------------------------------------------------------
 // Target inventory — one entry per bundle card.
@@ -308,15 +312,10 @@ const TARGETS: ComponentTarget[] = [
 // ---------------------------------------------------------------------------
 
 function parseCliArgs() {
-  const { values } = parseArgs({
-    options: {
-      only: { type: "string" },
-      list: { type: "boolean", default: false },
-      "bundle-dir": { type: "string" },
-      headed: { type: "boolean", default: false },
-      help: { type: "boolean", default: false },
-    },
-  });
+  const { values, only, list, bundleDir, headed } = parseCommonCliArgs(
+    DEFAULT_BUNDLE_DIR,
+    { help: { type: "boolean", default: false } },
+  );
   if (values.help) {
     console.log(
       [
@@ -331,18 +330,7 @@ function parseCliArgs() {
     );
     process.exit(0);
   }
-  return {
-    only: values.only
-      ? (values.only as string).split(",").map((s) => s.trim())
-      : undefined,
-    list: values.list as boolean,
-    bundleDir: path.resolve(
-      (values["bundle-dir"] as string | undefined) ||
-        process.env.DESIGN_SYNC_BUNDLE_DIR ||
-        DEFAULT_BUNDLE_DIR,
-    ),
-    headed: values.headed as boolean,
-  };
+  return { only, list, bundleDir, headed };
 }
 
 // ---------------------------------------------------------------------------
