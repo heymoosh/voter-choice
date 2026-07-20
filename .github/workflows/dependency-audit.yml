@@ -1,0 +1,46 @@
+name: Dependency audit
+
+on:
+  schedule:
+    # Weekly per the Class C loop table (docs/maintenance-loops.md in
+    # simple-kanban): user data / auth / trust repos want a blocking audit.
+    # Schedule-only for now, NOT on pull_request: a baseline scan already
+    # found 32 existing advisories (12 high, 2 critical, all in dev/test
+    # tooling — vitest, ws, jsdom, puppeteer-core). Wiring this into
+    # pull_request today would fail every future PR out of the gate, which
+    # functions as a new merge gate rather than a scanner addition — see
+    # docs/maintenance.md. Promote to pull_request once the baseline is
+    # clean (or explicitly accepted) so the "high severity" bar is
+    # achievable, not permanently red.
+    - cron: "0 13 * * 1"
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    name: audit
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6
+
+      - name: Setup Node
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      # Fails the scheduled run (visible red X in Actions) on any
+      # high/critical advisory. Schedule-only — does not touch any PR or
+      # merge gate; see the `on:` block above for why.
+      - name: npm audit (high+)
+        run: npm audit --audit-level=high
