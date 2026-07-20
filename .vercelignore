@@ -1,0 +1,19 @@
+# Local-only artifacts that must never be part of a deploy upload.
+# .gitignore alone isn't reliably honored by `vercel deploy`'s file walk —
+# be explicit here too (found 2026-07-19: a stray 9.8GB local Postgres dump
+# at repo root inflated a plain `vercel deploy` to a 10GB payload and it
+# failed with EPIPE).
+*.pgdump
+*.pgdump.gz
+.claude/
+.claude-worktrees/
+.playwright-mcp/
+.playwright-cli/
+.lighthouseci/
+.keystone-canvas-refs/
+.polis-redesign-screens/
+node_modules/
+.git/
+.next/
+coverage/
+.jscpd-report/
