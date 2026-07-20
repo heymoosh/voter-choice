@@ -203,7 +203,7 @@ describe("RepCard money-gap scale — subject vs. median only", () => {
 });
 
 describe("RepCard evidence hierarchy (Round-4)", () => {
-  it("shows the compact legend under the collapsed money glance", () => {
+  it("shows the segmented mix bar, not a duplicated %/legend, in the collapsed glance", () => {
     const seat = mkSeat({
       candidate: {
         id: "federal-TEST1",
@@ -219,11 +219,11 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     });
     const { container } = renderCard(seat);
 
-    const legend = container.querySelector(".rc-money-legend");
-    expect(legend).not.toBeNull();
-    expect(legend?.textContent).toContain("15%");
-    expect(legend?.textContent).toContain("39%");
-    expect(legend?.textContent).toContain("46%");
+    // The glance keeps the thin segmented visual (rc-money-bars) + total $;
+    // the small/large/PAC %s render once, in the expanded FunderBars panel
+    // below, not duplicated here (Muxin, 2026-07-19).
+    expect(container.querySelector(".rc-money-bars")).not.toBeNull();
+    expect(container.querySelector(".rc-money-glance .rc-money-legend")).toBeNull();
   });
 
   it("moves 'see all votes' inside the align-band and drops the detached card-evidence row", () => {
@@ -264,7 +264,9 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
 
     const chip = container.querySelector(".rc-money-median .median-chip");
     expect(chip?.textContent).toContain("≈3×");
-    expect(chip?.textContent).toContain("the typical U.S. House campaign");
+    expect(chip?.textContent).toContain(
+      "what a typical U.S. House campaign raises",
+    );
   });
 
   it("verdict buttons are unaffected by the evidence-hierarchy changes", () => {

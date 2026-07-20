@@ -25,10 +25,12 @@ describe("MedianChip", () => {
     const { container } = render(
       withI18n(<MedianChip raised={4_200_000} peer={peer} />),
     );
-    // Canvas's .fp-peer pattern: "≈3× the typical U.S. House campaign" — not
-    // a context-free "3× median" (Round-4 ask, 2026-07-12).
+    // Canvas's .fp-peer pattern, made explicit about what the multiple
+    // measures: "≈3× what a typical U.S. House campaign raises" — not a
+    // context-free "3× median" (Round-4 ask, 2026-07-12; explicit "×
+    // what?" copy, Muxin 2026-07-19).
     expect(
-      screen.getByText(/the typical U.S. House campaign/),
+      screen.getByText(/what a typical U\.S\. House campaign raises/),
     ).toBeInTheDocument();
     expect(screen.getByText("3×")).toBeInTheDocument();
     expect(screen.queryByText("median")).toBeNull();
@@ -72,7 +74,7 @@ describe("MoneyGapScale", () => {
     expect(screen.getByText("MEDIAN")).toBeInTheDocument();
     expect(screen.getByText("$1.4M")).toBeInTheDocument(); // the median amount
     expect(
-      screen.getByText(/the typical U.S. House campaign/),
+      screen.getByText(/what a typical U\.S\. House campaign raises/),
     ).toBeInTheDocument();
     expect(container.querySelector(".mgap-medline")).not.toBeNull();
     // aria-label carries the plain-language reading for SR users

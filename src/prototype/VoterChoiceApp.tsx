@@ -544,7 +544,7 @@ const TRANSLATIONS = {
       moneyLegendPacs: 'PACs',
       // Median chip worded context (canvas's .fp-peer pattern) — replaces
       // the bare "N× median" with what the multiple is measured against.
-      medianChipContext: 'the typical {office} campaign',
+      medianChipContext: 'what a typical {office} campaign raises',
       keyVotesLabel: 'key votes',
       worthKeepingUndo: 'Worth keeping — undo',
       worthKeeping: 'Worth keeping',
@@ -652,7 +652,7 @@ const TRANSLATIONS = {
       pacGapPartial:
         "Named PACs above account for <b>{named}</b> of an estimated <b>{implied}</b> in total PAC money ({pct}%). The remaining <b>{remaining}</b> hasn't been editorially curated yet — it may include other issue-PACs we haven't profiled. Don't assume the named PACs are the whole picture.",
       industryBreakdown: 'Industry breakdown',
-      industryBreakdownSub: 'all contributions grouped by sector (individuals + PACs combined)',
+      industryBreakdownSub: 'share of itemized donations, by donor industry',
       outsideNamedSectors: 'Outside named sectors',
       outsideNamedSectorsNote:
         'Mostly small-dollar & individual donations that don’t fit a single sector tag. They’re counted in the Funding mix bar above.',

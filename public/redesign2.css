@@ -3503,40 +3503,6 @@
 .rep-card .rc-money-disclose .chev {
   transition: transform 0.15s;
 }
-/* Compact legend (dot + % + word) under the glance bars — Muxin's explicit
-   Round-4 extension BEYOND canvas: canvas's collapsed .money-line carries
-   no legend at all (screens.css comment "money-top bar + $ total +
-   .money-detail" — no fp-legend), so "what orange vs. red means" only
-   surfaced once the panel was expanded. Shrunk fp-legend pattern
-   (screens.css:460-467): swatch dot + bold % + one-word label. */
-.rep-card .rc-money-legend {
-  width: 100%;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px 14px;
-  font-size: 11px;
-  color: var(--ink-2);
-}
-.rep-card .rc-money-legend span {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-.rep-card .rc-money-legend i.dot {
-  width: 7px;
-  height: 7px;
-  border-radius: 2px;
-  flex-shrink: 0;
-}
-.rep-card .rc-money-legend i.dot.small {
-  background: var(--rc-keep);
-}
-.rep-card .rc-money-legend i.dot.large {
-  background: var(--gold);
-}
-.rep-card .rc-money-legend i.dot.pac {
-  background: var(--vote-red);
-}
 /* canvas's .money-detail/.md-who teaser sentence (screens.css:410-412) —
    same dashed-rule second-line treatment as .rc-money-median below, since
    both are "detail" rows stacked under the money-top glance row. */
