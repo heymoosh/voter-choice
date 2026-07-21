@@ -203,7 +203,7 @@ describe("RepCard money-gap scale — subject vs. median only", () => {
 });
 
 describe("RepCard evidence hierarchy (Round-4)", () => {
-  it("shows the compact legend under the collapsed money glance", () => {
+  it("shows the funding-mix percentages once — in the expanded panel, not duplicated in the collapsed glance", () => {
     const seat = mkSeat({
       candidate: {
         id: "federal-TEST1",
@@ -213,13 +213,21 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
         totalRaised: 4_200_000,
         fundingMix: { small: 15, large: 39, pac: 46 },
         donorSource: undefined,
-        donorCoalition: null,
+        donorCoalition: [
+          { label: "Health sector", amount: 800_000, isIssuePAC: false },
+        ],
         peerComparison: peer,
       },
     });
     const { container } = renderCard(seat);
 
-    const legend = container.querySelector(".rc-money-legend");
+    // The duplicated compact legend is gone from the collapsed glance button.
+    const glance = container.querySelector("button.rc-money-glance");
+    expect(glance?.querySelector(".rc-money-legend")).toBeNull();
+
+    // The percentages render once, in the expanded FunderBars panel.
+    const panel = container.querySelector(".cv2-disclose-body");
+    const legend = panel?.querySelector(".cv2-money-legend");
     expect(legend).not.toBeNull();
     expect(legend?.textContent).toContain("15%");
     expect(legend?.textContent).toContain("39%");
@@ -264,7 +272,9 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
 
     const chip = container.querySelector(".rc-money-median .median-chip");
     expect(chip?.textContent).toContain("≈3×");
-    expect(chip?.textContent).toContain("the typical U.S. House campaign");
+    expect(chip?.textContent).toContain(
+      "what a typical U.S. House campaign raises",
+    );
   });
 
   it("verdict buttons are unaffected by the evidence-hierarchy changes", () => {
@@ -272,6 +282,54 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
 
     expect(screen.getByText(/Worth keeping/)).toBeInTheDocument();
     expect(screen.getByText("Time to replace")).toBeInTheDocument();
+  });
+});
+
+// SPEC-3A Option A — the canvas-variant issue-PAC pill restores the legacy
+// "what this PAC advocates" line (.fp-pac-advocates), rendered honest-blank
+// when the data is absent (the advocates field is data-gated).
+describe("RepCard canvas issue-PAC advocates line", () => {
+  const seatWithPac = (advocates?: string) =>
+    mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: [
+          {
+            label: "Better Care PAC",
+            amount: 250_000,
+            isIssuePAC: true,
+            relevantToIssue: "healthcare_affordability",
+            advocates,
+          },
+        ],
+        peerComparison: peer,
+      },
+    });
+
+  it("renders the advocates line when p.advocates is present", () => {
+    const { container } = renderCard(
+      seatWithPac("Pushes for lower prescription drug prices"),
+    );
+    const line = container.querySelector(".fp-pac-wrap .fp-pac-advocates");
+    expect(line).not.toBeNull();
+    expect(line?.textContent).toContain(
+      "Pushes for lower prescription drug prices",
+    );
+  });
+
+  it("omits the advocates line when p.advocates is absent", () => {
+    const { container } = renderCard(seatWithPac(undefined));
+    expect(
+      container.querySelector(".fp-pac-wrap .fp-pac-advocates"),
+    ).toBeNull();
+    // The pill itself still renders — only the data-gated line is blank.
+    expect(container.querySelector(".fp-pac-wrap .fp-pac")).not.toBeNull();
   });
 });
 

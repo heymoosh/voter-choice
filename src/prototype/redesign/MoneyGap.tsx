@@ -245,7 +245,7 @@ export function MoneyGapScale({ subject, field, peer }: MoneyGapScaleProps) {
   const maxRaised = Math.max(...rows.map((r) => r.raised), peer.medianRaised);
   const axisMax = maxRaised * 1.04;
   const medianPct = (peer.medianRaised / axisMax) * 100;
-  const medianLabel = "the typical " + peer.office + " campaign";
+  const medianLabel = "what a typical " + peer.office + " campaign raises";
 
   return (
     <div className="mgap" data-palette="white">

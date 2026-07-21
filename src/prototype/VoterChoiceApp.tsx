@@ -544,13 +544,12 @@ const TRANSLATIONS = {
       moneyLegendPacs: 'PACs',
       // Median chip worded context (canvas's .fp-peer pattern) — replaces
       // the bare "N× median" with what the multiple is measured against.
-      medianChipContext: 'the typical {office} campaign',
+      medianChipContext: 'what a typical {office} campaign raises',
       keyVotesLabel: 'key votes',
       worthKeepingUndo: 'Worth keeping — undo',
       worthKeeping: 'Worth keeping',
       replacingWith: 'Replacing with {name} — change',
       timeToReplaceChange: 'Time to replace — change',
-      timeToReplaceCompare: "Time to replace — compare who's running →",
       timeToReplace: 'Time to replace',
       mixedRecordOnIssue: 'Mixed record on this issue',
       positionUnclearLimited: 'Position unclear — limited public record',
@@ -652,7 +651,7 @@ const TRANSLATIONS = {
       pacGapPartial:
         "Named PACs above account for <b>{named}</b> of an estimated <b>{implied}</b> in total PAC money ({pct}%). The remaining <b>{remaining}</b> hasn't been editorially curated yet — it may include other issue-PACs we haven't profiled. Don't assume the named PACs are the whole picture.",
       industryBreakdown: 'Industry breakdown',
-      industryBreakdownSub: 'all contributions grouped by sector (individuals + PACs combined)',
+      industryBreakdownSub: 'share of itemized donations, by donor industry',
       outsideNamedSectors: 'Outside named sectors',
       outsideNamedSectorsNote:
         'Mostly small-dollar & individual donations that don’t fit a single sector tag. They’re counted in the Funding mix bar above.',
@@ -1156,13 +1155,12 @@ const TRANSLATIONS = {
       moneyLegendSmall: 'pequeños',
       moneyLegendLarge: 'grandes',
       moneyLegendPacs: 'PACs',
-      medianChipContext: 'la campaña típica de {office}',
+      medianChipContext: 'lo que recauda la campaña típica de {office}',
       keyVotesLabel: 'votos clave',
       worthKeepingUndo: 'Vale la pena mantener — deshacer',
       worthKeeping: 'Vale la pena mantener',
       replacingWith: 'Reemplazando con {name} — cambiar',
       timeToReplaceChange: 'Hora de reemplazar — cambiar',
-      timeToReplaceCompare: 'Hora de reemplazar — comparar quién se postula →',
       timeToReplace: 'Hora de reemplazar',
       mixedRecordOnIssue: 'Registro mixto en este tema',
       positionUnclearLimited: 'Postura poco clara — registro público limitado',
@@ -1264,7 +1262,7 @@ const TRANSLATIONS = {
       pacGapPartial:
         'Los PACs nombrados arriba representan <b>{named}</b> de un estimado de <b>{implied}</b> en dinero total de PACs ({pct}%). Los <b>{remaining}</b> restantes aún no han sido curados editorialmente — pueden incluir otros PACs de temas que no hemos perfilado. No asumas que los PACs nombrados son la imagen completa.',
       industryBreakdown: 'Desglose por industria',
-      industryBreakdownSub: 'todas las contribuciones agrupadas por sector (individuos + PACs combinados)',
+      industryBreakdownSub: 'proporción de donaciones detalladas, por industria del donante',
       outsideNamedSectors: 'Fuera de los sectores nombrados',
       outsideNamedSectorsNote:
         'Principalmente donaciones individuales y de pequeña cuantía que no encajan en una sola etiqueta de sector. Se cuentan en la barra de mezcla de financiamiento de arriba.',
@@ -2954,6 +2952,9 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
                     <span className="sw" style={{ background: issuePACSwatch(relevantIssue) }} />
                     <b>{formatDollars(p.amount)}</b> {p.label}
                   </span>
+                  {p.advocates && (
+                    <div className="fp-pac-advocates">{p.advocates}</div>
+                  )}
                   {showAlignment && (
                     <div className={"fp-pac-flag " + (conflictsWithUser ? 'conflict' : 'align')}>
                       <span className="ic">{conflictsWithUser ? '⚠' : '✓'}</span>

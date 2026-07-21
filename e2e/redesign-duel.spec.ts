@@ -41,7 +41,7 @@ test.describe("head-to-head candidate duel", () => {
     // The House seat is active first. Its "Time to replace" CTA now leads into
     // the duel (the seat has challengers), not an inline verdict toggle.
     const cta = page.getByTestId("open-duel");
-    await expect(cta).toContainText("compare who's running");
+    await expect(cta).toContainText("Time to replace");
     await cta.click();
 
     // Full-screen duel: incumbent column + challenger column + the switcher.
