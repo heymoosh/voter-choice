@@ -2857,3 +2857,15 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
     - `react-dom` 19.1.0 -> 19.2.8 (was #420) — `test`+`e2e` red
     - `@vitejs/plugin-react` 5.1.4 -> 6.0.3 (was #421) — `test`+`e2e` red, major
 - STATUS: Backlog
+
+**[P2] Evaluate removing the parity-gate check entirely (is it earning its keep?)**
+- ORIGIN: 2026-07-21 — Muxin: increasingly skeptical the parity-gate is doing us any favors. As a *required* status check on `main` it now blocks legitimate merges whenever copy or visuals intentionally change — which is most design work — and the references go stale the moment we ship a redesign, so the gate flags the intended change as a failure. Two concrete instances today (both had ALL real checks — `test`/`e2e`/`mutation`/`check`/`review-gallery` — green, blocked only by parity-gate, and were admin-merged past it):
+  - #413 fix(copy): privacy "never stored" trust copy — parity-gate red purely because the hero label + CTA subtext strings changed vs the reference screenshots.
+  - #414 feat(repcard): approved money-section redesign — parity-gate red because the redesign *intentionally* changes the card visuals; the reference is the OLD design.
+- CONTEXT / prior known issues (see memory `parity_gate_trust_model`, `keystone_gap_reassessment`): the gate has a documented history of a crop false-FAIL (fixed #261), a visual-only false-PASS on ~11 scenarios (passes different-but-similar pages), and a self-reference crash (fixed #412). The "flip to required" happened at some point — it is now in `required_status_checks` on `main` alongside `test`/`e2e`/`mutation`.
+- TASK: decide the gate's fate. Options to weigh:
+  - (a) REMOVE entirely — drop `parity-gate` from branch-protection required checks + delete/retire the workflow + `scripts/design/parity-gate.ts` and its scenario/reference machinery.
+  - (b) DEMOTE to non-required (advisory) — keep it running for signal but stop it blocking merges; revisit references opportunistically.
+  - (c) KEEP but fix the workflow so references auto-regenerate as part of an intentional-design PR (so an approved visual change updates its own baseline instead of failing).
+- DECISION NEEDED (Muxin): which of (a)/(b)/(c). Leaning toward remove/demote given how often it false-blocks real design work.
+- STATUS: Backlog
