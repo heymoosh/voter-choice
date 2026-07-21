@@ -823,12 +823,6 @@ export function RepCard({
         <ProvBadge researched={isResearchedBasis(seat)} />
       </div>
 
-      <AttendanceBand2
-        attendance={seat.attendance}
-        researched={seat.researched}
-        level={seat.level}
-      />
-
       {seat.researched ? (
         <ResearchedPositions
           positions={seat.positions}
@@ -926,22 +920,6 @@ export function RepCard({
               </>
             )}
           </span>
-          {cand.fundingMix && (
-            <span className="rc-money-legend">
-              <span>
-                <i className="dot small" />
-                {cand.fundingMix.small}% {t("repCard.moneyLegendSmall")}
-              </span>
-              <span>
-                <i className="dot large" />
-                {cand.fundingMix.large}% {t("repCard.moneyLegendLarge")}
-              </span>
-              <span>
-                <i className="dot pac" />
-                {cand.fundingMix.pac}% {t("repCard.moneyLegendPacs")}
-              </span>
-            </span>
-          )}
           <MoneyTeaser
             fundingMix={cand.fundingMix}
             donorCoalition={cand.donorCoalition}
@@ -965,12 +943,20 @@ export function RepCard({
           className="cv2-disclose-body"
           hidden={!moneyOpen}
         >
+          <FunderBars
+            donorCoalition={cand.donorCoalition}
+            totalRaised={cand.totalRaised}
+            donorSource={cand.donorSource}
+            fundingMix={cand.fundingMix}
+            userIssues={userIssues}
+            variant="canvas"
+          />
           {/* "Raised vs. the median" — subject vs. the median axis ONLY.
               Whole-field challenger rows move to the head-to-head duel
               ("Everyone running for this seat") — the incumbent's own card
               is about the incumbent, not every FEC filer for the seat
               (Round-4 ask, 2026-07-12). Renders nothing when peerComparison
-              is null, so the dollar-only FunderBars below stays the honest
+              is null, so the dollar-only FunderBars above stays the honest
               fallback. */}
           {cand.peerComparison != null &&
             typeof cand.totalRaised === "number" && (
@@ -983,16 +969,14 @@ export function RepCard({
                 peer={cand.peerComparison}
               />
             )}
-          <FunderBars
-            donorCoalition={cand.donorCoalition}
-            totalRaised={cand.totalRaised}
-            donorSource={cand.donorSource}
-            fundingMix={cand.fundingMix}
-            userIssues={userIssues}
-            variant="canvas"
-          />
         </div>
       </div>
+
+      <AttendanceBand2
+        attendance={seat.attendance}
+        researched={seat.researched}
+        level={seat.level}
+      />
 
       {/* The old inline "candidates simply listed below the rep"
           (ChallengersStrip) is retired: choosing "Time to replace" now opens
@@ -1077,9 +1061,7 @@ export function RepCard({
                       ? successor
                         ? t("repCard.replacingWith", { name: successor.name })
                         : t("repCard.timeToReplaceChange")
-                      : hasSelectableChallengers
-                        ? t("repCard.timeToReplaceCompare")
-                        : t("repCard.timeToReplace")}
+                      : t("repCard.timeToReplace")}
                   </span>
                 </button>
               </div>

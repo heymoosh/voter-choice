@@ -163,6 +163,16 @@ async function mockSeatRaceDataMedian(page: Page): Promise<void> {
               amount: 2_000_000,
             },
             { label: "PACs", percent: 60, amount: 3_000_000 },
+            // Named issue-PAC carrying an `advocates` string so the
+            // design-sync `rep-card-expanded` extraction actually renders
+            // the restored `.fp-pac-advocates` line (SPEC-3A Option A).
+            {
+              label: "Better Care Action Fund",
+              amount: 500_000,
+              isIssuePAC: true,
+              relevantToIssue: "healthcare_affordability",
+              advocates: "Lower prescription drug prices & expanded coverage",
+            },
           ],
           donorSource: { name: "fec", url: "https://www.fec.gov/" },
           totalRaised: 5_000_000,

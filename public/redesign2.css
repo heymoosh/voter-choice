@@ -3692,6 +3692,15 @@
   gap: 4px;
   max-width: 100%;
 }
+/* "what they advocate" line inside the compact canvas PAC (was legacy-only).
+   Sits between the pill and the conflict flag. */
+.rep-card .fp-pac-wrap .fp-pac-advocates {
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+  padding: 0 4px;
+  text-wrap: pretty;
+}
 .rep-card .fp-pac {
   font-size: 12px;
   color: var(--ink-2);
