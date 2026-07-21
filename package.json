@@ -83,7 +83,7 @@
     "@vitest/coverage-v8": "3.2.1",
     "drizzle-kit": "0.31.10",
     "eslint": "9.39.4",
-    "eslint-config-next": "15.2.4",
+    "eslint-config-next": "16.2.11",
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-complexity": "1.0.2",
     "eslint-plugin-prettier": "5.4.1",
