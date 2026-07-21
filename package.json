@@ -87,7 +87,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-complexity": "1.0.2",
     "eslint-plugin-prettier": "5.4.1",
-    "jscpd": "4.0.5",
+    "jscpd": "5.0.12",
     "jsdom": "25.0.1",
     "pg": "8.20.0",
     "prettier": "3.5.3",
