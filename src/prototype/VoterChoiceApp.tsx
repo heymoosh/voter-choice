@@ -235,7 +235,7 @@ const TRANSLATIONS = {
       howItWorksSubtext: 'Three steps. A few minutes. No account.',
       step1Title: 'Enter your address',
       step1Desc:
-        "We pull your representative's history based on address. The address never leaves your device — we look up your representative and discard it.",
+        "We pull your representative's history based on address. We look up your representative and discard it — your address is never stored.",
       step2Title: 'See what they actually did',
       step2Desc:
         "Voting record on the issues you care about. Donor list. How much they raised and from whom. No news articles, no ads — just the record.",
@@ -665,7 +665,7 @@ const TRANSLATIONS = {
         'Voter Choice shows you how your <b>senators and representative</b> actually voted on the issues <i>you</i> choose — and who funded them — then turns your verdicts into a <b>scorecard for the polls</b>.',
       addressLabel: 'Your registered address',
       addressWhyAria: 'Why we ask for your address',
-      staysOnDevice: 'Stays on this device',
+      staysOnDevice: 'Never stored',
       addressPlaceholder: '1100 Congress Ave, Austin, TX 78701',
       submitBtn: 'Pull my representatives →',
       unsureLede: 'Unsure?',
@@ -794,7 +794,7 @@ const TRANSLATIONS = {
       ctaHeading: 'Politicians want one thing: to get re-elected.',
       ctaBody: 'Make that depend on the work — not the war chest. The leverage is yours, and it’s on the ballot.',
       ctaButton: 'Pull my representatives',
-      ctaSub: 'No account · no tracking · your address never leaves your device',
+      ctaSub: 'No account · no tracking · your address is never stored',
     },
     orientation: {
       kick: 'Before you begin',
@@ -849,7 +849,7 @@ const TRANSLATIONS = {
       howItWorksSubtext: 'Tres pasos. Unos minutos. Sin cuenta.',
       step1Title: 'Ingresa tu dirección',
       step1Desc:
-        'Obtenemos el historial de tu representante según tu dirección. Tu dirección no sale de tu dispositivo — consultamos tu representante y la descartamos.',
+        'Obtenemos el historial de tu representante según tu dirección. Consultamos tu representante y la descartamos — tu dirección nunca se almacena.',
       step2Title: 'Mira lo que realmente hicieron',
       step2Desc:
         'Registro de votación sobre los temas que te importan. Lista de donantes. Cuánto recaudaron y de quién. Sin artículos, sin anuncios — solo el registro.',
@@ -1277,7 +1277,7 @@ const TRANSLATIONS = {
         'Voter Choice te muestra cómo votaron realmente tus <b>senadores y tu representante</b> en los temas que <i>tú</i> eliges — y quién los financió — y convierte tus veredictos en una <b>tarjeta para las urnas</b>.',
       addressLabel: 'Tu dirección registrada',
       addressWhyAria: 'Por qué pedimos tu dirección',
-      staysOnDevice: 'Se queda en este dispositivo',
+      staysOnDevice: 'Nunca se almacena',
       addressPlaceholder: '1100 Congress Ave, Austin, TX 78701',
       submitBtn: 'Consultar mis representantes →',
       unsureLede: '¿No estás seguro/a?',
@@ -1406,7 +1406,7 @@ const TRANSLATIONS = {
       ctaHeading: 'Los políticos quieren una cosa: ser reelegidos.',
       ctaBody: 'Haz que eso dependa del trabajo — no del fondo de campaña. La ventaja es tuya, y está en la boleta.',
       ctaButton: 'Buscar mis representantes',
-      ctaSub: 'Sin cuenta · sin rastreo · tu dirección nunca sale de tu dispositivo',
+      ctaSub: 'Sin cuenta · sin rastreo · tu dirección nunca se almacena',
     },
     orientation: {
       kick: 'Antes de empezar',
@@ -4588,7 +4588,7 @@ function ProfileResumeModal({ open, onClose, onResume }) {
         </header>
 
         <p className="be-lede">
-          If you saved your profile from a previous session, drop the .txt here. Your priorities and draft picks restore. Your address is still kept on this device only.
+          If you saved your profile from a previous session, drop the .txt here. Your priorities and draft picks restore. Your address is never stored on our servers.
         </p>
 
         <div className="pr-dropzone">
