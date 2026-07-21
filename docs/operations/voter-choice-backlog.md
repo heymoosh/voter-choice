@@ -2828,3 +2828,19 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
 - STATUS: Backlog
 - GOAL_CONDITION: a scheduled trigger exists; a first run against the last week of merges produces a sane, small card set (or zero, if nothing drifted).
 <!-- card-id: 549a533d-75ae-40ea-a6c0-16ef48c1f919 -->
+
+**[P2] Evaluate the 9 closed Dependabot version bumps before taking any of them**
+- ORIGIN: 2026-07-21 — 9 Dependabot PRs sat with red CI for days with nobody actually evaluating whether the bump was safe, worth fixing, or worth skipping; closed unevaluated rather than let them keep rotting silently (a closed, unreviewed PR is worse than no PR — it looks tracked without being acted on). Queuing the evaluation here instead of relying on Dependabot's own PRs as the tracking mechanism.
+- TASK: for each package below, on its own small branch — bump to the target version, run `npm run check` (lint + tsc + full test suite), skim the release notes for the version range, then decide: (a) safe -> open a PR and merge; (b) breaking but a quick fix -> fix it in the same PR; (c) not worth it right now -> leave it (Dependabot will re-propose later) or add an `ignore:` rule in `.github/dependabot.yml` if this major version specifically isn't worth chasing.
+- Queued bumps (closed PR # for reference; all failed `test`/`e2e` as of 2026-07-21 except where noted):
+  - `typescript` 5.9.3 -> 7.0.2 (was #402) — 2 major versions
+  - `@vitest/coverage-v8` 3.2.1 -> 4.1.10 (was #403) — major version
+  - `prettier` 3.5.3 -> 3.9.6 (was #404) — looked like a minor bump but still failed test/e2e, worth checking why
+  - `jscpd` 4.0.5 -> 5.0.12 (was #407) — major version, devDependency (duplication scanner only)
+  - `eslint-config-next` 15.2.4 -> 16.2.11 (was #408) — major version
+  - `actions/checkout` 6 -> 7 (was #397) — GitHub Action; all real checks passed once the parity-gate crash (fixed #412) stopped blocking it
+  - `actions/setup-node` 6 -> 7 (was #396) — same, all real checks passed
+  - `actions/upload-artifact` 4.6.2 -> 7.0.1 (was #398) — same, all real checks passed
+  - `dorny/paths-filter` 3.0.3 -> 4.0.2 (was #395) — same, all real checks passed
+- NOTE: the 4 GitHub Actions bumps are likely low-effort to re-verify and take — they were CI-clean except for the now-fixed parity-gate self-reference crash. The 5 npm/yarn ones have genuine test/e2e failures needing real investigation.
+- STATUS: Backlog
