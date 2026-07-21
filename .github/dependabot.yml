@@ -1,0 +1,24 @@
+# Dependency-update config for a Class C (user data / auth / trust) repo per
+# docs/maintenance.md and the shared rubric at
+# simple-kanban docs/maintenance-loops.md ("Dependency scan: weekly" row).
+#
+# This covers version-update PRs only. Security-alert-driven PRs
+# ("Dependabot security updates") are a separate repo-settings toggle
+# (Settings > Code security > Dependabot) — currently OFF; see docs/maintenance.md
+# and the PR body for why this audit didn't flip it itself.
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    labels:
+      - "dependencies"
