@@ -6,10 +6,21 @@ name: Dependency Audit
 #
 # NOT yet added to branch protection's required status checks — that's an
 # admin-only repo-settings action left to Muxin (same convention as other
-# branch-protection edits in this org). See this workflow's introducing PR
-# body for why: at introduction time, `npm audit --omit=dev --audit-level=high`
-# already reports pre-existing high-severity findings with no fix available
-# yet, so making this required today would block every PR.
+# branch-protection edits in this org).
+#
+# The baseline IS clean as of 2026-07-20: the high-severity findings this
+# workflow surfaced at introduction were fixed in the same PR — form-data CRLF
+# injection (GHSA-hmw2-7cc7-3qxx) via `npm audit fix`, and playwright's missing
+# SSL verification on browser download (GHSA-7mvr-c777-76hp) by moving
+# @playwright/test 1.52.0 -> 1.61.1. `npm audit --omit=dev --audit-level=high`
+# now exits 0, so this check is safe to make required whenever Muxin makes that
+# repo-settings edit.
+#
+# Two moderate findings remain, deliberately: postcss <8.5.10
+# (GHSA-qx2v-qp2m-jg93) is reachable only through next's bundled copy, and npm's
+# only offered fix is a downgrade to next@9.3.3 — a multi-major breaking change
+# to clear a moderate. Both sit below this gate's `high` threshold and clear
+# when next ships a bumped postcss.
 
 on:
   pull_request:

@@ -77,11 +77,22 @@ for exact scope.
    - `.github/dependabot.yml` — npm + github-actions ecosystems, weekly.
    - `.github/workflows/dependency-audit.yml` — `npm audit --omit=dev --audit-level=high`
      on PR/push/weekly schedule. **Not wired into required status checks** (branch
-     protection edits are admin-gated, left to Muxin per standing convention) and **will
-     show red today** — 6 pre-existing high-severity findings have no fix available yet
-     (playwright TLS-verification advisory, an `@anthropic-ai/sdk` transitive `form-data`
-     advisory via `@types/node-fetch`). Flagged in the PR body for her call: accept as
-     known/tracked risk (allowlist) vs. treat as blocking today.
+     protection edits are admin-gated, left to Muxin per standing convention), but the
+     baseline **is green as of 2026-07-20** — the high-severity findings this job surfaced
+     at introduction were fixed in this same PR rather than allowlisted:
+     - `form-data` CRLF injection (GHSA-hmw2-7cc7-3qxx), transitive via
+       `@anthropic-ai/sdk` → `@types/node-fetch` — cleared by `npm audit fix`,
+       lockfile-only, no direct dependency changed.
+     - `playwright` installing browsers without verifying the SSL certificate
+       (GHSA-7mvr-c777-76hp) — cleared by moving `@playwright/test` 1.52.0 → 1.61.1,
+       pinned exactly to match every other devDependency in this repo.
+
+     Two **moderate** findings remain and are deliberately not fixed: `postcss` <8.5.10
+     (GHSA-qx2v-qp2m-jg93) is reachable only through `next`'s bundled copy, and npm's only
+     offered remedy is a downgrade to `next@9.3.3` — a multi-major breaking change to clear
+     a moderate. They sit below this gate's `high` threshold and clear when `next` ships a
+     bumped `postcss`. So there is no allowlist and no accepted-risk decision to make: the
+     gate is honestly green, and is safe to make a required check.
    - `.github/workflows/security-review-required.yml` — the deterministic half of the
      "mandatory pre-merge on sensitive PRs" rule: detects PRs touching
      `src/app/api/**`, `db/**`, `.env*`, or anything matching `*secret*`/`*auth*`/
