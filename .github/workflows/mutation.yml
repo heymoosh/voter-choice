@@ -82,21 +82,41 @@ jobs:
               - 'tsconfig.stryker.json'
               - '.github/workflows/mutation.yml'
 
-      - name: Note skip when no scoped changes
-        if: github.event_name == 'pull_request' && steps.filter.outputs.scoped == 'false'
+      - name: Decide whether to run Stryker
+        id: decide
+        # Single source of truth for every downstream step's condition, so
+        # the run-gate and its "Note skip" negation can never drift apart.
+        # A version-pin bump inside this file (Dependabot's github_actions
+        # ecosystem) trips the '.github/workflows/mutation.yml' scoped-path
+        # filter above but cannot change what a mutant does — exclude that
+        # actor. A human editing this workflow still gets full PR-time
+        # coverage. Non-PR events (nightly cron, workflow_dispatch) are an
+        # explicit signal to always do the heavy work.
         run: |
-          echo "::notice::No scoped paths changed in this PR; Stryker skipped. Mutation gate reports passed."
-          echo "PR filter covers logic paths only (see header comment); nightly runs mutate the full stryker.config.json scope."
+          echo "should_run=${{ github.event_name != 'pull_request' || (steps.filter.outputs.scoped == 'true' && github.actor != 'dependabot[bot]') }}" >> "$GITHUB_OUTPUT"
+          echo "event_name=${{ github.event_name }}"
+          echo "actor=${{ github.actor }}"
+          echo "scoped=${{ steps.filter.outputs.scoped }}"
+
+      - name: Note skip when Stryker did not run
+        if: github.event_name == 'pull_request' && steps.decide.outputs.should_run == 'false'
+        run: |
+          echo "::notice::Stryker skipped. Mutation gate reports passed."
+          if [ "${{ steps.filter.outputs.scoped }}" == "true" ]; then
+            echo "Reason: scoped paths changed, but the actor is dependabot[bot] — a pinned-action version bump cannot affect a mutant."
+          else
+            echo "Reason: no scoped paths changed in this PR (see header comment); nightly runs mutate the full stryker.config.json scope."
+          fi
 
       - name: Setup Node
-        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        if: steps.decide.outputs.should_run == 'true'
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
-        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        if: steps.decide.outputs.should_run == 'true'
         run: npm ci
 
       - name: Sync generated ballot prompt module
@@ -104,18 +124,18 @@ jobs:
         # hooks, so the `pretest` hook (which generates the ballot prompt
         # module imported by scoped tests) does not fire automatically.
         # Run it explicitly to avoid spurious import failures.
-        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        if: steps.decide.outputs.should_run == 'true'
         run: npm run sync:ballot-prompt
 
       - name: Run Stryker mutation testing
-        if: github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true'
+        if: steps.decide.outputs.should_run == 'true'
         run: npx stryker run
 
       - name: Upload mutation report
         # Always upload — even on failure — so reviewers can inspect the
         # HTML report when the threshold gate trips. Only upload when
         # Stryker actually ran (i.e., not on a skipped PR).
-        if: always() && (github.event_name != 'pull_request' || steps.filter.outputs.scoped == 'true')
+        if: always() && steps.decide.outputs.should_run == 'true'
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: mutation-report
