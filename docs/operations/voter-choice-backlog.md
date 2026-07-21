@@ -2843,4 +2843,17 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
   - `actions/upload-artifact` 4.6.2 -> 7.0.1 (was #398) — same, all real checks passed
   - `dorny/paths-filter` 3.0.3 -> 4.0.2 (was #395) — same, all real checks passed
 - NOTE: the 4 GitHub Actions bumps are likely low-effort to re-verify and take — they were CI-clean except for the now-fixed parity-gate self-reference crash. The 5 npm/yarn ones have genuine test/e2e failures needing real investigation.
+- SECOND BATCH — closed unevaluated 2026-07-21 to avoid a 10-PR merge-queue pileup (Muxin's call). Same evaluate-then-decide task applies. CI state captured at close (`audit` fails on ALL ten — it's a pre-existing/flaky `npm audit` job, NOT the bump, so ignore it as signal; judge on `test`/`e2e`):
+  - LIKELY SAFE — real checks (`test`+`e2e`) GREEN, only `audit` red:
+    - `@tailwindcss/postcss` 4.2.1 -> 4.3.3 (was #415) — minor
+    - `@aws-sdk/client-textract` 3.1055.0 -> 3.1092.0 (was #416) — patch
+    - `eslint-plugin-prettier` 5.4.1 -> 5.5.6 (was #418) — minor, devDependency
+    - `@googlemaps/js-api-loader` 2.0.2 -> 2.1.1 (was #424) — minor
+  - REAL FAILURES — `test` (and/or `e2e`) red, need investigation:
+    - `prettier` 3.5.3 -> 3.9.6 (was #422) — `test` red (formatting churn likely; same package as first-batch #404)
+    - `eslint-config-next` 15.2.4 -> 16.2.11 (was #423) — `test` red, major (dup of first-batch #408)
+    - `react` + `@types/react` (was #417) — `test`+`e2e` red
+    - `eslint` 9.39.4 -> 10.7.0 (was #419) — `test`+`e2e` red, major
+    - `react-dom` 19.1.0 -> 19.2.8 (was #420) — `test`+`e2e` red
+    - `@vitejs/plugin-react` 5.1.4 -> 6.0.3 (was #421) — `test`+`e2e` red, major
 - STATUS: Backlog
