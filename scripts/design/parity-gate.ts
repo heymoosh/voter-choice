@@ -28,8 +28,7 @@
 //       in .keystone-canvas-refs/, with a COPY-TOLERANT ratio threshold: both
 //       images are downscaled to a common small width before diffing (see
 //       "why downscale" below), then compared with the anti-aliasing-aware
-//       pixelmatch algorithm @playwright/test already vendors (no new
-//       dependency — see "reusing playwright's own comparator" below).
+//       `pixelmatch` algorithm (see "pixelmatch" below).
 //
 //   (c) CONTENT — verbatim substring assertions (CONTENT_PROBES below) that
 //       specific canvas copy actually appears in the rendered page's text.
@@ -85,30 +84,31 @@
 // above is what catches structural regressions precisely.
 //
 // ---------------------------------------------------------------------------
-// Reusing playwright's own comparator (no new dependency)
+// pixelmatch
 // ---------------------------------------------------------------------------
-// @playwright/test's own `expect(page).toHaveScreenshot()` is backed by a
-// vendored copy of Mapbox's pixelmatch (node_modules/playwright-core/lib/
-// third_party/pixelmatch.js) — the exact same anti-aliasing-aware algorithm
-// the standalone `pixelmatch` npm package ships. It isn't part of
-// playwright-core's public `exports` map, so it can't be imported by package
-// specifier — this script resolves it by absolute file path instead (which
-// bypasses the "exports" gate; that gate only restricts bare-specifier
-// resolution, not direct-path requires). PNG decode/resize uses
-// `@napi-rs/canvas`, already a normal `dependencies` entry in package.json
-// (used elsewhere for PDF/OCR work) — no pngjs needed either.
+// Anti-aliasing-aware pixel diff, same algorithm @playwright/test's own
+// `expect(page).toHaveScreenshot()` uses internally. This used to reuse that
+// internal copy by reaching into playwright-core's package directory by
+// absolute path (node_modules/playwright-core/lib/third_party/pixelmatch.js)
+// to avoid a new dependency — but that path was never part of
+// playwright-core's public `exports` map, and a 1.52.0->1.61.1 upgrade
+// bundled it away entirely (playwright-core now ships opaque bundle files
+// like utilsBundle.js instead of individual vendor files), breaking every
+// PR that touched a Keystone-scoped path. Depending on the standalone
+// `pixelmatch` package directly avoids relying on another package's
+// internal, unversioned file layout. PNG decode/resize uses `@napi-rs/canvas`,
+// already a normal `dependencies` entry in package.json (used elsewhere for
+// PDF/OCR work) — no pngjs needed either.
 
 import { chromium, type Page } from "@playwright/test";
 import { createCanvas, loadImage, ImageData } from "@napi-rs/canvas";
-import { createRequire } from "node:module";
+import pixelmatch from "pixelmatch";
 import fs from "node:fs";
 import path from "node:path";
 import { parseArgs } from "node:util";
 import { SCENARIOS, type Scenario } from "./parity-gallery-scenarios";
 import { getFreePort, startNextDev, type AppInstance } from "./dev-server";
 import { computeVerdict } from "./gate-verdict";
-
-const require = createRequire(import.meta.url);
 
 const SCRIPT_DIR = path.dirname(new URL(import.meta.url).pathname);
 const REPO_ROOT = path.resolve(SCRIPT_DIR, "../..");
@@ -136,38 +136,17 @@ const DEFAULT_MAX_DIFF_RATIO = 0.18;
  *  softening the downscale step introduces. */
 const PIXELMATCH_THRESHOLD = 0.15;
 
-// ---------------------------------------------------------------------------
-// playwright-core internals reuse (pixelmatch)
-// ---------------------------------------------------------------------------
-
+/** Matches pixelmatch's own signature — kept as an explicit param type on
+ *  runVisualCheck below (rather than calling the import directly) so tests
+ *  can inject a fake. */
 type PixelmatchFn = (
-  img1: Uint8ClampedArray | Uint8Array | Buffer,
-  img2: Uint8ClampedArray | Uint8Array | Buffer,
-  output: Uint8ClampedArray | Uint8Array | Buffer | null,
+  img1: Uint8ClampedArray | Uint8Array,
+  img2: Uint8ClampedArray | Uint8Array,
+  output: Uint8ClampedArray | Uint8Array | void,
   width: number,
   height: number,
   options?: { threshold?: number; includeAA?: boolean },
 ) => number;
-
-function loadPixelmatch(): PixelmatchFn {
-  try {
-    const pkgPath = require.resolve("playwright-core/package.json");
-    const pixelmatchPath = path.join(
-      path.dirname(pkgPath),
-      "lib/third_party/pixelmatch.js",
-    );
-    return require(pixelmatchPath) as PixelmatchFn;
-  } catch (err) {
-    throw new Error(
-      "Could not load playwright-core's vendored pixelmatch (internal path " +
-        "lib/third_party/pixelmatch.js). This reuses @playwright/test's own " +
-        "screenshot-diff dependency rather than adding a new one; if a " +
-        "playwright-core upgrade moved the file, update the path here or " +
-        "add the standalone `pixelmatch` package instead. Original error: " +
-        String(err),
-    );
-  }
-}
 
 // ---------------------------------------------------------------------------
 // CLI args
@@ -2354,8 +2333,6 @@ async function main(): Promise<void> {
     );
     process.exit(1);
   }
-
-  const pixelmatch = loadPixelmatch();
 
   let instance: AppInstance;
   if (args.url) {

@@ -60,6 +60,7 @@
     "drizzle-orm": "0.45.2",
     "next": "15.5.20",
     "pdfjs-dist": "5.7.284",
+    "pixelmatch": "7.2.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "tesseract.js": "7.0.0"
