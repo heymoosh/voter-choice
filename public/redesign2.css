@@ -160,20 +160,134 @@
   font-style: italic;
 }
 
+/* Open seat (v3 §6) — a neutral fact, not a warning; navy tint distinguishes
+   it from the de-emphasized grey .seat-not-up pill it's always paired with. */
+.seat-not-seeking-reelection {
+  background: var(--civic-soft);
+  color: var(--civic);
+}
+
+/* ---- open-seat verdict slot (replaces keep/replace when
+   cand.seekingReelection2026 === false) ---- */
+.rep-card .open-band {
+  margin: 20px 18px 0;
+  padding: 13px 16px 14px;
+  border: 1px solid oklch(0.86 0.045 262);
+  background: var(--civic-soft);
+  border-radius: 12px;
+}
+.rep-card .open-band .ob-kick {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--civic);
+  margin-bottom: 5px;
+}
+.rep-card .open-band p {
+  font-size: 13.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 0;
+}
+.rep-card .open-band .src {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 7px;
+}
+.rep-card .btn-open {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: calc(100% - 36px);
+  padding: 16px 14px;
+  margin: 12px 18px 0;
+  border-radius: 12px;
+  border: 1.5px solid transparent;
+  background: var(--civic);
+  color: #fff;
+  cursor: pointer;
+  font-family: var(--sans);
+  min-height: 44px;
+}
+.rep-card .btn-open:hover {
+  background: var(--civic-2);
+}
+.rep-card .btn-open:focus-visible {
+  outline: 2px solid var(--civic);
+  outline-offset: 2px;
+}
+.rep-card .btn-open b {
+  font-size: 15.5px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rep-card .btn-open small {
+  font-size: 11.5px;
+  opacity: 0.85;
+  font-weight: 400;
+}
+.rep-card .open-picked {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 20px 18px 0;
+  padding: 14px 16px;
+  border: 1.5px solid var(--rc-keep);
+  background: var(--rc-keep-soft);
+  border-radius: 12px;
+  font-size: 14px;
+  color: var(--ink);
+}
+.rep-card .open-picked .ck {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 2px solid var(--rc-keep);
+  color: var(--rc-keep);
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 700;
+  flex: 0 0 auto;
+}
+.rep-card .open-picked b {
+  font-family: var(--serif);
+  font-weight: 600;
+}
+.rep-card .open-picked .chg {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--civic);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+  white-space: nowrap;
+  background: none;
+  border: none;
+  padding: 6px 2px;
+  min-height: 44px;
+}
+.rep-card .open-picked .chg:focus-visible {
+  outline: 2px solid var(--civic);
+  outline-offset: 2px;
+}
+
 /* Grey the whole rep card + its seat strip for a seat not on the 2026 ballot. */
 .rep-card.not-up-2026 {
   background: var(--tag-bg);
 }
 .rep-card.not-up-2026 .seat-strip {
   background: var(--tag-bg);
-}
-
-/* Scorecard pane row for a non-2026 rep — grey surface + the label up front. */
-.delegation .ws-ballot .b-row.not-up-2026 {
-  background: var(--tag-bg);
-  margin: 0 -14px;
-  padding: 14px;
-  border-radius: 6px;
 }
 
 /* RepCard's verdict block is replaced by this info band for a seat that
@@ -197,16 +311,6 @@
   color: var(--ink-2);
   margin: 0;
 }
-.b-not-up {
-  font-family: var(--mono);
-  font-size: 9.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin-bottom: 2px;
-}
-
 /* ---- attendance band [Δ] ---- */
 .att-band {
   display: flex;
@@ -407,40 +511,6 @@
   background: oklch(0.96 0.025 28);
 }
 
-/* ---- Bigger scorecard headings [Δ] — bump the workspace scorecard heading
-   hierarchy a step up for legibility. Scoped to .delegation so the legacy
-   workspace is untouched. ---- */
-.delegation .ws-ballot .b-head h3 {
-  font-size: 24px;
-}
-/* the rail-head progress dots (canvas rail-head's .rh-dots, screens.css) —
-   filed above (§ DELEGATION OVERVIEW comment) as "no matching rail-header-
-   dots element exists in this repo"; .b-head is that element, so this adds
-   the dots onto it rather than leaving the gap. One dot per seat passed to
-   ScorecardPane (the pane's existing doneCount/seats.length convention,
-   unchanged), not just up-for-election seats — same rows the b-list below
-   already renders, so the dot count always matches the row count. */
-.ws-ballot .b-head .rh-dots {
-  display: flex;
-  gap: 5px;
-}
-.ws-ballot .b-head .rh-dots i {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--rule);
-}
-.ws-ballot .b-head .rh-dots i.done {
-  background: var(--keep);
-}
-.ws-ballot .b-head .rh-dots i.active {
-  background: var(--brand);
-  box-shadow: 0 0 0 3px var(--brand-soft);
-}
-.ws-ballot .b-head .sub {
-  display: block;
-  margin-top: 6px;
-}
 .delegation .standing-cta h4 {
   font-size: 22px;
 }
@@ -698,18 +768,102 @@
   background: var(--tag-bg);
   border-color: var(--rule);
 }
-/* logistics info grid — canvas's bordered/rounded card (sheet-meta), was a
-   bare underlined grid here */
-.print-wrap .voter-meta.voter-meta-logistics {
-  gap: 1px;
-  background: var(--rule);
-  border: 1px solid var(--rule);
-  border-radius: 8px;
-  overflow: hidden;
+/* Open-seat print row (v3 §6b.4, frame 10) — a decided open-seat pick is
+   neither a ✓ keep nor a ⇄ replace, so it gets its own → glyph (a literal
+   character in the JSX, not a pseudo-element — ScorecardPrintView.tsx
+   renders `<div className="bx">→</div>`) and a navy pill, never the
+   green/red keep/replace treatment. The base `.br.checked .bx::after` rule
+   (prototype.css) still matches this row (it carries `.checked` too) and
+   would draw its check-shape UNDER the literal → character, so it's
+   suppressed here. --scp-brand is this file's existing brand-blue token
+   (declared above in the .print-wrap custom-property block) — same one
+   the .pflag/.sheet-section-lab accents already use. */
+.print-wrap .br.verdict-row.open-seat .bx::before,
+.print-wrap .br.verdict-row.open-seat .bx::after {
+  content: none;
 }
-.print-wrap .voter-meta.voter-meta-logistics .cell {
-  background: #fff;
-  padding: 12px 14px;
+.print-wrap .br.verdict-row.open-seat .bx {
+  border-color: var(--scp-brand);
+  background: oklch(0.93 0.045 262);
+  color: var(--scp-brand);
+  font-weight: 700;
+}
+.print-wrap .verdict-print.open-seat {
+  color: var(--scp-brand);
+  background: oklch(0.93 0.045 262);
+  border-color: var(--scp-brand);
+}
+/* logistics info — Fix 3 (v3 §3c): stacked label/value rows (canvas's
+   .vm-rows/.vm-row) replace the old 4-cell grid, which squeezed a
+   7-item Texas ID list into one skinny cell. --rule-2/--ink-3/--mono/
+   --serif already exist app-wide (prototype-c.css :root); --bf-brand from
+   the canvas source doesn't exist in this repo, so link color reuses
+   --scp-brand (this block's own brand-blue token) instead. */
+.print-wrap .vm-rows {
+  border-top: 1.5px solid var(--ink);
+  margin-top: 6px;
+}
+.print-wrap .vm-row {
+  display: grid;
+  grid-template-columns: 150px 1fr;
+  gap: 4px 18px;
+  padding: 13px 0;
+  border-bottom: 1px solid var(--rule-2);
+  align-items: start;
+}
+.print-wrap .vm-row .k {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding-top: 3px;
+}
+.print-wrap .vm-row .v {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  color: var(--ink);
+  line-height: 1.45;
+  min-width: 0;
+}
+.print-wrap .vm-row .v b {
+  font-weight: 600;
+}
+.print-wrap .vm-note {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin-top: 5px;
+}
+.print-wrap .vm-note a,
+.print-wrap .vm-row .v a {
+  color: var(--scp-brand);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* Bring-any-one ID list — 2 columns so a long list (e.g. Texas's 7 accepted
+   IDs) wraps wide instead of stretching one narrow cell tall. */
+.print-wrap .print-id-cols {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  columns: 2;
+  column-gap: 26px;
+}
+.print-wrap .print-id-cols li {
+  font-family: var(--serif);
+  font-size: 12.5px;
+  line-height: 1.4;
+  padding: 2px 0 2px 12px;
+  position: relative;
+  break-inside: avoid;
+}
+.print-wrap .print-id-cols li::before {
+  content: "·";
+  position: absolute;
+  left: 0;
+  color: var(--ink-3);
 }
 /* "Judged against your issues" — canvas screens-scorecard.jsx's live
    .sheet-issues > .si-row > (.pill + .si-juris + .si-quote) markup
@@ -807,95 +961,29 @@
   display: inline-block;
 }
 
-/* ---- single-panel results layout [P1] ----
-   The redesign drops the shipped left rail (its progress bar + duplicate
-   seat list / issue list now live entirely in the right scorecard pane).
-   With the rail gone, the workspace is center + right only. Scoped to
-   .delegation so the legacy 3-pane workspace keeps its 240px rail. Desktop
-   only (≥1024px): below that, the shipped prototype.css already hides the
-   rail (tablet 1fr 340px, phone single column), so no override is needed
-   — and forcing one there would clobber the tablet's tuned ballot width. */
-@media (min-width: 1024px) {
-  .delegation .ws-wrap {
-    grid-template-columns: 1fr 380px;
-  }
-  /* Relocate the issues + Edit control onto the desktop scorecard. It used
-     to live in the now-removed left rail; the ballot pane's .b-issues-edit
-     surface (shipped by prototype-c.css) is hidden ≥1024px specifically
-     because the rail duplicated it. With the rail gone it's the ONLY issues
-     surface, so reveal it on desktop and mirror prototype-c.css's mobile
-     styling here. Scoped to .delegation so the legacy workspace is untouched. */
-  .delegation .ws-ballot .b-issues-edit {
-    display: block;
-    padding: 14px 20px 16px;
-    border-bottom: 1px solid var(--rule);
-    background: var(--paper-2);
-  }
-  .delegation .ws-ballot .b-issues-head {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 10px;
-  }
-  .delegation .ws-ballot .b-issues-lab {
-    font-family: var(--mono);
-    font-size: 10.5px;
-    text-transform: uppercase;
-    letter-spacing: 0.14em;
-    color: var(--ink-3);
-  }
-  .delegation .ws-ballot .b-issues-btn {
-    background: var(--paper);
-    border: 1px solid var(--brand-soft);
-    color: var(--brand);
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    padding: 9px 15px;
-    border-radius: 999px;
-    min-height: 40px;
-    white-space: nowrap;
-  }
-  .delegation .ws-ballot .b-issues-btn:hover {
-    background: var(--brand);
-    color: var(--paper-2);
-    border-color: var(--brand);
-  }
-  .delegation .ws-ballot .b-issues-list {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-  }
-  .delegation .ws-ballot .b-issues-list li {
-    display: flex;
-    align-items: baseline;
-    gap: 8px;
-    font-size: 14px;
-    color: var(--ink);
-    line-height: 1.35;
-  }
-  .delegation .ws-ballot .b-issues-list li .n {
-    font-family: var(--mono);
-    font-size: 11px;
-    color: var(--brand);
-    font-weight: 600;
-    flex: 0 0 auto;
-  }
+/* ---- single-panel results layout ----
+   The right scorecard rail is gone entirely (product decision: "one focus
+   per page" — the seat page is just the RepCard + all-done panel). With no
+   second pane, .ws-wrap collapses to a single centered column instead of
+   the shipped grid, at every breakpoint (unlike the old rail-era override,
+   which only touched ≥1024px because the rail itself handled smaller
+   widths). .rep-center keeps the ~720px measure the money-redesign card
+   was designed to, rather than stretching into the freed rail space. */
+.delegation .ws-wrap {
+  display: flex;
+  justify-content: center;
+}
+.delegation .ws-chat.rep-center {
+  width: 100%;
+  max-width: 720px;
 }
 
 /* ---- tier intro (center column, above card) ----
    .ws-chat is a flex column with overflow:hidden (built for the chat
    thread). The redesign center is a document, not a chat — let it flow
    and let the page scroll.
-   Scoped to desktop only: on mobile, prototype.css hides .ws-chat by
-   default and the [data-mobile-chat="open"] rule below shows it as an
-   overlay. Without the @media guard, the more-specific .ws-chat.rep-center
-   selector overrides the prototype's display:none and the card bleeds into
-   the scorecard-only view.
+   Scoped to desktop only here; the mobile equivalent (.delegation
+   .ws-chat.rep-center) lives in the max-width:767px block below.
    overflow-y:auto here was the wide-screen scroll bug (part 1): it made
    this pane its own height-capped internal scroll region instead of a
    normal flowing block. Dropped in favor of the shell-level fix below,
@@ -916,9 +1004,7 @@
      scrollbar: content past the fold was simply invisible, not scrollable.
      Undo the clip for .delegation only (the legacy ballot workspace keeps
      its intentional fixed-viewport behavior); let the shell flow as a
-     document instead. The rail goes sticky (not stretched) so it travels
-     with the page and only scrolls internally if its own content — the
-     seat list — outgrows the viewport. */
+     document instead. */
   .ws-shell.delegation {
     height: auto;
     overflow: visible;
@@ -931,12 +1017,6 @@
   }
   .ws-shell.delegation .ws-chat {
     overflow: visible;
-  }
-  .ws-shell.delegation .ws-ballot {
-    position: sticky;
-    top: 0;
-    align-self: start;
-    max-height: 100vh;
   }
 }
 /* center-pane head: back control is mobile-only (shipped class hides it
@@ -961,27 +1041,25 @@
     display: none;
   }
 }
-/* When the shipped mobile-overlay rule flips .ws-chat to display:flex,
-   keep the redesign center a scrolling document instead. (The shipped
-   .ws-wrap[data-mobile-chat="open"] .ws-chat rule's position:fixed/inset:0/
-   z-index:50 still applies here even though this rule doesn't repeat them —
-   CSS resolves conflicts property-by-property, and neither rule declares a
-   competing value for those three, so they carry over from the lower-
-   specificity rule untouched.)
-   The real mobile bug: the header (with the back button) is a normal
-   child of this scrolling section, not a separate fixed bar the way the
-   legacy .ws-chat .head/.body split has one — so it scrolls away with the
-   card content within a screen or two and the back control goes out of
-   reach. Pin it; its background already matches the parent's, so it reads
-   as one seamless bar rather than content peeking out from underneath. */
+/* The seat page has no mobile-overlay toggle anymore (the Overview is the
+   hub at every breakpoint; "back" is the ordinary back-to-overview link) —
+   so the redesign center just needs to render as a normal scrolling
+   document on phones too, overriding prototype.css's shipped
+   .ws-chat{display:none} (built for the old tap-to-open overlay pattern).
+   The header (with the seat label) is a normal child of this scrolling
+   section, not a separate fixed bar the way the legacy .ws-chat .head/.body
+   split has one — so it scrolls away with the card content within a screen
+   or two and the label goes out of reach. Pin it; its background already
+   matches the parent's, so it reads as one seamless bar rather than content
+   peeking out from underneath. */
 @media (max-width: 767px) {
-  .ws-wrap[data-mobile-chat="open"] .ws-chat.rep-center {
+  .delegation .ws-chat.rep-center {
     display: block;
     overflow-y: auto;
     background: var(--paper);
     padding: 14px 16px 80px;
   }
-  .ws-wrap[data-mobile-chat="open"] .ws-chat.rep-center .rep-center-head {
+  .delegation .ws-chat.rep-center .rep-center-head {
     position: sticky;
     top: 0;
     background: var(--paper);
@@ -1095,6 +1173,79 @@
 }
 .all-done-print .arrow {
   color: var(--paper);
+}
+.all-done-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.all-done-actions .all-done-print {
+  margin-top: 0;
+  flex: 1;
+  min-width: 240px;
+}
+.all-done-handoff {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 46px;
+  padding: 0 20px;
+  border-radius: 11px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13.5px;
+  border: 1.5px solid var(--rule, oklch(0.88 0.006 258));
+  background: var(--paper, #fff);
+  color: var(--bf-brand, oklch(0.4 0.155 262));
+  cursor: pointer;
+  white-space: nowrap;
+}
+.all-done-handoff:hover {
+  border-color: var(--bf-brand, oklch(0.4 0.155 262));
+  background: var(--bf-brand-soft, oklch(0.94 0.04 262));
+}
+.all-done-handoff:focus-visible {
+  outline: 2px solid var(--bf-brand, oklch(0.4 0.155 262));
+  outline-offset: 2px;
+}
+.all-done-handoff .ic {
+  color: var(--ink-3, oklch(0.54 0.026 260));
+  font-size: 12px;
+}
+@media (max-width: 560px) {
+  .all-done-actions {
+    flex-direction: column;
+  }
+  .all-done-actions .all-done-print {
+    min-width: 0;
+  }
+}
+.all-done-deadline {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule-2, oklch(0.93 0.005 258));
+  font-size: 12.5px;
+  color: var(--ink-2, oklch(0.37 0.032 260));
+  line-height: 1.5;
+}
+.all-done-deadline b {
+  display: inline;
+  font-family: var(--sans);
+  font-size: inherit;
+  font-weight: 600;
+  margin: 0;
+}
+.all-done-deadline a {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.all-done-deadline .src {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3, oklch(0.54 0.026 260));
+  margin-top: 5px;
 }
 .all-done-also {
   margin-top: 12px;
@@ -4299,9 +4450,7 @@
    NOT ported: .cd-delta/.cd-pair/.cd-stage/.cd-explain/.cd-pick-tag
    (separate task) and .rh-dots (no matching rail-header-dots element
    exists in this repo).
-   Two source selectors don't map to real classes here and are retargeted:
-     - ".res-rail .rseat.click" -> ".ws-ballot .b-row", the real seat-strip
-       rail row in DelegationWorkspace.tsx (already clickable).
+   One source selector doesn't map to a real class here and is retargeted:
      - ".vbtn.keep.is-on" / ".vbtn.replace.is-on" -> ".pick.picked" /
        ".pick.replace.picked-replace", RepCard.tsx's real verdict buttons
        (already fully styled globally via .cv2-actions); scoped under
@@ -4781,6 +4930,35 @@
   background: var(--replace-soft);
   color: var(--replace);
 }
+/* Open seat (v3 §6b) — a successor pick is neither "keep" nor "replace" (no
+   incumbent to reject), so it gets its own tone, reusing the same
+   positive/decided visual language as .dg-status.keep. */
+.dg-status.successor {
+  background: var(--keep-soft);
+  color: var(--keep);
+}
+
+/* ---- open-seat band on the overview card (between provenance + alignment) ---- */
+.cd-openseat {
+  margin: 0 16px 12px;
+  padding: 10px 13px;
+  background: var(--brand-soft, oklch(0.94 0.04 262));
+  border-radius: 10px;
+  font-family: var(--sans);
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.cd-openseat .os-kick {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: var(--brand, var(--bf-brand));
+  margin-bottom: 3px;
+}
 
 /* the card is now a button into the deep view */
 .cd-card.dg-open {
@@ -4899,30 +5077,6 @@
    bar), so the back-to-overview control needs its own always-visible row. */
 .dg-back-row {
   margin: 0 0 14px;
-}
-
-/* retargeted from the source's ".res-rail .rseat.click" — the real
-   seat-strip rail row in this repo is DelegationWorkspace.tsx's .b-row
-   (already clickable; already tints .pick text on hover). Extend it with
-   the source's brand-tinted hover instead of inventing a new selector. */
-.delegation .ws-ballot .b-row:hover {
-  border-color: var(--brand);
-  background: var(--brand-soft);
-}
-/* palette-audit sweep: the base .b-row:hover rule's own "tints .pick text
-   on hover" (prototype.css) reads --civic, which .delegation never
-   redefines — so the hover text, the "done" checkmark fill, and the
-   active-row highlight were still leaking legacy teal even after the
-   border/background fix above. */
-.delegation .ws-ballot .b-row:hover .pick {
-  color: var(--brand);
-}
-.delegation .ws-ballot .b-row.done .ck {
-  background: var(--brand);
-  border-color: var(--brand);
-}
-.delegation .ws-ballot .b-row.active {
-  background: var(--brand-soft);
 }
 
 /* retargeted from the source's ".vbtn.keep.is-on" / ".vbtn.replace.is-on"

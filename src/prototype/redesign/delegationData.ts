@@ -85,6 +85,11 @@ export interface ApiDelegationSeat {
     name: string;
     party: string | null;
     priorRole: string | null;
+    /** false only when an official state roster confirms this incumbent
+     *  isn't seeking re-election (open seat) — see officialRoster.ts's
+     *  isIncumbentSeekingReelection. Absent/undefined = unknown, treated as
+     *  a normal seat everywhere this is read. */
+    seekingReelection2026?: boolean;
   } | null;
   attendance: { missedPct: number; of: string; band: string } | null;
   onBallot2026: boolean | null;
@@ -325,6 +330,9 @@ export interface DelegationSeatVM {
      * fabricates a baseline (honest-state rule, same as attendance: null).
      */
     peerComparison: PeerComparison | null;
+    /** false only when confirmed via official state roster (open seat) —
+     *  see ApiDelegationSeat.candidate. Undefined = unknown, normal seat. */
+    seekingReelection2026?: boolean;
   } | null;
   alignmentEntry: SeatCardData["alignmentEntry"];
   /** 2026 filers running for this seat ("Running for this seat in 2026"). */
@@ -410,6 +418,7 @@ export function buildSeats(
               office: seat.office,
               cycle: cardCand?.fundingMix?.cycle ?? "2025–26",
             }),
+            seekingReelection2026: apiCand.seekingReelection2026,
           }
         : null,
       alignmentEntry: card?.alignmentEntry ?? null,

@@ -746,15 +746,6 @@ async function reachWorkspace(page: Page): Promise<void> {
   await rail.waitFor({ timeout: 20000 });
 }
 
-async function setMoneyDisclosure(page: Page, open: boolean): Promise<void> {
-  const toggle = page.locator('[aria-controls^="mt2-"]').first();
-  const expanded = await toggle.getAttribute("aria-expanded");
-  if ((expanded === "true") !== open) {
-    await toggle.click();
-    await page.waitForTimeout(200);
-  }
-}
-
 async function verdictRow(
   page: Page,
   rowIndex: number,
@@ -816,7 +807,13 @@ export const SCENARIOS: Scenario[] = [
       "public/candidates.css",
     ],
     automatable: "yes",
-    note: "Workspace with the money disclosure explicitly collapsed.",
+    note:
+      "STALE REF (money-redesign v2/v3, 2026-07-21): the money section is no longer a " +
+      "collapsible disclosure — it's an always-open numbered step (MoneyHero + subject-scale " +
+      "+ mix bar + fused FundingSources list), and the seat page's rail is gone entirely. " +
+      "The .keystone-canvas-refs/02a-results-main.png artboard predates this and needs a " +
+      "fresh design-sync pull before this scenario's pass/fail is meaningful again — flag for " +
+      "Muxin, do not trust a green result here until the ref is refreshed.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -824,20 +821,26 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await setMoneyDisclosure(page, false);
     },
   },
   {
     id: "02b-results-funding-expanded",
     refFile: "02b-results-funding-expanded.png",
-    label: "Results — funding expanded (FunderBars)",
+    label: "Results — funding section (was: expanded FunderBars)",
     files: [
       "src/prototype/redesign/RepCard.tsx",
       "src/prototype/redesign/MoneyGap.tsx",
+      "src/prototype/redesign/FundingSources.tsx",
       "public/redesign2.css",
     ],
     automatable: "yes",
-    note: "Money-trail disclosure expanded via its toggle.",
+    note:
+      "STALE REF + REDUNDANT SCENARIO (money-redesign v2/v3): the money-trail disclosure " +
+      "toggle this scenario used to exercise no longer exists — money is always open now, so " +
+      "this capture is currently IDENTICAL to 02a. Kept as a distinct id (rather than deleted) " +
+      "so a future ref swap can retarget it at a specific money-section frame (e.g. scrolled to " +
+      "the FundingSources list) instead of collapsing it into 02a. Needs the same design-sync " +
+      "refresh as 02a before its ref is trustworthy.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -845,7 +848,6 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await setMoneyDisclosure(page, true);
     },
   },
   {
@@ -924,7 +926,8 @@ export const SCENARIOS: Scenario[] = [
       "The canvas artboard is a trimmed side-by-side palette-demo card, not a real app " +
       "screen — there is no equivalent standalone surface in the repo. Proxy: the results " +
       "workspace screenshot (02a), which is where the Bold Flag tokens are actually applied " +
-      "in the live app; use it to eyeball the same --brand/--keep/--replace/--gold values.",
+      "in the live app; use it to eyeball the same --brand/--keep/--replace/--gold values. " +
+      "Inherits 02a's stale-ref flag (money-redesign v2/v3).",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -932,7 +935,6 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await setMoneyDisclosure(page, false);
     },
   },
   {
@@ -1523,7 +1525,6 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await setMoneyDisclosure(page, true);
     },
   },
   {

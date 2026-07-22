@@ -289,6 +289,8 @@ const TRANSLATIONS = {
       byokClear: 'Remove key',
       byokSaved: 'Key saved — chat now uses your account.',
       byokRemoved: 'Key removed — back to the community budget.',
+      issuesSection: 'Your issues',
+      editIssuesRow: 'Edit your ranked issues',
       dataSection: 'Your data on this device',
       dataResume: 'Resume from saved profile (.txt)',
       dataExport: 'Export draft ballot (.txt)',
@@ -786,6 +788,10 @@ const TRANSLATIONS = {
       federalPlusState: 'federal + state',
       whereWhenToVote: 'Where & when to vote',
       address: 'Address',
+      pollingPlace: 'Polling place',
+      pollingAutoMatchDisclosure:
+        'Auto-matched to the address you entered — locations can change; confirm before you go.',
+      stateBallotLookupLink: "Find your county's ballot details ↗",
       yourDistricts: 'Your districts',
       bringAnyOne: 'Bring (any one)',
       noIdRequired: 'No ID required for most voters.',
@@ -804,6 +810,11 @@ const TRANSLATIONS = {
       notOnBallotHeading: 'Not on your ballot this year',
       notOnBallotLabel: 'Not on your 2026 ballot',
       notOnBallotNote: 'Shown for context · no decision needed this election',
+      openSeatPickLabel: '→ Open seat pick',
+      openSeatPickNote:
+        "The outgoing incumbent isn't running — judged against their record as the baseline.",
+      openSeatNoPickNote:
+        'Open seat — verified candidate list not available yet. See who\'s on your ballot at your county election page',
     },
     whyNowPage: {
       kicker: 'The case · America’s 250th election',
@@ -972,6 +983,8 @@ const TRANSLATIONS = {
       byokClear: 'Quitar llave',
       byokSaved: 'Llave guardada — el chat ahora usa tu cuenta.',
       byokRemoved: 'Llave quitada — volvemos al presupuesto comunitario.',
+      issuesSection: 'Tus temas',
+      editIssuesRow: 'Edita tus temas priorizados',
       dataSection: 'Tus datos en este dispositivo',
       dataResume: 'Continuar desde perfil guardado (.txt)',
       dataExport: 'Exportar boleta en borrador (.txt)',
@@ -1460,6 +1473,10 @@ const TRANSLATIONS = {
       federalPlusState: 'federal + estatal',
       whereWhenToVote: 'Dónde y cuándo votar',
       address: 'Dirección',
+      pollingPlace: 'Lugar de votación',
+      pollingAutoMatchDisclosure:
+        'Coincide automáticamente con la dirección que ingresaste — los lugares pueden cambiar; confirma antes de ir.',
+      stateBallotLookupLink: 'Consulta los detalles de tu condado ↗',
       yourDistricts: 'Tus distritos',
       bringAnyOne: 'Lleva (cualquiera de estos)',
       noIdRequired: 'No se requiere identificación para la mayoría de los votantes.',
@@ -1478,6 +1495,11 @@ const TRANSLATIONS = {
       notOnBallotHeading: 'No está en tu boleta este año',
       notOnBallotLabel: 'No está en tu boleta de 2026',
       notOnBallotNote: 'Se muestra como contexto · no requiere decisión esta elección',
+      openSeatPickLabel: '→ Puesto abierto',
+      openSeatPickNote:
+        'El titular saliente no se postula — evaluado contra su historial como referencia.',
+      openSeatNoPickNote:
+        'Puesto abierto — la lista de candidatos verificados aún no está disponible. Consulta quién aparece en tu boleta en la página electoral de tu condado',
     },
     whyNowPage: {
       kicker: 'El caso · La elección número 250 de EE. UU.',
@@ -5299,7 +5321,7 @@ function maskKey(k) {
 
    Repo target: (new — recommended src/components/SettingsPanel.tsx
    composing the existing LanguageToggle + BYOK utilities.) */
-function SettingsPanel({ open, onClose, onResetAll, onExportProfile, onResumeProfile }) {
+function SettingsPanel({ open, onClose, onResetAll, onExportProfile, onResumeProfile, onEditIssues }) {
   const { t, lang, setLang } = useI18n();
   const [keyDraft, setKeyDraft] = useStateSC('');
   const [savedKey, setSavedKey] = useStateSC(null);
@@ -5409,6 +5431,27 @@ function SettingsPanel({ open, onClose, onResetAll, onExportProfile, onResumePro
             <div className={"sx-status " + status.tone} role="status">{status.text}</div>
           )}
         </section>
+
+        {/* — Your issues — always-available fallback entry to EditIssuesModal
+            (the primary entry is the contextual fine-print link under the
+            alignment score on RepCard, v3 §3b); only rendered on stages that
+            actually have issues to edit. */}
+        {onEditIssues && (
+          <section className="sx-section">
+            <h3 className="sx-section-ttl">{t('settings.issuesSection')}</h3>
+            <ul className="sx-data-actions">
+              <li>
+                <button
+                  className="sx-row-btn"
+                  data-testid="edit-issues-settings"
+                  onClick={() => { onEditIssues(); onClose(); }}
+                >
+                  <span>{t('settings.editIssuesRow')}</span><span className="arr">→</span>
+                </button>
+              </li>
+            </ul>
+          </section>
+        )}
 
         {/* — Your data — */}
         <section className="sx-section">

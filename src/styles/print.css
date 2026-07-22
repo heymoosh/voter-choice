@@ -170,7 +170,8 @@
 
 .print-sheet .voter-meta .cell .k {
   font-family: var(--mono), "IBM Plex Mono", ui-monospace, monospace;
-  font-size: 8pt;
+  /* Fix 4 (a11y type floor) — was 8pt, below the 9pt print-media floor. */
+  font-size: 9pt;
   text-transform: uppercase;
   letter-spacing: 0.14em;
   color: var(--ink-3, #666);

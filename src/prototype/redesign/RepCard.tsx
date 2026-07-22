@@ -805,7 +805,9 @@ export function RepCard({
           element yet — see the a11y pass for promoting these to h2/h3. */}
       <div className="sec step-alignment">
         <div className="step">
-          <span className="step-n" aria-hidden="true">1</span>
+          <span className="step-n" aria-hidden="true">
+            1
+          </span>
           <div>
             <div className="sec-kick">{t("repCard.stepAlignmentKicker")}</div>
             <div className="sec-h">{t("repCard.stepAlignmentHeading")}</div>
@@ -813,8 +815,14 @@ export function RepCard({
         </div>
         {!seat.researched && (
           <div className="al-legend">
-            <span><i className="i-vote" aria-hidden="true" />{t("repCard.legendVote")}</span>
-            <span><i className="i-money" aria-hidden="true" />{t("repCard.legendMoney")}</span>
+            <span>
+              <i className="i-vote" aria-hidden="true" />
+              {t("repCard.legendVote")}
+            </span>
+            <span>
+              <i className="i-money" aria-hidden="true" />
+              {t("repCard.legendMoney")}
+            </span>
           </div>
         )}
         {seat.researched ? (
@@ -888,7 +896,9 @@ export function RepCard({
           (peerComparison, donorCoalition, fundingMix); nothing re-derived. */}
       <div className="sec step-money">
         <div className="step">
-          <span className="step-n" aria-hidden="true">2</span>
+          <span className="step-n" aria-hidden="true">
+            2
+          </span>
           <div>
             <div className="sec-kick">{t("repCard.stepMoneyKicker")}</div>
             <div className="sec-h">{t("repCard.stepMoneyHeading")}</div>
@@ -930,7 +940,9 @@ export function RepCard({
       {/* 3 · Attendance */}
       <div className="sec step-attendance">
         <div className="step">
-          <span className="step-n" aria-hidden="true">3</span>
+          <span className="step-n" aria-hidden="true">
+            3
+          </span>
           <div>
             <div className="sec-kick">{t("repCard.stepAttendanceKicker")}</div>
             <div className="sec-h">{t("repCard.stepAttendanceHeading")}</div>
@@ -979,6 +991,95 @@ export function RepCard({
           const successor = hasSelectableChallengers
             ? selectableChallengers.find((c) => c.id === pickId)
             : null;
+          const openSeat = cand?.seekingReelection2026 === false;
+
+          // Open seat (v3 §6): "worth keeping" isn't on the ballot — the
+          // incumbent's record stays the baseline, the only decision is who's
+          // next. Storage is UNCHANGED (still a "replace" verdict + pickId);
+          // only rendering branches on the flag.
+          if (openSeat) {
+            if (verdict === "replace" && successor) {
+              return (
+                <div className="open-picked">
+                  <span className="ck" aria-hidden="true">
+                    ✓
+                  </span>
+                  <span
+                    dangerouslySetInnerHTML={{
+                      __html: `${t("repCard.openSeatPickedPrefix")} <b>${escapeHtml(successor.name)}</b>`,
+                    }}
+                  />
+                  <button
+                    className="chg linklike"
+                    data-testid="open-duel"
+                    onClick={() => onOpenDuel && onOpenDuel(seat.id)}
+                  >
+                    {t("repCard.openSeatChange")}
+                  </button>
+                </div>
+              );
+            }
+            return (
+              <>
+                {hasRosterButNoSelectable ? (
+                  <div
+                    className="cv2-notup-band"
+                    data-testid="roster-provenance-warning"
+                  >
+                    <div className="cv2-notup-eyebrow">
+                      {t("repCard.rosterNotVerifiedEyebrow")}
+                    </div>
+                    <p className="cv2-notup-text">
+                      {t("repCard.openSeatNoRosterBand")}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="open-band">
+                    <div className="ob-kick">
+                      {t("repCard.openSeatBandKicker")}
+                    </div>
+                    <p>{t("repCard.openSeatBandBody")}</p>
+                    {seat.eligibility?.sourceUrl && (
+                      <div className="src">
+                        <a
+                          href={seat.eligibility.sourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("repCard.openSeatBandSource")}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <button
+                  className="btn-open"
+                  data-testid="open-duel"
+                  onClick={() => {
+                    if (hasSelectableChallengers && onOpenDuel) {
+                      onOpenDuel(seat.id);
+                    } else {
+                      // No verified roster yet — the pickless inline mark
+                      // (§6c): counts the seat as decided without inventing
+                      // a name. Reuses the same no-challenger verdict path
+                      // the normal flow already falls back to below.
+                      onVerdict(verdict === "replace" ? null : "replace");
+                    }
+                  }}
+                >
+                  <b>
+                    {hasSelectableChallengers
+                      ? t("repCard.openSeatCta")
+                      : t("repCard.openSeatMarkChoose")}
+                  </b>
+                  {hasSelectableChallengers && (
+                    <small>{t("repCard.openSeatCtaSub")}</small>
+                  )}
+                </button>
+              </>
+            );
+          }
+
           return (
             <>
               {hasRosterButNoSelectable && (

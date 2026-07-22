@@ -268,9 +268,7 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     const vs = container.querySelector(".step-money .mny-vs");
     expect(vs).not.toBeNull();
     expect(vs?.textContent).toContain("3×");
-    expect(vs?.textContent).toContain(
-      "a typical U.S. House campaign raises",
-    );
+    expect(vs?.textContent).toContain("a typical U.S. House campaign raises");
   });
 
   it("verdict buttons are unaffected by the evidence-hierarchy changes", () => {
@@ -490,5 +488,109 @@ describe("RepCard runoff-pending challengers", () => {
     renderStrip(seat);
 
     expect(screen.queryByText("Runoff pending")).not.toBeInTheDocument();
+  });
+});
+
+describe("RepCard open seats (incumbent not seeking re-election)", () => {
+  const openSeatChallenger = {
+    id: "successor-1",
+    name: "Maria Alvarez",
+    party: "Democrat",
+    totalReceipts: 400_000,
+    rosterProvenance: verifiedRosterProvenance,
+  };
+
+  it("renders the open-seat band + CTA, and no keep/replace buttons, when undecided", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: undefined,
+        donorSource: undefined,
+        donorCoalition: null,
+        peerComparison: peer,
+        seekingReelection2026: false,
+      },
+      challengers: [openSeatChallenger],
+    });
+    const { container } = renderCard(seat);
+
+    expect(container.querySelector(".open-band")).not.toBeNull();
+    expect(container.querySelector(".btn-open")).not.toBeNull();
+    expect(screen.queryByText("Worth keeping")).not.toBeInTheDocument();
+    expect(screen.queryByText("Time to replace")).not.toBeInTheDocument();
+    expect(
+      container.querySelector(".seat-not-seeking-reelection")?.textContent,
+    ).toContain("Open seat — incumbent not running");
+  });
+
+  it("renders the open-picked confirmation once a successor is chosen, still no keep button", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: undefined,
+        donorSource: undefined,
+        donorCoalition: null,
+        peerComparison: peer,
+        seekingReelection2026: false,
+      },
+      challengers: [openSeatChallenger],
+    });
+    const { container } = renderCard(seat, {
+      verdict: "replace",
+      pickId: "successor-1",
+    });
+
+    const picked = container.querySelector(".open-picked");
+    expect(picked).not.toBeNull();
+    expect(picked?.textContent).toContain("Maria Alvarez");
+    expect(container.querySelector(".btn-open")).toBeNull();
+    expect(screen.queryByText("Worth keeping")).not.toBeInTheDocument();
+  });
+
+  it("renders the roster-not-verified band, not the open-band CTA, when no selectable challenger exists yet", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: undefined,
+        donorSource: undefined,
+        donorCoalition: null,
+        peerComparison: peer,
+        seekingReelection2026: false,
+      },
+      challengers: [
+        {
+          id: "finance-only-1",
+          name: "Someone Filing",
+          party: "Independent",
+          totalReceipts: 10_000,
+          rosterProvenance: fecFinanceOnlyProvenance,
+        },
+      ],
+    });
+    const { container } = renderCard(seat);
+
+    expect(screen.getByTestId("roster-provenance-warning")).toBeInTheDocument();
+    expect(container.querySelector(".open-band")).toBeNull();
+    // The pickless "I'll choose from my ballot" mark is still available.
+    expect(screen.getByText("I'll choose from my ballot")).toBeInTheDocument();
+  });
+
+  it("a seeking-re-election seat (default fixture) renders the normal keep/replace pair unchanged", () => {
+    renderCard(mkSeat());
+
+    expect(screen.getByText(/Worth keeping/)).toBeInTheDocument();
+    expect(screen.getByText("Time to replace")).toBeInTheDocument();
   });
 });

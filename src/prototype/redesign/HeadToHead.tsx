@@ -173,6 +173,10 @@ export function HeadToHead({
     : null;
 
   const repLast = lastName(repName);
+  // Open seat (v3 §6b): the incumbent isn't seeking re-election — "replace
+  // {incumbent}" is the wrong frame (nobody's being rejected). Copy-only
+  // swap; the verdict/pick storage underneath is completely unchanged.
+  const openSeat = cand?.seekingReelection2026 === false;
 
   return (
     <div className="cmp-screen" data-palette="white">
@@ -192,7 +196,9 @@ export function HeadToHead({
             >
               ← Back
             </button>
-            <h2>Head-to-head</h2>
+            <h2>
+              {openSeat ? "Who should hold this open seat?" : "Head-to-head"}
+            </h2>
             <div className="ctx">
               {seatWhen
                 ? t("headToHead.seatStatement", {
@@ -270,22 +276,28 @@ export function HeadToHead({
               as selectable replacements.
             </p>
             <div className="cmp-actions">
-              <button
-                className={"cmp-keepbtn" + (verdict === "keep" ? " on" : "")}
-                onClick={onKeep}
-              >
-                {verdict === "keep" ? "✓ Keeping " : "Keep "}
-                {repLast}
-              </button>
+              {!openSeat && (
+                <button
+                  className={"cmp-keepbtn" + (verdict === "keep" ? " on" : "")}
+                  onClick={onKeep}
+                >
+                  {verdict === "keep" ? "✓ Keeping " : "Keep "}
+                  {repLast}
+                </button>
+              )}
               <button
                 className={
                   "cmp-repbtn ghost" + (verdict === "replace" ? " on" : "")
                 }
                 onClick={() => onReplace(null)}
               >
-                {verdict === "replace"
-                  ? "✕ Marked to replace"
-                  : "Mark to replace"}
+                {openSeat
+                  ? verdict === "replace"
+                    ? "✓ Marked — I'll choose from my ballot"
+                    : "I'll choose from my ballot"
+                  : verdict === "replace"
+                    ? "✕ Marked to replace"
+                    : "Mark to replace"}
               </button>
             </div>
           </div>
@@ -605,13 +617,17 @@ export function HeadToHead({
                 </div>
               </div>
               <div className="cmp-actions">
-                <button
-                  className={"cmp-keepbtn" + (verdict === "keep" ? " on" : "")}
-                  onClick={onKeep}
-                >
-                  {verdict === "keep" ? "✓ Keeping " : "Keep "}
-                  {repLast}
-                </button>
+                {!openSeat && (
+                  <button
+                    className={
+                      "cmp-keepbtn" + (verdict === "keep" ? " on" : "")
+                    }
+                    onClick={onKeep}
+                  >
+                    {verdict === "keep" ? "✓ Keeping " : "Keep "}
+                    {repLast}
+                  </button>
+                )}
                 <button
                   className={
                     "cmp-repbtn" +
@@ -621,8 +637,10 @@ export function HeadToHead({
                   disabled={!ch}
                 >
                   {verdict === "replace" && pickId === ch?.id
-                    ? "✓ Replacing with "
-                    : "Replace with "}
+                    ? "✓ Picked "
+                    : openSeat
+                      ? "Pick "
+                      : "Replace with "}
                   {ch ? lastName(ch.name) : ""}{" "}
                   <span aria-hidden="true">→</span>
                 </button>

@@ -57,12 +57,14 @@ function DgProv({ researched }: { researched: boolean }) {
 function SeatCard({
   seat,
   verdict,
+  pickId,
   userIssues,
   t,
   onOpen,
 }: {
   seat: DelegationSeatVM;
   verdict: "keep" | "replace" | null | undefined;
+  pickId?: string | null;
   userIssues: UserIssue[];
   t: (key: string, vars?: Record<string, unknown>) => string;
   onOpen: (seatId: string) => void;
@@ -70,12 +72,20 @@ function SeatCard({
   const align = seatOverviewAlignmentPct(seat, userIssues);
   const rows = seatIssueAlignmentRows(seat, userIssues);
   const cand = seat.candidate;
+  // Open seat (v3 §6b): the incumbent isn't seeking re-election, so "worth
+  // keeping" isn't a real decision — the only path is picking a successor
+  // via the duel. Only an explicit `false` triggers this; undefined/null
+  // (unknown) renders the normal keep/replace card unchanged.
+  const openSeat = cand?.seekingReelection2026 === false;
+  const successor = openSeat
+    ? (seat.challengers || []).find((c) => c.id === pickId)
+    : null;
   const cls =
     "cd-card dg-open" +
     (verdict === "keep"
       ? " is-pick"
       : verdict === "replace"
-        ? " verdict-replace"
+        ? " verdict-replace" + (openSeat ? " is-pick" : "")
         : "");
 
   function activate() {
@@ -100,9 +110,13 @@ function SeatCard({
         <span className="seat-t">
           {seat.office} · {seat.districtLabel}
         </span>
-        {verdict === "keep" ? (
+        {openSeat && successor ? (
+          <span className="dg-status successor">
+            {t("repCard.overviewSuccessorChip", { name: successor.name })}
+          </span>
+        ) : verdict === "keep" ? (
           <span className="dg-status keep">✓ {t("repCard.worthKeeping")}</span>
-        ) : verdict === "replace" ? (
+        ) : verdict === "replace" && !openSeat ? (
           <span className="dg-status replace">
             ⇄ {t("repCard.timeToReplace")}
           </span>
@@ -124,6 +138,23 @@ function SeatCard({
       <div className="cd-prov-row">
         <DgProv researched={!!seat.researched} />
       </div>
+
+      {openSeat && (
+        <div className="cd-openseat">
+          <span className="os-kick">{t("repCard.overviewOpenSeatKicker")}</span>
+          {successor ? (
+            <span
+              dangerouslySetInnerHTML={{
+                __html: t("repCard.overviewOpenSeatPickedSentence", {
+                  name: successor.name,
+                }),
+              }}
+            />
+          ) : (
+            t("repCard.overviewOpenSeatSentence")
+          )}
+        </div>
+      )}
 
       <div className="cd-align">
         <div className="cd-align-top">
@@ -184,9 +215,13 @@ function SeatCard({
             activate();
           }}
         >
-          {verdict
-            ? t("delegationOverview.reopenSeat")
-            : t("delegationOverview.reviewSeat")}
+          {openSeat
+            ? successor
+              ? t("delegationOverview.reopenSeat")
+              : t("repCard.overviewSeeWhoRunning")
+            : verdict
+              ? t("delegationOverview.reopenSeat")
+              : t("delegationOverview.reviewSeat")}
         </button>
       </div>
     </div>
@@ -196,12 +231,14 @@ function SeatCard({
 export function DelegationOverview({
   seats,
   verdicts,
+  picks,
   userIssues,
   onOpen,
   onPrint,
 }: {
   seats: DelegationSeatVM[];
   verdicts: Record<string, "keep" | "replace" | undefined>;
+  picks?: Record<string, string | undefined>;
   userIssues: UserIssue[];
   onOpen: (seatId: string) => void;
   onPrint?: () => void;
@@ -252,6 +289,7 @@ export function DelegationOverview({
             key={s.id}
             seat={s}
             verdict={verdicts[s.id]}
+            pickId={picks?.[s.id]}
             userIssues={userIssues}
             t={t}
             onOpen={onOpen}
