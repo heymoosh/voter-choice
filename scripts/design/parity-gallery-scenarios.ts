@@ -727,34 +727,39 @@ async function reachWorkspace(page: Page): Promise<void> {
   await lockIssues(page);
   await page.getByTestId("orientation-continue").click({ timeout: 15000 });
   // PR #243 (merged) makes DelegationOverview the default landing screen
-  // (App2.tsx's seatOverviewOpen defaults true) instead of landing directly
-  // on the single-seat rail — its cards carry a shared data-testid="seat-card"
-  // (src/prototype/redesign/DelegationOverview.tsx). Race both markers rather
-  // than a fixed pre-wait, so a branch without the overview pays no extra
-  // latency (.b-row just wins the race as before) and a branch with it
-  // clicks through the first card before falling through to the same rail
-  // wait every scenario expects.
+  // (App2.tsx's seatOverviewOpen defaults true) — its cards carry
+  // data-testid="seat-card" (src/prototype/redesign/DelegationOverview.tsx).
+  // v3 rail removal (2026-07-21) deleted the seat page's right-rail
+  // (ScorecardPane / .b-row) entirely — the overview is now the ONLY nav
+  // surface at every breakpoint, so this just clicks through the first card
+  // and waits for the deep view's own card root, not a rail that no longer
+  // exists.
   const seatCard = page.getByTestId("seat-card").first();
-  const rail = page.locator(".b-row").first();
-  await Promise.race([
-    seatCard.waitFor({ timeout: 20000 }),
-    rail.waitFor({ timeout: 20000 }),
-  ]).catch(() => {});
-  if (await seatCard.isVisible().catch(() => false)) {
-    await seatCard.click();
-  }
-  await rail.waitFor({ timeout: 20000 });
+  await seatCard.waitFor({ timeout: 20000 });
+  await seatCard.click();
+  await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
 }
 
+/** Decide the Nth decidable seat from the overview (v3 rail removal —
+ *  there's no rail row to click anymore, so every call round-trips through
+ *  the overview: back-to-overview if needed, click seat-card N, set the
+ *  verdict). Self-contained/order-independent, unlike the old rail-index
+ *  version this replaces. */
 async function verdictRow(
   page: Page,
   rowIndex: number,
   verdict: "keep" | "replace",
 ): Promise<void> {
-  // Indexes DECIDABLE rows only — not-up-2026 rows carry no verdict UI
-  // (reviewable, never decidable), same scoping as the shared journey.
-  const rows = page.locator(".b-row:not(.not-up-2026)");
-  await rows.nth(rowIndex).click();
+  const backLink = page.getByTestId("back-to-overview");
+  if (await backLink.isVisible().catch(() => false)) {
+    await backLink.click();
+    await page.getByTestId("seat-card").first().waitFor({ timeout: 15000 });
+  }
+  // Indexes decidable seat-cards only — not-up-2026 seats render as
+  // .dg-excluded rows outside the scored grid (reviewable, never
+  // decidable), same scoping the old .b-row(:not(.not-up-2026)) selector
+  // used to enforce.
+  await page.getByTestId("seat-card").nth(rowIndex).click();
   const btn =
     verdict === "keep"
       ? page.getByRole("button", { name: /Worth keeping/ }).first()
@@ -979,7 +984,11 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await page.locator(".b-row").nth(2).click();
+      // The junior-senator seat (index 2) has no DB voting record and is
+      // excluded from the overview's scored grid — it renders as a
+      // .dg-excluded row (v3 rail removal dropped the old .b-row rail this
+      // used to click through; the overview is the only nav surface now).
+      await page.locator(".dg-excluded").first().click();
       await page
         .getByTestId("web-search-alignment-banner")
         .waitFor({ timeout: 15000 });
