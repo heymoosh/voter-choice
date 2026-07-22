@@ -203,7 +203,7 @@ describe("RepCard money-gap scale — subject vs. median only", () => {
 });
 
 describe("RepCard evidence hierarchy (Round-4)", () => {
-  it("shows the funding-mix percentages once — in the expanded panel, not duplicated in the collapsed glance", () => {
+  it("shows the funding-mix percentages exactly once, in the money section's mix bar", () => {
     const seat = mkSeat({
       candidate: {
         id: "federal-TEST1",
@@ -221,17 +221,11 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     });
     const { container } = renderCard(seat);
 
-    // The duplicated compact legend is gone from the collapsed glance button.
-    const glance = container.querySelector("button.rc-money-glance");
-    expect(glance?.querySelector(".rc-money-legend")).toBeNull();
-
-    // The percentages render once, in the expanded FunderBars panel.
-    const panel = container.querySelector(".cv2-disclose-body");
-    const legend = panel?.querySelector(".cv2-money-legend");
-    expect(legend).not.toBeNull();
-    expect(legend?.textContent).toContain("15%");
-    expect(legend?.textContent).toContain("39%");
-    expect(legend?.textContent).toContain("46%");
+    const legends = container.querySelectorAll(".mix .cv2-money-legend");
+    expect(legends).toHaveLength(1);
+    expect(legends[0].textContent).toContain("15%");
+    expect(legends[0].textContent).toContain("39%");
+    expect(legends[0].textContent).toContain("46%");
   });
 
   it("moves 'see all votes' inside the align-band and drops the detached card-evidence row", () => {
@@ -256,24 +250,26 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
     expect(cta.closest(".cv2-see-all")).not.toBeNull();
   });
 
-  it("the whole money glance is a clickable disclosure trigger with the FUNDERS & INFLUENCE affordance", () => {
+  it("the money section is always open — no collapse toggle, hero leads with the total", () => {
     const seat = mkSeat();
     const { container } = renderCard(seat);
 
-    const glance = container.querySelector("button.rc-money-glance");
-    expect(glance).not.toBeNull();
-    expect(glance).toHaveAttribute("aria-expanded");
-    expect(container.querySelector(".rc-money-disclose")).not.toBeNull();
+    expect(container.querySelector("button.rc-money-glance")).toBeNull();
+    expect(container.querySelector(".cv2-disclose.rc-money-glance")).toBeNull();
+    const hero = container.querySelector(".step-money .mny-hero");
+    expect(hero).not.toBeNull();
+    expect(hero?.textContent).toContain("$4.2M");
   });
 
-  it("median chip reads worded context, not a bare multiple", () => {
+  it("the money hero reads a worded multiple, not a bare number", () => {
     const seat = mkSeat();
     const { container } = renderCard(seat);
 
-    const chip = container.querySelector(".rc-money-median .median-chip");
-    expect(chip?.textContent).toContain("≈3×");
-    expect(chip?.textContent).toContain(
-      "what a typical U.S. House campaign raises",
+    const vs = container.querySelector(".step-money .mny-vs");
+    expect(vs).not.toBeNull();
+    expect(vs?.textContent).toContain("3×");
+    expect(vs?.textContent).toContain(
+      "a typical U.S. House campaign raises",
     );
   });
 
@@ -312,24 +308,29 @@ describe("RepCard canvas issue-PAC advocates line", () => {
       },
     });
 
-  it("renders the advocates line when p.advocates is present", () => {
+  it("uses p.advocates as the source row's agenda line when present", () => {
     const { container } = renderCard(
       seatWithPac("Pushes for lower prescription drug prices"),
     );
-    const line = container.querySelector(".fp-pac-wrap .fp-pac-advocates");
-    expect(line).not.toBeNull();
-    expect(line?.textContent).toContain(
+    const row = Array.from(container.querySelectorAll(".srcs .src")).find(
+      (el) => el.textContent?.includes("Better Care PAC"),
+    );
+    expect(row).toBeTruthy();
+    expect(row?.querySelector(".src-agenda")?.textContent).toContain(
       "Pushes for lower prescription drug prices",
     );
   });
 
-  it("omits the advocates line when p.advocates is absent", () => {
+  it("falls back to the PAC's own label as the agenda line when p.advocates is absent", () => {
     const { container } = renderCard(seatWithPac(undefined));
-    expect(
-      container.querySelector(".fp-pac-wrap .fp-pac-advocates"),
-    ).toBeNull();
-    // The pill itself still renders — only the data-gated line is blank.
-    expect(container.querySelector(".fp-pac-wrap .fp-pac")).not.toBeNull();
+    const row = Array.from(container.querySelectorAll(".srcs .src")).find(
+      (el) => el.textContent?.includes("Better Care PAC"),
+    );
+    // The row itself still renders — only the honest fallback text changes.
+    expect(row).toBeTruthy();
+    expect(row?.querySelector(".src-agenda")?.textContent).toContain(
+      "Better Care PAC",
+    );
   });
 });
 

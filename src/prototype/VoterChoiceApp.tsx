@@ -512,7 +512,7 @@ const TRANSLATIONS = {
         'FEC filings preserved for finance history · not verified on the ballot',
       notUp2026: 'Not up for election in 2026',
       notUp2026BandSentence: 'You can still review their record — {label}.',
-      notSeekingReelection2026: 'Not on the 2026 ballot',
+      notSeekingReelection2026: 'Open seat — incumbent not running',
       runoffPendingTag: 'Runoff pending',
       runoffPendingNote:
         "This party's nominee isn't decided yet — a primary runoff will settle it. Your vote in that runoff can still decide who appears on your November ballot.",
@@ -579,6 +579,59 @@ const TRANSLATIONS = {
         "Judge instead on the public statements they've made and the donor base below.",
       alignedOnOfVotes: 'Aligned on <b>{kept}</b> of <b>{total}</b> {votes}',
       detailNotYetCurated: ' · detail not yet curated',
+      // Money-redesign v2/v3 — numbered step chrome
+      stepAlignmentKicker: 'Do they represent you',
+      stepAlignmentHeading: 'Alignment with your top issues',
+      stepMoneyKicker: 'Follow the money',
+      stepMoneyHeading: 'Who funds this seat',
+      stepAttendanceKicker: 'Do they show up',
+      stepAttendanceHeading: 'On the job',
+      legendVote: 'How they voted',
+      legendMoney: 'Whose money they take',
+      votedWithYouOfFraction: '{pct}% of your key votes went your way · {kept} of {total}',
+      // §4 alignment×money join — per-issue verdict pills + track labels
+      trackVoteLabel: 'How they voted',
+      trackMoneyLabel: 'Whose money',
+      trackVoteWithFraction: '<b>{kept} of {total}</b> key votes with you.',
+      trackVoteFractionOnly: '<b>{kept} of {total}</b> key votes.',
+      trackVoteNoRecord: 'No key votes yet this term — nothing on the floor to judge.',
+      issueVerdictWith: 'With you',
+      issueVerdictVotesYesMoneyNo: 'Votes yes, money says no',
+      issueVerdictMixedSignal: 'Mixed signal',
+      issueVerdictBothAgainst: 'Against you, money too',
+      issueVerdictNoRecordMoneyAgainst: 'No record, money against',
+      showVoteDetail: 'Show vote detail ▾',
+      hideVoteDetail: 'Hide vote detail ▴',
+      // Money hero (MoneyHero — Tier B)
+      moneyHeroRaisedCycle: 'raised · {cycle} cycle',
+      moneyHeroVsTypical: "That's <mult>{multiple}×</mult> the <b>{median}</b> a typical {office} campaign raises.",
+      moneyHeroDollarOnly: 'raised this cycle — no chamber baseline yet to compare against.',
+      // Funding-mix caveat already covered by funderBars.pacGap*; verdict/ask/attendance restyle only, no new copy needed there.
+      // Edit-issues entry points (v3 §3b)
+      editIssuesFinePrint: 'Scored against your {n} ranked issues. Priorities changed?',
+      editIssuesLink: 'Edit your issues',
+      editIssuesFinePrintSuffix: '— every seat re-scores instantly.',
+      // All-done panel additions (v3 §3b)
+      allDoneHandoffBtn: 'Continue in another chatbot',
+      allDoneDeadlineIntro: 'Before you go: register by <b>{date}</b> so you’re not turned away at the polls',
+      allDoneDeadlineElection: ' — General election <b>{date}</b>.',
+      allDoneDeadlineSource: 'Source: {label} ↗',
+      // Open seats (v3 §6)
+      openSeatTag: 'Open seat — incumbent not running',
+      openSeatBandKicker: 'Open seat — not running in 2026',
+      openSeatBandBody: "This seat's incumbent isn't seeking re-election, so “worth keeping” isn't on your ballot. Their record above is still your baseline — use it to judge who should be next.",
+      openSeatBandSource: 'Source: Official state candidate roster ↗',
+      openSeatCta: "See who's running for this open seat →",
+      openSeatCtaSub: "Verified from your state's official candidate list",
+      openSeatPickedPrefix: 'Your pick for this open seat:',
+      openSeatChange: 'Change',
+      openSeatNoRosterBand: 'A verified candidate list for this open seat isn’t available yet.',
+      openSeatMarkChoose: "I'll choose from my ballot",
+      overviewOpenSeatKicker: 'Open seat — not running in 2026',
+      overviewOpenSeatSentence: "This incumbent isn't seeking re-election. Their record is your baseline for who's next.",
+      overviewOpenSeatPickedSentence: 'You picked <b>{name}</b>…',
+      overviewSeeWhoRunning: "See who's running →",
+      overviewSuccessorChip: '→ {name}',
     },
     headToHead: {
       seatStatement: '{office} · {district} — one seat, {when}',
@@ -655,6 +708,23 @@ const TRANSLATIONS = {
       outsideNamedSectors: 'Outside named sectors',
       outsideNamedSectorsNote:
         'Mostly small-dollar & individual donations that don’t fit a single sector tag. They’re counted in the Funding mix bar above.',
+    },
+    fundingSources: {
+      heading: 'Where the big money comes from',
+      subheading: "The largest sources behind this seat, and what each one is pushing for — flagged against your issues.",
+      smallDonorsName: 'Small individual donors',
+      smallDonorsAgenda: 'Everyday people giving under $200 — no single agenda.',
+      largeDonorsName: 'Large individual donors',
+      largeDonorsAgenda: 'Individual donors giving $200 or more — no single agenda.',
+      pctOfAllMoney: '{pct}% of all money',
+      industryAgenda: 'Industry-sector donations; not linked to your ranked issues.',
+      untracedPacsName: 'Other & untraced PACs',
+      untracedPacsAgenda: "Smaller PACs we haven't linked to a public agenda yet.",
+      outsideNamedSectorsAgenda: 'Mostly small-dollar & individual donations that don’t fit a single sector tag.',
+      tagConflict: '⚠ Works against your #{rank} · {issue}',
+      tagAlign: '✓ Backs your #{rank} · {issue}',
+      tagNone: 'Not tied to your issues',
+      tagUnknown: 'Unknown',
     },
     homeHero: {
       eyebrow: "Nov 3, 2026 · America's 250th election",
@@ -1127,7 +1197,7 @@ const TRANSLATIONS = {
         'Presentaciones ante la FEC conservadas como historial financiero · no verificadas en la boleta',
       notUp2026: 'No está en la boleta en 2026',
       notUp2026BandSentence: 'Aún puedes revisar su historial — {label}.',
-      notSeekingReelection2026: 'No está en la boleta de 2026',
+      notSeekingReelection2026: 'Puesto abierto — el titular no se postula',
       runoffPendingTag: 'Segunda vuelta pendiente',
       runoffPendingNote:
         'La candidatura de este partido aún no está decidida — una segunda vuelta primaria lo definirá. Tu voto en esa segunda vuelta todavía puede decidir quién aparece en tu boleta de noviembre.',
@@ -1190,6 +1260,52 @@ const TRANSLATIONS = {
         'Juzga en su lugar por las declaraciones públicas que ha hecho y la base de donantes a continuación.',
       alignedOnOfVotes: 'Alineado en <b>{kept}</b> de <b>{total}</b> {votes}',
       detailNotYetCurated: ' · detalle aún no revisado',
+      stepAlignmentKicker: '¿Te representan?',
+      stepAlignmentHeading: 'Alineación con tus temas principales',
+      stepMoneyKicker: 'Sigue el dinero',
+      stepMoneyHeading: 'Quién financia este puesto',
+      stepAttendanceKicker: '¿Se presentan?',
+      stepAttendanceHeading: 'En el trabajo',
+      legendVote: 'Cómo votaron',
+      legendMoney: 'De quién reciben dinero',
+      votedWithYouOfFraction: '{pct}% de tus votos clave coincidieron contigo · {kept} de {total}',
+      trackVoteLabel: 'Cómo votaron',
+      trackMoneyLabel: 'De quién reciben dinero',
+      trackVoteWithFraction: '<b>{kept} de {total}</b> votos clave contigo.',
+      trackVoteFractionOnly: '<b>{kept} de {total}</b> votos clave.',
+      trackVoteNoRecord: 'Sin votos clave este período — nada en el pleno para evaluar.',
+      issueVerdictWith: 'Contigo',
+      issueVerdictVotesYesMoneyNo: 'Vota a favor, el dinero dice que no',
+      issueVerdictMixedSignal: 'Señal mixta',
+      issueVerdictBothAgainst: 'En tu contra, el dinero también',
+      issueVerdictNoRecordMoneyAgainst: 'Sin registro, dinero en contra',
+      showVoteDetail: 'Ver detalle de votos ▾',
+      hideVoteDetail: 'Ocultar detalle de votos ▴',
+      moneyHeroRaisedCycle: 'recaudado · ciclo {cycle}',
+      moneyHeroVsTypical: 'Eso es <mult>{multiple}×</mult> lo que <b>{median}</b> recauda una campaña típica de {office}.',
+      moneyHeroDollarOnly: 'recaudado este ciclo — aún no hay una base de comparación de la cámara.',
+      editIssuesFinePrint: 'Evaluado según tus {n} temas priorizados. ¿Cambiaron tus prioridades?',
+      editIssuesLink: 'Edita tus temas',
+      editIssuesFinePrintSuffix: '— cada puesto se vuelve a puntuar al instante.',
+      allDoneHandoffBtn: 'Continuar en otro chatbot',
+      allDoneDeadlineIntro: 'Antes de irte: regístrate antes del <b>{date}</b> para que no te rechacen en las urnas',
+      allDoneDeadlineElection: ' — Elección General <b>{date}</b>.',
+      allDoneDeadlineSource: 'Fuente: {label} ↗',
+      openSeatTag: 'Puesto abierto — el titular no se postula',
+      openSeatBandKicker: 'Puesto abierto — no se postula en 2026',
+      openSeatBandBody: 'El titular de este puesto no busca la reelección, así que “vale la pena mantener” no está en tu boleta. Su historial arriba sigue siendo tu punto de referencia — úsalo para juzgar quién debería seguir.',
+      openSeatBandSource: 'Fuente: Lista oficial estatal de candidatos ↗',
+      openSeatCta: 'Ver quién compite por este puesto abierto →',
+      openSeatCtaSub: 'Verificado con la lista oficial de candidatos de tu estado',
+      openSeatPickedPrefix: 'Tu elección para este puesto abierto:',
+      openSeatChange: 'Cambiar',
+      openSeatNoRosterBand: 'Aún no hay una lista de candidatos verificada para este puesto abierto.',
+      openSeatMarkChoose: 'Elegiré en mi boleta',
+      overviewOpenSeatKicker: 'Puesto abierto — no se postula en 2026',
+      overviewOpenSeatSentence: 'Este titular no busca la reelección. Su historial es tu punto de referencia para quién sigue.',
+      overviewOpenSeatPickedSentence: 'Elegiste a <b>{name}</b>…',
+      overviewSeeWhoRunning: 'Ver quién compite →',
+      overviewSuccessorChip: '→ {name}',
     },
     headToHead: {
       seatStatement: '{office} · {district} — un puesto, {when}',
@@ -1266,6 +1382,23 @@ const TRANSLATIONS = {
       outsideNamedSectors: 'Fuera de los sectores nombrados',
       outsideNamedSectorsNote:
         'Principalmente donaciones individuales y de pequeña cuantía que no encajan en una sola etiqueta de sector. Se cuentan en la barra de mezcla de financiamiento de arriba.',
+    },
+    fundingSources: {
+      heading: 'De dónde viene el gran dinero',
+      subheading: 'Las mayores fuentes detrás de este puesto, y qué busca cada una — marcadas contra tus temas.',
+      smallDonorsName: 'Pequeños donantes individuales',
+      smallDonorsAgenda: 'Personas comunes donando menos de $200 — sin una agenda única.',
+      largeDonorsName: 'Grandes donantes individuales',
+      largeDonorsAgenda: 'Donantes individuales que dan $200 o más — sin una agenda única.',
+      pctOfAllMoney: '{pct}% de todo el dinero',
+      industryAgenda: 'Donaciones del sector industrial; no vinculadas a tus temas priorizados.',
+      untracedPacsName: 'Otros PACs sin rastrear',
+      untracedPacsAgenda: 'PACs más pequeños que aún no hemos vinculado a una agenda pública.',
+      outsideNamedSectorsAgenda: 'Principalmente donaciones individuales y de pequeña cuantía que no encajan en una sola etiqueta de sector.',
+      tagConflict: '⚠ Va en contra de tu tema #{rank} · {issue}',
+      tagAlign: '✓ Respalda tu tema #{rank} · {issue}',
+      tagNone: 'No vinculado a tus temas',
+      tagUnknown: 'Desconocido',
     },
     homeHero: {
       eyebrow: '3 de noviembre de 2026 · la elección 250 de Estados Unidos',
@@ -2116,7 +2249,7 @@ function CandidateCardHeader({ candidate, party, blindMode, isRevealed, alias, o
        %; see AlignmentIssueRow below). Kept as an opt-in prop rather than a
        global reshape so the legacy ballot card (still covered by
        prototype-core.spec.ts) renders byte-identical. */
-function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research, rowVariant = 'legacy', onSeeAllVotes, totalVotes }) {
+function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedIssue, onToggleIssue, anonCtx, research, rowVariant = 'legacy', onSeeAllVotes, totalVotes, donorCoalition }) {
   const { t } = useI18n();
   // ── Pillar 2: research_pending + web_search scores rendering ─────────────
   // Three cases for no-record candidates:
@@ -2177,6 +2310,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           {rowsData.map(({ issue, score }, i) => (
             <AlignmentIssueRow
               key={`${i}-${issue.canonicalIssue || issue.interpretation || issue.sourceText}`}
+              rank={i + 1}
               issue={issue}
               score={score}
               candidate={candidate}
@@ -2184,6 +2318,8 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
               onToggle={() => onToggleIssue(issue.canonicalIssue)}
               anonCtx={anonCtx}
               rowVariant={rowVariant}
+              donorCoalition={donorCoalition}
+              userIssues={userIssues}
             />
           ))}
         </div>
@@ -2265,6 +2401,7 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
       {rowsData.map(({ issue, score }, i) => (
         <AlignmentIssueRow
           key={`${i}-${issue.canonicalIssue || issue.interpretation || issue.sourceText}`}
+          rank={i + 1}
           issue={issue}
           score={score}
           candidate={candidate}
@@ -2272,6 +2409,8 @@ function AlignmentScoreBanner({ candidate, alignmentEntry, userIssues, expandedI
           onToggle={() => onToggleIssue(issue.canonicalIssue)}
           anonCtx={anonCtx}
           rowVariant={rowVariant}
+          donorCoalition={donorCoalition}
+          userIssues={userIssues}
         />
       ))}
 
@@ -2445,7 +2584,7 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
 }
 
 /* ── single row of the banner (private to AlignmentScoreBanner) ── */
-function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx, rowVariant = 'legacy' }) {
+function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx, rowVariant = 'legacy', rank, donorCoalition, userIssues }) {
   const { t } = useI18n();
   if (score && score.sourceType === 'web_search') {
     return (
@@ -2458,41 +2597,84 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
   const tone = pct === null ? '' : pct >= 65 ? '' : pct >= 50 ? 'mid' : 'low';
   const hasVotes = !!(score?.contributingVotes?.length);
 
-  // canvas shape (RepCard only) — one line: name | bar | fraction, caret
-  // on expandable rows, no per-row % (screens.css:240-246). The legacy
-  // stacked name/bar/prose + % badge shape below renders unchanged for the
-  // ballot CandidateCard.
+  // canvas shape (RepCard only) — money-redesign `.iss` card: rank + name +
+  // combined verdict pill, then two always-visible tracks (how they voted /
+  // whose money) — screens.css .iss/.iss-head/.iss-tracks/.trk. Money track
+  // is the §4 alignment×money join (deriveIssueMoneyTrack) — display-only,
+  // honest-blank: no matching issue-PAC slice → vote track alone, no pill.
   if (rowVariant === 'canvas') {
-    // Canvas is a strict 2-tier good(green)/bad(red) semantic (screens.css
-    // .at-pct.good/.bad, .align-track i.good/.bad) — no third "mid" tier.
-    // Kept separate from the shared `tone` above, which the legacy branch
-    // below still uses unchanged.
     const canvasTone = pct === null ? '' : pct >= 65 ? 'good' : 'bad';
     const fraction = score && score.total > 0 ? `${score.kept}/${score.total}` : null;
+    const moneyTrack = deriveIssueMoneyTrack(donorCoalition, issue, userIssues);
+    const votesWithYou = pct !== null && pct >= 65;
+    let verdictKey = null;
+    if (moneyTrack) {
+      if (!hasVotes) {
+        verdictKey = moneyTrack.conflict ? 'v-against' : moneyTrack.aligned ? 'v-with' : null;
+      } else if (votesWithYou) {
+        verdictKey = moneyTrack.conflict ? 'v-mixed' : moneyTrack.aligned ? 'v-with' : null;
+      } else {
+        verdictKey = moneyTrack.conflict ? 'v-against' : moneyTrack.aligned ? 'v-mixed' : null;
+      }
+    }
+    const verdictLabel = {
+      'v-with': t('repCard.issueVerdictWith'),
+      'v-mixed': hasVotes && votesWithYou ? t('repCard.issueVerdictVotesYesMoneyNo') : t('repCard.issueVerdictMixedSignal'),
+      'v-against': hasVotes ? t('repCard.issueVerdictBothAgainst') : t('repCard.issueVerdictNoRecordMoneyAgainst'),
+    }[verdictKey];
+    const voteTrackText = hasVotes
+      ? t('repCard.trackVoteWithFraction', { kept: score.kept, total: score.total })
+      : score && score.total > 0
+        ? t('repCard.trackVoteFractionOnly', { kept: score.kept, total: score.total })
+        : t('repCard.trackVoteNoRecord');
     return (
-      <div className={"cv2-iss-row cv2-iss-row--canvas" + (isOpen ? " open" : "") + (hasVotes ? " has-drill" : "")} data-testid="voting-record-alignment-row">
-        <button className="cv2-iss-head" onClick={hasVotes ? onToggle : undefined} aria-expanded={isOpen}>
-          <span className="cv2-iss-name">{issue.interpretation}</span>
-          <div className="cv2-bar"><div className={"fill " + canvasTone} style={{ width: (pct || 0) + '%' }} /></div>
-          <span className="cv2-iss-frac">
-            {fraction || <small>n/a</small>}
-            {hasVotes && (
-              <span className={"chev" + (isOpen ? "" : " dim")}>
-                {isOpen ? "▾" : "▸"}
-              </span>
-            )}
-          </span>
-        </button>
+      <div className={"iss" + (isOpen ? " open" : "")} data-testid="voting-record-alignment-row">
+        <div className="iss-head">
+          {rank != null && <span className="iss-rank">#{rank}</span>}
+          <span className="iss-name">{issue.interpretation}</span>
+          {verdictKey && verdictLabel && (
+            <span className={"iss-verdict " + verdictKey}>{verdictLabel}</span>
+          )}
+        </div>
+        <div className="iss-tracks">
+          <div className="trk">
+            <span className="trk-ic vote">{fraction ? '✓' : '–'}</span>
+            <div>
+              <div className="trk-lab">{t('repCard.trackVoteLabel')}</div>
+              <div className="trk-val">{voteTrackText}</div>
+            </div>
+          </div>
+          {moneyTrack && (
+            <div className={"trk" + (moneyTrack.aligned ? '' : '')}>
+              <span className={"trk-ic money" + (moneyTrack.aligned ? ' ok' : '')}>$</span>
+              <div>
+                <div className="trk-lab">{t('repCard.trackMoneyLabel')}</div>
+                <div className="trk-val">
+                  <span className={moneyTrack.conflict ? 'trk-flag' : moneyTrack.aligned ? 'trk-good' : ''}>
+                    {formatDollars(moneyTrack.amount)}
+                  </span>{' '}
+                  {moneyTrack.advocates || moneyTrack.label}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
 
         {score?.notice && (
           <div className="cv2-iss-notice" role="note" style={{
             fontSize: '11px',
             color: 'var(--ink-3, #888)',
             fontStyle: 'italic',
-            padding: '2px 10px 6px',
+            padding: '2px 15px 6px',
           }}>
             {score.notice}
           </div>
+        )}
+
+        {hasVotes && (
+          <button className="iss-drill-toggle" onClick={onToggle} aria-expanded={isOpen}>
+            {isOpen ? t('repCard.hideVoteDetail') : t('repCard.showVoteDetail')}
+          </button>
         )}
 
         {isOpen && hasVotes && (
@@ -2722,6 +2904,135 @@ function ContributingVoteCard({ vote, anonCtx }) {
                bar + swatch-dot list, byte-identical) | 'canvas' (RepCard —
                canvas's per-row progress-bar industry shape, screens-
                results.jsx:119-131) */
+/** Single source of truth for "does this PAC slice align with or conflict
+ * against a user's ranked issue" — was duplicated verbatim between
+ * FunderBars' canvas and legacy named-PAC branches; now shared so the
+ * money-redesign's FundingSources list and the alignment×money join
+ * (deriveIssueMoneyTrack, below) never drift from FunderBars' own read. */
+export function deriveIssuePacAlignment(pacSlice, userIssues) {
+  const relevantIssue = pacSlice.alignsWith || pacSlice.relevantToIssue;
+  const userIssue = (userIssues || []).find(iss => iss.canonicalIssue === relevantIssue);
+  const derivedPacStance = userIssue?.stance && pacSlice.issuePacStance
+    ? (pacSlice.issuePacStance === userIssue.stance ? 'with' : 'against')
+    : pacSlice.pacStance;
+  const showAlignment = !!userIssue && !!derivedPacStance;
+  const conflictsWithUser = showAlignment && derivedPacStance === 'against';
+  return { relevantIssue, userIssue, showAlignment, conflictsWithUser };
+}
+
+/** §4 alignment×money join (money-redesign v2) — for one ranked issue, find
+ * the issue-PAC slice(s) in this candidate's donorCoalition that target it,
+ * and report a single money read. DISPLAY-ONLY: never feeds the alignment
+ * score, verdict state, or scorecard — a second read on the same issue, not
+ * a new metric. Honest-blank: returns null when no issue-PAC slice matches,
+ * so the caller renders the vote track alone rather than inventing a
+ * money conflict. */
+export function deriveIssueMoneyTrack(donorCoalition, issue, userIssues) {
+  const slice = (donorCoalition || []).find(
+    s => s.isIssuePAC && (s.alignsWith === issue.canonicalIssue || s.relevantToIssue === issue.canonicalIssue),
+  );
+  if (!slice) return null;
+  const { showAlignment, conflictsWithUser } = deriveIssuePacAlignment(slice, userIssues);
+  return {
+    amount: slice.amount,
+    label: slice.label,
+    advocates: slice.advocates || null,
+    aligned: showAlignment && !conflictsWithUser,
+    conflict: showAlignment && conflictsWithUser,
+  };
+}
+
+/** Tier-A mix bar (canvas's `.mix`/`.cv2-money-map`) — extracted from
+ * FunderBars' single-subject fallback branch so the money-redesign's always-
+ * open money section can render it directly, without pulling in FunderBars'
+ * named-PAC/industry blocks that FundingSources now supersedes on that
+ * surface. FunderBars itself keeps calling this (no visual change there). */
+export function FundingMixBar({ fundingMix, variant = 'legacy' }) {
+  const { t } = useI18n();
+  if (!fundingMix) return null;
+  return (
+    <div className="cv2-money-map-wrap">
+      <div className="cv2-money-map" role="img" aria-label="Funding by source type">
+        <div className="seg small" style={{ flexBasis: fundingMix.small + '%' }}>
+          {fundingMix.small >= 12 && <span className="pct">{fundingMix.small}%</span>}
+        </div>
+        <div className="seg large" style={{ flexBasis: fundingMix.large + '%' }}>
+          {fundingMix.large >= 12 && <span className="pct">{fundingMix.large}%</span>}
+        </div>
+        <div className="seg pac" style={{ flexBasis: fundingMix.pac + '%' }}>
+          {fundingMix.pac >= 12 && <span className="pct">{fundingMix.pac}%</span>}
+        </div>
+      </div>
+      <div className="cv2-money-legend">
+        <div><span className="sw small" /> <b>{fundingMix.small}%</b> {t('funderBars.smallDonorsLabel')} <small>{t('funderBars.smallDonorsThreshold')}</small></div>
+        <div><span className="sw large" /> <b>{fundingMix.large}%</b> {t('funderBars.largeDonorsLabel')} <small>{t('funderBars.largeDonorsThreshold')}</small></div>
+        {variant === 'canvas' ? (
+          <div>
+            <span className="sw pac" /> <b>{fundingMix.pac}%</b>{' '}
+            <span className="pac-term" tabIndex={0}>
+              {t('funderBars.pacsLabel')}
+              <span className="pac-tip" role="tooltip">
+                <b>PAC</b>{t('funderBars.pacGlossDefinition')}
+              </span>
+            </span>{' '}
+            <small>{t('funderBars.pacsThreshold')}</small>
+          </div>
+        ) : (
+          <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
+        )}
+      </div>
+      {variant !== 'canvas' && (
+        <p className="cv2-pac-gloss">
+          <b>PAC</b>{t('funderBars.pacGlossDefinition')}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/** Tier-A untraced-PAC caveat (canvas's `.mny-caveat`) — extracted from
+ * FunderBars' PAC-coverage callout so the money-redesign section can render
+ * it directly below FundingSources. Same three cases (none/partial/full
+ * coverage), same math, unchanged from FunderBars' own copy. */
+export function PacGapCaveat({ issuePacs, fundingMix, totalRaised }) {
+  const namedPacTotal = (issuePacs || []).reduce((s, p) => s + (p.amount || 0), 0);
+  const impliedPacTotal = fundingMix && typeof totalRaised === 'number'
+    ? Math.round(totalRaised * (fundingMix.pac / 100))
+    : null;
+  const uncatPacTotal = impliedPacTotal !== null ? Math.max(0, impliedPacTotal - namedPacTotal) : null;
+  const pctIdentified = impliedPacTotal && impliedPacTotal > 0
+    ? Math.round((namedPacTotal / impliedPacTotal) * 100)
+    : null;
+  const { t } = useI18n();
+  if (impliedPacTotal === null || impliedPacTotal <= 0) return null;
+  if ((issuePacs || []).length === 0) {
+    return (
+      <div className="cv2-pac-gap mny-caveat">
+        <span className="ic">!</span>
+        <span dangerouslySetInnerHTML={{
+          __html: t('funderBars.pacGapNone', { amount: formatDollars(impliedPacTotal), pct: fundingMix.pac }),
+        }} />
+      </div>
+    );
+  }
+  if (pctIdentified !== null && pctIdentified < 75) {
+    return (
+      <div className="cv2-pac-gap partial mny-caveat">
+        <span className="ic">!</span>
+        <span dangerouslySetInnerHTML={{
+          __html: t('funderBars.pacGapPartial', {
+            named: formatDollars(namedPacTotal),
+            implied: formatDollars(impliedPacTotal),
+            pct: pctIdentified,
+            remaining: formatDollars(uncatPacTotal),
+          }),
+        }} />
+      </div>
+    );
+  }
+  return null;
+}
+
 function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource, donorUnavailable, fundingMix, userIssues, peerTotals, variant = 'legacy' }) {
   const { t } = useI18n();
   if (!donorCoalition && donorUnavailable) {
@@ -2772,21 +3083,6 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
       </div>
     );
   }
-
-  // ── PAC partial-coverage math ─────────────────────────────
-  // Three cases:
-  //   • fully covered — named-PAC $ ≈ implied PAC total
-  //   • partial      — we identify some, not all
-  //   • zero         — we have nothing curated, but the candidate
-  //                    still takes PAC money (the original gap case)
-  const namedPacTotal = issuePACs.reduce((s, p) => s + (p.amount || 0), 0);
-  const impliedPacTotal = fundingMix && typeof totalRaised === 'number'
-    ? Math.round(totalRaised * (fundingMix.pac / 100))
-    : null;
-  const uncatPacTotal = impliedPacTotal !== null ? Math.max(0, impliedPacTotal - namedPacTotal) : null;
-  const pctIdentified = impliedPacTotal && impliedPacTotal > 0
-    ? Math.round((namedPacTotal / impliedPacTotal) * 100)
-    : null;
 
   // Peer comparison — single source of truth (design-system core).
   // We keep the local peerCandidate/peerLabel names the render below
@@ -2878,46 +3174,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
 
       {/* Fallback: no peer to compare against — original single money map. */}
       {fundingMix && !(peerCandidate && peerLabel) && (
-        <div className="cv2-money-map-wrap">
-          <div className="cv2-money-map" role="img" aria-label="Funding by source type">
-            <div className="seg small" style={{ flexBasis: fundingMix.small + '%' }}>
-              {fundingMix.small >= 12 && <span className="pct">{fundingMix.small}%</span>}
-            </div>
-            <div className="seg large" style={{ flexBasis: fundingMix.large + '%' }}>
-              {fundingMix.large >= 12 && <span className="pct">{fundingMix.large}%</span>}
-            </div>
-            <div className="seg pac" style={{ flexBasis: fundingMix.pac + '%' }}>
-              {fundingMix.pac >= 12 && <span className="pct">{fundingMix.pac}%</span>}
-            </div>
-          </div>
-          <div className="cv2-money-legend">
-            <div><span className="sw small" /> <b>{fundingMix.small}%</b> {t('funderBars.smallDonorsLabel')} <small>{t('funderBars.smallDonorsThreshold')}</small></div>
-            <div><span className="sw large" /> <b>{fundingMix.large}%</b> {t('funderBars.largeDonorsLabel')} <small>{t('funderBars.largeDonorsThreshold')}</small></div>
-            {variant === 'canvas' ? (
-              /* [Δ] canvas-parity — the PAC definition moves from an
-                 always-visible paragraph (below) to a tooltip on the "PACs"
-                 legend term itself (screens.css .pac-term/.pac-tip), same
-                 keyboard-focusable pattern canvas uses. */
-              <div>
-                <span className="sw pac" /> <b>{fundingMix.pac}%</b>{' '}
-                <span className="pac-term" tabIndex={0}>
-                  {t('funderBars.pacsLabel')}
-                  <span className="pac-tip" role="tooltip">
-                    <b>PAC</b>{t('funderBars.pacGlossDefinition')}
-                  </span>
-                </span>{' '}
-                <small>{t('funderBars.pacsThreshold')}</small>
-              </div>
-            ) : (
-              <div><span className="sw pac" /> <b>{fundingMix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
-            )}
-          </div>
-          {variant !== 'canvas' && (
-            <p className="cv2-pac-gloss">
-              <b>PAC</b>{t('funderBars.pacGlossDefinition')}
-            </p>
-          )}
-        </div>
+        <FundingMixBar fundingMix={fundingMix} variant={variant} />
       )}
 
       {/* Named issue-PACs. Subtitle clarifies what this section is.
@@ -2937,15 +3194,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
           </div>
           <div className="fp-pacs">
             {issuePACs.map((p, i) => {
-              const relevantIssue = p.alignsWith || p.relevantToIssue;
-              const userIssue = (userIssues || []).find(
-                iss => iss.canonicalIssue === relevantIssue
-              );
-              const derivedPacStance = userIssue?.stance && p.issuePacStance
-                ? (p.issuePacStance === userIssue.stance ? 'with' : 'against')
-                : p.pacStance;
-              const showAlignment = !!userIssue && !!derivedPacStance;
-              const conflictsWithUser = showAlignment && derivedPacStance === 'against';
+              const { relevantIssue, userIssue, showAlignment, conflictsWithUser } = deriveIssuePacAlignment(p, userIssues);
               return (
                 <div className="fp-pac-wrap" key={i}>
                   <span className="fp-pac">
@@ -2977,15 +3226,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
             <small className="cv2-sub-lab">{t('funderBars.namedIssuePacsSub')}</small>
           </div>
           {issuePACs.map((p, i) => {
-            const relevantIssue = p.alignsWith || p.relevantToIssue;
-            const userIssue = (userIssues || []).find(
-              iss => iss.canonicalIssue === relevantIssue
-            );
-            const derivedPacStance = userIssue?.stance && p.issuePacStance
-              ? (p.issuePacStance === userIssue.stance ? 'with' : 'against')
-              : p.pacStance;
-            const showAlignment = !!userIssue && !!derivedPacStance;
-            const conflictsWithUser = showAlignment && derivedPacStance === 'against';
+            const { relevantIssue, userIssue, showAlignment, conflictsWithUser } = deriveIssuePacAlignment(p, userIssues);
             return (
               <div className="cv2-pac-row v2" key={i}>
                 <div className="cv2-pac-top">
@@ -3017,35 +3258,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
 
       {/* [Δ] PAC coverage callout — moved BELOW the named PACs so readers
           first see what we DO have, then learn about what we don't. */}
-      {impliedPacTotal !== null && impliedPacTotal > 0 && (
-        issuePACs.length === 0 ? (
-          <div className="cv2-pac-gap">
-            <span className="ic">!</span>
-            <span
-              dangerouslySetInnerHTML={{
-                __html: t('funderBars.pacGapNone', {
-                  amount: formatDollars(impliedPacTotal),
-                  pct: fundingMix.pac,
-                }),
-              }}
-            />
-          </div>
-        ) : pctIdentified !== null && pctIdentified < 75 ? (
-          <div className="cv2-pac-gap partial">
-            <span className="ic">!</span>
-            <span
-              dangerouslySetInnerHTML={{
-                __html: t('funderBars.pacGapPartial', {
-                  named: formatDollars(namedPacTotal),
-                  implied: formatDollars(impliedPacTotal),
-                  pct: pctIdentified,
-                  remaining: formatDollars(uncatPacTotal),
-                }),
-              }}
-            />
-          </div>
-        ) : null
-      )}
+      <PacGapCaveat issuePacs={issuePACs} fundingMix={fundingMix} totalRaised={totalRaised} />
 
       {/* Industry breakdown — same data but grouped differently.
           [Fix] Industries usually only cover the top sectors; the
