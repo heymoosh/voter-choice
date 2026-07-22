@@ -87,6 +87,16 @@ interface ComponentTarget {
    *  one exists; only set this when the CARD (not the whole scenario) needs
    *  its own caveat. */
   note?: string;
+  /** Wraps the captured outerHTML in a synthetic `<div class={wrapClass}>`
+   *  before writing. Needed when `selector` targets an element narrower
+   *  than the CSS scope root its styles are written against (e.g. this
+   *  repo's money-redesign rules are all `.rep-card <inner>`-scoped) — the
+   *  standalone-render step has no cascade from ancestors that weren't
+   *  captured, so a crop below the scope root renders unstyled without
+   *  this. Prefer widening `selector` instead when the scope root itself
+   *  IS the useful crop; reach for this only when a genuinely narrower
+   *  crop is wanted from a component whose styles are scoped above it. */
+  wrapClass?: string;
 }
 
 const TARGETS: ComponentTarget[] = [
@@ -163,18 +173,31 @@ const TARGETS: ComponentTarget[] = [
 
   // ---- Results ----
   {
+    // Money-redesign v2/v3 (2026-07-21/22) made the money section always
+    // open — no more collapsed/expanded disclosure state, so this pair no
+    // longer captures two states of the same thing. Kept as two cards:
+    // this one shows the seat top (alignment + money hero + scale), the
+    // next one below scrolls to the fused funding-sources list, so the
+    // pair stays visually distinct rather than becoming duplicates.
     id: "rep-card-collapsed",
     group: "Results",
-    title: "RepCard — money disclosure collapsed",
+    title: "RepCard — seat top (alignment + money hero)",
     scenarioId: "02a-results-main",
     selector: ".rep-card",
   },
   {
+    // Extraction grabs outerHTML and render-check does a standalone
+    // full-page screenshot of it — a narrower selector, not a scroll, is
+    // what produces a distinct crop. `.srcs` is the fused funding-sources
+    // list (v2 Tier B), the biggest net-new surface in this card. Its
+    // rules are all `.rep-card .src*`-scoped, so wrapClass restores the
+    // ancestor the standalone render needs to pick up any styling at all.
     id: "rep-card-expanded",
     group: "Results",
-    title: "RepCard — money disclosure expanded",
+    title: "RepCard — funding sources list",
     scenarioId: "02b-results-funding-expanded",
-    selector: ".rep-card",
+    selector: ".srcs",
+    wrapClass: "rep-card",
   },
   {
     id: "rep-card-revealed",
@@ -214,14 +237,18 @@ const TARGETS: ComponentTarget[] = [
 
   // ---- Money ----
   {
+    // MedianChip (the old collapsed-glance chip this card used to capture)
+    // has no live callers anymore — money-redesign v2 (2026-07-21/22)
+    // replaced it with MoneyHero, the always-open serif hero + multiple
+    // sentence. Repurposed this slot rather than deleting it outright,
+    // since the money section's opening view is exactly the kind of
+    // reusable pattern this board exists to mirror.
     id: "median-chip",
     group: "Money",
-    title: "MedianChip",
+    title: "MoneyHero",
     scenarioId: "02a-results-main",
-    selector: ".median-chip",
-    note:
-      "Collapsed-state chip only — MedianChip's own 'no median yet' empty variant needs a " +
-      "candidate with no peerComparison, not captured here.",
+    selector: ".mny-hero",
+    wrapClass: "rep-card",
   },
   {
     id: "field-money-gap",
@@ -436,7 +463,10 @@ async function extractOne(
     await neutralizeScrollTraps(page);
     const locator = page.locator(target.selector).nth(target.nth ?? 0);
     await locator.waitFor({ state: "visible", timeout: 10_000 });
-    const outerHtml = await locator.evaluate((el) => el.outerHTML);
+    let outerHtml = await locator.evaluate((el) => el.outerHTML);
+    if (target.wrapClass) {
+      outerHtml = `<div class="${target.wrapClass}">${outerHtml}</div>`;
+    }
     const componentsDir = path.join(bundleDir, "components");
     fs.mkdirSync(componentsDir, { recursive: true });
     const file = path.join(componentsDir, `${target.id}.html`);
