@@ -604,7 +604,7 @@ const TRANSLATIONS = {
       hideVoteDetail: 'Hide vote detail ▴',
       // Money hero (MoneyHero — Tier B)
       moneyHeroRaisedCycle: 'raised · {cycle} cycle',
-      moneyHeroVsTypical: "That's <mult>{multiple}×</mult> the <b>{median}</b> a typical {office} campaign raises.",
+      moneyHeroVsTypical: "That's <mult>{multiple}</mult> the <b>{median}</b> a typical {office} campaign raises.",
       moneyHeroDollarOnly: 'raised this cycle — no chamber baseline yet to compare against.',
       // Funding-mix caveat already covered by funderBars.pacGap*; verdict/ask/attendance restyle only, no new copy needed there.
       // Edit-issues entry points (v3 §3b)
@@ -1282,7 +1282,7 @@ const TRANSLATIONS = {
       showVoteDetail: 'Ver detalle de votos ▾',
       hideVoteDetail: 'Ocultar detalle de votos ▴',
       moneyHeroRaisedCycle: 'recaudado · ciclo {cycle}',
-      moneyHeroVsTypical: 'Eso es <mult>{multiple}×</mult> lo que <b>{median}</b> recauda una campaña típica de {office}.',
+      moneyHeroVsTypical: 'Eso es <mult>{multiple}</mult> lo que <b>{median}</b> recauda una campaña típica de {office}.',
       moneyHeroDollarOnly: 'recaudado este ciclo — aún no hay una base de comparación de la cámara.',
       editIssuesFinePrint: 'Evaluado según tus {n} temas priorizados. ¿Cambiaron tus prioridades?',
       editIssuesLink: 'Edita tus temas',
