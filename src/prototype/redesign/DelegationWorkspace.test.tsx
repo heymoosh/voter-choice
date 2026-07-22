@@ -155,6 +155,29 @@ describe("DelegationWorkspace rail removal", () => {
   });
 });
 
+describe("DelegationWorkspace overview blind wiring", () => {
+  it("threads blindMode/revealed through to the overview's seat cards", () => {
+    const { container } = renderWorkspace(verifiedRosterProvenance, {
+      overviewOpen: true,
+      blindMode: true,
+    });
+
+    expect(container.querySelector(".cd-card")?.className).toContain("blind");
+  });
+
+  it("does not mark the seat card blind once it's in the revealed set", () => {
+    const { container } = renderWorkspace(verifiedRosterProvenance, {
+      overviewOpen: true,
+      blindMode: true,
+      revealed: new Set(["house-TX-21"]),
+    });
+
+    expect(container.querySelector(".cd-card")?.className).not.toContain(
+      "blind",
+    );
+  });
+});
+
 describe("DelegationWorkspace all-done polis-invite panel", () => {
   it("mounts the polis-invite panel in place of the old buried text link", () => {
     const { container, getByText } = renderWorkspace(verifiedRosterProvenance);

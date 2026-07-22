@@ -436,42 +436,6 @@
   cursor: pointer;
 }
 
-/* ---- verdict buttons (evolve .cv2-actions .pick) ---- */
-.cv2-actions.verdicts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.cv2-actions .pick.replace {
-  background: transparent;
-  color: var(--vote-red);
-  border: 1.5px solid oklch(0.8 0.07 28);
-  box-shadow: none;
-}
-.cv2-actions .pick.replace:hover {
-  border-color: var(--vote-red);
-  background: oklch(0.97 0.015 28);
-}
-.cv2-actions .pick.picked-replace {
-  background: oklch(0.93 0.04 28);
-  border-color: var(--vote-red);
-  color: var(--vote-red);
-}
-/* checkbox box on the (light-bg) replace button needs a visible border */
-.cv2-actions .pick.replace .ck {
-  border-color: oklch(0.7 0.1 28);
-}
-.cv2-actions .pick.picked-replace .ck {
-  border-color: var(--vote-red);
-  background: var(--vote-red);
-  color: var(--paper-2);
-}
-@media (max-width: 640px) {
-  .cv2-actions.verdicts {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ---- verdict chips (scorecard + print) ---- */
 .verdict-chip {
   font-family: var(--mono);
@@ -543,6 +507,15 @@
   --scp-keep-line: oklch(0.62 0.1 159);
   --scp-replace: oklch(0.53 0.205 27);
   --scp-replace-ink: oklch(0.47 0.18 27);
+}
+/* Frames 10+11 fix 2 (whiteboard line 589) — no whiteboard original exists
+   for this note (unstyled there), so it matches the tone of the existing
+   .vm-note below: small, muted meta text under the print header. */
+.print-wrap .print-why-note {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin: 4px 0 0;
 }
 /* .pflag — the flag-stripe accent canvas puts on the sheet card itself
    (screens-scorecard.jsx / screens-home.jsx .sheet .pflag), never ported to
@@ -1270,11 +1243,6 @@
   font-size: 11px;
   color: var(--ink-3, oklch(0.54 0.026 260));
   margin-top: 5px;
-}
-.all-done-also {
-  margin-top: 12px;
-  font-size: 13px;
-  color: var(--ink-3);
 }
 .linklike {
   background: none;
@@ -3598,28 +3566,6 @@
 .rep-card .al-legend .i-money {
   background: var(--vote-red);
 }
-.rep-card .al-edit {
-  margin-top: 14px;
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.4;
-}
-.rep-card .al-edit a {
-  display: inline-block;
-  padding: 6px 2px;
-  margin: -6px 0;
-  color: var(--civic);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.rep-card .al-edit a:focus-visible {
-  outline: 2px solid var(--civic);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
 /* ---- per-issue card — replaces the old single-line cv2-iss-row--canvas ---- */
 .rep-card .iss {
   margin-top: 14px;
@@ -4026,14 +3972,14 @@
 }
 
 /* ============================================================
-   RepCard §2 — merged money section, NEW pieces (Build order items 1-2).
-   Everything below stages CSS for components/markup not yet wired:
-   MoneyVerdict (mny-verdict), RevolvingDoorBand (rd-band), the
+   RepCard §2 — merged money section (Build order items 1-2). Everything
+   below styles MoneyVerdict (mny-verdict), RevolvingDoorBand (rd-band), the
    expander/collapse chrome, FundingSources' src-votes sub-block, the
-   money & democracy tiles (md-*), and the verdict button pair (replaces
-   .cv2-actions.verdicts/.pick once RepCard.tsx switches markup). Same
-   .rep-card-local token aliases as the block above (--civic=navy,
-   --vote-red=red, --rc-keep=green, --gold-text/--amber=amber).
+   money & democracy tiles (md-*), and the verdict button pair (.btn-keep/
+   .btn-replace — the old .cv2-actions.verdicts/.pick markup this replaced is
+   gone from both RepCard.tsx and this stylesheet). Same .rep-card-local
+   token aliases as the block above (--civic=navy, --vote-red=red,
+   --rc-keep=green, --gold-text/--amber=amber).
    ============================================================ */
 
 /* ---- money verdict — "did their votes follow their donors?" ---- */
@@ -4452,9 +4398,9 @@
   white-space: nowrap;
 }
 
-/* ---- verdict button pair — whiteboard's .verdict/.btn grid, staged
-   ahead of the RepCard.tsx swap away from .cv2-actions.verdicts/.pick
-   (same handlers, same keep/replace semantics). ---- */
+/* ---- verdict button pair — whiteboard's .verdict/.btn grid, RepCard.tsx's
+   real verdict markup (replaced .cv2-actions.verdicts/.pick; same handlers,
+   same keep/replace semantics). ---- */
 .rep-card .verdict {
   display: grid;
   gap: 12px;
@@ -5139,26 +5085,6 @@
   font-weight: 700;
 }
 
-/* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic
-   so it reads canvas's keep-green instead (see --rc-keep above); "time to
-   replace" already rides --vote-red via the existing .pick.replace
-   override, so it inherits the new flag-red automatically. ---- */
-.rep-card .cv2-actions .pick:not(.replace) {
-  background: var(--rc-keep);
-  border: 1.5px solid var(--rc-keep);
-}
-.rep-card .cv2-actions .pick:not(.replace):hover {
-  background: var(--rc-keep-2);
-  border-color: var(--rc-keep-2);
-}
-.rep-card .cv2-actions .pick.picked {
-  border-color: var(--rc-keep);
-}
-.rep-card .cv2-actions .pick.picked .ck {
-  border-color: var(--rc-keep);
-  background: var(--rc-keep);
-}
-
 /* ====================================================
    § DELEGATION OVERVIEW
    PORT of design-handoff/keystone-canvas/src/delegation.css (its own "§8 ·
@@ -5179,15 +5105,12 @@
    scoped, same as .cmp .tone-good/.tone-mid/.tone-bad above.
    NOT ported: .cd-delta/.cd-pair/.cd-stage/.cd-explain/.cd-pick-tag
    (separate task) and .rh-dots (no matching rail-header-dots element
-   exists in this repo).
-   One source selector doesn't map to a real class here and is retargeted:
-     - ".vbtn.keep.is-on" / ".vbtn.replace.is-on" -> ".pick.picked" /
-       ".pick.replace.picked-replace", RepCard.tsx's real verdict buttons
-       (already fully styled globally via .cv2-actions); scoped under
-       .dg-deep so this only adds emphasis inside the overview's deep
-       view. The source's `.ck::before { content: "⇄" }` accent is
-       dropped — RepCard already renders a "✕" glyph via JSX for the
-       replace state, so the pseudo-element would double the icon.
+   exists in this repo). The source's ".vbtn.keep.is-on"/".vbtn.replace.is-on"
+   emphasis (retargeted here in an earlier pass at ".pick.picked"/".pick.replace
+   .picked-replace") was dropped along with those dead selectors once
+   RepCard.tsx's real verdict buttons became .btn-keep/.btn-replace — no
+   replacement rule needed, .btn-keep.picked/.btn-replace.picked-replace
+   already carry their own emphasis styling above.
    Loaded via redesign2.css's existing <link> in src/app/layout.tsx.
    ==================================================== */
 
@@ -5449,37 +5372,11 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.cd-bars {
-  flex: 1;
-  display: flex;
-  height: 8px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid var(--rule-2);
-}
-.cd-bars i.small {
-  background: var(--keep);
-}
-.cd-bars i.large {
-  background: var(--gold);
-}
-.cd-bars i.pac {
-  background: var(--replace);
-}
 .cd-money-top .tot {
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 700;
   color: var(--ink);
-}
-.cd-money-note {
-  font-size: 11px;
-  color: var(--ink-3);
-  margin-top: 6px;
-}
-.cd-money-note b {
-  color: var(--ink-2);
-  font-weight: 600;
 }
 .cd-foot {
   margin-top: auto;
@@ -5979,21 +5876,6 @@
    bar), so the back-to-overview control needs its own always-visible row. */
 .dg-back-row {
   margin: 0 0 14px;
-}
-
-/* retargeted from the source's ".vbtn.keep.is-on" / ".vbtn.replace.is-on"
-   — the real verdict buttons in this repo are RepCard.tsx's .pick.picked /
-   .pick.replace.picked-replace (already fully styled everywhere via
-   .cv2-actions). Scoped under .dg-deep so this only adds emphasis inside
-   the overview's deep view. */
-.dg-deep .pick.picked {
-  box-shadow:
-    0 0 0 3px var(--keep-soft),
-    var(--shadow-soft);
-}
-.dg-deep .pick.replace.picked-replace {
-  background: var(--replace);
-  color: var(--paper-2);
 }
 
 /* ---- Roster feedback ("Missing a rep? Something look wrong?") ----

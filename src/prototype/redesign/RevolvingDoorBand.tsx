@@ -15,6 +15,7 @@
  */
 
 import React from "react";
+import { useI18n, escapeHtml } from "../VoterChoiceApp";
 
 export interface RevolvingDoorRecord {
   memberId: string;
@@ -29,6 +30,9 @@ export interface RevolvingDoorBandProps {
 }
 
 export function RevolvingDoorBand({ record }: RevolvingDoorBandProps) {
+  const { t } = useI18n() as {
+    t: (key: string, vars?: Record<string, unknown>) => string;
+  };
   if (!record) return null;
   return (
     <div className="rd-band" style={{ marginTop: 12 }} data-testid="rd-band">
@@ -36,13 +40,22 @@ export function RevolvingDoorBand({ record }: RevolvingDoorBandProps) {
         ⟳
       </span>
       <span>
-        <b>Heading for the exit:</b> this incumbent has accepted {record.role}{" "}
-        at <b>{record.org}</b> — a company whose PAC funded them.
+        <b>{t("repCard.revolvingDoorLead")}</b>{" "}
+        <span
+          dangerouslySetInnerHTML={{
+            __html: t("repCard.revolvingDoorSentence", {
+              role: escapeHtml(record.role),
+              org: escapeHtml(record.org),
+            }),
+          }}
+        />
         <span className="src">
           {" "}
-          Documented {record.dateDocumented} ·{" "}
+          {t("repCard.revolvingDoorDocumented", {
+            date: record.dateDocumented,
+          })}{" "}
           <a href={record.sourceUrl} target="_blank" rel="noopener noreferrer">
-            source ↗
+            {t("repCard.sourceArrowLink")}
           </a>
         </span>
       </span>

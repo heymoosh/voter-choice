@@ -291,6 +291,85 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
   });
 });
 
+// The .iss-verdict chip (RepCard §1) is wired through delegationData.ts's
+// shared deriveIssueMoneyVerdict helper — same money×vote join the overview
+// card's cd-influence reads — rather than a duplicated inline derivation.
+describe("RepCard per-issue money verdict chip (deriveIssueMoneyVerdict wiring)", () => {
+  it("renders the v-with chip (reviewed whiteboard copy) when the vote went with the user and the issue-PAC's stance aligns", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: [
+          {
+            label: "Better Care PAC",
+            amount: 250_000,
+            isIssuePAC: true,
+            alignsWith: "healthcare_affordability",
+            issuePacStance: "in_favor",
+          },
+        ],
+        peerComparison: peer,
+      },
+    });
+    const { container } = renderCard(seat);
+    const chip = container.querySelector(".iss-verdict");
+    expect(chip).toHaveClass("v-with");
+    expect(chip).toHaveTextContent("Votes & money align");
+  });
+
+  it("renders the v-mixed chip when the vote went with the user but the issue-PAC's stance conflicts", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: [
+          {
+            label: "Big Pharma PAC",
+            amount: 250_000,
+            isIssuePAC: true,
+            alignsWith: "healthcare_affordability",
+            issuePacStance: "opposed",
+          },
+        ],
+        peerComparison: peer,
+      },
+    });
+    const { container } = renderCard(seat);
+    const chip = container.querySelector(".iss-verdict");
+    expect(chip).toHaveClass("v-mixed");
+    expect(chip).toHaveTextContent("Votes yes, money says no");
+  });
+
+  it("renders no chip when there's no matching issue-PAC with a fixed stance", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: undefined,
+        donorSource: undefined,
+        donorCoalition: null,
+        peerComparison: peer,
+      },
+    });
+    const { container } = renderCard(seat);
+    expect(container.querySelector(".iss-verdict")).toBeNull();
+  });
+});
+
 // SPEC-3A Option A — the canvas-variant issue-PAC pill restores the legacy
 // "what this PAC advocates" line (.fp-pac-advocates), rendered honest-blank
 // when the data is absent (the advocates field is data-gated).

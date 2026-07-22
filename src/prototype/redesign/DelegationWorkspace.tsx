@@ -121,6 +121,8 @@ export function DelegationWorkspace({
           verdicts={verdicts}
           picks={picks}
           userIssues={userIssues}
+          blindMode={blindMode}
+          revealed={revealed}
           onOpen={onOpenSeat}
           onPrint={onPrint}
         />
@@ -256,7 +258,9 @@ export function DelegationWorkspace({
             <div className="all-done" data-testid="all-done">
               <div className="all-done-kick">{t("scorecard.allDoneKick")}</div>
               <b>{t("scorecard.allDoneHeadline")}</b>
-              <p className="all-done-sub">{t("scorecard.allDoneSub")}</p>
+              <p className="all-done-sub">
+                {t("scorecard.allDoneSub", { n: doneCount })}
+              </p>
               <div className="all-done-actions">
                 <button
                   className="all-done-print"

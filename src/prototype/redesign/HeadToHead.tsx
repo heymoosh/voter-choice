@@ -1,46 +1,71 @@
 // @ts-nocheck
 "use client";
-/* Head-to-head candidate duel — the "Time to replace" flow (card 6a1fb1fb).
-   PORT of claude-code-handoff/design-session/screens-candidates.jsx → the
-   down-selected DIRECTION B (`HeadToHead`), brought onto the app's stylesheet
-   pipeline (public/candidates.css) and wired to REAL seat data. Per repo
-   policy the design is the source of truth — markup/class names are the
-   design's; only the data bindings and the honest empty states are new:
+/* Head-to-head candidate duel — the "Time to replace" flow (card 6a1fb1fb),
+   rebuilt onto the whiteboard's BLIND `.dl-*` markup (work order v4, Frame 5
+   "Head-to-head goes BLIND" + Frame 6 challenger empty states + Frame 7's
+   shared FundingSources embed). Per repo policy the design is the source of
+   truth — markup/class names are the whiteboard's; only data bindings and
+   honest empty states are new. This replaces the old `.cmp-*` markup (still
+   in public/candidates.css until this lands, see that file's BAND C comment).
 
-     - REP literal → seat.candidate + seat.alignmentEntry (roll-call) or
-       seat.positions/research (researched executive — Phase-1 is Congress, so
-       this path is the no-DB-record member fallback, never blended).
-     - CHS literal → seat.challengers after verified ballot-roster filtering;
-       per-challenger alignment comes from on-demand getChallengerResearch()
-       (web_search, cited) — fired when a challenger is first selected, with
-       the design's loading / "no record" honest states. FEC filing data stays
-       separate as campaign-finance evidence.
-     - The Δ ledger sources both sides from duelAlignment.buildLedger over the
-       USER's issues; a side with no record renders "no record" (delta hidden),
-       never a fabricated number.
-     - Keep / Replace at the foot record the EXISTING verdict; "Replace with X"
-       also records X as the seat's successor pick (rides to scorecard/print). */
+   Blind contract (same shape RepCard/DelegationWorkspace already use):
+     - `blindMode` — whether the app is in blind mode at all.
+     - `revealed: Set<string>` — the SAME set App2 already threads into every
+       RepCard, keyed by seat.id for the incumbent (so revealing the rep on
+       the card also reveals them here, and vice versa — "the incumbent uses
+       the seat's existing reveal state"). Each challenger gets its own key,
+       `challengerRevealKey(seat.id, challenger.id)`, in that SAME set — no
+       new parent state needed, just pass the existing (blindMode, revealed,
+       reveal) through to this component's (blindMode, revealed, onReveal).
+     - `onReveal(id)` — same setter App2 already has (`reveal = (id) =>
+       setRevealed(p => new Set([...p, id]))`); works unchanged for either
+       key shape.
+     - Aliases ("This seat's incumbent" / "Candidate A/B/C…") are DISPLAY
+       ONLY — every handler below (onKeep/onReplace) still receives the
+       real challenger id, so picking while blind records the real pick;
+       only the printed/rendered text is aliased.
+
+   Money section (Frame 7): both columns render the UNMODIFIED FundingSources
+   component the seat card uses — no bespoke money grid here anymore. A
+   challenger only ever carries `totalReceipts` today (no donorCoalition/
+   fundingMix — see GAPS-AND-DATA-AUDIT.md §D7), so FundingSources naturally
+   renders nothing for them yet; the honest fallback (dollar total + "PACs ·
+   not yet traced", or Frame 6's no-FEC-match empty state) covers that gap
+   until a challenger-committee crosswalk lands — at which point this file
+   needs no changes, FundingSources just starts rendering the real breakdown. */
 
 import React, { useState, useEffect } from "react";
 import { formatDollars, useI18n } from "../VoterChoiceApp";
-import { getChallengerResearch, researchChallenger } from "./delegationData";
+import {
+  getChallengerResearch,
+  researchChallenger,
+  deriveMoneyInfluence,
+  deriveVoteLinkage,
+} from "./delegationData";
 import { buildLedger, overallAlignment } from "./duelAlignment";
 import { MoneyGapScale } from "./MoneyGap";
+import { FundingSources } from "./FundingSources";
+import { MoneyVerdict } from "./MoneyVerdict";
 import { isSelectableReplacement } from "../../lib/rosterProvenance";
+import { anonymizeText } from "../../lib/anonymizeText";
 
 function cdTone(p) {
   return p == null ? "na" : p >= 67 ? "good" : p >= 34 ? "mid" : "bad";
 }
 
-/** Provenance badge — the design's unifier (roll-call vs researched). */
-function ProvBadge({ basis, conf }) {
-  return basis === "roll-call" ? (
-    <span className="prov rollcall">Roll-call record</span>
-  ) : (
-    <span className="prov researched">
-      Researched · cited{conf ? " · " + conf : ""}
-    </span>
-  );
+/** `.dl-prov` badge — roll-call vs researched, the whiteboard's unifier
+ *  (verbatim `prov-b roll` / `prov-b res` classes). Confidence is appended
+ *  only for a researched read that has one (challengers always do once
+ *  research completes; an executive incumbent's researched fallback may).
+ *  Reuses RepCard's own provRollcall/provResearched keys — same badge
+ *  copy, same wording contract either surface. */
+function provLabel(basis, conf, t) {
+  if (basis === "roll-call")
+    return { cls: "roll", text: t("repCard.provRollcall") };
+  return {
+    cls: "res",
+    text: t("repCard.provResearched") + (conf ? " · " + conf : ""),
+  };
 }
 
 const PARTY_PIP = {
@@ -59,41 +84,79 @@ function initial(name) {
   return (name || "?").trim().charAt(0).toUpperCase() || "?";
 }
 
+/** Challenger alias by roster position — "Candidate A/B/C…", stable across
+ *  renders because it's a pure function of the (stable) filtered challenger
+ *  array's index, not of selection or research state. */
+function challengerAliasLetter(index) {
+  return String.fromCharCode(65 + index);
+}
+function challengerAlias(index) {
+  return "Candidate " + challengerAliasLetter(index);
+}
+
+/** Composite reveal-set key for a challenger — lives in the SAME Set the
+ *  parent already keys the incumbent by seat.id (see file header). */
+function challengerRevealKey(seatId, challengerId) {
+  return seatId + "::challenger::" + challengerId;
+}
+
 /* ── the incumbent's record, reduced to the shape the duel reads ── */
 function incumbentScores(seat) {
   if (seat.researched) return seat.positions || [];
   return seat.alignmentEntry?.scores || [];
 }
 
-/** Top named-industry labels from donorCoalition — mirrors
- * RepCard.tsx's topFundingIndustries, same small per-screen helper,
- * duplicated locally per this repo's convention (see RepCard.tsx's
- * ProvBadge comment). */
-function topFundingIndustries(donorCoalition, limit = 3) {
-  return (donorCoalition || [])
-    .filter((s) => s && !s.isIssuePAC && s.label)
-    .slice(0, limit)
-    .map((s) => s.label);
+/** Deduped, name-free-safe evidence list across a candidate's scores — the
+ *  source links Frame 5 item 5 locks behind `.dl-lock` while blind. */
+function collectEvidence(scores) {
+  const seen = new Set();
+  const out = [];
+  for (const s of scores || []) {
+    for (const e of s?.evidence || []) {
+      if (e?.url && !seen.has(e.url)) {
+        seen.add(e.url);
+        out.push(e);
+      }
+    }
+  }
+  return out;
 }
 
 /** Whole-field money-gap rows — verified roster candidates with real FEC
  * finance totals, highest first. Honest-data: a challenger with no
  * total_receipts row is omitted, never fabricated as $0. Mirrors RepCard.tsx's
  * moneyGapField mapping (that card is dropping these rows — the full field now
- * lives here). */
-function buildMoneyGapField(challengers, t) {
+ * lives here). MoneyGapScale renders whatever name/pip/tag it's given
+ * (including into each row's aria-label), so blind-safety for this whole-field
+ * scale is entirely a data-layer concern here: alias index comes from the
+ * SAME roster-ordered `challengers` array the tabs use (not this function's
+ * own totalReceipts sort order), and `tag` drops the party word while blind
+ * (the un-hidden `.mgap-tag` text would otherwise leak party even with the
+ * pip dashed and the name aliased). */
+function buildMoneyGapField(challengers, t, seatId, blindMode, revealed) {
   return (challengers || [])
     .filter((c) => typeof c.totalReceipts === "number" && c.totalReceipts > 0)
-    .sort((a, b) => b.totalReceipts - a.totalReceipts)
-    .map((c) => ({
-      name: c.name,
-      raised: c.totalReceipts,
-      pip: PARTY_PIP[c.party] || "ind",
-      tag: t("repCard.challengerTag", {
-        party: c.party || t("repCard.partyUnknown"),
-      }),
-    }));
+    .map((c) => {
+      const idx = challengers.findIndex((x) => x.id === c.id);
+      const blind =
+        !!blindMode && !revealed.has(challengerRevealKey(seatId, c.id));
+      return {
+        name: blind ? challengerAlias(idx) : c.name,
+        raised: c.totalReceipts,
+        pip: blind ? "hid" : PARTY_PIP[c.party] || "ind",
+        // Party-free while blind — the un-hidden `.mgap-tag` text would
+        // otherwise leak party even with the pip dashed and the name aliased.
+        tag: blind
+          ? t("headToHead.challengerFallback")
+          : t("repCard.challengerTag", {
+              party: c.party || t("repCard.partyUnknown"),
+            }),
+      };
+    })
+    .sort((a, b) => b.raised - a.raised);
 }
+
+const EMPTY_REVEALED = new Set();
 
 export function HeadToHead({
   seat,
@@ -105,6 +168,9 @@ export function HeadToHead({
   onReplace,
   onClose,
   onShowBudgetOptions,
+  blindMode = false,
+  revealed = EMPTY_REVEALED,
+  onReveal = () => {},
 }) {
   const { t } = useI18n();
   const cand = seat.candidate;
@@ -120,17 +186,35 @@ export function HeadToHead({
   // Re-render when an on-demand challenger research promise settles.
   const [, setTick] = useState(0);
   const ch = challengers.find((c) => c.id === sel) || null;
+  const chIndex = ch ? challengers.findIndex((c) => c.id === ch.id) : -1;
+  const chAlias = chIndex >= 0 ? challengerAlias(chIndex) : "";
+  const chRevealKey = ch ? challengerRevealKey(seat.id, ch.id) : null;
+
+  const incBlind = !!blindMode && !revealed.has(seat.id);
+  const chBlind = !!blindMode && !!chRevealKey && !revealed.has(chRevealKey);
+  // Whether the blind-mode chrome (blindbar, per-column reveal buttons) has
+  // anything left to say — a stale "vet everyone first" banner once every
+  // side is already revealed would be dishonest chrome, not a design gap.
+  const anyBlindLeft =
+    blindMode &&
+    (incBlind ||
+      challengers.some(
+        (c) => !revealed.has(challengerRevealKey(seat.id, c.id)),
+      ));
+
+  function fireResearch() {
+    if (!ch) return;
+    researchChallenger(ch, seat, userIssues, stateCode, () =>
+      setTick((n) => n + 1),
+    );
+  }
 
   // On-demand research: fire for the selected challenger if we have no result
   // yet (mirrors ChallengerRow's contract — name goes server-side only).
   useEffect(() => {
     if (!ch) return;
     const existing = getChallengerResearch(ch.id);
-    if (!existing) {
-      researchChallenger(ch, seat, userIssues, stateCode, () =>
-        setTick((t) => t + 1),
-      );
-    }
+    if (!existing) fireResearch();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sel]);
 
@@ -139,6 +223,10 @@ export function HeadToHead({
   const incOverall = overallAlignment(incScores);
   const repName = seat.candidate?.name || seat.blindLabel;
   const incPip = PARTY_PIP[seat.partyName] || "ind";
+  const incDisplayName = incBlind ? t("repCard.blindSeatIncumbent") : repName;
+  const incEvidence =
+    incBasis === "researched" ? collectEvidence(incScores) : [];
+  const incProv = provLabel(incBasis, null, t);
 
   const research = ch ? getChallengerResearch(ch.id) : undefined;
   const chDone = research?.status === "done";
@@ -148,11 +236,15 @@ export function HeadToHead({
     ? (research.scores.find((s) => s.confidence)?.confidence ?? null)
     : null;
   const chPip = (ch && PARTY_PIP[ch.party]) || "ind";
+  const chDisplayName = ch ? (chBlind ? chAlias : ch.name) : "";
+  const chEvidence = chDone ? collectEvidence(chScores) : [];
+  const chProv = provLabel("researched", chConf, t);
 
   const ledger = buildLedger(incScores, chScores, userIssues);
 
-  // Funding contrast — honest: challengers carry only totalReceipts (no mix),
-  // so we show the dollar figure and omit any PAC% we don't have.
+  // Funding — honest: challengers carry only totalReceipts today (no mix/
+  // coalition), so the money column below degrades per Frame 6 state 4 /
+  // GAPS §D7 until a challenger-committee crosswalk lands.
   const incRaised =
     typeof seat.candidate?.totalRaised === "number"
       ? seat.candidate.totalRaised
@@ -160,8 +252,42 @@ export function HeadToHead({
   const incPac = seat.candidate?.fundingMix?.pac;
   const chRaised =
     ch && typeof ch.totalReceipts === "number" ? ch.totalReceipts : null;
-  const incIndustries = topFundingIndustries(cand?.donorCoalition);
-  const moneyGapField = buildMoneyGapField(challengers, t);
+  const moneyGapField = buildMoneyGapField(
+    challengers,
+    t,
+    seat.id,
+    blindMode,
+    revealed,
+  );
+  const incVoteLinkage = deriveVoteLinkage(seat);
+  const incMoneyInfluence = deriveMoneyInfluence(seat, userIssues);
+  const chVoteLinkage = ch
+    ? deriveVoteLinkage({
+        candidate: {
+          donorCoalition: ch.donorCoalition ?? null,
+          fundingMix: ch.fundingMix ?? null,
+        },
+        alignmentEntry: { scores: chScores },
+      })
+    : new Map();
+  const chMoneyInfluence = ch
+    ? deriveMoneyInfluence(
+        {
+          candidate: { donorCoalition: ch.donorCoalition ?? null },
+          alignmentEntry: { scores: chScores },
+        },
+        userIssues,
+      )
+    : null;
+  // Same guard FundingSources uses internally (donorCoalition + fundingMix +
+  // a positive total) — computed locally so the fallback below only shows
+  // when FundingSources would otherwise render nothing for this challenger.
+  const chHasFullBreakdown = !!(
+    ch?.donorCoalition &&
+    ch?.fundingMix &&
+    typeof chRaised === "number" &&
+    chRaised > 0
+  );
 
   // Explicit seat statement (Muxin: "I cannot tell if this is even
   // accurate... are they running for the same seats?") — names the office,
@@ -179,27 +305,22 @@ export function HeadToHead({
   const openSeat = cand?.seekingReelection2026 === false;
 
   return (
-    <div className="cmp-screen" data-palette="white">
-      <div className="cmp">
-        <div className="flagbar">
-          <i></i>
-          <i></i>
-          <i></i>
-        </div>
-
-        <div className="cmp-top">
-          <div>
-            <button
-              className="cmp-back"
-              onClick={onClose}
-              aria-label="Back to your scorecard"
-            >
-              ← Back
+    <div className="delegation">
+      <div className="ws-wrap">
+        <section className="ws-chat rep-center">
+          <div className="flagbar">
+            <i></i>
+            <i></i>
+            <i></i>
+          </div>
+          <div className="dl">
+            <button className="dl-back" onClick={onClose}>
+              {t("headToHead.backToScorecard")}
             </button>
             <h2>
-              {openSeat ? "Who should hold this open seat?" : "Head-to-head"}
+              {openSeat ? t("headToHead.openSeatTitle") : t("headToHead.title")}
             </h2>
-            <div className="ctx">
+            <div className="dl-ctx">
               {seatWhen
                 ? t("headToHead.seatStatement", {
                     office: seat.office,
@@ -211,444 +332,684 @@ export function HeadToHead({
                     district: seat.districtLabel,
                   })}
             </div>
-          </div>
-          {/* Lineup — the incumbent is PINNED (not selectable, not
-              dismissable): it's the fixed comparison anchor, never just
-              one more chip in the challenger row (Muxin: "What happened
-              to him?"). Challenger chips stay selectable as today. */}
-          <div className="cmp-lineup">
-            <span
-              className="cmp-chip-pinned"
-              aria-label={
-                incOverall.pct != null
-                  ? t("headToHead.yourRepPinnedAria", {
-                      name: repName,
-                      pct: incOverall.pct,
-                    })
-                  : t("headToHead.yourRepPinnedAriaNoScore", { name: repName })
-              }
-            >
-              <span className={"pip " + incPip} aria-hidden="true" />
-              <span className="lab">{t("headToHead.yourRepPinned")}</span>
-              {repName}
-              {incOverall.pct != null && (
-                <span className="p">{incOverall.pct}%</span>
-              )}
-            </span>
-            {challengers.length > 0 && (
-              <div
-                className="cmp-switch"
-                role="tablist"
-                aria-label="Challengers running for this seat"
-              >
-                {challengers.map((c) => {
-                  const r = getChallengerResearch(c.id);
-                  const o =
-                    r?.status === "done"
-                      ? overallAlignment(r.scores).pct
-                      : null;
-                  return (
-                    <button
-                      key={c.id}
-                      role="tab"
-                      aria-selected={sel === c.id}
-                      className={sel === c.id ? "on" : ""}
-                      onClick={() => setSel(c.id)}
-                    >
-                      <span
-                        className={"pip " + (PARTY_PIP[c.party] || "ind")}
-                      />
-                      {lastName(c.name)}
-                      {o != null && <span className="p">{o}%</span>}
+
+            {challengers.length === 0 ? (
+              <>
+                <div className="dl-empty" style={{ marginTop: 16 }}>
+                  <div className="k">{t("headToHead.emptyNoRosterKicker")}</div>
+                  <div className="t">{t("headToHead.emptyNoRosterTitle")}</div>
+                  <div className="s">
+                    {t("headToHead.emptyNoRosterSentence")}
+                  </div>
+                </div>
+                <div className="dl-foot">
+                  {!openSeat && (
+                    <button className="btn btn-keep" onClick={onKeep}>
+                      <b>
+                        <span className="box" aria-hidden="true" />
+                        {verdict === "keep"
+                          ? t("headToHead.keepingConfirmed")
+                          : t("repCard.worthKeeping")}
+                      </b>
+                      <small>
+                        {t("headToHead.keepButtonSub", { name: repLast })}
+                      </small>
                     </button>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {challengers.length === 0 ? (
-          <div className="cmp-empty">
-            <p>
-              No verified replacement roster yet. FEC campaign-finance filings
-              are not ballot roster proof, so we won&apos;t present those filers
-              as selectable replacements.
-            </p>
-            <div className="cmp-actions">
-              {!openSeat && (
-                <button
-                  className={"cmp-keepbtn" + (verdict === "keep" ? " on" : "")}
-                  onClick={onKeep}
-                >
-                  {verdict === "keep" ? "✓ Keeping " : "Keep "}
-                  {repLast}
-                </button>
-              )}
-              <button
-                className={
-                  "cmp-repbtn ghost" + (verdict === "replace" ? " on" : "")
-                }
-                onClick={() => onReplace(null)}
-              >
-                {openSeat
-                  ? verdict === "replace"
-                    ? "✓ Marked — I'll choose from my ballot"
-                    : "I'll choose from my ballot"
-                  : verdict === "replace"
-                    ? "✕ Marked to replace"
-                    : "Mark to replace"}
-              </button>
-            </div>
-          </div>
-        ) : (
-          <>
-            <div className="cmp-grid">
-              <div className="cmp-col inc">
-                <div className="cmp-colhead">
-                  <div className="cmp-av">{initial(repName)}</div>
-                  <div className="cmp-roleline">
-                    <div className="cmp-tag">The record you have</div>
-                    <div className="cmp-cname">
-                      <span className={"pip " + incPip} />
-                      {repName}
-                    </div>
-                    <div className="cmp-crole">
-                      {seat.candidate?.priorRole || seat.office}
-                    </div>
-                  </div>
-                </div>
-                <div className="cmp-big">
-                  {incOverall.pct != null ? (
-                    <>
-                      <b className={"tone-" + cdTone(incOverall.pct)}>
-                        {incOverall.pct}%
-                      </b>
-                      <span className="lab">
-                        {incBasis === "roll-call"
-                          ? "voted with you"
-                          : "aligns with you"}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="lab">No scoreable record yet</span>
                   )}
+                  <button
+                    className="btn btn-replace"
+                    onClick={() => onReplace(null)}
+                  >
+                    <b>
+                      {openSeat
+                        ? verdict === "replace"
+                          ? t("headToHead.markedOpenSeat")
+                          : t("repCard.openSeatMarkChoose")
+                        : verdict === "replace"
+                          ? t("headToHead.markedToReplace")
+                          : t("headToHead.markToReplace")}
+                    </b>
+                  </button>
                 </div>
-                <div className="cmp-prov-line">
-                  <ProvBadge basis={incBasis} />
-                </div>
-              </div>
-
-              <div className="cmp-col ch">
-                <div className="cmp-colhead">
-                  <div className="cmp-av">{initial(ch?.name)}</div>
-                  <div className="cmp-roleline">
-                    <div className="cmp-tag">Running to replace them</div>
-                    <div className="cmp-cname">
-                      <span className={"pip " + chPip} />
-                      {ch?.name}
-                    </div>
-                    <div className="cmp-crole">
-                      {ch?.party || "Party unknown"} ·{" "}
-                      {t("headToHead.challengerProvenance")}
-                    </div>
-                  </div>
-                </div>
-                <div className="cmp-big">
-                  {research?.status === "loading" || !research ? (
-                    <span className="lab">Looking up public statements…</span>
-                  ) : chOverall.pct != null ? (
-                    <>
-                      <b className={"tone-" + cdTone(chOverall.pct)}>
-                        {chOverall.pct}%
-                      </b>
-                      <span className="lab">aligns with you</span>
-                    </>
-                  ) : (
-                    <span className="lab">
-                      No citable record on your issues
-                    </span>
-                  )}
-                </div>
-                <div className="cmp-prov-line">
-                  {chDone ? (
-                    <ProvBadge basis="researched" conf={chConf} />
-                  ) : (
-                    <span className="prov researched">Researched · cited</span>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            <div className="cmp-ledger">
-              <div className="cmp-ledgrid">
-                <div className="cmp-lrow head">
-                  <span>Your rep</span>
-                  <span></span>
-                  <span style={{ textAlign: "center" }}>On your issues</span>
-                  <span></span>
-                  <span>{ch ? firstName(ch.name) : "Challenger"}</span>
-                </div>
-                {ledger.map((row, i) => {
-                  const incPct = row.inc?.pct;
-                  const chPct = row.ch?.pct;
-                  const d = row.delta;
-                  return (
-                    <div className="cmp-lrow" key={row.canonicalIssue || i}>
-                      <span className="cmp-iss-l">
-                        {incPct != null ? `${incPct}% · ` : "no record · "}
-                        {row.label}
-                      </span>
-                      <span
-                        className={
-                          "cmp-v " +
-                          (incPct != null
-                            ? "tone-" + cdTone(incPct)
-                            : "tone-na")
-                        }
-                      >
-                        {incPct != null ? incPct : "—"}
-                      </span>
-                      <span className="cmp-mid">
-                        {d != null ? (
+              </>
+            ) : (
+              <>
+                <div className="dl-lineup">
+                  <span className="dl-pin">
+                    <span
+                      className={"pip " + (incBlind ? "hid" : incPip)}
+                      aria-hidden="true"
+                    />
+                    <span className="lab">{t("headToHead.pinLabel")}</span>
+                    {incDisplayName}
+                    {incOverall.pct != null && (
+                      <span className="p">{incOverall.pct}%</span>
+                    )}
+                  </span>
+                  <div className="dl-tabs" role="tablist">
+                    {challengers.map((c, i) => {
+                      const cBlind =
+                        !!blindMode &&
+                        !revealed.has(challengerRevealKey(seat.id, c.id));
+                      const r = getChallengerResearch(c.id);
+                      const o =
+                        r?.status === "done"
+                          ? overallAlignment(r.scores).pct
+                          : null;
+                      return (
+                        <button
+                          key={c.id}
+                          role="tab"
+                          aria-selected={sel === c.id}
+                          className={sel === c.id ? "on" : ""}
+                          onClick={() => setSel(c.id)}
+                        >
                           <span
                             className={
-                              "arrow " +
-                              (d > 0 ? "up" : d < 0 ? "down" : "even")
+                              "pip " +
+                              (cBlind ? "hid" : PARTY_PIP[c.party] || "ind")
                             }
-                          >
-                            {d > 0 ? "▲ +" + d : d < 0 ? "▼ " + d : "even"}
-                          </span>
-                        ) : (
+                          />
+                          {cBlind ? challengerAlias(i) : lastName(c.name)}
+                          {o != null && <span className="p">{o}%</span>}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {anyBlindLeft && (
+                  <div className="dl-blindbar">
+                    <svg
+                      className="eye"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      aria-hidden="true"
+                    >
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94"></path>
+                      <path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                    <span
+                      dangerouslySetInnerHTML={{
+                        __html: t("headToHead.blindbarBody"),
+                      }}
+                    />
+                  </div>
+                )}
+
+                <div className="dl-grid">
+                  <div className="dl-col">
+                    <div className="dl-colhead">
+                      <div className="dl-av">
+                        {incBlind ? "?" : initial(repName)}
+                      </div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="dl-tag">
+                          {t("headToHead.tagIncumbentRecord")}
+                        </div>
+                        <div className="dl-cname">
                           <span
-                            className="arrow even"
-                            title="No comparable record"
+                            className={"pip " + (incBlind ? "hid" : incPip)}
+                          />
+                          {incDisplayName}
+                        </div>
+                        <div className="dl-crole">
+                          {incBasis === "roll-call"
+                            ? t("headToHead.incumbentRoleRollcall")
+                            : t("headToHead.incumbentRoleResearched")}
+                        </div>
+                      </div>
+                      {incBlind && (
+                        <button
+                          className="dl-reveal"
+                          onClick={() => onReveal(seat.id)}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
                           >
-                            —
-                          </span>
-                        )}
-                      </span>
-                      <span
-                        className={
-                          "cmp-v " +
-                          (chPct != null ? "tone-" + cdTone(chPct) : "tone-na")
-                        }
-                      >
-                        {research?.status === "loading"
-                          ? "…"
-                          : chPct != null
-                            ? chPct
-                            : "—"}
-                      </span>
-                      <span className="cmp-iss-r">
-                        {chPct != null ? `${chPct}% · ` : "no record · "}
-                        {row.label}
-                      </span>
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                          {t("headToHead.revealButton")}
+                        </button>
+                      )}
                     </div>
-                  );
-                })}
-              </div>
-              {chDone && (
-                <p className="cmp-ledger-note">
-                  Challenger figures are a directional read of researched, cited
-                  positions — not a vote tally. Your rep's are roll-call votes.
-                </p>
-              )}
-              {research?.status === "unavailable" && (
-                <p className="cmp-ledger-note">
-                  No citable public statements found for {firstName(ch?.name)}{" "}
-                  on your issues yet — we'd rather show the gap than guess.
-                </p>
-              )}
-              {research?.status === "budget_blocked" && (
-                <p
-                  className="cmp-ledger-note"
-                  data-testid="duel-budget-blocked"
-                >
-                  Live research is paused — the community AI budget for this
-                  month is used up.{" "}
-                  {onShowBudgetOptions && (
-                    <button className="linklike" onClick={onShowBudgetOptions}>
-                      More options →
-                    </button>
-                  )}
-                </p>
-              )}
-            </div>
-
-            {/* Funding comparison — Muxin: "THIS is the place we should
-                have shown the whole funding breakdown." Side-by-side mix
-                bars + PAC% + top industries for the incumbent, dollar
-                total + FEC-filing source for the selected challenger.
-                Honest-data: a challenger only ever carries totalReceipts
-                (no mix/sectors) — render what exists, never fabricate. */}
-            {(incRaised != null || cand?.fundingMix || chRaised != null) && (
-              <div className="cmp-money">
-                <div className="cmp-money-head">
-                  {t("headToHead.moneySectionTitle")}
-                </div>
-                <div className="cmp-money-grid">
-                  <div className="cmp-money-col inc">
-                    <div className="cmp-money-name">{repName}</div>
-                    {cand?.fundingMix && (
-                      <span
-                        className="cmp-money-bars"
-                        role="img"
-                        aria-label="Funding by source type"
-                      >
-                        <i
-                          className="small"
-                          style={{ width: cand.fundingMix.small + "%" }}
-                        />
-                        <i
-                          className="large"
-                          style={{ width: cand.fundingMix.large + "%" }}
-                        />
-                        <i
-                          className="pac"
-                          style={{ width: cand.fundingMix.pac + "%" }}
-                        />
-                      </span>
-                    )}
-                    {incRaised != null || incPac != null ? (
-                      <div className="cmp-money-stats">
-                        {incRaised != null && (
-                          <span className="cmp-money-tot">
-                            {formatDollars(incRaised)}
+                    <div className="dl-big">
+                      {incOverall.pct != null ? (
+                        <>
+                          <b className={"tone-" + cdTone(incOverall.pct)}>
+                            {incOverall.pct}%
+                          </b>
+                          <span className="lab">
+                            {t(
+                              incBasis === "roll-call"
+                                ? "headToHead.bigLabelRollcall"
+                                : "headToHead.bigLabelResearched",
+                              { n: userIssues.length },
+                            )}
                           </span>
-                        )}
-                        {incPac != null && (
-                          <span className="cmp-money-pac">
-                            {t("headToHead.moneyPacPct", { pct: incPac })}
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="cmp-money-none">
-                        {t("headToHead.moneyUnavailable")}
-                      </div>
-                    )}
-                    {incIndustries.length > 0 && (
-                      <div className="cmp-money-inds">
-                        {t("repCard.moneyTopIndustries", {
-                          industries: incIndustries.join(", "),
-                        })}
-                      </div>
-                    )}
-                    {cand?.donorSource?.name && (
-                      <div className="cmp-money-src">
-                        {cand.donorSource.name}
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="cmp-money-col ch">
-                    <div className="cmp-money-name">
-                      {ch ? ch.name : "Challenger"}
-                    </div>
-                    {chRaised != null ? (
-                      <div className="cmp-money-stats">
-                        <span className="cmp-money-tot">
-                          {formatDollars(chRaised)}
+                        </>
+                      ) : (
+                        <span className="lab">
+                          {t("headToHead.noScoreableRecord")}
                         </span>
+                      )}
+                    </div>
+                    <div className="dl-prov">
+                      <span className={"prov-b " + incProv.cls}>
+                        {incProv.text}
+                      </span>
+                      {incBasis === "researched" && incEvidence.length > 0 && (
+                        <IncumbentSources
+                          blind={incBlind}
+                          evidence={incEvidence}
+                          realLastName={repLast}
+                          alias={t("repCard.blindSeatIncumbent")}
+                        />
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="dl-col">
+                    <div className="dl-colhead">
+                      <div className="dl-av">
+                        {chBlind
+                          ? challengerAliasLetter(chIndex)
+                          : initial(ch?.name)}
                       </div>
-                    ) : (
-                      <div className="cmp-money-none">
-                        {t("repCard.noFundsReported")}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="dl-tag">
+                          {t("headToHead.tagChallenger")}
+                        </div>
+                        <div className="dl-cname">
+                          <span
+                            className={"pip " + (chBlind ? "hid" : chPip)}
+                          />
+                          {chDisplayName}
+                        </div>
+                        <div className="dl-crole">
+                          {chBlind
+                            ? t("headToHead.challengerRoleBlind")
+                            : `${ch?.party || t("repCard.partyUnknown")} · ${t("headToHead.challengerProvenance")}`}
+                        </div>
                       </div>
-                    )}
-                    <div className="cmp-money-src">
-                      {t("headToHead.financeEvidenceFec")}
+                      {chBlind && (
+                        <button
+                          className="dl-reveal"
+                          onClick={() => onReveal(chRevealKey)}
+                        >
+                          <svg
+                            viewBox="0 0 24 24"
+                            width="14"
+                            height="14"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            aria-hidden="true"
+                          >
+                            <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                          {t("headToHead.revealButton")}
+                        </button>
+                      )}
+                    </div>
+                    <div className="dl-big">
+                      {research?.status === "loading" || !research ? (
+                        <span className="lab">
+                          {t("repCard.lookingUpStatements")}
+                        </span>
+                      ) : chOverall.pct != null ? (
+                        <>
+                          <b className={"tone-" + cdTone(chOverall.pct)}>
+                            {chOverall.pct}%
+                          </b>
+                          <span className="lab">
+                            {t("headToHead.bigLabelResearched", {
+                              n: userIssues.length,
+                            })}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="lab">
+                          {t("headToHead.noCitableRecord")}
+                        </span>
+                      )}
+                    </div>
+                    <div className="dl-prov">
+                      <span className={"prov-b " + chProv.cls}>
+                        {chProv.text}
+                      </span>
+                      {chDone && chEvidence.length > 0 && (
+                        <ChallengerSources
+                          blind={chBlind}
+                          evidence={chEvidence}
+                          realLastName={lastName(ch?.name)}
+                          alias={chAlias}
+                        />
+                      )}
                     </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {/* Whole-field scale — verified roster candidates with separate
-                campaign-finance totals, not just the one selected above
-                (relocated from RepCard, which now only shows
-                subject-vs-median for the incumbent alone). */}
-            {cand?.peerComparison != null &&
-              typeof cand.totalRaised === "number" && (
-                <div className="cmp-field">
-                  <div className="cmp-field-head">
-                    {t("headToHead.fieldSectionTitle")}
-                  </div>
-                  <MoneyGapScale
-                    subject={{
-                      name: repName,
-                      raised: cand.totalRaised,
-                      pip: incPip,
+                {/* Frame 6 state 1 — always true for every challenger, so it
+                    always renders here, independent of research status. */}
+                <div className="dl-empty" style={{ marginTop: 14 }}>
+                  <div className="k">{t("headToHead.emptyNoOfficeKicker")}</div>
+                  <div className="t">{t("headToHead.emptyNoOfficeTitle")}</div>
+                  <div
+                    className="s"
+                    dangerouslySetInnerHTML={{
+                      __html: t("headToHead.emptyNoOfficeSentence"),
                     }}
-                    field={moneyGapField}
-                    peer={cand.peerComparison}
                   />
                 </div>
-              )}
 
-            <div className="cmp-foot">
-              <div className="cmp-fund">
-                <div className="blk">
-                  <span className="v">
-                    {incPac != null
-                      ? `${incPac}% PAC`
-                      : incRaised != null
-                        ? formatDollars(incRaised)
-                        : "Funding n/a"}
-                  </span>
-                  <span className="k">
-                    your rep
-                    {incRaised != null ? ` · ${formatDollars(incRaised)}` : ""}
-                  </span>
-                </div>
-                <span style={{ fontFamily: "var(--mono)", fontSize: "11px" }}>
-                  vs
-                </span>
-                <div className="blk">
-                  <span className="v">
-                    {chRaised != null
-                      ? formatDollars(chRaised)
-                      : "No funds reported"}
-                  </span>
-                  <span className="k">
-                    {ch ? firstName(ch.name) : "challenger"} · FEC filing
-                  </span>
-                </div>
-              </div>
-              <div className="cmp-actions">
-                {!openSeat && (
-                  <button
-                    className={
-                      "cmp-keepbtn" + (verdict === "keep" ? " on" : "")
-                    }
-                    onClick={onKeep}
+                {research?.status === "unavailable" && (
+                  <div
+                    className="dl-empty"
+                    style={{ marginTop: 12 }}
+                    data-testid="duel-research-unavailable"
                   >
-                    {verdict === "keep" ? "✓ Keeping " : "Keep "}
-                    {repLast}
-                  </button>
+                    <div className="k">
+                      {t("headToHead.emptyResearchUnavailableKicker")}
+                    </div>
+                    <div className="t">
+                      {t("headToHead.emptyResearchUnavailableTitle", {
+                        n: userIssues.length,
+                      })}
+                    </div>
+                    <div className="s">
+                      {t("headToHead.emptyResearchUnavailableSentencePrefix")}{" "}
+                      <button
+                        type="button"
+                        className="linklike"
+                        onClick={fireResearch}
+                      >
+                        {t("headToHead.checkAgainLink")}
+                      </button>{" "}
+                      {t("headToHead.emptyResearchUnavailableSentenceSuffix")}
+                    </div>
+                  </div>
                 )}
-                <button
-                  className={
-                    "cmp-repbtn" +
-                    (verdict === "replace" && pickId === ch?.id ? " on" : "")
-                  }
-                  onClick={() => onReplace(ch?.id ?? null)}
-                  disabled={!ch}
-                >
-                  {verdict === "replace" && pickId === ch?.id
-                    ? "✓ Picked "
-                    : openSeat
-                      ? "Pick "
-                      : "Replace with "}
-                  {ch ? lastName(ch.name) : ""}{" "}
-                  <span aria-hidden="true">→</span>
-                </button>
-              </div>
-            </div>
-          </>
-        )}
+
+                {research?.status === "budget_blocked" && (
+                  <div
+                    className="dl-empty"
+                    style={{ marginTop: 12 }}
+                    data-testid="duel-budget-blocked"
+                  >
+                    <div className="k">
+                      {t("headToHead.emptyBudgetPausedKicker")}
+                    </div>
+                    <div className="t">
+                      {t("headToHead.emptyBudgetPausedTitle")}
+                    </div>
+                    <div className="s">
+                      {t("headToHead.emptyBudgetPausedSentence")}{" "}
+                      {onShowBudgetOptions && (
+                        <button
+                          type="button"
+                          className="linklike"
+                          onClick={onShowBudgetOptions}
+                        >
+                          {t("repCard.moreOptions")}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <div className="dl-ledger">
+                  <div className="dl-lrow">
+                    <span style={{ textAlign: "right" }}>
+                      {incBlind
+                        ? t("headToHead.ledgerIncumbentBlindLabel")
+                        : repName}
+                    </span>
+                    <span></span>
+                    <span style={{ textAlign: "center" }}>
+                      {t("headToHead.ledgerOnYourIssues")}
+                    </span>
+                    <span></span>
+                    <span>
+                      {chBlind
+                        ? chAlias
+                        : firstName(ch?.name) ||
+                          t("headToHead.challengerFallback")}
+                    </span>
+                  </div>
+                  {ledger.map((row, i) => {
+                    const incPct = row.inc?.pct;
+                    const chPct = row.ch?.pct;
+                    const d = row.delta;
+                    return (
+                      <div className="dl-lrow" key={row.canonicalIssue || i}>
+                        <span className="l">
+                          {incPct != null
+                            ? `${incPct}% · `
+                            : t("headToHead.noRecordPrefix")}
+                          {row.label}
+                        </span>
+                        <span
+                          className={
+                            "dl-v " +
+                            (incPct != null
+                              ? "tone-" + cdTone(incPct)
+                              : "tone-na")
+                          }
+                        >
+                          {incPct != null ? incPct : "—"}
+                        </span>
+                        <span className="dl-mid">
+                          {d != null ? (
+                            <span
+                              className={
+                                "arrow " +
+                                (d > 0 ? "up" : d < 0 ? "down" : "even")
+                              }
+                            >
+                              {d > 0
+                                ? "▲ +" + d
+                                : d < 0
+                                  ? "▼ " + d
+                                  : t("headToHead.deltaEven")}
+                            </span>
+                          ) : (
+                            <span
+                              className="arrow even"
+                              title={t("headToHead.noComparableRecordTitle")}
+                            >
+                              —
+                            </span>
+                          )}
+                        </span>
+                        <span
+                          className={
+                            "dl-v " +
+                            (chPct != null
+                              ? "tone-" + cdTone(chPct)
+                              : "tone-na")
+                          }
+                        >
+                          {research?.status === "loading"
+                            ? "…"
+                            : chPct != null
+                              ? chPct
+                              : "—"}
+                        </span>
+                        <span className="r">
+                          {chPct != null
+                            ? `${chPct}% · ${researchedVerbPhrase(chPct, t)}`
+                            : t("headToHead.noRecordPrefix") + row.label}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <p className="dl-note">
+                  {t("headToHead.ledgerNote")}
+                  {anyBlindLeft && t("headToHead.ledgerNoteBlindSuffix")}
+                </p>
+
+                {(incRaised != null ||
+                  cand?.fundingMix ||
+                  chRaised != null) && (
+                  <div className="dl-money">
+                    <div className="dl-money-h">
+                      {t("headToHead.moneyHeading")}
+                    </div>
+                    <div className="dl-money-sub">
+                      {t("headToHead.moneySub")}
+                    </div>
+                    <div className="dl-money-grid">
+                      <div>
+                        <div className="dl-mhead">
+                          <span className="mav">
+                            {incBlind ? "?" : initial(repName)}
+                          </span>
+                          <div>
+                            <b>{incDisplayName}</b>
+                            <span className="sub">
+                              {incRaised != null
+                                ? `${formatDollars(incRaised)} raised`
+                                : t("headToHead.fundingNA")}
+                              {incPac != null
+                                ? t("headToHead.pacMoneySuffix", {
+                                    pct: incPac,
+                                  })
+                                : ""}
+                            </span>
+                          </div>
+                        </div>
+                        {incMoneyInfluence ? (
+                          <MoneyVerdict influence={incMoneyInfluence} />
+                        ) : (
+                          <p className="dl-note">
+                            {t("headToHead.incumbentNoMoneyLinkage")}
+                          </p>
+                        )}
+                        <FundingSources
+                          donorCoalition={cand?.donorCoalition}
+                          totalRaised={incRaised}
+                          fundingMix={cand?.fundingMix}
+                          userIssues={userIssues}
+                          voteLinkage={incVoteLinkage}
+                        />
+                      </div>
+                      <div>
+                        <div className="dl-mhead">
+                          <span className="mav">
+                            {chBlind
+                              ? challengerAliasLetter(chIndex)
+                              : initial(ch?.name)}
+                          </span>
+                          <div>
+                            <b>{chDisplayName}</b>
+                            <span className="sub">
+                              {chRaised != null
+                                ? `${formatDollars(chRaised)} raised`
+                                : ""}
+                            </span>
+                          </div>
+                        </div>
+                        {chMoneyInfluence ? (
+                          <MoneyVerdict influence={chMoneyInfluence} />
+                        ) : (
+                          <p className="dl-note">
+                            {t("headToHead.challengerNoMoneyLinkage", {
+                              name: chDisplayName,
+                            })}
+                          </p>
+                        )}
+                        {chHasFullBreakdown ? (
+                          <FundingSources
+                            donorCoalition={ch.donorCoalition}
+                            totalRaised={chRaised}
+                            fundingMix={ch.fundingMix}
+                            userIssues={userIssues}
+                            voteLinkage={chVoteLinkage}
+                            noRollCallRecord
+                          />
+                        ) : chRaised != null ? (
+                          <div className="srcs" style={{ marginTop: 8 }}>
+                            <div className="src" style={{ padding: "10px 0" }}>
+                              <span
+                                className="src-dot d-unknown"
+                                aria-hidden="true"
+                              />
+                              <span className="src-name">
+                                {t("headToHead.pacsUntraced")}
+                              </span>
+                              <span className="src-amt">
+                                {formatDollars(chRaised)}
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="dl-empty" style={{ marginTop: 8 }}>
+                            <div className="k">
+                              {t("headToHead.emptyNoFecMatchKicker")}
+                            </div>
+                            <div className="t">
+                              {t("headToHead.emptyNoFecMatchTitle")}
+                            </div>
+                            <div
+                              className="s"
+                              dangerouslySetInnerHTML={{
+                                __html: t("headToHead.emptyNoFecMatchSentence"),
+                              }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {cand?.peerComparison != null &&
+                  typeof cand.totalRaised === "number" && (
+                    <div className="cmp-field">
+                      <div className="cmp-field-head">
+                        {t("headToHead.fieldSectionTitle")}
+                      </div>
+                      <MoneyGapScale
+                        subject={{
+                          name: incDisplayName,
+                          raised: cand.totalRaised,
+                          pip: incBlind ? "hid" : incPip,
+                        }}
+                        field={moneyGapField}
+                        peer={cand.peerComparison}
+                      />
+                    </div>
+                  )}
+
+                <div className="dl-foot">
+                  {!openSeat && (
+                    <button className="btn btn-keep" onClick={onKeep}>
+                      <b>
+                        <span className="box" aria-hidden="true" />
+                        {verdict === "keep"
+                          ? t("headToHead.keepingConfirmed")
+                          : t("repCard.worthKeeping")}
+                      </b>
+                      <small>{t("headToHead.keepThisIncumbent")}</small>
+                    </button>
+                  )}
+                  <button
+                    className="btn"
+                    style={{ background: "var(--navy)", color: "#fff" }}
+                    onClick={() => onReplace(ch?.id ?? null)}
+                    disabled={!ch}
+                  >
+                    <b>
+                      {verdict === "replace" && pickId === ch?.id
+                        ? t("headToHead.picked") + " "
+                        : openSeat
+                          ? t("headToHead.pickPrefix") + " "
+                          : t("headToHead.replaceWithPrefix") + " "}
+                      {chDisplayName} <span aria-hidden="true">→</span>
+                    </b>
+                    <small>
+                      {chBlind ? t("headToHead.pickingPrintsRealName") : ""}
+                    </small>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </section>
       </div>
     </div>
+  );
+}
+
+/** Representative band → descriptive phrase for the ledger's right-hand
+ *  flanking text. Derivable from duelAlignment's fixed RESEARCHED_BAND
+ *  (80/20/50 for in_favor/opposed/mixed) — not new data, just naming the
+ *  band the row's pct already came from. */
+function researchedVerbPhrase(pct, t) {
+  if (pct >= 67) return t("headToHead.verbStatedSupport");
+  if (pct <= 34) return t("headToHead.verbStatedOpposition");
+  return t("headToHead.verbMixedStated");
+}
+
+/** `.dl-prov`'s source-lock affordance for the incumbent's researched
+ *  fallback (rare — only executive seats without a roll-call record). Same
+ *  contract as ChallengerSources below. */
+function IncumbentSources({ blind, evidence, realLastName, alias }) {
+  const { t } = useI18n();
+  if (blind)
+    return <span className="dl-lock">{t("headToHead.sourcesLocked")}</span>;
+  return (
+    <span className="dl-sources">
+      {evidence.slice(0, 3).map((e, i) => (
+        <React.Fragment key={e.url}>
+          {i > 0 && " · "}
+          <a
+            href={e.url}
+            className="dl-source-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {anonymizeText(e.summary, {
+              blindMode: blind,
+              realLastName,
+              alias,
+            })}
+          </a>
+        </React.Fragment>
+      ))}
+    </span>
+  );
+}
+
+/** Frame 5 item 5 — evidence source links stay locked until reveal (a link
+ *  would leak identity even with the visible text aliased). Once revealed,
+ *  render the real cited links; the summary text is still run through
+ *  anonymizeText defensively (a no-op once blind=false) in case a citation's
+ *  own wording repeats the candidate's name. */
+function ChallengerSources({ blind, evidence, realLastName, alias }) {
+  const { t } = useI18n();
+  if (blind)
+    return <span className="dl-lock">{t("headToHead.sourcesLocked")}</span>;
+  return (
+    <span className="dl-sources">
+      {evidence.slice(0, 3).map((e, i) => (
+        <React.Fragment key={e.url}>
+          {i > 0 && " · "}
+          <a
+            href={e.url}
+            className="dl-source-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {anonymizeText(e.summary, {
+              blindMode: blind,
+              realLastName,
+              alias,
+            })}
+          </a>
+        </React.Fragment>
+      ))}
+    </span>
   );
 }

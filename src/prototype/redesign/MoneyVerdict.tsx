@@ -18,7 +18,7 @@
  */
 
 import React from "react";
-import { formatDollars } from "../VoterChoiceApp";
+import { formatDollars, useI18n, escapeHtml } from "../VoterChoiceApp";
 import type { MoneyInfluence } from "./delegationData";
 
 export interface MoneyVerdictProps {
@@ -26,6 +26,9 @@ export interface MoneyVerdictProps {
 }
 
 export function MoneyVerdict({ influence }: MoneyVerdictProps) {
+  const { t } = useI18n() as {
+    t: (key: string, vars?: Record<string, unknown>) => string;
+  };
   if (!influence) return null;
   const { pct, k, n, yourWayPct, topDollarAgainst } = influence;
 
@@ -33,32 +36,30 @@ export function MoneyVerdict({ influence }: MoneyVerdictProps) {
     <div className="mny-verdict" data-testid="money-verdict">
       <div className="mvd-head">
         <b className="pct">{pct}%</b>
-        <span>
-          {
-            " — on the issues their PAC donors target, this member's votes went the "
-          }
-          <b>donors&rsquo; way</b>
-          {` (${k} of ${n} scored votes)`}
-          {topDollarAgainst && (
-            <>
-              {" — including "}
-              <b>{formatDollars(topDollarAgainst.amount)}</b>
-              {` against your #1 · ${topDollarAgainst.issue}`}
-            </>
-          )}
-          .
-        </span>
+        <span
+          dangerouslySetInnerHTML={{
+            __html:
+              t("repCard.moneyVerdictSentence", { k, n }) +
+              (topDollarAgainst
+                ? t("repCard.moneyVerdictTopDollarClause", {
+                    amount: escapeHtml(formatDollars(topDollarAgainst.amount)),
+                    issue: escapeHtml(topDollarAgainst.issue),
+                  })
+                : "") +
+              ".",
+          }}
+        />
       </div>
       <div className="mvd-bars">
         <div className="mvd-row">
-          <span className="k">Donors&rsquo; way</span>
+          <span className="k">{t("repCard.moneyVerdictDonorsWay")}</span>
           <div className="bar">
             <i className="bad" style={{ width: pct + "%" }} />
           </div>
           <span className="v bad">{pct}%</span>
         </div>
         <div className="mvd-row">
-          <span className="k">Your way</span>
+          <span className="k">{t("repCard.moneyVerdictYourWay")}</span>
           <div className="bar">
             <i className="you" style={{ width: yourWayPct + "%" }} />
           </div>

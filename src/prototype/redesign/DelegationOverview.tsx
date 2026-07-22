@@ -31,7 +31,7 @@
        "a card was activated," not what navigation follows. */
 
 import React from "react";
-import { useI18n, formatDollars } from "../VoterChoiceApp";
+import { useI18n, formatDollars, escapeHtml } from "../VoterChoiceApp";
 import {
   seatOverviewAlignmentPct,
   seatIssueAlignmentRows,
@@ -263,18 +263,27 @@ function SeatCard({
           <div className="cd-mixkey">
             <span>
               <i className="mix-sm" />
-              <b>{cand.fundingMix.small}%</b> small donors{" "}
-              <span className="sub">under $200</span>
+              <b>{cand.fundingMix.small}%</b>{" "}
+              {t("delegationOverview.mixKeySmallLabel")}{" "}
+              <span className="sub">
+                {t("delegationOverview.mixKeySmallSub")}
+              </span>
             </span>
             <span>
               <i className="mix-lg" />
-              <b>{cand.fundingMix.large}%</b> large donors{" "}
-              <span className="sub">$200+</span>
+              <b>{cand.fundingMix.large}%</b>{" "}
+              {t("delegationOverview.mixKeyLargeLabel")}{" "}
+              <span className="sub">
+                {t("delegationOverview.mixKeyLargeSub")}
+              </span>
             </span>
             <span>
               <i className="mix-pac" />
-              <b>{cand.fundingMix.pac}%</b> PACs{" "}
-              <span className="sub">groups &amp; lobbies</span>
+              <b>{cand.fundingMix.pac}%</b>{" "}
+              {t("delegationOverview.mixKeyPacLabel")}{" "}
+              <span className="sub">
+                {t("delegationOverview.mixKeyPacSub")}
+              </span>
             </span>
           </div>
         </>
@@ -284,31 +293,34 @@ function SeatCard({
         <div
           className={"cd-influence" + (moneyInfluence.pct < 50 ? " low" : "")}
         >
-          <div className="k">$ · Money influence</div>
+          <div className="k">
+            {t("delegationOverview.moneyInfluenceKicker")}
+          </div>
           <div className="big">
             <b>{moneyInfluence.pct}%</b>
-            <span>
-              — on the issues their PAC donors target, this member's votes went
-              the <b>donors' way</b> ({moneyInfluence.k} of {moneyInfluence.n}{" "}
-              scored votes)
-              {moneyInfluence.pct < 50 ? (
-                <>
-                  {" "}
-                  — <b>money leads this record less than most</b>
-                </>
-              ) : (
-                moneyInfluence.topDollarAgainst && (
-                  <>
-                    {" "}
-                    — including{" "}
-                    <b>
-                      {formatDollars(moneyInfluence.topDollarAgainst.amount)}
-                    </b>{" "}
-                    against your #1 · {moneyInfluence.topDollarAgainst.issue}
-                  </>
-                )
-              )}
-            </span>
+            <span
+              dangerouslySetInnerHTML={{
+                __html:
+                  t("delegationOverview.moneyInfluenceSentence", {
+                    k: moneyInfluence.k,
+                    n: moneyInfluence.n,
+                  }) +
+                  (moneyInfluence.pct < 50
+                    ? t("delegationOverview.moneyInfluenceLowClause")
+                    : moneyInfluence.topDollarAgainst
+                      ? t("delegationOverview.moneyInfluenceTopDollarClause", {
+                          amount: escapeHtml(
+                            formatDollars(
+                              moneyInfluence.topDollarAgainst.amount,
+                            ),
+                          ),
+                          issue: escapeHtml(
+                            moneyInfluence.topDollarAgainst.issue,
+                          ),
+                        })
+                      : ""),
+              }}
+            />
           </div>
           {/* Reform-votes chip ("{k} of {n} reform votes with you") and the
               revolving-door chip ("⟳ revolving door · documented") are
@@ -318,7 +330,9 @@ function SeatCard({
               those curated fields land on DelegationSeatVM/candidate. */}
           {untracedPct != null && (
             <div className="chips">
-              <span className="mut">{untracedPct}% untraced</span>
+              <span className="mut">
+                {t("delegationOverview.untracedPctChip", { p: untracedPct })}
+              </span>
             </div>
           )}
         </div>
@@ -399,15 +413,16 @@ export function DelegationOverview({
           >
             {ready
               ? t("delegationOverview.printReady")
-              : // Frame 1 item 4: counts REMAINING seats, not the total — the
-                // i18n string table (VoterChoiceApp.tsx, out of this file's
-                // edit scope) still has the old "Decide {n} seats to print"
-                // key, so this is hardcoded here rather than routed through
-                // t(), same as the app's other un-i18n'd plural ternaries
-                // (e.g. "{n} candidate{n === 1 ? '' : 's'}").
-                `Decide ${total - decided} more seat${
-                  total - decided === 1 ? "" : "s"
-                } to print your scorecard`}
+              : // Frame 1 item 4: counts REMAINING seats, not the total.
+                // printNotReady/printNotReadySingular (VoterChoiceApp.tsx)
+                // carry the singular/plural sentence — same full-key-swap
+                // pattern as repCard.vote/repCard.votes.
+                t(
+                  total - decided === 1
+                    ? "delegationOverview.printNotReadySingular"
+                    : "delegationOverview.printNotReady",
+                  { n: total - decided },
+                )}
           </button>
         </div>
       </div>

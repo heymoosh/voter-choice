@@ -1,14 +1,30 @@
 // @vitest-environment jsdom
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { I18nProvider } from "../VoterChoiceApp";
-import { HeadToHead } from "./HeadToHead";
 import type { DelegationSeatVM, UserIssue } from "./delegationData";
 
-// Round-4 lane F — seat clarity, pinned incumbent, full funding comparison.
-// Mirrors RepCard.test.tsx's fixture conventions (mkSeat/vote/peer/userIssues).
+// Blind rebuild (work order v4, Frame 5/6/7) — HeadToHead now renders the
+// whiteboard's `.dl-*` markup and never leaks a real name/party while blind.
+// getChallengerResearch/researchChallenger are mocked so each test can force
+// a specific research status (done/unavailable/budget_blocked/loading)
+// without depending on network timing.
+vi.mock("./delegationData", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./delegationData")>();
+  return {
+    ...actual,
+    getChallengerResearch: vi.fn(),
+    researchChallenger: vi.fn(),
+  };
+});
+
+import { HeadToHead } from "./HeadToHead";
+import { getChallengerResearch, researchChallenger } from "./delegationData";
+
+const mockGetResearch = vi.mocked(getChallengerResearch);
+const mockResearch = vi.mocked(researchChallenger);
 
 const vote = (canonicalIssue: string, kept: number, total: number) => ({
   canonicalIssue,
@@ -17,6 +33,14 @@ const vote = (canonicalIssue: string, kept: number, total: number) => ({
   sourceType: "voting_record",
   kept,
   total,
+});
+
+const researched = (canonicalIssue: string, resolvedStance: string) => ({
+  canonicalIssue,
+  issueLabel: canonicalIssue,
+  resolvedStance,
+  sourceType: "web_search",
+  confidence: "medium",
 });
 
 const peer = {
@@ -143,6 +167,12 @@ function renderDuel(
   );
 }
 
+beforeEach(() => {
+  mockGetResearch.mockReset();
+  mockResearch.mockReset();
+  mockGetResearch.mockReturnValue(undefined);
+});
+
 describe("HeadToHead — seat clarity", () => {
   it("states the office, district, and next election under the title", () => {
     renderDuel(mkSeat());
@@ -159,46 +189,194 @@ describe("HeadToHead — seat clarity", () => {
   });
 });
 
-describe("HeadToHead — pinned incumbent chip", () => {
-  it("renders a pinned, non-dismissable incumbent chip in the lineup with name + score", () => {
-    const { container } = renderDuel(mkSeat());
-    const chip = container.querySelector(".cmp-chip-pinned");
-    expect(chip).not.toBeNull();
-    expect(chip).toHaveTextContent("Theo Vance");
-    expect(chip).toHaveTextContent("75%"); // 3/4 roll-call
-    // it's a static chip, not a selectable tab
-    expect(chip?.tagName).not.toBe("BUTTON");
+describe("HeadToHead — blind mode: no real name or party leaks", () => {
+  it("shows aliases everywhere and never renders the real name or party while blind", () => {
+    const { container } = renderDuel(mkSeat(), {
+      blindMode: true,
+      revealed: new Set(),
+    });
+    expect(screen.queryByText("Theo Vance")).not.toBeInTheDocument();
+    expect(screen.queryByText("Elena Reyes")).not.toBeInTheDocument();
+    expect(screen.queryByText(/Reyes/)).not.toBeInTheDocument();
+    expect(screen.getAllByText("This seat's incumbent").length).toBeGreaterThan(
+      0,
+    );
+    expect(screen.getAllByText(/Candidate A/).length).toBeGreaterThan(0);
+    // every pip is dashed-hidden — none carries a real party class
+    const pips = container.querySelectorAll(".pip");
+    expect(pips.length).toBeGreaterThan(0);
+    pips.forEach((p) => {
+      expect(p.className).toContain("hid");
+      expect(p.className).not.toMatch(/\b(rep|dem|ind)\b/);
+    });
   });
 
-  it("keeps the challenger chips selectable alongside the pinned chip", () => {
-    const { container } = renderDuel(mkSeat());
+  it("aliases challengers by roster order (A, B) and keeps them stable across re-renders", () => {
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "c1",
+          name: "Elena Reyes",
+          party: "Democrat",
+          totalReceipts: 1_340_000,
+          rosterProvenance: verifiedRosterProvenance,
+        },
+        {
+          id: "c2",
+          name: "Sam Ortiz",
+          party: "Independent",
+          totalReceipts: 400_000,
+          rosterProvenance: verifiedRosterProvenance,
+        },
+      ],
+    });
+    const { rerender } = renderDuel(seat, {
+      blindMode: true,
+      revealed: new Set(),
+    });
+    expect(screen.getAllByText(/Candidate A/).length).toBeGreaterThan(0);
+    fireEvent.click(screen.getByRole("tab", { name: /Candidate B/ }));
+    rerender(
+      <I18nProvider>
+        <HeadToHead
+          seat={seat}
+          userIssues={userIssues}
+          stateCode="TX"
+          verdict={null}
+          pickId={null}
+          onKeep={() => {}}
+          onReplace={() => {}}
+          onClose={() => {}}
+          onShowBudgetOptions={() => {}}
+          blindMode
+          revealed={new Set()}
+        />
+      </I18nProvider>,
+    );
+    // Still B — the tab order didn't change, so its alias didn't move.
     expect(
-      container.querySelector(".cmp-lineup .cmp-chip-pinned"),
-    ).not.toBeNull();
-    expect(container.querySelectorAll(".cmp-switch button").length).toBe(2);
+      screen.getByRole("tab", { name: /Candidate B/ }),
+    ).toBeInTheDocument();
+  });
+
+  it("locks researched-position evidence links behind the whiteboard's copy while blind", () => {
+    mockGetResearch.mockReturnValue({
+      status: "done",
+      scores: [
+        {
+          ...researched("healthcare_affordability", "in_favor"),
+          evidence: [
+            {
+              summary: "Reyes has called for lower drug prices.",
+              url: "https://example.com/reyes",
+            },
+          ],
+        },
+      ],
+    });
+    renderDuel(mkSeat(), { blindMode: true, revealed: new Set() });
+    expect(screen.getByText("🔒 sources unlock on reveal")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("link", { name: /example.com/ }),
+    ).not.toBeInTheDocument();
+    const links = screen.queryAllByRole("link") as HTMLAnchorElement[];
+    expect(
+      links.every(
+        (a) => a.getAttribute("href") !== "https://example.com/reyes",
+      ),
+    ).toBe(true);
   });
 });
 
-describe("HeadToHead — funding comparison section", () => {
-  it("renders incumbent mix bars, PAC%, and top industries alongside the challenger's dollar total", () => {
-    const { container } = renderDuel(mkSeat());
-    const money = container.querySelector(".cmp-money");
-    expect(money).not.toBeNull();
-    expect(
-      money?.querySelector(".cmp-money-col.inc .cmp-money-bars"),
-    ).not.toBeNull();
-    expect(money).toHaveTextContent("46% PAC");
-    expect(money).toHaveTextContent("Finance, Real estate");
-    expect(money).toHaveTextContent("$4.2M");
-    // challenger side: dollar figure only — never a fabricated mix bar
-    expect(
-      money?.querySelector(".cmp-money-col.ch .cmp-money-bars"),
-    ).toBeNull();
-    expect(money).toHaveTextContent("$1.3M");
-    expect(money).toHaveTextContent("FEC filing");
+describe("HeadToHead — reveal flow", () => {
+  it("reveals the incumbent via onReveal(seat.id) — the same key RepCard uses", () => {
+    const onReveal = vi.fn();
+    renderDuel(mkSeat(), { blindMode: true, revealed: new Set(), onReveal });
+    const revealButtons = screen.getAllByRole("button", { name: /Reveal/ });
+    fireEvent.click(revealButtons[0]);
+    expect(onReveal).toHaveBeenCalledWith("house-TX-21");
   });
 
-  it("HONEST STATE: a challenger with no funds reported shows the honest fallback, not a fabricated $0", () => {
+  it("reveals a challenger via a composite seat+challenger key, independent of the incumbent", () => {
+    const onReveal = vi.fn();
+    renderDuel(mkSeat(), { blindMode: true, revealed: new Set(), onReveal });
+    const revealButtons = screen.getAllByRole("button", { name: /Reveal/ });
+    fireEvent.click(revealButtons[1]);
+    expect(onReveal).toHaveBeenCalledWith("house-TX-21::challenger::c1");
+  });
+
+  it("shows the real name and party once a challenger's key is in `revealed`, incumbent stays blind", () => {
+    renderDuel(mkSeat(), {
+      blindMode: true,
+      revealed: new Set(["house-TX-21::challenger::c1"]),
+    });
+    expect(screen.getAllByText("Elena Reyes").length).toBeGreaterThan(0);
+    expect(screen.queryByText("Theo Vance")).not.toBeInTheDocument();
+  });
+
+  it("drops the blind banner once everyone is revealed", () => {
+    const seat = mkSeat({
+      challengers: [
+        {
+          id: "c1",
+          name: "Elena Reyes",
+          party: "Democrat",
+          totalReceipts: 1_340_000,
+          rosterProvenance: verifiedRosterProvenance,
+        },
+      ],
+    });
+    const { container } = renderDuel(seat, {
+      blindMode: true,
+      revealed: new Set(["house-TX-21", "house-TX-21::challenger::c1"]),
+    });
+    expect(container.querySelector(".dl-blindbar")).toBeNull();
+  });
+});
+
+describe("HeadToHead — pick-while-blind records the real id", () => {
+  it("onReplace still receives the real challenger id while blind (only the display is aliased)", () => {
+    const onReplace = vi.fn();
+    renderDuel(mkSeat(), {
+      blindMode: true,
+      revealed: new Set(),
+      onReplace,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Candidate A/ }));
+    expect(onReplace).toHaveBeenCalledWith("c1");
+  });
+});
+
+describe("HeadToHead — Frame 6 challenger empty states", () => {
+  it("always shows the 'never held this office' state for every challenger", () => {
+    renderDuel(mkSeat());
+    expect(
+      screen.getByText("No roll-call record — and that's expected"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the research-came-back-empty state with a working 'check again'", () => {
+    mockGetResearch.mockReturnValue({ status: "unavailable" });
+    renderDuel(mkSeat());
+    expect(
+      screen.getByText("No citable statements on your 1 issues yet"),
+    ).toBeInTheDocument();
+    fireEvent.click(screen.getByText("check again"));
+    expect(mockResearch).toHaveBeenCalled();
+  });
+
+  it("shows the research-paused state with a working budget-options link", () => {
+    const onShowBudgetOptions = vi.fn();
+    mockGetResearch.mockReturnValue({ status: "budget_blocked" });
+    renderDuel(mkSeat(), { onShowBudgetOptions });
+    expect(screen.getByTestId("duel-budget-blocked")).toHaveTextContent(
+      "Live research is paused this month",
+    );
+    fireEvent.click(screen.getByText("More options →"));
+    expect(onShowBudgetOptions).toHaveBeenCalled();
+  });
+
+  it("shows the no-FEC-match state in the money column instead of a fabricated $0", () => {
     const seat = mkSeat({
       challengers: [
         {
@@ -210,25 +388,14 @@ describe("HeadToHead — funding comparison section", () => {
         },
       ],
     });
-    const { container } = renderDuel(seat);
-    const chCol = container.querySelector(".cmp-money-col.ch");
-    expect(chCol).toHaveTextContent("No funds reported");
+    renderDuel(seat);
+    expect(
+      screen.getByText("No FEC match yet — so no dollar shown"),
+    ).toBeInTheDocument();
   });
 });
 
 describe("HeadToHead — roster provenance containment", () => {
-  it("labels selectable candidates as verified ballot-roster rows, not FEC filers", () => {
-    const { container } = renderDuel(mkSeat());
-    const challengerRole = container.querySelector(".cmp-col.ch .cmp-crole");
-    const money = container.querySelector(".cmp-money-col.ch");
-
-    expect(challengerRole).toHaveTextContent(
-      "Democrat · verified current ballot roster",
-    );
-    expect(challengerRole).not.toHaveTextContent("2026 FEC filer");
-    expect(money).toHaveTextContent("Campaign-finance evidence: FEC filing");
-  });
-
   it("does not render FEC finance-only rows as selectable replacement tabs", () => {
     const seat = mkSeat({
       challengers: [
@@ -241,11 +408,30 @@ describe("HeadToHead — roster provenance containment", () => {
         },
       ],
     });
-
-    const { container } = renderDuel(seat);
-    expect(container.querySelectorAll(".cmp-switch button")).toHaveLength(0);
+    renderDuel(seat);
+    expect(screen.queryAllByRole("tab")).toHaveLength(0);
     expect(screen.queryByText("Finance Filer")).not.toBeInTheDocument();
-    expect(screen.getByText(/No verified replacement roster yet/)).toBeInTheDocument();
+    expect(
+      screen.getByText("No verified replacement roster yet"),
+    ).toBeInTheDocument();
+  });
+});
+
+describe("HeadToHead — money section (Frame 7)", () => {
+  it("embeds FundingSources for the incumbent under a dl-mhead", () => {
+    const { container } = renderDuel(mkSeat());
+    const money = container.querySelector(".dl-money");
+    expect(money).not.toBeNull();
+    expect(money?.querySelector(".dl-mhead")).not.toBeNull();
+    expect(money).toHaveTextContent("$4.2M raised");
+    expect(money).toHaveTextContent("46% PAC money");
+  });
+
+  it("HONEST STATE: a challenger with a dollar total but no coalition shows 'PACs · not yet traced', never a fabricated mix", () => {
+    const { container } = renderDuel(mkSeat());
+    const money = container.querySelector(".dl-money");
+    expect(money).toHaveTextContent("PACs · not yet traced");
+    expect(money).toHaveTextContent("$1.3M");
   });
 });
 
@@ -256,8 +442,6 @@ describe("HeadToHead — whole-field money scale", () => {
     expect(field).not.toBeNull();
     expect(field).toHaveTextContent("Everyone running for this seat");
     const rows = field?.querySelectorAll(".mgap-row") ?? [];
-    // subject (Theo Vance) + the one funded challenger (Elena Reyes) —
-    // "No Data Nick" (totalReceipts: null) is honestly omitted.
     expect(rows.length).toBe(2);
     expect(screen.queryByText("No Data Nick")).not.toBeInTheDocument();
   });
@@ -278,5 +462,18 @@ describe("HeadToHead — whole-field money scale", () => {
     } as Partial<DelegationSeatVM>);
     const { container } = renderDuel(seat);
     expect(container.querySelector(".cmp-field")).toBeNull();
+  });
+});
+
+describe("HeadToHead — no verified replacement roster", () => {
+  it("renders the honest empty state and keeps Keep/Mark-to-replace working", () => {
+    const seat = mkSeat({ challengers: [] });
+    renderDuel(seat);
+    expect(
+      screen.getByText("No verified replacement roster yet"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /Mark to replace/ }),
+    ).toBeInTheDocument();
   });
 });

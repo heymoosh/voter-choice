@@ -839,10 +839,17 @@ export function RepCard({
   // are permanently absent rather than conditionally computed.
   const moneyExpanderParts = [
     rankedSourcesCount > 0
-      ? `${rankedSourcesCount} ranked source${rankedSourcesCount === 1 ? "" : "s"}`
+      ? t(
+          rankedSourcesCount === 1
+            ? "repCard.moneyExpanderRankedSourceSingular"
+            : "repCard.moneyExpanderRankedSourcePlural",
+          { n: rankedSourcesCount },
+        )
       : null,
-    hasScoredLinkage ? "did the money vote?" : null,
-    untracedTile ? `${untracedTile.pct}% untraced` : null,
+    hasScoredLinkage ? t("repCard.moneyExpanderDidMoneyVote") : null,
+    untracedTile
+      ? t("repCard.moneyExpanderUntraced", { pct: untracedTile.pct })
+      : null,
   ].filter(Boolean);
   const revolvingDoorTile =
     revolvingDoor && revolvingDoor.org && revolvingDoor.role
@@ -942,13 +949,7 @@ export function RepCard({
             same mny-expander shell the money section's own expander uses
             (public/redesign2.css .rep-card .mny-expander is generic chrome,
             not money-specific); provoked by the score itself, the
-            always-available fallback lives in Settings (nav ⚙).
-            NOTE (i18n gap, flagged to lead): this label/sub are hardcoded,
-            not run through t() — repCard.editIssuesFinePrint/editIssuesLink/
-            editIssuesFinePrintSuffix (VoterChoiceApp.tsx TRANSLATIONS) were
-            written for the old fine-print row's three-fragment sentence, not
-            this button's two-line shape; adding new keys means editing
-            VoterChoiceApp.tsx, which is outside this file's scope. */}
+            always-available fallback lives in Settings (nav ⚙). */}
         {onEditIssues && (
           <button
             className="mny-expander"
@@ -956,8 +957,8 @@ export function RepCard({
             onClick={onEditIssues}
           >
             <span>
-              Edit your {userIssues.length} ranked issues
-              <small>every seat re-scores instantly</small>
+              {t("repCard.editIssuesButtonLabel", { n: userIssues.length })}
+              <small>{t("repCard.editIssuesButtonSub")}</small>
             </span>
             <span className="car" aria-hidden="true">
               ✎
@@ -996,12 +997,6 @@ export function RepCard({
           </span>
           <div>
             <div className="sec-kick">{t("repCard.stepMoneyKicker")}</div>
-            {/* NOTE (i18n gap, flagged to lead): repCard.stepMoneyHeading's
-                translated value is still "Who funds this seat" — the
-                work-order copy change to "…and did it buy their votes?" is
-                a one-line value edit in VoterChoiceApp.tsx TRANSLATIONS
-                (en+es), outside this file's scope. Left the existing key in
-                place rather than forking the heading source. */}
             <h2 className="sec-h">{t("repCard.stepMoneyHeading")}</h2>
           </div>
         </div>
@@ -1038,7 +1033,7 @@ export function RepCard({
             onClick={() => setMoneyOpen(true)}
           >
             <span>
-              Where the money comes from — and why it matters
+              {t("repCard.moneyExpanderLabel")}
               {moneyExpanderParts.length > 0 && (
                 <small>{moneyExpanderParts.join(" · ")}</small>
               )}
@@ -1058,7 +1053,7 @@ export function RepCard({
               <span className="car" aria-hidden="true">
                 ▲
               </span>
-              Hide where the money comes from
+              {t("repCard.moneyCollapseLabel")}
             </button>
             <FundingSources
               donorCoalition={cand.donorCoalition}
@@ -1072,11 +1067,11 @@ export function RepCard({
               <div className="mvc-key" style={{ marginTop: 10 }}>
                 <span>
                   <i className="kw" aria-hidden="true" />
-                  voted the donor&rsquo;s way
+                  {t("repCard.mvcKeyDonorsWay")}
                 </span>
                 <span>
                   <i className="ka" aria-hidden="true" />
-                  voted against the donor
+                  {t("repCard.mvcKeyAgainstDonor")}
                 </span>
               </div>
             )}
@@ -1112,16 +1107,14 @@ export function RepCard({
                 when funding data exists) and the revolving-door tile
                 (citation-gated, same record as rd-band) can ever appear. */}
             <div className="srcs-h" style={{ marginTop: 24 }}>
-              Why this matters — shown for every candidate
+              {t("repCard.whyThisMattersHeading")}
             </div>
-            <div className="md-why">
-              Every issue you care about passes through a legislature that money
-              can outvote.{" "}
-              <b>
-                When policy answers to donors before voters, that&rsquo;s not a
-                democracy — it&rsquo;s an oligarchy with elections.
-              </b>
-            </div>
+            <div
+              className="md-why"
+              dangerouslySetInnerHTML={{
+                __html: t("repCard.moneyWhySentence"),
+              }}
+            />
             {(untracedTile || revolvingDoorTile) && (
               <div className="md-grid">
                 {untracedTile && (
@@ -1130,20 +1123,16 @@ export function RepCard({
                       <span className="ic dark" aria-hidden="true">
                         ?
                       </span>
-                      Money we can&rsquo;t trace
+                      {t("repCard.tileUntracedLabel")}
                     </div>
                     <div className="md-big">
                       {untracedTile.pct}% · {formatDollars(untracedTile.amount)}{" "}
-                      <small>untraceable</small>
+                      <small>{t("repCard.tileUntraceableWord")}</small>
                     </div>
                     <div className="md-txt">
-                      Influence that can&rsquo;t be audited is the point of
-                      routing money this way — so it sits up front, never in a
-                      footnote.
+                      {t("repCard.tileUntracedBody")}
                     </div>
-                    <div className="md-src">
-                      Same math as the source list&rsquo;s untraced row
-                    </div>
+                    <div className="md-src">{t("repCard.tileUntracedSrc")}</div>
                   </div>
                 )}
                 {revolvingDoorTile && (
@@ -1152,24 +1141,29 @@ export function RepCard({
                       <span className="ic door" aria-hidden="true">
                         ⟳
                       </span>
-                      The revolving door
+                      {t("repCard.tileRevolvingLabel")}
                     </div>
                     <div className="md-big">
-                      Announced: <small>{revolvingDoorTile.role},</small>{" "}
+                      {t("repCard.tileRevolvingAnnouncedPrefix")}{" "}
+                      <small>{revolvingDoorTile.role},</small>{" "}
                       {revolvingDoorTile.org}
                     </div>
-                    <div className="md-txt">
-                      Politicians who vote an industry&rsquo;s way often{" "}
-                      <b>retire into its payroll</b> — documented here.
-                    </div>
+                    <div
+                      className="md-txt"
+                      dangerouslySetInnerHTML={{
+                        __html: t("repCard.tileRevolvingBody"),
+                      }}
+                    />
                     <div className="md-src">
-                      Documented {revolvingDoorTile.dateDocumented} ·{" "}
+                      {t("repCard.tileRevolvingDocumentedPrefix", {
+                        date: revolvingDoorTile.dateDocumented,
+                      })}{" "}
                       <a
                         href={revolvingDoorTile.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
                       >
-                        source ↗
+                        {t("repCard.sourceArrowLink")}
                       </a>
                     </div>
                   </div>
@@ -1184,7 +1178,7 @@ export function RepCard({
               <span className="car" aria-hidden="true">
                 ▲
               </span>
-              Hide where the money comes from
+              {t("repCard.moneyCollapseLabel")}
             </button>
           </>
         )}
@@ -1351,13 +1345,10 @@ export function RepCard({
               {/* Whiteboard's .verdict grid (work order Frames 2+3, verdict +
                   sources) — same onVerdict/onOpenDuel handlers and
                   data-testid as the prior .cv2-actions pair, just the
-                  markup/classes. NOTE (i18n gap, flagged to lead): the
-                  <small> sublines ("Add to my keep list" / "See who's
-                  running →") are hardcoded — no repCard dot-key exists for
-                  them yet, and adding one means editing VoterChoiceApp.tsx,
-                  outside this file's scope. The main labels keep the
-                  existing translated repCard.worthKeeping / repCard.timeToReplace
-                  keys (and their undo/change/replacingWith variants). */}
+                  markup/classes. The main labels keep the existing translated
+                  repCard.worthKeeping / repCard.timeToReplace keys (and their
+                  undo/change/replacingWith variants); the <small> sublines
+                  are repCard.verdictKeepSub / repCard.verdictReplaceSub. */}
               <div className="verdict">
                 <button
                   className={
@@ -1373,7 +1364,9 @@ export function RepCard({
                       ? t("repCard.worthKeepingUndo")
                       : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
                   </b>
-                  {verdict !== "keep" && <small>Add to my keep list</small>}
+                  {verdict !== "keep" && (
+                    <small>{t("repCard.verdictKeepSub")}</small>
+                  )}
                 </button>
                 <button
                   className={
@@ -1400,7 +1393,7 @@ export function RepCard({
                       : t("repCard.timeToReplace")}
                   </b>
                   {verdict !== "replace" && (
-                    <small>See who&rsquo;s running →</small>
+                    <small>{t("repCard.verdictReplaceSub")}</small>
                   )}
                 </button>
               </div>

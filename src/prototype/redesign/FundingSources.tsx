@@ -65,12 +65,7 @@ interface FundingSourcesProps {
   noRollCallRecord?: boolean;
 }
 
-const VOTE_LINKAGE_LABEL = "Did their money vote?";
-const VOTE_LINKAGE_INDIVIDUALS =
-  "Nothing to check — individuals don't file lobbying agendas";
-const VOTE_LINKAGE_UNTRACED = "Can't check — agenda untraced";
-const VOTE_LINKAGE_NO_ROLLCALL =
-  "No roll-calls exist to check this money against — the influence read starts with their first vote.";
+type T = (key: string, vars?: Record<string, unknown>) => string;
 
 /**
  * The whiteboard's `src-votes` sub-block (`Voter Choice Whiteboard.html`
@@ -82,17 +77,23 @@ const VOTE_LINKAGE_NO_ROLLCALL =
 function renderVoteLinkage(
   entry: VoteLinkageEntry | undefined,
   noRollCallRecord: boolean,
+  t: T,
 ): React.ReactNode {
   if (!entry) return null;
+
+  const label = t("fundingSources.voteLinkageLabel");
 
   if (entry.kind === "scored") {
     const hi = entry.n > 0 && entry.k * 3 >= entry.n * 2;
     return (
       <div className="src-votes">
         <div className="sv-top">
-          <span className="sv-lab">{VOTE_LINKAGE_LABEL}</span>
+          <span className="sv-lab">{label}</span>
           <span className={"mvr-pct" + (hi ? " hi" : "")}>
-            {`Voted their way ${entry.k} of ${entry.n}`}
+            {t("fundingSources.voteLinkageScored", {
+              k: entry.k,
+              n: entry.n,
+            })}
           </span>
         </div>
         <div className="mvr-dots">
@@ -108,8 +109,10 @@ function renderVoteLinkage(
     return (
       <div className="src-votes">
         <div className="sv-top">
-          <span className="sv-lab">{VOTE_LINKAGE_LABEL}</span>
-          <span className="mvr-pct">{VOTE_LINKAGE_INDIVIDUALS}</span>
+          <span className="sv-lab">{label}</span>
+          <span className="mvr-pct">
+            {t("fundingSources.voteLinkageIndividuals")}
+          </span>
         </div>
       </div>
     );
@@ -120,9 +123,11 @@ function renderVoteLinkage(
   return (
     <div className="src-votes">
       <div className="sv-top">
-        <span className="sv-lab">{VOTE_LINKAGE_LABEL}</span>
+        <span className="sv-lab">{label}</span>
         <span className="mvr-pct">
-          {noRollCallRecord ? VOTE_LINKAGE_NO_ROLLCALL : VOTE_LINKAGE_UNTRACED}
+          {noRollCallRecord
+            ? t("fundingSources.voteLinkageNoRollcall")
+            : t("fundingSources.voteLinkageUntraced")}
         </span>
       </div>
     </div>
@@ -332,7 +337,7 @@ export function FundingSources({
               {r.tagLabel && (
                 <span className={"src-tag " + r.tagClass}>{r.tagLabel}</span>
               )}
-              {voteLinkage && renderVoteLinkage(linkage, noRollCallRecord)}
+              {voteLinkage && renderVoteLinkage(linkage, noRollCallRecord, t)}
             </div>
             <div className="src-proportion">
               <i

@@ -19,6 +19,7 @@ import {
   getRealStateResources,
 } from "./data";
 import { voteGroupsForUserIssues } from "./redesign/voteGroups";
+import { deriveIssueMoneyVerdict } from "./redesign/delegationData";
 import {
   loadAllRaceData,
   fetchBallotFromAddress,
@@ -376,7 +377,6 @@ const TRANSLATIONS = {
       printBtn: 'Print my scorecard (PDF)',
       handoffBtn: 'Continue in another chatbot',
       allDone: "That's your whole delegation.",
-      allDoneSeeStanding: 'where you stand among your neighbors →',
       precinct: 'Precinct',
       backToScorecard: '← Back to your scorecard',
       seatOfTotal: 'SEAT {n} OF {total}',
@@ -391,12 +391,11 @@ const TRANSLATIONS = {
       tierStatWhatIssues: 'Of your priorities, your statehouse holds the pen on <b>{issues}</b>.',
       tierExecTitle: "Offices that don't take roll-call votes",
       tierExecWhat: "A governor signs and vetoes — there's no voting record to score. So we research positions and <b>show the receipts</b> instead of faking an alignment number.",
-      allDoneKick: "You're done",
-      allDoneHeadline: "You've reviewed all your representatives.",
+      allDoneKick: 'All seats decided',
+      allDoneHeadline: 'Your scorecard is ready.',
       allDoneSub:
-        'Take your verdicts with you — print a scorecard you can bring to the ballot box.',
+        '{n} decisions, backed by the record. Print it and take it with you — or keep digging with an AI you already use.',
       allDonePrintBtn: 'Print My Scorecard',
-      allDoneAlsoIntro: 'One more thing worth seeing —',
     },
     delegationOverview: {
       kicker: 'Your delegation',
@@ -406,10 +405,25 @@ const TRANSLATIONS = {
       reviewSeat: 'Review this seat →',
       reopenSeat: 'Reopen this seat →',
       printReady: 'Print my scorecard →',
-      printNotReady: 'Decide {n} seats to print',
+      printNotReady: 'Decide {n} more seats to print your scorecard',
+      printNotReadySingular: 'Decide {n} more seat to print your scorecard',
       excludedNote: 'Not on your ballot this year',
       excludedOpen: 'See their record →',
       backToOverview: '← All seats',
+      moneyInfluenceKicker: '$ · Money influence',
+      moneyInfluenceSentence:
+        '— on the issues their PAC donors target, this member&rsquo;s votes went the <b>donors&rsquo; way</b> ({k} of {n} scored votes)',
+      moneyInfluenceLowClause:
+        ' — <b>money leads this record less than most</b>',
+      moneyInfluenceTopDollarClause:
+        ' — including <b>{amount}</b> against your #1 · {issue}',
+      untracedPctChip: '{p}% untraced',
+      mixKeySmallLabel: 'small donors',
+      mixKeySmallSub: 'under $200',
+      mixKeyLargeLabel: 'large donors',
+      mixKeyLargeSub: '$200+',
+      mixKeyPacLabel: 'PACs',
+      mixKeyPacSub: 'groups & lobbies',
     },
     editIssues: {
       eyebrow: 'Amend your issues',
@@ -585,7 +599,7 @@ const TRANSLATIONS = {
       stepAlignmentKicker: 'Do they represent you',
       stepAlignmentHeading: 'Alignment with your top issues',
       stepMoneyKicker: 'Follow the money',
-      stepMoneyHeading: 'Who funds this seat',
+      stepMoneyHeading: 'Who funds this seat — and did it buy their votes?',
       stepAttendanceKicker: 'Do they show up',
       stepAttendanceHeading: 'On the job',
       legendVote: 'How they voted',
@@ -597,11 +611,17 @@ const TRANSLATIONS = {
       trackVoteWithFraction: '<b>{kept} of {total}</b> key votes with you.',
       trackVoteFractionOnly: '<b>{kept} of {total}</b> key votes.',
       trackVoteNoRecord: 'No key votes yet this term — nothing on the floor to judge.',
-      issueVerdictWith: 'With you',
       issueVerdictVotesYesMoneyNo: 'Votes yes, money says no',
-      issueVerdictMixedSignal: 'Mixed signal',
-      issueVerdictBothAgainst: 'Against you, money too',
       issueVerdictNoRecordMoneyAgainst: 'No record, money against',
+      // v-with (aligned) chip — this is the whiteboard's reviewed copy.
+      issueVerdictWithMoneyAlign: 'Votes & money align',
+      // The next three cells aren't in the whiteboard design (which only
+      // shows the 3 combinations above) — placeholder copy on the same
+      // with/mixed/against severity ladder, pending design review
+      // (deriveIssueMoneyVerdict's own doc comment, delegationData.ts).
+      issueVerdictNoRecordMoneyAligns: 'No record, money aligns',
+      issueVerdictVotesNoMoneyAligns: 'Votes no, money aligns',
+      issueVerdictVotesNoMoneyAgainst: 'Votes no, money against',
       showVoteDetail: 'Show vote detail ▾',
       hideVoteDetail: 'Hide vote detail ▴',
       // Money hero (MoneyHero — Tier B)
@@ -634,19 +654,131 @@ const TRANSLATIONS = {
       overviewOpenSeatPickedSentence: 'You picked <b>{name}</b>…',
       overviewSeeWhoRunning: "See who's running →",
       overviewSuccessorChip: '→ {name}',
+      // Edit-issues entry (mny-expander-styled button, RepCard §1)
+      editIssuesButtonLabel: 'Edit your {n} ranked issues',
+      editIssuesButtonSub: 'every seat re-scores instantly',
+      // Money section expander/collapse chrome (RepCard §2)
+      moneyExpanderLabel: 'Where the money comes from — and why it matters',
+      moneyCollapseLabel: 'Hide where the money comes from',
+      moneyExpanderRankedSourceSingular: '{n} ranked source',
+      moneyExpanderRankedSourcePlural: '{n} ranked sources',
+      moneyExpanderDidMoneyVote: 'did the money vote?',
+      moneyExpanderUntraced: '{pct}% untraced',
+      mvcKeyDonorsWay: "voted the donor&rsquo;s way",
+      mvcKeyAgainstDonor: 'voted against the donor',
+      // "Why this matters" band + democracy tiles (RepCard §2 expanded)
+      whyThisMattersHeading: 'Why this matters — shown for every candidate',
+      moneyWhySentence:
+        'Every issue you care about passes through a legislature that money can outvote. <b>When policy answers to donors before voters, that&rsquo;s not a democracy — it&rsquo;s an oligarchy with elections.</b>',
+      tileUntracedLabel: 'Money we can&rsquo;t trace',
+      tileUntraceableWord: 'untraceable',
+      tileUntracedBody:
+        'Influence that can&rsquo;t be audited is the point of routing money this way — so it sits up front, never in a footnote.',
+      tileUntracedSrc: 'Same math as the source list&rsquo;s untraced row',
+      tileRevolvingLabel: 'The revolving door',
+      tileRevolvingAnnouncedPrefix: 'Announced:',
+      tileRevolvingBody:
+        'Politicians who vote an industry&rsquo;s way often <b>retire into its payroll</b> — documented here.',
+      tileRevolvingDocumentedPrefix: 'Documented {date} ·',
+      // Verdict pair sublines (RepCard verdict grid)
+      verdictKeepSub: 'Add to my keep list',
+      verdictReplaceSub: "See who&rsquo;s running →",
+      // MoneyVerdict (.mny-verdict) — shared money-influence sentence
+      moneyVerdictSentence:
+        '— on the issues their PAC donors target, this member&rsquo;s votes went the <b>donors&rsquo; way</b> ({k} of {n} scored votes)',
+      moneyVerdictTopDollarClause:
+        ' — including <b>{amount}</b> against your #1 · {issue}',
+      moneyVerdictDonorsWay: 'Donors&rsquo; way',
+      moneyVerdictYourWay: 'Your way',
+      // RevolvingDoorBand (.rd-band)
+      revolvingDoorLead: 'Heading for the exit:',
+      revolvingDoorSentence:
+        'this incumbent has accepted {role} at <b>{org}</b> — a company whose PAC funded them.',
+      revolvingDoorDocumented: 'Documented {date} ·',
+      sourceArrowLink: 'source ↗',
     },
     headToHead: {
       seatStatement: '{office} · {district} — one seat, {when}',
       seatStatementPlain: '{office} · {district} — one seat',
-      yourRepPinned: 'Your rep',
-      yourRepPinnedAria: 'Your rep, {name}, {pct}% aligned',
-      yourRepPinnedAriaNoScore: 'Your rep, {name}',
+      pinLabel: 'Your current rep',
       challengerProvenance: 'verified current ballot roster',
-      financeEvidenceFec: 'Campaign-finance evidence: FEC filing',
-      moneySectionTitle: 'Funding comparison',
-      moneyPacPct: '{pct}% PAC',
-      moneyUnavailable: 'Funding data not available',
       fieldSectionTitle: 'Everyone running for this seat',
+      backToScorecard: '← Back to your scorecard',
+      title: 'Head-to-head',
+      openSeatTitle: 'Who should hold this open seat?',
+      emptyNoRosterKicker: 'Replacements · none verified yet',
+      emptyNoRosterTitle: 'No verified replacement roster yet',
+      emptyNoRosterSentence:
+        "FEC campaign-finance filings are not ballot roster proof, so we won't present those filers as selectable replacements.",
+      keepingConfirmed: '✓ Keeping',
+      keepButtonSub: 'Keep {name}',
+      markedOpenSeat: '✓ Marked',
+      markedToReplace: '✕ Marked to replace',
+      markToReplace: 'Mark to replace',
+      blindbarBody:
+        "<b>Names &amp; parties hidden</b> — vet everyone by record first. Reveal any one of them whenever you're ready; your pick prints with its real name.",
+      tagIncumbentRecord: 'The record you have',
+      incumbentRoleRollcall: 'Holds this seat now · roll-call record',
+      incumbentRoleResearched:
+        'Holds this seat now · researched positions, cited',
+      revealButton: 'Reveal',
+      bigLabelRollcall:
+        'alignment with your {n} issues — scored from their roll-call votes',
+      bigLabelResearched:
+        'alignment with your {n} issues — scored from researched, cited positions',
+      noScoreableRecord: 'No scoreable record yet',
+      tagChallenger: 'Running for this seat',
+      challengerRoleBlind:
+        'Identity & party hidden · researched positions, cited',
+      noCitableRecord: 'No citable record on your issues',
+      sourcesLocked: '🔒 sources unlock on reveal',
+      emptyNoOfficeKicker: 'Votes · has never held this office',
+      emptyNoOfficeTitle: "No roll-call record — and that's expected",
+      emptyNoOfficeSentence:
+        'Challengers start at zero votes. We research their <b>stated positions</b> instead — cited, from campaign sites, Ballotpedia and local news.',
+      emptyResearchUnavailableKicker: 'Research · came back empty',
+      emptyResearchUnavailableTitle:
+        'No citable statements on your {n} issues yet',
+      emptyResearchUnavailableSentencePrefix:
+        "We searched and found nothing we could cite — we'd rather show you the gap than guess. Statements accumulate as the race heats up;",
+      checkAgainLink: 'check again',
+      emptyResearchUnavailableSentenceSuffix: 'closer to the election.',
+      emptyBudgetPausedKicker: 'Research · paused',
+      emptyBudgetPausedTitle: 'Live research is paused this month',
+      emptyBudgetPausedSentence:
+        'The community AI budget is used up — it resets monthly.',
+      ledgerIncumbentBlindLabel: 'This incumbent',
+      ledgerOnYourIssues: 'On your issues',
+      challengerFallback: 'Challenger',
+      noRecordPrefix: 'no record · ',
+      verbStatedSupport: 'stated support, cited',
+      verbStatedOpposition: 'stated opposition, cited',
+      verbMixedStated: 'a mixed stated position, cited',
+      ledgerNote:
+        "Challenger figures are a directional read of researched, cited positions — not a vote tally. Your rep's are roll-call votes.",
+      ledgerNoteBlindSuffix: ' Nothing here names anyone until you reveal.',
+      moneyHeading: 'Follow the money — and what the votes did after it',
+      moneySub:
+        'Same ranked PAC & industry component as the seat card, plus one line per source: what happened on the floor. Who gave is trivia — whether the votes tracked the money is the influence read.',
+      fundingNA: 'Funding n/a',
+      pacMoneySuffix: ' · {pct}% PAC money',
+      incumbentNoMoneyLinkage:
+        'No donor-targeted votes to check on your issues yet.',
+      challengerNoMoneyLinkage:
+        'No votes to check — {name} has no roll-call record yet.',
+      pacsUntraced: 'PACs · not yet traced',
+      emptyNoFecMatchKicker: 'Funding · roster not yet matched',
+      emptyNoFecMatchTitle: 'No FEC match yet — so no dollar shown',
+      emptyNoFecMatchSentence:
+        "This name comes from your state's official roster; we only attach FEC money on an exact seat + name match. An unmatched name shows <b>this note</b>, never a fabricated $0.",
+      keepThisIncumbent: 'Keep this incumbent',
+      picked: '✓ Picked',
+      pickPrefix: 'Pick',
+      replaceWithPrefix: 'Replace with',
+      pickingPrintsRealName:
+        'Picking prints their real name on your scorecard',
+      deltaEven: 'even',
+      noComparableRecordTitle: 'No comparable record',
     },
     handoffModal: {
       eyebrow: 'Continue elsewhere · context handoff',
@@ -727,6 +859,13 @@ const TRANSLATIONS = {
       tagAlign: '✓ Backs your #{rank} · {issue}',
       tagNone: 'Not tied to your issues',
       tagUnknown: 'Unknown',
+      voteLinkageLabel: 'Did their money vote?',
+      voteLinkageScored: 'Voted their way {k} of {n}',
+      voteLinkageIndividuals:
+        "Nothing to check — individuals don't file lobbying agendas",
+      voteLinkageUntraced: "Can't check — agenda untraced",
+      voteLinkageNoRollcall:
+        'No roll-calls exist to check this money against — the influence read starts with their first vote.',
     },
     homeHero: {
       eyebrow: "Nov 3, 2026 · America's 250th election",
@@ -1072,7 +1211,6 @@ const TRANSLATIONS = {
       printBtn: 'Imprimir mi tarjeta (PDF)',
       handoffBtn: 'Continuar en otro chatbot',
       allDone: 'Esa es toda tu delegación.',
-      allDoneSeeStanding: 'Mira dónde estás entre tus vecinos →',
       precinct: 'Precinto',
       backToScorecard: '← Volver a tu tarjeta',
       seatOfTotal: 'ESCAÑO {n} DE {total}',
@@ -1087,12 +1225,11 @@ const TRANSLATIONS = {
       tierStatWhatIssues: 'De tus prioridades, tu legislatura estatal tiene la pluma en <b>{issues}</b>.',
       tierExecTitle: 'Cargos sin votaciones nominales',
       tierExecWhat: 'Un gobernador firma y veta — no hay historial de votación que puntuar. Así que investigamos posiciones y <b>mostramos las fuentes</b> en lugar de inventar un número de alineación.',
-      allDoneKick: 'Terminaste',
-      allDoneHeadline: 'Revisaste a toda tu delegación.',
+      allDoneKick: 'Todos los escaños decididos',
+      allDoneHeadline: 'Tu tarjeta de puntuación está lista.',
       allDoneSub:
-        'Lleva tus veredictos contigo — imprime una tarjeta para llevar a la urna.',
+        '{n} decisiones, respaldadas por el historial. Imprímela y llévala contigo — o sigue investigando con una IA que ya usas.',
       allDonePrintBtn: 'Imprimir Mi Tarjeta',
-      allDoneAlsoIntro: 'Una cosa más que vale la pena ver —',
     },
     delegationOverview: {
       kicker: 'Tu delegación',
@@ -1102,10 +1239,25 @@ const TRANSLATIONS = {
       reviewSeat: 'Revisar este escaño →',
       reopenSeat: 'Reabrir este escaño →',
       printReady: 'Imprimir mi tarjeta →',
-      printNotReady: 'Decide {n} escaños para imprimir',
+      printNotReady: 'Decide {n} escaños más para imprimir tu tarjeta',
+      printNotReadySingular: 'Decide {n} escaño más para imprimir tu tarjeta',
       excludedNote: 'No está en tu boleta este año',
       excludedOpen: 'Ver su historial →',
       backToOverview: '← Todos los escaños',
+      moneyInfluenceKicker: '$ · Influencia del dinero',
+      moneyInfluenceSentence:
+        '— en los temas que financian sus PAC, los votos de este miembro fueron a favor de <b>los donantes</b> ({k} de {n} votos calificados)',
+      moneyInfluenceLowClause:
+        ' — <b>el dinero influye menos en este historial que en la mayoría</b>',
+      moneyInfluenceTopDollarClause:
+        ' — incluyendo <b>{amount}</b> en contra de tu tema #1 · {issue}',
+      untracedPctChip: '{p}% sin rastrear',
+      mixKeySmallLabel: 'pequeños donantes',
+      mixKeySmallSub: 'menos de $200',
+      mixKeyLargeLabel: 'grandes donantes',
+      mixKeyLargeSub: '$200 o más',
+      mixKeyPacLabel: 'PAC',
+      mixKeyPacSub: 'grupos y lobbies',
     },
     editIssues: {
       eyebrow: 'Modifica tus temas',
@@ -1278,7 +1430,7 @@ const TRANSLATIONS = {
       stepAlignmentKicker: '¿Te representan?',
       stepAlignmentHeading: 'Alineación con tus temas principales',
       stepMoneyKicker: 'Sigue el dinero',
-      stepMoneyHeading: 'Quién financia este puesto',
+      stepMoneyHeading: 'Quién financia este puesto — ¿y compró sus votos?',
       stepAttendanceKicker: '¿Se presentan?',
       stepAttendanceHeading: 'En el trabajo',
       legendVote: 'Cómo votaron',
@@ -1289,11 +1441,12 @@ const TRANSLATIONS = {
       trackVoteWithFraction: '<b>{kept} de {total}</b> votos clave contigo.',
       trackVoteFractionOnly: '<b>{kept} de {total}</b> votos clave.',
       trackVoteNoRecord: 'Sin votos clave este período — nada en el pleno para evaluar.',
-      issueVerdictWith: 'Contigo',
       issueVerdictVotesYesMoneyNo: 'Vota a favor, el dinero dice que no',
-      issueVerdictMixedSignal: 'Señal mixta',
-      issueVerdictBothAgainst: 'En tu contra, el dinero también',
       issueVerdictNoRecordMoneyAgainst: 'Sin registro, dinero en contra',
+      issueVerdictWithMoneyAlign: 'Votos y dinero alineados',
+      issueVerdictNoRecordMoneyAligns: 'Sin registro, dinero alineado',
+      issueVerdictVotesNoMoneyAligns: 'Vota en contra, el dinero se alinea',
+      issueVerdictVotesNoMoneyAgainst: 'Vota en contra, dinero también en contra',
       showVoteDetail: 'Ver detalle de votos ▾',
       hideVoteDetail: 'Ocultar detalle de votos ▴',
       moneyHeroRaisedCycle: 'recaudado · ciclo {cycle}',
@@ -1321,19 +1474,125 @@ const TRANSLATIONS = {
       overviewOpenSeatPickedSentence: 'Elegiste a <b>{name}</b>…',
       overviewSeeWhoRunning: 'Ver quién compite →',
       overviewSuccessorChip: '→ {name}',
+      editIssuesButtonLabel: 'Edita tus {n} temas priorizados',
+      editIssuesButtonSub: 'cada puesto se vuelve a puntuar al instante',
+      moneyExpanderLabel: 'De dónde viene el dinero — y por qué importa',
+      moneyCollapseLabel: 'Ocultar de dónde viene el dinero',
+      moneyExpanderRankedSourceSingular: '{n} fuente clasificada',
+      moneyExpanderRankedSourcePlural: '{n} fuentes clasificadas',
+      moneyExpanderDidMoneyVote: '¿el dinero votó?',
+      moneyExpanderUntraced: '{pct}% sin rastrear',
+      mvcKeyDonorsWay: 'votó a favor del donante',
+      mvcKeyAgainstDonor: 'votó en contra del donante',
+      whyThisMattersHeading: 'Por qué esto importa — se muestra para cada candidato',
+      moneyWhySentence:
+        'Cada tema que te importa pasa por una legislatura que el dinero puede superar en votos. <b>Cuando la política responde a los donantes antes que a los votantes, eso no es una democracia — es una oligarquía con elecciones.</b>',
+      tileUntracedLabel: 'Dinero que no podemos rastrear',
+      tileUntraceableWord: 'sin rastrear',
+      tileUntracedBody:
+        'La influencia que no se puede auditar es precisamente el propósito de mover el dinero así — por eso va al frente, nunca en una nota al pie.',
+      tileUntracedSrc: 'Mismo cálculo que la fila sin rastrear de la lista de fuentes',
+      tileRevolvingLabel: 'La puerta giratoria',
+      tileRevolvingAnnouncedPrefix: 'Anunciado:',
+      tileRevolvingBody:
+        'Los políticos que votan a favor de una industria a menudo <b>terminan trabajando para ella</b> — documentado aquí.',
+      tileRevolvingDocumentedPrefix: 'Documentado el {date} ·',
+      verdictKeepSub: 'Agregar a mi lista de mantener',
+      verdictReplaceSub: 'Ver quién compite →',
+      moneyVerdictSentence:
+        '— en los temas que financian sus PAC, los votos de este miembro fueron a favor de <b>los donantes</b> ({k} de {n} votos calificados)',
+      moneyVerdictTopDollarClause:
+        ' — incluyendo <b>{amount}</b> en contra de tu tema #1 · {issue}',
+      moneyVerdictDonorsWay: 'A favor de los donantes',
+      moneyVerdictYourWay: 'A tu favor',
+      revolvingDoorLead: 'Rumbo a la salida:',
+      revolvingDoorSentence:
+        'este titular aceptó {role} en <b>{org}</b> — una empresa cuyo PAC lo financió.',
+      revolvingDoorDocumented: 'Documentado el {date} ·',
+      sourceArrowLink: 'fuente ↗',
     },
     headToHead: {
       seatStatement: '{office} · {district} — un puesto, {when}',
       seatStatementPlain: '{office} · {district} — un puesto',
-      yourRepPinned: 'Tu representante',
-      yourRepPinnedAria: 'Tu representante, {name}, {pct}% alineado',
-      yourRepPinnedAriaNoScore: 'Tu representante, {name}',
+      pinLabel: 'Tu representante actual',
       challengerProvenance: 'lista actual de boleta verificada',
-      financeEvidenceFec: 'Evidencia de financiamiento de campaña: presentación ante la FEC',
-      moneySectionTitle: 'Comparación de financiamiento',
-      moneyPacPct: '{pct}% PAC',
-      moneyUnavailable: 'Datos de financiamiento no disponibles',
       fieldSectionTitle: 'Todos los que compiten por este puesto',
+      backToScorecard: '← Volver a tu tarjeta',
+      title: 'Cara a cara',
+      openSeatTitle: '¿Quién debería ocupar este puesto abierto?',
+      emptyNoRosterKicker: 'Reemplazos · aún no verificados',
+      emptyNoRosterTitle: 'Aún no hay una lista de reemplazo verificada',
+      emptyNoRosterSentence:
+        'Las presentaciones de financiamiento de campaña ante la FEC no son prueba de boleta, así que no presentaremos a esos candidatos como reemplazos seleccionables.',
+      keepingConfirmed: '✓ Manteniendo',
+      keepButtonSub: 'Mantener a {name}',
+      markedOpenSeat: '✓ Marcado',
+      markedToReplace: '✕ Marcado para reemplazar',
+      markToReplace: 'Marcar para reemplazar',
+      blindbarBody:
+        '<b>Nombres y partidos ocultos</b> — evalúa a todos por su historial primero. Revela a cualquiera cuando estés listo/a; tu elección se imprime con su nombre real.',
+      tagIncumbentRecord: 'El historial que tienes',
+      incumbentRoleRollcall: 'Ocupa este puesto ahora · historial de votaciones',
+      incumbentRoleResearched:
+        'Ocupa este puesto ahora · posiciones investigadas, citadas',
+      revealButton: 'Revelar',
+      bigLabelRollcall:
+        'alineación con tus {n} temas — calificado según sus votaciones nominales',
+      bigLabelResearched:
+        'alineación con tus {n} temas — calificado según posiciones investigadas y citadas',
+      noScoreableRecord: 'Aún no hay historial calificable',
+      tagChallenger: 'Compite por este puesto',
+      challengerRoleBlind:
+        'Identidad y partido ocultos · posiciones investigadas, citadas',
+      noCitableRecord: 'Sin historial citable sobre tus temas',
+      sourcesLocked: '🔒 las fuentes se desbloquean al revelar',
+      emptyNoOfficeKicker: 'Votos · nunca ha ocupado este cargo',
+      emptyNoOfficeTitle: 'Sin historial de votaciones — y eso es de esperarse',
+      emptyNoOfficeSentence:
+        'Los candidatos retadores empiezan sin votos. En su lugar investigamos sus <b>posiciones declaradas</b> — citadas, de sitios de campaña, Ballotpedia y noticias locales.',
+      emptyResearchUnavailableKicker: 'Investigación · no encontró nada',
+      emptyResearchUnavailableTitle:
+        'Aún no hay declaraciones citables sobre tus {n} temas',
+      emptyResearchUnavailableSentencePrefix:
+        'Buscamos y no encontramos nada que pudiéramos citar — preferimos mostrarte el vacío que adivinar. Las declaraciones se acumulan a medida que se acerca la contienda;',
+      checkAgainLink: 'buscar de nuevo',
+      emptyResearchUnavailableSentenceSuffix: 'más cerca de la elección.',
+      emptyBudgetPausedKicker: 'Investigación · pausada',
+      emptyBudgetPausedTitle: 'La investigación en vivo está pausada este mes',
+      emptyBudgetPausedSentence:
+        'El presupuesto de IA comunitario se agotó — se reinicia cada mes.',
+      ledgerIncumbentBlindLabel: 'Este titular',
+      ledgerOnYourIssues: 'En tus temas',
+      challengerFallback: 'Retador',
+      noRecordPrefix: 'sin registro · ',
+      verbStatedSupport: 'apoyo declarado, citado',
+      verbStatedOpposition: 'oposición declarada, citada',
+      verbMixedStated: 'postura declarada mixta, citada',
+      ledgerNote:
+        'Las cifras del retador son una lectura direccional de posiciones investigadas y citadas — no un conteo de votos. Las de tu representante son votaciones nominales.',
+      ledgerNoteBlindSuffix: ' Nada aquí nombra a nadie hasta que reveles.',
+      moneyHeading: 'Sigue el dinero — y qué hicieron los votos después',
+      moneySub:
+        'El mismo componente de PAC e industria clasificado que la tarjeta del puesto, más una línea por fuente: qué pasó en el pleno. Quién donó es trivial — si los votos siguieron al dinero es la lectura de influencia.',
+      fundingNA: 'Financiamiento no disponible',
+      pacMoneySuffix: ' · {pct}% dinero de PAC',
+      incumbentNoMoneyLinkage:
+        'Aún no hay votos vinculados a donantes para verificar en tus temas.',
+      challengerNoMoneyLinkage:
+        'Nada que verificar — {name} no tiene historial de votaciones aún.',
+      pacsUntraced: 'PACs · aún sin rastrear',
+      emptyNoFecMatchKicker: 'Financiamiento · aún no coincide con la lista',
+      emptyNoFecMatchTitle:
+        'Aún no hay coincidencia con la FEC — por eso no se muestra monto',
+      emptyNoFecMatchSentence:
+        'Este nombre proviene de la lista oficial de tu estado; solo vinculamos dinero de la FEC cuando coincide exactamente el puesto y el nombre. Un nombre sin coincidencia muestra <b>esta nota</b>, nunca un $0 inventado.',
+      keepThisIncumbent: 'Mantener a este titular',
+      picked: '✓ Elegido',
+      pickPrefix: 'Elegir a',
+      replaceWithPrefix: 'Reemplazar con',
+      pickingPrintsRealName: 'Elegir imprime su nombre real en tu tarjeta',
+      deltaEven: 'igual',
+      noComparableRecordTitle: 'Sin historial comparable',
     },
     handoffModal: {
       eyebrow: 'Continuar en otro lugar · traspaso de contexto',
@@ -1414,6 +1673,13 @@ const TRANSLATIONS = {
       tagAlign: '✓ Respalda tu tema #{rank} · {issue}',
       tagNone: 'No vinculado a tus temas',
       tagUnknown: 'Desconocido',
+      voteLinkageLabel: '¿Su dinero votó?',
+      voteLinkageScored: 'Votó a su favor {k} de {n}',
+      voteLinkageIndividuals:
+        'Nada que verificar — los individuos no presentan agendas de cabildeo',
+      voteLinkageUntraced: 'No se puede verificar — agenda sin rastrear',
+      voteLinkageNoRollcall:
+        'No existen votaciones para verificar este dinero — la lectura de influencia comienza con su primer voto.',
     },
     homeHero: {
       eyebrow: '3 de noviembre de 2026 · la elección 250 de Estados Unidos',
@@ -2609,6 +2875,19 @@ function WebSearchAlignmentRow({ issue, score, anonCtx }) {
   );
 }
 
+/* deriveIssueMoneyVerdict (delegationData.ts) returns its label as a fixed
+   English string (by design — the function's doc comment says wording is a
+   consumer contract, not baked in). Maps each of the 6 possible labels to
+   its i18n key so the .iss-verdict chip below renders translated copy. */
+const ISSUE_MONEY_VERDICT_LABEL_KEYS = {
+  'Votes & money align': 'repCard.issueVerdictWithMoneyAlign',
+  'No record, money aligns': 'repCard.issueVerdictNoRecordMoneyAligns',
+  'Votes no, money aligns': 'repCard.issueVerdictVotesNoMoneyAligns',
+  'Votes yes, money says no': 'repCard.issueVerdictVotesYesMoneyNo',
+  'No record, money against': 'repCard.issueVerdictNoRecordMoneyAgainst',
+  'Votes no, money against': 'repCard.issueVerdictVotesNoMoneyAgainst',
+};
+
 /* ── single row of the banner (private to AlignmentScoreBanner) ── */
 function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx, rowVariant = 'legacy', rank, donorCoalition, userIssues }) {
   const { t } = useI18n();
@@ -2625,29 +2904,21 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
 
   // canvas shape (RepCard only) — money-redesign `.iss` card: rank + name +
   // combined verdict pill, then two always-visible tracks (how they voted /
-  // whose money) — screens.css .iss/.iss-head/.iss-tracks/.trk. Money track
-  // is the §4 alignment×money join (deriveIssueMoneyTrack) — display-only,
-  // honest-blank: no matching issue-PAC slice → vote track alone, no pill.
+  // whose money) — screens.css .iss/.iss-head/.iss-tracks/.trk. The money
+  // TRACK (amount/advocates row) still comes from deriveIssueMoneyTrack —
+  // display-only, honest-blank: no matching issue-PAC slice → vote track
+  // alone, no track row. The verdict PILL is the shared delegationData.ts
+  // helper (deriveIssueMoneyVerdict) so this chip can never drift from the
+  // overview card's read of the same money×vote join.
   if (rowVariant === 'canvas') {
     const canvasTone = pct === null ? '' : pct >= 65 ? 'good' : 'bad';
     const fraction = score && score.total > 0 ? `${score.kept}/${score.total}` : null;
     const moneyTrack = deriveIssueMoneyTrack(donorCoalition, issue, userIssues);
-    const votesWithYou = pct !== null && pct >= 65;
-    let verdictKey = null;
-    if (moneyTrack) {
-      if (!hasVotes) {
-        verdictKey = moneyTrack.conflict ? 'v-against' : moneyTrack.aligned ? 'v-with' : null;
-      } else if (votesWithYou) {
-        verdictKey = moneyTrack.conflict ? 'v-mixed' : moneyTrack.aligned ? 'v-with' : null;
-      } else {
-        verdictKey = moneyTrack.conflict ? 'v-against' : moneyTrack.aligned ? 'v-mixed' : null;
-      }
-    }
-    const verdictLabel = {
-      'v-with': t('repCard.issueVerdictWith'),
-      'v-mixed': hasVotes && votesWithYou ? t('repCard.issueVerdictVotesYesMoneyNo') : t('repCard.issueVerdictMixedSignal'),
-      'v-against': hasVotes ? t('repCard.issueVerdictBothAgainst') : t('repCard.issueVerdictNoRecordMoneyAgainst'),
-    }[verdictKey];
+    const moneyVerdict = deriveIssueMoneyVerdict(score, donorCoalition);
+    const verdictKey = moneyVerdict?.cls ?? null;
+    const verdictLabel = moneyVerdict
+      ? t(ISSUE_MONEY_VERDICT_LABEL_KEYS[moneyVerdict.label] || moneyVerdict.label)
+      : null;
     const voteTrackText = hasVotes
       ? t('repCard.trackVoteWithFraction', { kept: score.kept, total: score.total })
       : score && score.total > 0
