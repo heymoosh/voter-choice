@@ -2663,7 +2663,7 @@ function AlignmentIssueRow({ issue, score, candidate, isOpen, onToggle, anonCtx,
             <span className="trk-ic vote">{fraction ? '✓' : '–'}</span>
             <div>
               <div className="trk-lab">{t('repCard.trackVoteLabel')}</div>
-              <div className="trk-val">{voteTrackText}</div>
+              <div className="trk-val" dangerouslySetInnerHTML={{ __html: voteTrackText }} />
             </div>
           </div>
           {moneyTrack && (
