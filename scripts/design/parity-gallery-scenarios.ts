@@ -961,7 +961,10 @@ export const SCENARIOS: Scenario[] = [
       await reachWorkspace(page);
       await verdictRow(page, 0, "keep");
       await verdictRow(page, 1, "replace");
-      await page.getByRole("button", { name: /Print my scorecard/ }).click();
+      // Case-insensitive: the deleted rail's own button said "Print my
+      // scorecard" (lowercase); the all-done panel's says "Print My
+      // Scorecard" (capital M) — only the latter exists now.
+      await page.getByRole("button", { name: /Print my scorecard/i }).click();
       await page.locator(".print-sheet").waitFor({ timeout: 10000 });
     },
   },
@@ -1271,7 +1274,7 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await page.getByTestId("edit-issues-scorecard").click();
+      await page.getByTestId("edit-issues-alignment").click();
       await page.getByTestId("edit-issues-modal").waitFor({ timeout: 10000 });
       await sendFollowUpIssue(page);
     },
@@ -1298,7 +1301,7 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      await page.getByTestId("edit-issues-scorecard").click();
+      await page.getByTestId("edit-issues-alignment").click();
       await page.getByTestId("edit-issues-modal").waitFor({ timeout: 10000 });
       await sendFollowUpIssue(page);
       await page.getByTestId("issue-primary").click();
