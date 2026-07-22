@@ -3762,25 +3762,29 @@
 }
 
 /* ---- fused funding-source list (FundingSources.tsx) ---- */
-.rep-card .srcs {
+.rep-card .srcs,
+.dl-money .srcs {
   margin: 22px 18px 0;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
-.rep-card .srcs-h {
+.rep-card .srcs-h,
+.dl-money .srcs-h {
   font-family: var(--serif);
   font-size: 17px;
   font-weight: 600;
   margin-bottom: 2px;
 }
-.rep-card .srcs-sub {
+.rep-card .srcs-sub,
+.dl-money .srcs-sub {
   font-size: 12.5px;
   color: var(--ink-3);
   margin-bottom: 12px;
   line-height: 1.4;
 }
-.rep-card .src {
+.rep-card .src,
+.dl-money .src {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 2px 12px;
@@ -3788,38 +3792,47 @@
   border-top: 1px solid var(--rule-2);
   align-items: start;
 }
-.rep-card .src:first-of-type {
+.rep-card .src:first-of-type,
+.dl-money .src:first-of-type {
   border-top: 1px solid var(--rule);
 }
-.rep-card .src-dot {
+.rep-card .src-dot,
+.dl-money .src-dot {
   grid-row: 1 / 3;
   width: 10px;
   height: 10px;
   border-radius: 3px;
   margin-top: 5px;
 }
-.rep-card .src-dot.d-people {
+.rep-card .src-dot.d-people,
+.dl-money .src-dot.d-people {
   background: var(--civic);
 }
-.rep-card .src-dot.d-pac {
+.rep-card .src-dot.d-pac,
+.dl-money .src-dot.d-pac {
   background: var(--vote-red);
 }
-.rep-card .src-dot.d-good {
+.rep-card .src-dot.d-good,
+.dl-money .src-dot.d-good {
   background: var(--rc-keep);
 }
-.rep-card .src-dot.d-neutral {
+.rep-card .src-dot.d-neutral,
+.dl-money .src-dot.d-neutral {
   background: var(--ink-3);
 }
-.rep-card .src-dot.d-unknown {
+.rep-card .src-dot.d-unknown,
+.dl-money .src-dot.d-unknown {
   background: var(--rule);
 }
-.rep-card .src-name {
+.rep-card .src-name,
+.dl-money .src-name {
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);
   line-height: 1.25;
 }
-.rep-card .src-amt {
+.rep-card .src-amt,
+.dl-money .src-amt {
   font-family: var(--mono);
   font-size: 14px;
   font-weight: 600;
@@ -3827,23 +3840,27 @@
   text-align: right;
   white-space: nowrap;
 }
-.rep-card .src-pct {
+.rep-card .src-pct,
+.dl-money .src-pct {
   grid-column: 2 / 4;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-3);
   margin-top: 1px;
 }
-.rep-card .src-body {
+.rep-card .src-body,
+.dl-money .src-body {
   grid-column: 2 / 4;
   margin-top: 6px;
 }
-.rep-card .src-agenda {
+.rep-card .src-agenda,
+.dl-money .src-agenda {
   font-size: 13px;
   color: var(--ink-2);
   line-height: 1.4;
 }
-.rep-card .src-tag {
+.rep-card .src-tag,
+.dl-money .src-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3857,21 +3874,25 @@
   border-radius: 999px;
   line-height: 1.2;
 }
-.rep-card .src-tag.t-conflict {
+.rep-card .src-tag.t-conflict,
+.dl-money .src-tag.t-conflict {
   background: var(--vote-red-soft);
   color: var(--vote-red);
 }
-.rep-card .src-tag.t-align {
+.rep-card .src-tag.t-align,
+.dl-money .src-tag.t-align {
   background: var(--rc-keep-soft);
   color: var(--rc-keep);
 }
-.rep-card .src-tag.t-none {
+.rep-card .src-tag.t-none,
+.dl-money .src-tag.t-none {
   background: var(--tag-bg);
   /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
      .cv2-sub.blind .cv2-tag. */
   color: oklch(0.5 0.026 260);
 }
-.rep-card .src-proportion {
+.rep-card .src-proportion,
+.dl-money .src-proportion {
   grid-column: 2 / 4;
   height: 4px;
   border-radius: 2px;
@@ -3879,24 +3900,30 @@
   margin-top: 9px;
   overflow: hidden;
 }
-.rep-card .src-proportion i {
+.rep-card .src-proportion i,
+.dl-money .src-proportion i {
   display: block;
   height: 100%;
   border-radius: 2px;
 }
-.rep-card .src-proportion i.d-people {
+.rep-card .src-proportion i.d-people,
+.dl-money .src-proportion i.d-people {
   background: var(--civic);
 }
-.rep-card .src-proportion i.d-pac {
+.rep-card .src-proportion i.d-pac,
+.dl-money .src-proportion i.d-pac {
   background: var(--vote-red);
 }
-.rep-card .src-proportion i.d-good {
+.rep-card .src-proportion i.d-good,
+.dl-money .src-proportion i.d-good {
   background: var(--rc-keep);
 }
-.rep-card .src-proportion i.d-neutral {
+.rep-card .src-proportion i.d-neutral,
+.dl-money .src-proportion i.d-neutral {
   background: var(--ink-3);
 }
-.rep-card .src-proportion i.d-unknown {
+.rep-card .src-proportion i.d-unknown,
+.dl-money .src-proportion i.d-unknown {
   /* --rule (~L0.88) on this bar's --paper-3 track (~L0.972) is ~1.3:1,
      nowhere near AA's 3:1 for a graphical object — scoped darker fill,
      same hue/chroma family as --rule/--ink-3, --rule stays untouched
@@ -3983,75 +4010,89 @@
    ============================================================ */
 
 /* ---- money verdict — "did their votes follow their donors?" ---- */
-.rep-card .mny-verdict {
+.rep-card .mny-verdict,
+.dl-money .mny-verdict {
   margin: 14px 18px 0;
   padding: 13px 14px;
   background: var(--paper-2);
   border-radius: 11px;
 }
-.rep-card .mvd-head {
+.rep-card .mvd-head,
+.dl-money .mvd-head {
   display: flex;
   align-items: baseline;
   gap: 11px;
 }
-.rep-card .mvd-head .pct {
+.rep-card .mvd-head .pct,
+.dl-money .mvd-head .pct {
   font-family: var(--serif);
   font-size: 32px;
   font-weight: 600;
   color: var(--vote-red);
   line-height: 1;
 }
-.rep-card .mvd-head span {
+.rep-card .mvd-head span,
+.dl-money .mvd-head span {
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--ink-2);
 }
-.rep-card .mvd-head span b {
+.rep-card .mvd-head span b,
+.dl-money .mvd-head span b {
   color: var(--ink);
 }
-.rep-card .mvd-bars {
+.rep-card .mvd-bars,
+.dl-money .mvd-bars {
   margin-top: 11px;
   display: grid;
   gap: 7px;
 }
-.rep-card .mvd-row {
+.rep-card .mvd-row,
+.dl-money .mvd-row {
   display: grid;
   grid-template-columns: 76px 1fr 42px;
   gap: 9px;
   align-items: center;
 }
-.rep-card .mvd-row .k {
+.rep-card .mvd-row .k,
+.dl-money .mvd-row .k {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.rep-card .mvd-row .bar {
+.rep-card .mvd-row .bar,
+.dl-money .mvd-row .bar {
   height: 8px;
   border-radius: 4px;
   background: var(--paper-3);
   overflow: hidden;
 }
-.rep-card .mvd-row .bar i {
+.rep-card .mvd-row .bar i,
+.dl-money .mvd-row .bar i {
   display: block;
   height: 100%;
   border-radius: 4px;
 }
-.rep-card .mvd-row .bar i.bad {
+.rep-card .mvd-row .bar i.bad,
+.dl-money .mvd-row .bar i.bad {
   background: var(--vote-red);
 }
-.rep-card .mvd-row .bar i.you {
+.rep-card .mvd-row .bar i.you,
+.dl-money .mvd-row .bar i.you {
   background: var(--civic);
 }
-.rep-card .mvd-row .v {
+.rep-card .mvd-row .v,
+.dl-money .mvd-row .v {
   font-family: var(--mono);
   font-size: 12.5px;
   font-weight: 600;
   text-align: right;
   color: var(--ink);
 }
-.rep-card .mvd-row .v.bad {
+.rep-card .mvd-row .v.bad,
+.dl-money .mvd-row .v.bad {
   color: var(--vote-red);
 }
 
@@ -4154,13 +4195,15 @@
 /* ---- "did their money vote?" — src-votes sub-block per FundingSources
    row (Frame 7 item 1); grid-column 2/4 to span the row's content columns
    like its sibling .src-body/.src-proportion above. ---- */
-.rep-card .src-votes {
+.rep-card .src-votes,
+.dl-money .src-votes {
   grid-column: 2 / 4;
   margin-top: 9px;
   padding-top: 9px;
   border-top: 1px dashed var(--rule-2);
 }
-.rep-card .src-votes .sv-top {
+.rep-card .src-votes .sv-top,
+.dl-money .src-votes .sv-top {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -4168,20 +4211,24 @@
   flex-wrap: wrap;
   margin-bottom: 6px;
 }
-.rep-card .src-votes .sv-top:last-child {
+.rep-card .src-votes .sv-top:last-child,
+.dl-money .src-votes .sv-top:last-child {
   margin-bottom: 0;
 }
-.rep-card .src-votes .sv-lab {
+.rep-card .src-votes .sv-lab,
+.dl-money .src-votes .sv-lab {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
 }
-.rep-card .src-votes .mvr-receipt {
+.rep-card .src-votes .mvr-receipt,
+.dl-money .src-votes .mvr-receipt {
   margin-top: 7px;
 }
-.rep-card .mvr-pct {
+.rep-card .mvr-pct,
+.dl-money .mvr-pct {
   font-family: var(--mono);
   font-size: 11px;
   letter-spacing: 0.04em;
@@ -4190,34 +4237,41 @@
   padding: 4px 9px;
   border-radius: 999px;
 }
-.rep-card .mvr-pct.hi {
+.rep-card .mvr-pct.hi,
+.dl-money .mvr-pct.hi {
   background: var(--vote-red-soft);
   color: var(--vote-red);
 }
-.rep-card .mvr-pct.lo {
+.rep-card .mvr-pct.lo,
+.dl-money .mvr-pct.lo {
   background: var(--rc-keep-soft);
   color: var(--rc-keep);
 }
-.rep-card .mvr-dots {
+.rep-card .mvr-dots,
+.dl-money .mvr-dots {
   display: flex;
   gap: 5px;
   margin-top: 9px;
   flex-wrap: wrap;
 }
-.rep-card .mvr-dots i {
+.rep-card .mvr-dots i,
+.dl-money .mvr-dots i {
   width: 14px;
   height: 14px;
   border-radius: 4px;
   display: inline-block;
 }
-.rep-card .mvr-dots i.w {
+.rep-card .mvr-dots i.w,
+.dl-money .mvr-dots i.w {
   background: var(--vote-red);
 }
-.rep-card .mvr-dots i.a {
+.rep-card .mvr-dots i.a,
+.dl-money .mvr-dots i.a {
   background: var(--paper);
   border: 1.5px solid var(--rc-keep);
 }
-.rep-card .mvr-receipt {
+.rep-card .mvr-receipt,
+.dl-money .mvr-receipt {
   display: flex;
   gap: 9px;
   align-items: baseline;
@@ -4229,20 +4283,23 @@
   line-height: 1.45;
   color: var(--ink-2);
 }
-.rep-card .mvr-receipt .d {
+.rep-card .mvr-receipt .d,
+.dl-money .mvr-receipt .d {
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 600;
   color: var(--ink-3);
   white-space: nowrap;
 }
-.rep-card .mvr-receipt .arr {
+.rep-card .mvr-receipt .arr,
+.dl-money .mvr-receipt .arr {
   font-family: var(--mono);
   color: var(--vote-red);
   font-weight: 600;
 }
 /* legend after the source list — only when at least one dot strip rendered */
-.rep-card .mvc-key {
+.rep-card .mvc-key,
+.dl-money .mvc-key {
   display: flex;
   gap: 18px;
   margin-top: 12px;
@@ -4250,20 +4307,24 @@
   color: var(--ink-2);
   flex-wrap: wrap;
 }
-.rep-card .mvc-key span {
+.rep-card .mvc-key span,
+.dl-money .mvc-key span {
   display: inline-flex;
   align-items: center;
   gap: 7px;
 }
-.rep-card .mvc-key i {
+.rep-card .mvc-key i,
+.dl-money .mvc-key i {
   width: 12px;
   height: 12px;
   border-radius: 3px;
 }
-.rep-card .mvc-key .kw {
+.rep-card .mvc-key .kw,
+.dl-money .mvc-key .kw {
   background: var(--vote-red);
 }
-.rep-card .mvc-key .ka {
+.rep-card .mvc-key .ka,
+.dl-money .mvc-key .ka {
   background: var(--paper);
   border: 1.5px solid var(--rc-keep);
 }

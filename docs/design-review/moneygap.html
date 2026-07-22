@@ -49,17 +49,17 @@
 </head>
 <body>
   <h1>Keystone review — Money-gap</h1>
-  <div class="sub">ref: <code>HEAD (90f66480)</code> &middot; generated 2026-07-17T14:23:31.985Z</div>
+  <div class="sub">ref: <code>HEAD (43c5d9ee)</code> &middot; generated 2026-07-22T21:42:07.652Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (90f66480))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (43c5d9ee))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">11a-fieldmoneygap</div>
           <div class="label">Money-gap — subject vs the median (field rows moved to the duel)</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">REWRITTEN 2026-07-12 (Round-4 problem #10): the incumbent card's scale is subject-vs-median ONLY — the `field` challenger rows the 2026-07-11 ruling wired here were removed again by Muxin's Round-4 review (challenger money bars don't belong on the incumbent's own card); the whole-field comparison relocates to the head-to-head duel ('Everyone running for this seat', feat/headtohead-money-clarity). The canvas artboard (refFile) still shows the whole-field composition; subject-only renders as a strict subset of it, inside the coarse visual threshold — the marker probe in parity-gate.ts is the binding check for the removal. mockDelegationWithChallengers stays in this capture ON PURPOSE: the mock supplies funded challengers so a regressed tree that re-wires `field` would genuinely render the rows the probe asserts are gone.</div>
         </td>
@@ -83,9 +83,9 @@
         <td class="meta">
           <div class="id">11c-moneygaph2h</div>
           <div class="label">Money-gap — in the head-to-head</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag proxy">proxy</span>
-          <div class="note">The canvas's money-ratio + shared-scale component for this screen was deleted as dead code — confirmed by grep: no export with that shape exists anywhere in MoneyGap.tsx anymore. The duel screen's actual money treatment is a simpler PAC-percentage footnote (.cmp-fund), not that ratio/scale component. Proxy: same HeadToHead screenshot as 05b, so the gap is visible rather than hidden.</div>
+          <div class="note">The canvas's money-ratio + shared-scale component for this screen was deleted as dead code — confirmed by grep: no export with that shape exists anywhere in MoneyGap.tsx anymore. Whiteboard v4 (2026-07-22) replaced the duel's money treatment entirely with `.dl-money` — the shared FundingSources component embedded per column, not a ratio/scale component or the old `.cmp-fund` footnote either. Proxy: same HeadToHead screenshot as 05b, so the gap is visible rather than hidden — inherits 05b's stale-ref flag too (manifest describes the old real-name `.cmp-*` switcher; the duel is blind by default now).</div>
         </td>
         <td class="shot"><img src="screenshots/refs/11c-moneygaph2h.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/11c-moneygaph2h.png" alt="repo screenshot"></td>

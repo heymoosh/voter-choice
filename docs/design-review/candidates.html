@@ -49,46 +49,22 @@
 </head>
 <body>
   <h1>Keystone review — Candidates</h1>
-  <div class="sub">ref: <code>HEAD (90f66480)</code> &middot; generated 2026-07-17T14:23:31.985Z</div>
+  <div class="sub">ref: <code>HEAD (43c5d9ee)</code> &middot; generated 2026-07-22T21:58:13.027Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (90f66480))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (43c5d9ee))</th></tr></thead>
     <tbody>
-      <tr>
-        <td class="meta">
-          <div class="id">05a-candidates-parity</div>
-          <div class="label">Candidates — CandidateParity (unified card)</div>
-          <span class="badge unchanged">unchanged since base</span>
-          <span class="tag yes">automated</span>
-          <div class="note">Captures the junior-senator seat, which has no DB voting record and renders via the research/web_search path (the closest current analog to the canvas's dashed 'RESEARCHED · CITED' provenance treatment). Repo-wide grep found no ROLL-CALL/CITED provenance-badge markup at all — HANDOFF §5 flags the badge distinction as unverified; this screenshot is honest evidence either way, not a forced match.</div>
-        </td>
-        <td class="shot"><img src="screenshots/refs/05a-candidates-parity.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/05a-candidates-parity.png" alt="repo screenshot"></td>
-      </tr>
-
       <tr>
         <td class="meta">
           <div class="id">05b-headtohead</div>
           <div class="label">Candidates — HeadToHead duel</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
-          <div class="note">Opens the full-screen duel via 'Time to replace' on the House seat (has 2026 challengers).</div>
+          <div class="note">Opens the full-screen duel via 'Time to replace' on the House seat (has 2026 challengers). STALE REF: whiteboard v4 (2026-07-22) rebuilt this screen onto blind `.dl-*` markup — App2.tsx's blindMode is always true, so both the incumbent and the challenger render as aliases ('This seat's incumbent' / 'Candidate A') with dashed party pips until individually revealed. The manifest's own ref notes describe the OLD `.cmp-*` layout with real names in the switcher ('Reyes/Whitfield/Dunne') — that ref predates the blind rebuild. Captures the real (blind) state rather than driving a reveal to chase the stale ref; flag for Muxin, needs a fresh design-sync pull.</div>
         </td>
         <td class="shot"><img src="screenshots/refs/05b-headtohead.png" alt="reference artboard"></td>
         <td class="shot"><img src="screenshots/repo/05b-headtohead.png" alt="repo screenshot"></td>
-      </tr>
-
-      <tr>
-        <td class="meta">
-          <div class="id">05c-candidates-overview</div>
-          <div class="label">Candidates — DelegationOverview (multi-seat scored cards before drill-down)</div>
-          <span class="badge unchanged">unchanged since base</span>
-          <span class="tag yes">automated</span>
-          <div class="note">PR #243 merged (data-testid="delegation-overview") — capture() below drives the actual repo screen (DelegationOverview.tsx), no longer a stand-in. The canvas ref PNG was captured from a different, newer, untracked folder (design-handoff/design_handoff_voter_choice_redesign/, not design-handoff/keystone-canvas/ which predates this screen) — screens-delegation.jsx's DelegationOverview, wired into that folder's own standalone canvas viewer ('Voter Choice - Keystone Design Session.html') as the 'dg-overview' artboard. Captured 2026-07-08 by serving that folder locally and screenshotting the artboard's [data-dc-slot="dg-overview"] .dc-card node at 3x (deviceScaleFactor) — the same fidelity as the viewer's own Download-PNG export, just driven headlessly. See .keystone-canvas-refs/manifest.json's 05c-candidates-overview entry for what it shows.</div>
-        </td>
-        <td class="shot"><img src="screenshots/refs/05c-candidates-overview.png" alt="reference artboard"></td>
-        <td class="shot"><img src="screenshots/repo/05c-candidates-overview.png" alt="repo screenshot"></td>
       </tr></tbody>
   </table>
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>

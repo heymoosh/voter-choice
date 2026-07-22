@@ -511,3 +511,76 @@ describe("deriveVoteLinkage", () => {
     expect(summedN).toBe(influence?.n);
   });
 });
+
+// Regression for the 2026-07-22 whiteboard-v4 visual-audit bug: the gallery's
+// realistic seat fixture (scripts/design/parity-gallery-scenarios.ts
+// `mockSeatRaceDataMedian`, mirrored in e2e/helpers/redesign-mocks.ts) has an
+// issue-PAC that keys its issue via `relevantToIssue` (not `alignsWith` — the
+// alias every other fixture above uses) the way real /api/race-data payloads
+// sometimes do, per DonorCoalitionSlice's own doc comment. That fixture
+// ALSO omitted `issuePacStance` entirely. Every unit fixture above already
+// set both `alignsWith` and `issuePacStance` via the `pac()` helper, so they
+// never exercised this combination — the money-verdict block, the
+// `.iss-verdict` chip, and the FundingSources `src-votes` sub-block all
+// silently rendered honest-null in the gallery even though a scoreable vote
+// existed, and no unit test caught it.
+describe("issue-PAC keyed by relevantToIssue (real mock-data shape parity)", () => {
+  const userIssues = [
+    rankedIssue("healthcare_affordability", "Lower insulin & drug prices", 1),
+  ];
+  const scoredEntry = {
+    scores: [
+      moneyScore("healthcare_affordability", "in_favor", ["with"], 5, 6),
+    ],
+  };
+  // Matches parity-gallery-scenarios.ts's "Better Care Action Fund" entry
+  // shape exactly, keyed via `relevantToIssue` like the real fixture.
+  const pacMissingStance: DonorCoalitionSlice = {
+    label: "Better Care Action Fund",
+    amount: 500_000,
+    isIssuePAC: true,
+    relevantToIssue: "healthcare_affordability",
+    advocates: "Lower prescription drug prices & expanded coverage",
+  };
+
+  it("honest-null (not a bug): relevantToIssue-keyed PAC with no issuePacStance can't be scored", () => {
+    const seat = {
+      candidate: { donorCoalition: [pacMissingStance] },
+      alignmentEntry: scoredEntry,
+    };
+    expect(deriveMoneyInfluence(seat, userIssues)).toBeNull();
+    expect(
+      deriveIssueMoneyVerdict(scoredEntry.scores[0], [pacMissingStance]),
+    ).toBeNull();
+    expect(deriveVoteLinkage(seat).get("Better Care Action Fund")).toEqual({
+      kind: "unscored",
+    });
+  });
+
+  it("scores once issuePacStance is set, via relevantToIssue same as alignsWith", () => {
+    const pacWithStance: DonorCoalitionSlice = {
+      ...pacMissingStance,
+      issuePacStance: "in_favor",
+    };
+    const seat = {
+      candidate: { donorCoalition: [pacWithStance] },
+      alignmentEntry: scoredEntry,
+    };
+    expect(deriveMoneyInfluence(seat, userIssues)).toEqual({
+      pct: 100,
+      k: 1,
+      n: 1,
+      yourWayPct: 100,
+      topDollarAgainst: null,
+    });
+    expect(
+      deriveIssueMoneyVerdict(scoredEntry.scores[0], [pacWithStance]),
+    ).toEqual({ cls: "v-with", label: "Votes & money align" });
+    expect(deriveVoteLinkage(seat).get("Better Care Action Fund")).toEqual({
+      kind: "scored",
+      k: 1,
+      n: 1,
+      dots: ["w"],
+    });
+  });
+});

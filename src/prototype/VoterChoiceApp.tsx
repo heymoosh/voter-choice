@@ -625,7 +625,11 @@ const TRANSLATIONS = {
       showVoteDetail: 'Show vote detail ▾',
       hideVoteDetail: 'Hide vote detail ▴',
       // Money hero (MoneyHero — Tier B)
-      moneyHeroRaisedCycle: 'raised · {cycle} cycle',
+      // {cycle} already carries the word "cycle" (fundingMix.cycle is a
+      // full phrase like "2026 cycle" — race-data.ts `computeFundingMix`);
+      // this template must not append it again (was "raised · 2026 cycle
+      // cycle" on screen).
+      moneyHeroRaisedCycle: 'raised · {cycle}',
       moneyHeroVsTypical: "That's <mult>{multiple}</mult> the <b>{median}</b> a typical {office} campaign raises.",
       moneyHeroDollarOnly: 'raised this cycle — no chamber baseline yet to compare against.',
       // Funding-mix caveat already covered by funderBars.pacGap*; verdict/ask/attendance restyle only, no new copy needed there.
@@ -664,17 +668,17 @@ const TRANSLATIONS = {
       moneyExpanderRankedSourcePlural: '{n} ranked sources',
       moneyExpanderDidMoneyVote: 'did the money vote?',
       moneyExpanderUntraced: '{pct}% untraced',
-      mvcKeyDonorsWay: "voted the donor&rsquo;s way",
+      mvcKeyDonorsWay: "voted the donor’s way",
       mvcKeyAgainstDonor: 'voted against the donor',
       // "Why this matters" band + democracy tiles (RepCard §2 expanded)
       whyThisMattersHeading: 'Why this matters — shown for every candidate',
       moneyWhySentence:
         'Every issue you care about passes through a legislature that money can outvote. <b>When policy answers to donors before voters, that&rsquo;s not a democracy — it&rsquo;s an oligarchy with elections.</b>',
-      tileUntracedLabel: 'Money we can&rsquo;t trace',
+      tileUntracedLabel: 'Money we can’t trace',
       tileUntraceableWord: 'untraceable',
       tileUntracedBody:
-        'Influence that can&rsquo;t be audited is the point of routing money this way — so it sits up front, never in a footnote.',
-      tileUntracedSrc: 'Same math as the source list&rsquo;s untraced row',
+        'Influence that can’t be audited is the point of routing money this way — so it sits up front, never in a footnote.',
+      tileUntracedSrc: 'Same math as the source list’s untraced row',
       tileRevolvingLabel: 'The revolving door',
       tileRevolvingAnnouncedPrefix: 'Announced:',
       tileRevolvingBody:
@@ -682,13 +686,13 @@ const TRANSLATIONS = {
       tileRevolvingDocumentedPrefix: 'Documented {date} ·',
       // Verdict pair sublines (RepCard verdict grid)
       verdictKeepSub: 'Add to my keep list',
-      verdictReplaceSub: "See who&rsquo;s running →",
+      verdictReplaceSub: "See who’s running →",
       // MoneyVerdict (.mny-verdict) — shared money-influence sentence
       moneyVerdictSentence:
         '— on the issues their PAC donors target, this member&rsquo;s votes went the <b>donors&rsquo; way</b> ({k} of {n} scored votes)',
       moneyVerdictTopDollarClause:
         ' — including <b>{amount}</b> against your #1 · {issue}',
-      moneyVerdictDonorsWay: 'Donors&rsquo; way',
+      moneyVerdictDonorsWay: 'Donors’ way',
       moneyVerdictYourWay: 'Your way',
       // RevolvingDoorBand (.rd-band)
       revolvingDoorLead: 'Heading for the exit:',
@@ -1449,7 +1453,8 @@ const TRANSLATIONS = {
       issueVerdictVotesNoMoneyAgainst: 'Vota en contra, dinero también en contra',
       showVoteDetail: 'Ver detalle de votos ▾',
       hideVoteDetail: 'Ocultar detalle de votos ▴',
-      moneyHeroRaisedCycle: 'recaudado · ciclo {cycle}',
+      // Same fix as the `en` key above: {cycle} is already a full phrase.
+      moneyHeroRaisedCycle: 'recaudado · {cycle}',
       moneyHeroVsTypical: 'Eso es <mult>{multiple}</mult> lo que <b>{median}</b> recauda una campaña típica de {office}.',
       moneyHeroDollarOnly: 'recaudado este ciclo — aún no hay una base de comparación de la cámara.',
       editIssuesFinePrint: 'Evaluado según tus {n} temas priorizados. ¿Cambiaron tus prioridades?',

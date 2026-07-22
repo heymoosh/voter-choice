@@ -49,17 +49,17 @@
 </head>
 <body>
   <h1>Keystone review — Polis</h1>
-  <div class="sub">ref: <code>HEAD (90f66480)</code> &middot; generated 2026-07-17T14:23:31.985Z</div>
+  <div class="sub">ref: <code>HEAD (43c5d9ee)</code> &middot; generated 2026-07-22T21:42:07.652Z</div>
   
   <div class="nav-links"><a href="index.html">&larr; back to index</a></div>
   <table>
-    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (90f66480))</th></tr></thead>
+    <thead><tr><th>Scenario</th><th>Reference artboard</th><th>Repo (HEAD (43c5d9ee))</th></tr></thead>
     <tbody>
       <tr>
         <td class="meta">
           <div class="id">10a-polis-entry</div>
           <div class="label">Polis — entry point</div>
-          <span class="badge unchanged">unchanged since base</span>
+          <span class="badge changed">changed since base</span>
           <span class="tag yes">automated</span>
           <div class="note">PolisEntry.tsx (canvas's dedicated invite/preview screen, data-testid="polis-entry-see-standing") landed via PR #237 — the workspace's '.all-done … where you stand' completion link now opens this interstitial instead of jumping straight to the standing report (the false-pass this scenario used to document, STOP-SHIP 2026-07-09, is resolved: capture() reaches the real screen, not an unclicked proxy link). capture() verdicts every seat, follows that link, and stops at PolisEntry itself — one step short of goToStanding()'s final click into the real standing report. Also fixed here: PolisEntry.tsx's .pe-screen predates the app-wide Bold Flag foundation (PR #237 was built before it) and pointed its --brand/--brand-2 tokens at --civic, which .bf-app's own comment documents as deliberately LEFT untouched app-wide (it still doubles as the 'keep' green) — so PolisEntry's flagbar/buttons/invite-rail rendered civic-green instead of the canvas's navy. Repointed at --bf-brand/--bf-brand-2 (public/redesign2.css).</div>
         </td>

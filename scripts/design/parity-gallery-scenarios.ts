@@ -156,21 +156,30 @@ async function mockSeatRaceDataMedian(page: Page): Promise<void> {
           id: candidateId,
           name,
           incumbent: true,
+          // donorCoalition carries ONLY sector + issue-PAC buckets, matching
+          // the real /api/race-data contract (race-data.ts
+          // `donorFieldsFromResult`) — the small/large/PAC mix is surfaced
+          // separately via `fundingMix` below. Putting "Small individual
+          // donors (under $200)"/"PACs" directly in here (an earlier version
+          // of this mock did) double-rendered them through FundingSources'
+          // `industries` fallback (any non-issue-PAC slice), duplicating the
+          // fixed fundingMix row under the wrong "industry-sector donations"
+          // copy.
           donorCoalition: [
-            {
-              label: "Small individual donors (under $200)",
-              percent: 40,
-              amount: 2_000_000,
-            },
-            { label: "PACs", percent: 60, amount: 3_000_000 },
             // Named issue-PAC carrying an `advocates` string so the
             // design-sync `rep-card-expanded` extraction actually renders
             // the restored `.fp-pac-advocates` line (SPEC-3A Option A).
+            // `issuePacStance: "in_favor"` matches its `advocates` copy
+            // (lower drug prices — the same direction as this seat's
+            // healthcare_affordability score/user stance below) so
+            // scorePacVotesForIssue (delegationData.ts) can actually score
+            // it instead of silently no-op'ing on a missing stance field.
             {
               label: "Better Care Action Fund",
               amount: 500_000,
               isIssuePAC: true,
               relevantToIssue: "healthcare_affordability",
+              issuePacStance: "in_favor",
               advocates: "Lower prescription drug prices & expanded coverage",
             },
           ],
@@ -295,14 +304,10 @@ async function mockSeatRaceDataDeltaAware(page: Page): Promise<void> {
               id: "federal-TEST1",
               name: "Alex Rivera",
               incumbent: true,
-              donorCoalition: [
-                {
-                  label: "Small individual donors (under $200)",
-                  percent: 40,
-                  amount: 2_000_000,
-                },
-                { label: "PACs", percent: 60, amount: 3_000_000 },
-              ],
+              // Same fix as mockSeatRaceDataMedian above: donorCoalition
+              // carries only sector/issue-PAC buckets, never the mix labels
+              // (those come from `fundingMix` below).
+              donorCoalition: [],
               donorSource: { name: "fec", url: "https://www.fec.gov/" },
               totalRaised: 5_000_000,
               fundingMix: {
@@ -763,9 +768,10 @@ async function verdictRow(
   const btn =
     verdict === "keep"
       ? page.getByRole("button", { name: /Worth keeping/ }).first()
-      : page
-          .getByRole("button", { name: "Time to replace", exact: true })
-          .first();
+      : // Not `exact: true` anymore — whiteboard v4's verdict button grew a
+        // `<small>` subline ("See who's running →"), which is part of the
+        // button's accessible name now.
+        page.getByRole("button", { name: /^Time to replace/ }).first();
   await btn.waitFor({ timeout: 15000 });
   await btn.click();
   await page.waitForTimeout(700);
@@ -864,7 +870,12 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/VoterChoiceApp.tsx",
     ],
     automatable: "yes",
-    note: "Clicks the first scoreable issue row to expand AlignmentDrilldown.",
+    note:
+      "Clicks the first scoreable issue row to expand AlignmentDrilldown. RepCard always " +
+      "renders the canvas row variant now (whiteboard v4's `.iss`/`.iss-head` money-redesign " +
+      "shape) — its drill toggle is its own `.iss-drill-toggle` button, unlike the older " +
+      "`.cv2-iss-row`/`.cv2-iss-head` variant (still used elsewhere) which toggled on a click " +
+      "anywhere on the head.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -872,13 +883,13 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
-      const row = page
+      const toggle = page
         .locator(
-          '[data-testid="voting-record-alignment-row"].has-drill .cv2-iss-head',
+          '[data-testid="voting-record-alignment-row"] .iss-drill-toggle',
         )
         .first();
-      await row.waitFor({ timeout: 10000 });
-      await row.click();
+      await toggle.waitFor({ timeout: 10000 });
+      await toggle.click();
     },
   },
   {
@@ -987,6 +998,11 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
+      // reachWorkspace lands INSIDE the first seat's deep view (v3 rail
+      // removal, 2026-07-21) — back out to the overview to reach the
+      // excluded row (it isn't visible from a seat's own deep view).
+      await page.getByTestId("back-to-overview").click();
+      await page.getByTestId("seat-card").first().waitFor({ timeout: 15000 });
       // The junior-senator seat (index 2) has no DB voting record and is
       // excluded from the overview's scored grid — it renders as a
       // .dg-excluded row (v3 rail removal dropped the old .b-row rail this
@@ -1006,7 +1022,15 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/duelAlignment.ts",
     ],
     automatable: "yes",
-    note: "Opens the full-screen duel via 'Time to replace' on the House seat (has 2026 challengers).",
+    note:
+      "Opens the full-screen duel via 'Time to replace' on the House seat (has 2026 " +
+      "challengers). STALE REF: whiteboard v4 (2026-07-22) rebuilt this screen onto blind " +
+      "`.dl-*` markup — App2.tsx's blindMode is always true, so both the incumbent and the " +
+      "challenger render as aliases ('This seat's incumbent' / 'Candidate A') with dashed " +
+      "party pips until individually revealed. The manifest's own ref notes describe the OLD " +
+      "`.cmp-*` layout with real names in the switcher ('Reyes/Whitfield/Dunne') — that ref " +
+      "predates the blind rebuild. Captures the real (blind) state rather than driving a " +
+      "reveal to chase the stale ref; flag for Muxin, needs a fresh design-sync pull.",
     async capture(page) {
       await mockDelegationWithChallengers(page);
       await mockSeatRaceDataMedian(page);
@@ -1015,9 +1039,12 @@ export const SCENARIOS: Scenario[] = [
       await mockCounters(page);
       await reachWorkspace(page);
       await page.getByTestId("open-duel").click();
-      await page.locator(".cmp").waitFor({ timeout: 10000 });
+      await page.locator(".dl").waitFor({ timeout: 10000 });
+      // Let the challenger's researched score settle before capturing.
       await page
-        .locator(".cmp-col.ch .cmp-big b")
+        .locator(".dl-grid .dl-col")
+        .nth(1)
+        .locator(".dl-big b")
         .waitFor({ timeout: 10000 })
         .catch(() => {});
     },
@@ -1261,7 +1288,11 @@ export const SCENARIOS: Scenario[] = [
       "src/prototype/redesign/IssueConversation.tsx",
     ],
     automatable: "yes",
-    note: "Opens the seeded 'Amend your issues' modal from the scorecard's Edit link, then adds a turn.",
+    note:
+      "Opens the seeded 'Amend your issues' modal from the alignment section's fine print " +
+      "(v3 rail removal, 2026-07-21, dropped the old rail's own 'edit-issues-scorecard' entry " +
+      "point — 'edit-issues-alignment', restyled onto the mny-expander shell by whiteboard v4, " +
+      "is the primary entry now), then adds a turn.",
     // ".amend-card" is EditIssuesModal's own visible card (onClick
     // stopPropagation) — NOT the outer `data-testid="edit-issues-modal"`
     // node (".amend-modal"), which is the full-viewport dimmed backdrop
@@ -1569,9 +1600,12 @@ export const SCENARIOS: Scenario[] = [
     note:
       "The canvas's money-ratio + shared-scale component for this screen was deleted as " +
       "dead code — confirmed by grep: no export with that shape exists anywhere in " +
-      "MoneyGap.tsx anymore. The duel screen's actual money treatment is a simpler " +
-      "PAC-percentage footnote (.cmp-fund), not that ratio/scale component. Proxy: same " +
-      "HeadToHead screenshot as 05b, so the gap is visible rather than hidden.",
+      "MoneyGap.tsx anymore. Whiteboard v4 (2026-07-22) replaced the duel's money treatment " +
+      "entirely with `.dl-money` — the shared FundingSources component embedded per column, " +
+      "not a ratio/scale component or the old `.cmp-fund` footnote either. Proxy: same " +
+      "HeadToHead screenshot as 05b, so the gap is visible rather than hidden — inherits 05b's " +
+      "stale-ref flag too (manifest describes the old real-name `.cmp-*` switcher; the duel is " +
+      "blind by default now).",
     async capture(page) {
       await mockDelegationWithChallengers(page);
       await mockSeatRaceDataMedian(page);
@@ -1580,7 +1614,7 @@ export const SCENARIOS: Scenario[] = [
       await mockCounters(page);
       await reachWorkspace(page);
       await page.getByTestId("open-duel").click();
-      await page.locator(".cmp").waitFor({ timeout: 10000 });
+      await page.locator(".dl").waitFor({ timeout: 10000 });
     },
   },
 ];

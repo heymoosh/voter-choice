@@ -416,7 +416,11 @@ export function buildSeats(
               totalRaised: cardCand?.totalRaised,
               chamberMedian: cardCand?.chamberMedian,
               office: seat.office,
-              cycle: cardCand?.fundingMix?.cycle ?? "2025–26",
+              // The fallback must already be a complete phrase, matching the
+              // real fundingMix.cycle shape (race-data.ts `computeFundingMix`
+              // produces e.g. "2026 cycle") — MoneyHero's i18n template
+              // renders "{cycle}" verbatim with no separate "cycle" suffix.
+              cycle: cardCand?.fundingMix?.cycle ?? "2025–26 cycle",
             }),
             seekingReelection2026: apiCand.seekingReelection2026,
           }

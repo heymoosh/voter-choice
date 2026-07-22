@@ -192,17 +192,20 @@ export async function mockSeatRaceData(
           id: candidateId,
           name,
           incumbent: true,
+          // donorCoalition mirrors the real /api/race-data contract
+          // (race-data.ts `donorFieldsFromResult`): it carries ONLY sector +
+          // issue-PAC buckets, never the small/large/PAC mix labels — those
+          // are surfaced separately via `fundingMix` below. An earlier
+          // version of this mock put "Small individual donors (under $200)"
+          // and "PACs" directly in donorCoalition, which made FundingSources'
+          // `industries` filter (rows without `isIssuePAC`) render them a
+          // SECOND time as generic industry-sector rows, duplicating the
+          // fixed fundingMix-derived row under the wrong "industry-sector
+          // donations" copy.
           donorCoalition:
             donorMode === "totalReceiptsOnly"
               ? [{ label: "total_receipts", percent: 100, amount: 5_000_000 }]
-              : [
-                  {
-                    label: "Small individual donors (under $200)",
-                    percent: 40,
-                    amount: 2_000_000,
-                  },
-                  { label: "PACs", percent: 60, amount: 3_000_000 },
-                ],
+              : [],
           donorSource: { name: "fec", url: "https://www.fec.gov/" },
           totalRaised: 5_000_000,
           fundingMix:
