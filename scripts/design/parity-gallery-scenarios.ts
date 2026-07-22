@@ -846,12 +846,11 @@ export const SCENARIOS: Scenario[] = [
     ],
     automatable: "yes",
     note:
-      "STALE REF + REDUNDANT SCENARIO (money-redesign v2/v3): the money-trail disclosure " +
-      "toggle this scenario used to exercise no longer exists — money is always open now, so " +
-      "this capture is currently IDENTICAL to 02a. Kept as a distinct id (rather than deleted) " +
-      "so a future ref swap can retarget it at a specific money-section frame (e.g. scrolled to " +
-      "the FundingSources list) instead of collapsing it into 02a. Needs the same design-sync " +
-      "refresh as 02a before its ref is trustworthy.",
+      "Whiteboard v4 (#427) re-gated the money section behind the mny-expander, so this " +
+      "scenario is genuinely distinct from 02a again: it opens the expander and captures the " +
+      "expanded state (MoneyGapScale, FundingSources with src-votes, caveat, democracy tiles). " +
+      "STALE REF: the committed ref PNG still predates whiteboard v4 — needs the design-sync " +
+      "refresh before its parity verdict is trustworthy.",
     async capture(page) {
       await mockDelegation(page);
       await mockSeatRaceDataMedian(page);
@@ -859,6 +858,8 @@ export const SCENARIOS: Scenario[] = [
       await mockPolis(page);
       await mockCounters(page);
       await reachWorkspace(page);
+      await page.getByTestId("money-expander-toggle").first().click();
+      await page.locator(".srcs").first().waitFor({ timeout: 10000 });
     },
   },
   {

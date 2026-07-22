@@ -232,7 +232,10 @@ const TARGETS: ComponentTarget[] = [
     group: "Candidates",
     title: "HeadToHead duel",
     scenarioId: "05b-headtohead",
-    selector: ".cmp-screen",
+    // Whiteboard v4 (#427) rebuilt the duel from .cmp-screen onto the blind
+    // .dl markup; .dl carries the duel's own token block in candidates.css,
+    // so the standalone render styles without an extra wrapper.
+    selector: ".dl",
   },
 
   // ---- Money ----
