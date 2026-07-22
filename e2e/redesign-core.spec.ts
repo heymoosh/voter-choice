@@ -53,7 +53,9 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     // election date stays in the seat strip and resurfaces at the all-done
     // junction, covered by redesign-core's all-done tests instead).
     await expect(page.locator(".seat-strip")).toContainText("TX-37");
-    await expect(page.locator(".att-band")).toContainText("missed 1.4%");
+    // Whiteboard v4 attendance copy: "Present for {a} of {b} floor votes —
+    // missed just {p}%." (was the shorter "missed {p}%" sentence).
+    await expect(page.locator(".att-band")).toContainText("missed just 1.4%");
     await expect(page.locator(".att-band .att-chip")).toHaveText(
       "Rarely misses",
     );
@@ -129,9 +131,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     // isn't on the 2026 ballot and carries no verdict UI).
     await page.getByRole("button", { name: /Worth keeping/ }).click();
     await page.waitForTimeout(900);
-    await page
-      .getByRole("button", { name: "Time to replace", exact: true })
-      .click();
+    // Not `exact: true` anymore — the whiteboard's verdict button grew a
+    // `<small>` subline ("See who's running →"), which is part of the
+    // button's accessible name now.
+    await page.getByRole("button", { name: /^Time to replace/ }).click();
     await page.waitForTimeout(900);
     await page.locator(".all-done").waitFor({ timeout: 15000 });
 
@@ -184,6 +187,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
+    // Whiteboard v4 merged money into one expander-gated section — the
+    // sparse-breakdown note now lives behind it, not in the always-open hero.
+    await page.getByTestId("money-expander-toggle").click();
+
     const sparseFunding = page
       .locator('[data-testid="funding-sparse"]')
       .first();
@@ -225,9 +232,10 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     // auto-advances ~600ms after each verdict, skipping the not-up seat.
     await page.getByRole("button", { name: /Worth keeping/ }).click();
     await page.waitForTimeout(900);
-    await page
-      .getByRole("button", { name: "Time to replace", exact: true })
-      .click();
+    // Not `exact: true` anymore — the whiteboard's verdict button grew a
+    // `<small>` subline ("See who's running →"), which is part of the
+    // button's accessible name now.
+    await page.getByRole("button", { name: /^Time to replace/ }).click();
     await page.waitForTimeout(900);
 
     // Both decidable seats done (the not-up seat never sits in the

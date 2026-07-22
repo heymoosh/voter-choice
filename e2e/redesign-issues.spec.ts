@@ -92,8 +92,12 @@ test.describe("conversational issue intake", () => {
       .click({ timeout: 15000 });
     await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
     // v3 rail removal: the issue count now surfaces in the alignment
-    // section's fine print, not a right-rail issues list.
-    await expect(page.locator(".al-edit")).toContainText("3 ranked issues");
+    // section's fine print, not a right-rail issues list. Whiteboard v4
+    // restyled that fine print onto the mny-expander shell (`.al-edit` is
+    // gone) — the testid is the stable selector across that restyle.
+    await expect(page.getByTestId("edit-issues-alignment")).toContainText(
+      "3 ranked issues",
+    );
   });
 
   test("a budget block mid-intake preserves the conversation and opens the budget modal", async ({
@@ -225,7 +229,9 @@ test.describe("edit issues from the workspace", () => {
     await expect(
       page.getByRole("button", { name: /Worth keeping — undo/ }),
     ).toBeVisible();
-    await expect(page.locator(".al-edit")).toContainText("3 ranked issues");
+    await expect(page.getByTestId("edit-issues-alignment")).toContainText(
+      "3 ranked issues",
+    );
     await expect(page.getByTestId("issue-delta-banner")).toContainText(
       "your verdicts stand",
     );

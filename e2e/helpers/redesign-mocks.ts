@@ -606,9 +606,12 @@ export async function goToPolisEntry(page: Page): Promise<void> {
     await page.waitForTimeout(700);
   }
   await allDone.waitFor({ timeout: 15000 });
+  // Whiteboard v4 replaced the buried text link with PolisInvitePanel's
+  // "See where I stand →" button (copy no longer says "where YOU stand") —
+  // the testid is the stable contract across that copy churn.
   const standingLink = page
     .locator(".all-done")
-    .getByRole("button", { name: /where you stand/ });
+    .getByTestId("polis-invite-see-standing");
   await standingLink.waitFor({ timeout: 15000 });
   await standingLink.click();
   // Stop AT PolisEntry (invite/preview screen) — visible and settled.
