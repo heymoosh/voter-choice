@@ -93,13 +93,22 @@ test.describe("seat chat — ask anything about this seat", () => {
       page.getByTestId("seat-chat").locator(".msg.ai .bubble"),
     ).toContainText("(mocked reply)");
 
-    // Switch to the senior senator's seat — fresh, empty log. Seat rows live
-    // only in the right scorecard pane now (the left rail was removed [P1]).
-    await page.locator(".ws-ballot .b-row").nth(1).click();
+    // Switch to the senior senator's seat — fresh, empty log. v3 rail
+    // removal: the overview is the only nav surface now, reached via
+    // back-to-overview + a seat-card click.
+    await page.getByTestId("back-to-overview").click();
+    await page
+      .locator('[data-testid="seat-card"]')
+      .nth(1)
+      .click({ timeout: 15000 });
     await expect(page.getByTestId("seat-chat").locator(".msg")).toHaveCount(0);
 
     // Back to the House seat — the conversation survives the switch.
-    await page.locator(".ws-ballot .b-row").nth(0).click();
+    await page.getByTestId("back-to-overview").click();
+    await page
+      .locator('[data-testid="seat-card"]')
+      .nth(0)
+      .click({ timeout: 15000 });
     await expect(
       page.getByTestId("seat-chat").locator(".msg.user .bubble"),
     ).toContainText("Question for seat one");
@@ -160,9 +169,11 @@ test.describe("seat chat — ask anything about this seat", () => {
     await expect(modal.getByTestId("handoff-actions")).toBeVisible();
     await expect(page.locator(".msg.ai-error")).toHaveCount(0);
 
-    // The assessment is untouched behind the modal.
+    // The assessment is untouched behind the modal — still on the same
+    // seat's deep view (v3 rail removal dropped the rail's own row count
+    // as a "nothing navigated away" signal).
     await page.locator(".be-x").click();
-    await expect(page.locator(".b-row")).toHaveCount(3);
+    await expect(page.locator(".rep-card")).toBeVisible();
   });
 
   test("BYOK: save a key, retry the refused turn browser-direct to Anthropic", async ({

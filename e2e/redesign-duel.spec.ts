@@ -82,14 +82,14 @@ test.describe("head-to-head candidate duel", () => {
     await switcher.getByRole("tab", { name: /Reyes/ }).click();
     await cmp.getByRole("button", { name: /Replace with Reyes/ }).click();
 
-    // Back on the workspace: the scorecard shows the replace verdict + the
-    // chosen successor (the answer to "what happens when you replace?").
-    await expect(page.locator(".ws-ballot")).toBeVisible();
-    const houseRow = page.locator(".b-row").first();
-    await expect(houseRow.locator(".verdict-chip")).toHaveText("⇄ REPLACE");
-    await expect(houseRow.locator(".pick-successor")).toContainText(
-      "Elena Reyes",
-    );
+    // Back on the seat's own deep view (closing the duel doesn't navigate
+    // away): the verdict button itself now names the successor — the
+    // answer to "what happens when you replace?" (v3 rail removal dropped
+    // the rail's own .verdict-chip/.pick-successor readout).
+    await expect(page.locator(".rep-card")).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Replacing with Elena Reyes/ }),
+    ).toBeVisible();
   });
 
   test("Keep at the foot records a keep verdict and returns to the scorecard", async ({
@@ -113,13 +113,15 @@ test.describe("head-to-head candidate duel", () => {
       .getByRole("button", { name: /^Keep / })
       .click();
 
-    await expect(page.locator(".ws-ballot")).toBeVisible();
+    // Back on the seat's own deep view — the verdict button reads the keep
+    // state directly (v3 rail removal dropped the rail's own readout).
+    await expect(page.locator(".rep-card")).toBeVisible();
     await expect(
-      page.locator(".b-row").first().locator(".verdict-chip"),
-    ).toHaveText("✓ KEEP");
-    // No successor on a keep.
+      page.getByRole("button", { name: /Worth keeping — undo/ }),
+    ).toBeVisible();
+    // No successor on a keep — the replace button still reads its default.
     await expect(
-      page.locator(".b-row").first().locator(".pick-successor"),
-    ).toHaveCount(0);
+      page.getByRole("button", { name: "Time to replace", exact: true }),
+    ).toBeVisible();
   });
 });

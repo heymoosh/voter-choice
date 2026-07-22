@@ -24,6 +24,10 @@
   --civic-soft: oklch(0.9 0.025 170);
   --vote-red: oklch(0.54 0.16 28);
   --gold: oklch(0.76 0.1 75);
+  /* Gold as TEXT fails contrast at raw --gold (~2:1 on --paper) — darkened
+     text-only variant, same L-drop pattern as .rep-card's local --gold-text
+     (redesign2.css). Raw --gold stays reserved for fills/swatches. */
+  --gold-text: oklch(0.5 0.1 75);
   --tag-bg: oklch(0.92 0.012 85);
   /* NOTE: the Keystone "Bold Flag" accent tokens (--brand / --keep /
      --replace …) that the Polis "Where you stand" report needs are defined in

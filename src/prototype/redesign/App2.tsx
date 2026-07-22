@@ -1148,6 +1148,11 @@ function App2Inner() {
         onResetAll={startOver}
         onExportProfile={undefined}
         onResumeProfile={undefined}
+        onEditIssues={
+          issues && issues.length > 0
+            ? () => setEditIssuesOpen(true)
+            : undefined
+        }
       />
     </NavProvider>
   );

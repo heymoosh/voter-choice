@@ -26,12 +26,10 @@ test.skip(
 test.describe("delegation flow — address → assess → verdicts", () => {
   test("walks home → cold-open → workspace with real card surfaces", async ({
     page,
-  }, testInfo) => {
-    // The left rail is desktop-only (<768px shows the scorecard pane first).
-    test.skip(
-      testInfo.project.name !== "chromium-desktop",
-      "rail assertions are desktop-only",
-    );
+  }) => {
+    // v3 rail removal (2026-07-21): the seat page renders identically at
+    // every breakpoint now (no more desktop-only rail split), so this runs
+    // on every project.
     await mockDelegation(page);
     await mockSeatRaceData(page);
     await mockResearch(page);
@@ -48,30 +46,32 @@ test.describe("delegation flow — address → assess → verdicts", () => {
       "This seat's incumbent",
     );
 
-    // Seat strip + attendance band + eligibility + sources are all present.
+    // Seat strip + attendance band + sources are all present. The
+    // standalone election-info block (.elig, EligibilityNote2) was removed
+    // from the main card entirely (v3 §2 row 4, 2026-07-21 human decision:
+    // "one focus per page" — the seat page is record + money only; the
+    // election date stays in the seat strip and resurfaces at the all-done
+    // junction, covered by redesign-core's all-done tests instead).
     await expect(page.locator(".seat-strip")).toContainText("TX-37");
     await expect(page.locator(".att-band")).toContainText("missed 1.4%");
     await expect(page.locator(".att-band .att-chip")).toHaveText(
       "Rarely misses",
     );
-    await expect(page.locator(".elig")).toContainText("2026");
     await expect(page.locator(".card-sources")).toContainText("GovTrack");
 
-    // Money glance carries the donor total (core thesis). The glance is
-    // now canvas's compact one-liner (.rc-money-glance) — no more
-    // .cv2-disclose-summary wrapper in this shape.
-    await expect(page.locator(".rc-money-glance")).toContainText("$5M");
+    // Money hero carries the donor total (core thesis). The money-redesign
+    // section is always open now — no more collapsible glance/disclosure
+    // wrapper in this shape (v2/v3, 2026-07-21).
+    await expect(page.locator(".mny-total")).toContainText("$5M");
     await expect(page.locator(".tweaks2")).toHaveCount(0);
 
-    // Single right panel ([P1]): the left rail was removed, so the scorecard
-    // pane is the only side panel and it renders the issues. The confusing
-    // per-issue Fed/Both/State jurisdiction tags stay removed ([P0]) — the
-    // one jurisdiction tag DECISIONS.md keeps lives once, on the seat-tier
-    // header (canvas res-tier's .lvl), not per issue chip.
-    await expect(page.locator(".ws-ballot")).toBeVisible();
-    await expect(
-      page.locator(".ws-ballot .b-issues-list li").first(),
-    ).toBeVisible();
+    // One focus per page (v3, 2026-07-21): the seat page's right rail is
+    // gone entirely — no ws-rail, no ws-ballot, just the centered seat card.
+    // The confusing per-issue Fed/Both/State jurisdiction tags stay removed
+    // ([P0]) — the one jurisdiction tag DECISIONS.md keeps lives once, on
+    // the seat-tier header (canvas res-tier's .lvl), not per issue chip.
+    await expect(page.locator(".rep-card")).toBeVisible();
+    await expect(page.locator(".ws-ballot")).toHaveCount(0);
     await expect(page.locator(".ws-rail")).toHaveCount(0);
     await expect(page.locator(".lvl-tag")).toHaveCount(1);
     await expect(page.locator(".tier-intro .lvl-tag")).toHaveText("FEDERAL");
@@ -122,6 +122,18 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await mockPolis(page);
     await mockCounters(page);
     await goToWorkspace(page);
+
+    // v3 rail removal: the persistent rail's own handoff button is gone —
+    // "Continue in another chatbot" now lives in the all-done panel, so
+    // both decidable seats need a verdict first to reach it (senate-TX-b
+    // isn't on the 2026 ballot and carries no verdict UI).
+    await page.getByRole("button", { name: /Worth keeping/ }).click();
+    await page.waitForTimeout(900);
+    await page
+      .getByRole("button", { name: "Time to replace", exact: true })
+      .click();
+    await page.waitForTimeout(900);
+    await page.locator(".all-done").waitFor({ timeout: 15000 });
 
     await page
       .getByRole("button", { name: /Continue in another chatbot/ })
@@ -196,10 +208,13 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     const counters = await mockCounters(page);
     await goToWorkspace(page);
 
-    // Print is disabled until at least one verdict exists.
+    // "Print my scorecard" now lives only in the all-done panel (v3 rail
+    // removal dropped the rail's own always-present-but-disabled print
+    // button), so it doesn't render at all until every decidable seat has
+    // a verdict.
     await expect(
-      page.getByRole("button", { name: /Print my scorecard/ }),
-    ).toBeDisabled();
+      page.getByRole("button", { name: /Print my scorecard/i }),
+    ).toHaveCount(0);
 
     await page.locator(".cv2-reveal").first().click();
     await expect(page.locator(".cv2-name").first()).toHaveText("Alex Rivera");
@@ -215,11 +230,13 @@ test.describe("delegation flow — address → assess → verdicts", () => {
       .click();
     await page.waitForTimeout(900);
 
-    // "2/2 decided" — the not-up seat never sits in the denominator.
-    await expect(page.locator(".ws-ballot")).toContainText("2/2");
-    await expect(page.locator(".verdict-chip").first()).toBeVisible();
+    // Both decidable seats done (the not-up seat never sits in the
+    // denominator) surfaces the all-done panel — v3 rail removal dropped
+    // the rail's own persistent "N/M decided" + .verdict-chip readout, so
+    // this is the equivalent terminal-state signal now.
+    await expect(page.locator(".all-done")).toBeVisible();
     await expect(
-      page.getByRole("button", { name: /Print my scorecard/ }),
+      page.getByRole("button", { name: /Print my scorecard/i }),
     ).toBeEnabled();
 
     // Session-end counters fired once, with concerns and WITHOUT verdicts.
@@ -230,7 +247,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     // Print sheet renders the verdicts + districts line. The not-up seat
     // still appears (reviewable) but in its own "shown for context, no
     // decision needed" group — never scored as a keep/replace decision.
-    await page.getByRole("button", { name: /Print my scorecard/ }).click();
+    await page.getByRole("button", { name: /Print my scorecard/i }).click();
     await expect(page.locator(".print-sheet")).toContainText("Alex Rivera");
     await expect(page.locator(".print-sheet")).toContainText(
       "U.S. House TX-37",
@@ -243,11 +260,7 @@ test.describe("delegation flow — address → assess → verdicts", () => {
 
   test("no-DB-record member renders the web_search card in the same surface", async ({
     page,
-  }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== "chromium-desktop",
-      "scorecard seat selection is desktop-only",
-    );
+  }) => {
     await mockDelegation(page);
     await mockSeatRaceData(page);
     await mockResearch(page);
@@ -255,9 +268,12 @@ test.describe("delegation flow — address → assess → verdicts", () => {
     await mockCounters(page);
     await goToWorkspace(page);
 
-    // Open the junior senator's card (research fallback path) — seat rows now
-    // live only in the right scorecard pane (the left rail was removed).
-    await page.locator(".ws-ballot .b-row").nth(2).click();
+    // Open the junior senator's card (research fallback path, not-up-2026
+    // so it's excluded from the overview's scored grid) — v3 rail removal:
+    // the overview is the only nav surface now, and excluded seats render
+    // as .dg-excluded rows rather than seat-cards.
+    await page.getByTestId("back-to-overview").click();
+    await page.locator(".dg-excluded").first().click();
     await expect(
       page.locator('[data-testid="web-search-alignment-banner"]'),
     ).toBeVisible({ timeout: 15000 });

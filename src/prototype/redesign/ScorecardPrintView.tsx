@@ -39,6 +39,23 @@ export function ScorecardPrintView({
   onBack,
 }) {
   const { t } = useI18n();
+  // Honest ballot-details link for the polling disclosure (Fix 2) and the
+  // open-seat no-pick note (Fix 5). Neither pollingInfo (PollingInfoVM) nor
+  // BallotLogistics carries a per-voter county name or URL — /api/civic's
+  // county field is consumed internally by civic-logistics.ts to parse the
+  // congressional district and never propagated out — so a real per-county
+  // link (e.g. "Harris County ballot details") isn't derivable here without
+  // fabricating one. stateData.resources.countyElectionLookup is the one
+  // link this view can show without guessing: the state's own directory to
+  // every county's election office, always correct regardless of which
+  // county the voter is actually in.
+  const countyLookupUrl = stateData?.resources?.countyElectionLookup || null;
+  const BallotLookupLink = () =>
+    countyLookupUrl ? (
+      <a href={countyLookupUrl} target="_blank" rel="noopener noreferrer">
+        {t("scorecardPrint.stateBallotLookupLink")}
+      </a>
+    ) : null;
   // Reps not up for election in 2026 are excluded from the printed scorecard —
   // they stay visible (greyed + labeled) in the workspace, but the takeaway
   // sheet is about who's on your 2026 ballot. onBallot2026 === false only;
@@ -194,6 +211,11 @@ export function ScorecardPrintView({
                   {t("scorecardPrint.pollsHours", { hours: pollingInfo.hours })}
                 </>
               )}
+              {pollingInfo?.source === "civic" && (
+                <div className="vm-note" style={{ textAlign: "right" }}>
+                  {t("scorecardPrint.pollingAutoMatchDisclosure")}
+                </div>
+              )}
             </div>
           </header>
 
@@ -217,6 +239,49 @@ export function ScorecardPrintView({
                 <div className="gtitle">{section}</div>
                 {ss.map((s) => {
                   const v = verdicts[s.id];
+                  // Open seat (v3 §6b.4): the incumbent isn't running, so a
+                  // "replace" verdict here isn't a rejection — it's a
+                  // first-time pick for a seat with no incumbent. There's no
+                  // "keep" option for an open seat, so this only ever
+                  // branches off "replace".
+                  const isOpenSeat =
+                    v === "replace" &&
+                    s.candidate?.seekingReelection2026 === false;
+                  if (isOpenSeat) {
+                    const pick = (s.challengers || []).find(
+                      (c) =>
+                        c.id === picks?.[s.id] && isSelectableReplacement(c),
+                    );
+                    return (
+                      <div
+                        className="br checked verdict-row open-seat"
+                        key={s.id}
+                      >
+                        <div className="bx">→</div>
+                        <div className="br-main">
+                          <div className="race-name">
+                            {s.office} · {s.districtLabel}
+                          </div>
+                          <div className="pick-name">
+                            {pick?.name}
+                            <span className="party verdict-print open-seat">
+                              {t("scorecardPrint.openSeatPickLabel")}
+                            </span>
+                          </div>
+                          <div className="my-note">
+                            {pick ? (
+                              t("scorecardPrint.openSeatPickNote")
+                            ) : (
+                              <>
+                                {t("scorecardPrint.openSeatNoPickNote")}{" "}
+                                <BallotLookupLink />
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
                   const score = scoreFor(s);
                   const note = reasonLine(s, v, score);
                   return (
@@ -373,34 +438,64 @@ export function ScorecardPrintView({
           <div className="logistics-title">
             {t("scorecardPrint.whereWhenToVote")}
           </div>
-          <div className="voter-meta voter-meta-logistics">
-            <div className="cell">
-              <div className="k">{t("scorecardPrint.address")}</div>
-              <div className="v" style={{ fontSize: "12px" }}>
-                {address}
+          <div className="vm-rows">
+            {/* The polling row below already shows the matched address once
+                civic resolves a real place, so the separate Address row is
+                dropped in that case (avoids printing the address twice).
+                When civic hasn't resolved anything, this stays the only
+                place the voter's entered address appears. */}
+            {pollingInfo?.source !== "civic" && (
+              <div className="vm-row">
+                <div className="k">{t("scorecardPrint.address")}</div>
+                <div className="v">{address}</div>
               </div>
-            </div>
-            <div className="cell">
-              <div className="k">{t("scorecardPrint.yourDistricts")}</div>
-              <div className="v" style={{ fontSize: "12px" }}>
-                {districtsLine || "—"}
-              </div>
-            </div>
-            <div className="cell cell-bring">
-              <div className="k">{t("scorecardPrint.bringAnyOne")}</div>
-              <ul className="v print-id-list">
-                {(stateData?.votingRules?.acceptedIds || []).map((id) => (
-                  <li key={id}>{id}</li>
-                ))}
-                {!stateData?.votingRules?.idRequired && (
-                  <li>
-                    {stateData?.votingRules?.idNote ||
-                      t("scorecardPrint.noIdRequired")}
-                  </li>
+            )}
+            <div className="vm-row">
+              <div className="k">{t("scorecardPrint.pollingPlace")}</div>
+              <div className="v">
+                {pollingInfo?.source === "civic" ? (
+                  <>
+                    <b>
+                      {pollingInfo.precinct
+                        ? t("scorecardPrint.precinct", {
+                            n: pollingInfo.precinct,
+                          }) + " — "
+                        : ""}
+                      {pollingInfo.name}
+                    </b>
+                    {pollingInfo.address ? ` · ${pollingInfo.address}` : ""}
+                    {pollingInfo.hours ? ` · ${pollingInfo.hours}` : ""}
+                    <div className="vm-note">
+                      {t("scorecardPrint.pollingAutoMatchDisclosure")}{" "}
+                      <BallotLookupLink />
+                    </div>
+                  </>
+                ) : (
+                  pollingInfo?.name || t("scorecardPrint.checkStateSite")
                 )}
-              </ul>
+              </div>
             </div>
-            <div className="cell">
+            <div className="vm-row">
+              <div className="k">{t("scorecardPrint.yourDistricts")}</div>
+              <div className="v">{districtsLine || "—"}</div>
+            </div>
+            <div className="vm-row">
+              <div className="k">{t("scorecardPrint.bringAnyOne")}</div>
+              <div className="v">
+                <ul className="print-id-cols">
+                  {(stateData?.votingRules?.acceptedIds || []).map((id) => (
+                    <li key={id}>{id}</li>
+                  ))}
+                  {!stateData?.votingRules?.idRequired && (
+                    <li>
+                      {stateData?.votingRules?.idNote ||
+                        t("scorecardPrint.noIdRequired")}
+                    </li>
+                  )}
+                </ul>
+              </div>
+            </div>
+            <div className="vm-row">
               <div className="k">{t("scorecardPrint.earlyVoting")}</div>
               <div className="v">
                 {earlyVoting || t("scorecardPrint.checkStateSite")}

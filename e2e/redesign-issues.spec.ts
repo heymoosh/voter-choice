@@ -78,7 +78,7 @@ test.describe("conversational issue intake", () => {
     ).toHaveCount(3);
 
     // Lock → IntakeLocked pre-lock confirm screen → guided orientation
-    // interstitial → workspace, with all three issues on the rail.
+    // interstitial → workspace, with all three issues scored against.
     await page.getByTestId("issue-primary").click();
     await page
       .getByTestId("issue-locked-confirm-btn")
@@ -90,8 +90,10 @@ test.describe("conversational issue intake", () => {
       .locator('[data-testid="seat-card"]')
       .first()
       .click({ timeout: 15000 });
-    await page.locator(".b-row").first().waitFor({ timeout: 20000 });
-    await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
+    await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
+    // v3 rail removal: the issue count now surfaces in the alignment
+    // section's fine print, not a right-rail issues list.
+    await expect(page.locator(".al-edit")).toContainText("3 ranked issues");
   });
 
   test("a budget block mid-intake preserves the conversation and opens the budget modal", async ({
@@ -121,24 +123,21 @@ test.describe("conversational issue intake", () => {
 });
 
 test.describe("edit issues from the workspace", () => {
-  test("scorecard Edit button is reachable on mobile and tablet (no rail)", async ({
+  // v3 rail removal (2026-07-21): there's no right rail at any breakpoint
+  // anymore, so the old per-viewport "which edit affordance is visible at
+  // this width" split no longer applies — the seat page renders identically
+  // everywhere. §3b's two entry points replace it instead: a quiet
+  // fine-print link under the alignment score (contextual, provoked by the
+  // score itself) and an always-available fallback in Settings.
+  test("the alignment fine-print 'Edit your issues' link opens the edit-issues modal", async ({
     page,
-  }, testInfo) => {
-    // The desktop left rail (ws-rail) is hidden at ≤1023px, so the only
-    // edit-issues affordance at tablet/mobile is the Edit button inside
-    // ws-ballot (.b-issues-edit, shown by CSS at ≤1023px).
-    test.skip(
-      testInfo.project.name !== "chromium-mobile",
-      "this test targets the mobile/tablet edit path; desktop uses the rail",
-    );
+  }) => {
     await installDataMocks(page);
     await goToWorkspace(page);
 
-    // ws-ballot is the primary surface on mobile; b-issues-edit sits right
-    // below the scorecard header so it's immediately visible without scrolling.
-    const editBtn = page.getByTestId("edit-issues-scorecard");
-    await expect(editBtn).toBeVisible();
-    await editBtn.click();
+    const editLink = page.getByTestId("edit-issues-alignment");
+    await expect(editLink).toBeVisible();
+    await editLink.click();
 
     // Modal should open and show the two seeded issues.
     const modal = page.getByTestId("edit-issues-modal");
@@ -152,24 +151,14 @@ test.describe("edit issues from the workspace", () => {
     await expect(modal).not.toBeVisible();
   });
 
-  // Re-check at a tablet viewport (768–1023px: rail hidden, ballot + chat visible).
-  // Playwright has no built-in tablet project, so we set the viewport inline.
-  test("scorecard Edit button is reachable at tablet viewport (768px)", async ({
+  test("the Settings panel's Edit-issues row opens the same modal (always-available fallback)", async ({
     page,
-  }, testInfo) => {
-    test.skip(
-      testInfo.project.name !== "chromium-desktop",
-      "tablet viewport test runs on the desktop project (viewport overridden inline)",
-    );
-    await page.setViewportSize({ width: 900, height: 768 });
+  }) => {
     await installDataMocks(page);
     await goToWorkspace(page);
 
-    // At 768-1023px prototype.css hides ws-rail. The ballot stays visible
-    // (340px right column) and b-issues-edit shows via @media (max-width:1023px).
-    const editBtn = page.getByTestId("edit-issues-scorecard");
-    await expect(editBtn).toBeVisible();
-    await editBtn.click();
+    await page.getByRole("button", { name: "Settings" }).click();
+    await page.getByTestId("edit-issues-settings").click();
 
     const modal = page.getByTestId("edit-issues-modal");
     await expect(modal).toBeVisible();
@@ -188,15 +177,26 @@ test.describe("edit issues from the workspace", () => {
 
     // Verdict the first seat so we can prove verdicts survive the re-score.
     await page.getByRole("button", { name: /Worth keeping/ }).click();
+    // Let the verdict commit (commitVerdict defers auto-advance ~600ms; v3
+    // rail removal means the deep view now moves to the next undecided seat
+    // in place, with no persistent sidebar to read an aggregate count from).
     await page.waitForTimeout(900);
-    // senate-TX-b isn't on the 2026 ballot, so the decided-count denominator
-    // is the 2 decidable seats only (Muxin, 2026-07-12: not-up seats are
-    // reviewable, never decidable — they never sit in this count).
-    await expect(page.locator(".ws-ballot")).toContainText("1/2");
+    await page.locator(".rep-card").first().waitFor({ timeout: 15000 });
+    // Confirm the decided count via the overview (§3b: the aggregate count
+    // now lives only there, not on a rail). senate-TX-b isn't on the 2026
+    // ballot, so the decided-count denominator is the 2 decidable seats
+    // only (Muxin, 2026-07-12: not-up seats are reviewable, never
+    // decidable — they never sit in this count).
+    await page.getByTestId("back-to-overview").click();
+    await expect(page.locator(".dg-prog .mlab")).toContainText("1 of 2");
+    await page
+      .locator('[data-testid="seat-card"]')
+      .first()
+      .click({ timeout: 15000 });
+    await page.locator(".rep-card").first().waitFor({ timeout: 15000 });
 
-    // EDIT now lives only in the right scorecard pane ([P1] removed the left
-    // rail that previously carried the desktop Edit control).
-    await page.getByTestId("edit-issues-scorecard").click();
+    // v3 §3b: the alignment fine-print link is the primary edit-issues entry.
+    await page.getByTestId("edit-issues-alignment").click();
     const modal = page.getByTestId("edit-issues-modal");
     // Canvas-verbatim lede (screens-intake.jsx EditIssues, ported in 93801957).
     await expect(modal).toContainText("Your verdicts are kept");
@@ -210,18 +210,22 @@ test.describe("edit issues from the workspace", () => {
     await modal.getByTestId("issue-convo-send").click();
     await expect(modal.locator(".theme-row")).toHaveCount(3);
 
-    // Apply → deterministic re-score (analyzing interstitial) → workspace.
+    // Apply → deterministic re-score (analyzing interstitial) → workspace,
+    // landing back on the same seat that was active when the modal opened
+    // (re-scoring doesn't change which seat is focused).
     await modal.getByTestId("issue-primary").click();
-    await page.locator(".b-row").first().waitFor({ timeout: 20000 });
+    await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
 
-    // Verdict survived; the rail now carries three issues; the delta banner
-    // reports honestly (mock data scores identically → nothing significant).
-    // senate-TX-b isn't on the 2026 ballot, so the decided-count denominator
-    // is the 2 decidable seats only (Muxin, 2026-07-12: not-up seats are
-    // reviewable, never decidable — they never sit in this count).
-    await expect(page.locator(".ws-ballot")).toContainText("1/2");
-    await expect(page.locator(".verdict-chip").first()).toBeVisible();
-    await expect(page.locator(".ws-ballot .b-issues-list li")).toHaveCount(3);
+    // Verdict survived the re-score — checked directly on this seat's own
+    // verdict button (a more precise check than the old rail text-content
+    // read, which only proved the aggregate count, not which seat). The
+    // alignment fine print now scores against three issues; the delta
+    // banner reports honestly (mock data scores identically → nothing
+    // significant).
+    await expect(
+      page.getByRole("button", { name: /Worth keeping — undo/ }),
+    ).toBeVisible();
+    await expect(page.locator(".al-edit")).toContainText("3 ranked issues");
     await expect(page.getByTestId("issue-delta-banner")).toContainText(
       "your verdicts stand",
     );

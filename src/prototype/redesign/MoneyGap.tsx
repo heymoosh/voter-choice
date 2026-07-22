@@ -114,6 +114,68 @@ export function MedianChip({ raised, peer }: MedianChipProps) {
 }
 
 // ---------------------------------------------------------------------------
+// MoneyHero — the money-redesign's `.mny-hero` (v2 Tier B)
+// ---------------------------------------------------------------------------
+
+export interface MoneyHeroProps {
+  totalRaised: number | null | undefined;
+  peer: PeerComparison | null;
+}
+
+/**
+ * The money section's opening hero: the raised total in serif display type,
+ * plus (when a baseline exists) one sentence naming the multiple against the
+ * median — same inputs as MedianChip, just a bigger, non-collapsed view.
+ * Honest-blank: peer === null renders the dollar total alone, no fabricated
+ * multiple (mirrors MedianChip's dollar-only case).
+ */
+export function MoneyHero({ totalRaised, peer }: MoneyHeroProps) {
+  const { t } = useI18n() as {
+    t: (key: string, vars?: Record<string, unknown>) => string;
+  };
+  if (typeof totalRaised !== "number" || totalRaised <= 0) return null;
+
+  if (peer == null) {
+    return (
+      <div className="mny-hero">
+        <div className="mny-total">
+          {formatUsd(totalRaised)}
+          <span className="cyc">{t("repCard.moneyHeroDollarOnly")}</span>
+        </div>
+      </div>
+    );
+  }
+
+  const wordedMultiple =
+    peer.multiple >= 1
+      ? Math.round(peer.multiple) + "×"
+      : formatMultiple(peer.multiple);
+  return (
+    <div className="mny-hero">
+      <div className="mny-total">
+        {formatUsd(totalRaised)}
+        <span className="cyc">
+          {t("repCard.moneyHeroRaisedCycle", { cycle: peer.cycle })}
+        </span>
+      </div>
+      <div className="mny-vs">
+        <span
+          dangerouslySetInnerHTML={{
+            __html: t("repCard.moneyHeroVsTypical", {
+              multiple: wordedMultiple,
+              median: formatUsd(peer.medianRaised),
+              office: peer.office,
+            })
+              .replace(/<mult>/g, '<span class="mult">')
+              .replace(/<\/mult>/g, "</span>"),
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Shared scale internals — axis, one row
 // ---------------------------------------------------------------------------
 

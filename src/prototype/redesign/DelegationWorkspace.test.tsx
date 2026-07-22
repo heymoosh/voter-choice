@@ -124,17 +124,27 @@ function renderWorkspace(rosterProvenance: unknown) {
 }
 
 describe("DelegationWorkspace stale successor picks", () => {
-  it("does not show a successor in the scorecard pane for a stale FEC-only pick", () => {
+  it("does not name a successor on the replace verdict for a stale FEC-only pick", () => {
     const { container } = renderWorkspace(fecFinanceOnlyProvenance);
 
-    expect(container.querySelector(".ws-ballot .pick-successor")).toBeNull();
+    expect(
+      container.querySelector('[data-testid="open-duel"]'),
+    ).not.toHaveTextContent("Successor Candidate");
   });
 
-  it("shows a successor in the scorecard pane for a verified current-ballot pick", () => {
+  it("names the successor on the replace verdict for a verified current-ballot pick", () => {
     const { container } = renderWorkspace(verifiedRosterProvenance);
 
     expect(
-      container.querySelector(".ws-ballot .pick-successor"),
+      container.querySelector('[data-testid="open-duel"]'),
     ).toHaveTextContent("Successor Candidate");
+  });
+});
+
+describe("DelegationWorkspace rail removal", () => {
+  it("renders a single-pane seat view with no scorecard rail", () => {
+    const { container } = renderWorkspace(verifiedRosterProvenance);
+
+    expect(container.querySelector(".ws-ballot")).toBeNull();
   });
 });
