@@ -147,12 +147,16 @@ export function MoneyHero({ totalRaised, peer }: MoneyHeroProps) {
   }
 
   const wordedMultiple =
-    peer.multiple >= 1 ? Math.round(peer.multiple) + "×" : formatMultiple(peer.multiple);
+    peer.multiple >= 1
+      ? Math.round(peer.multiple) + "×"
+      : formatMultiple(peer.multiple);
   return (
     <div className="mny-hero">
       <div className="mny-total">
         {formatUsd(totalRaised)}
-        <span className="cyc">{t("repCard.moneyHeroRaisedCycle", { cycle: peer.cycle })}</span>
+        <span className="cyc">
+          {t("repCard.moneyHeroRaisedCycle", { cycle: peer.cycle })}
+        </span>
       </div>
       <div className="mny-vs">
         <span

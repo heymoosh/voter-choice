@@ -23,12 +23,19 @@
  */
 
 import React from "react";
-import { useI18n, formatDollars, deriveIssuePacAlignment } from "../VoterChoiceApp";
+import {
+  useI18n,
+  formatDollars,
+  deriveIssuePacAlignment,
+} from "../VoterChoiceApp";
 
 interface FundingSourcesProps {
   donorCoalition: any[] | null | undefined;
   totalRaised: number | null | undefined;
-  fundingMix: { small: number; large: number; pac: number; cycle?: string } | null | undefined;
+  fundingMix:
+    | { small: number; large: number; pac: number; cycle?: string }
+    | null
+    | undefined;
   userIssues: Array<{ canonicalIssue?: string; interpretation: string }>;
 }
 
@@ -43,9 +50,22 @@ type Row = {
   tagLabel: string | null;
 };
 
-export function FundingSources({ donorCoalition, totalRaised, fundingMix, userIssues }: FundingSourcesProps) {
-  const { t } = useI18n() as { t: (key: string, vars?: Record<string, unknown>) => string };
-  if (!donorCoalition || !fundingMix || typeof totalRaised !== "number" || totalRaised <= 0) return null;
+export function FundingSources({
+  donorCoalition,
+  totalRaised,
+  fundingMix,
+  userIssues,
+}: FundingSourcesProps) {
+  const { t } = useI18n() as {
+    t: (key: string, vars?: Record<string, unknown>) => string;
+  };
+  if (
+    !donorCoalition ||
+    !fundingMix ||
+    typeof totalRaised !== "number" ||
+    totalRaised <= 0
+  )
+    return null;
 
   const issuePacs = donorCoalition.filter((s) => s && s.isIssuePAC);
   const industries = donorCoalition.filter((s) => s && !s.isIssuePAC);
@@ -79,20 +99,32 @@ export function FundingSources({ donorCoalition, totalRaised, fundingMix, userIs
   }
 
   issuePacs.forEach((p, i) => {
-    const { userIssue, showAlignment, conflictsWithUser } = deriveIssuePacAlignment(p, userIssues);
-    const rank = userIssue ? userIssues.findIndex((iss) => iss === userIssue) + 1 : null;
-    const pct = typeof totalRaised === "number" && totalRaised > 0 ? Math.round((p.amount / totalRaised) * 100) : null;
+    const { userIssue, showAlignment, conflictsWithUser } =
+      deriveIssuePacAlignment(p, userIssues);
+    const rank = userIssue
+      ? userIssues.findIndex((iss) => iss === userIssue) + 1
+      : null;
+    const pct =
+      typeof totalRaised === "number" && totalRaised > 0
+        ? Math.round((p.amount / totalRaised) * 100)
+        : null;
     let tagClass: string | null = "t-none";
     let tagLabel: string | null = t("fundingSources.tagNone");
     let dotClass = "d-pac";
     if (showAlignment && rank) {
       if (conflictsWithUser) {
         tagClass = "t-conflict";
-        tagLabel = t("fundingSources.tagConflict", { rank, issue: userIssue.interpretation });
+        tagLabel = t("fundingSources.tagConflict", {
+          rank,
+          issue: userIssue.interpretation,
+        });
         dotClass = "d-pac";
       } else {
         tagClass = "t-align";
-        tagLabel = t("fundingSources.tagAlign", { rank, issue: userIssue.interpretation });
+        tagLabel = t("fundingSources.tagAlign", {
+          rank,
+          issue: userIssue.interpretation,
+        });
         dotClass = "d-good";
       }
     }
@@ -114,7 +146,10 @@ export function FundingSources({ donorCoalition, totalRaised, fundingMix, userIs
       dotClass: "d-neutral",
       name: d.label,
       amount: d.amount || 0,
-      pctLabel: typeof d.percent === "number" ? t("fundingSources.pctOfAllMoney", { pct: d.percent }) : "",
+      pctLabel:
+        typeof d.percent === "number"
+          ? t("fundingSources.pctOfAllMoney", { pct: d.percent })
+          : "",
       agenda: t("fundingSources.industryAgenda"),
       tagClass: "t-none",
       tagLabel: t("fundingSources.tagNone"),
@@ -143,8 +178,15 @@ export function FundingSources({ donorCoalition, totalRaised, fundingMix, userIs
   const namedPacTotal = issuePacs.reduce((s, p) => s + (p.amount || 0), 0);
   const impliedPacTotal = Math.round(totalRaised * (fundingMix.pac / 100));
   const uncatPacTotal = Math.max(0, impliedPacTotal - namedPacTotal);
-  const pctIdentified = impliedPacTotal > 0 ? Math.round((namedPacTotal / impliedPacTotal) * 100) : null;
-  if (impliedPacTotal > 0 && (pctIdentified === null || pctIdentified < 100) && uncatPacTotal > 0) {
+  const pctIdentified =
+    impliedPacTotal > 0
+      ? Math.round((namedPacTotal / impliedPacTotal) * 100)
+      : null;
+  if (
+    impliedPacTotal > 0 &&
+    (pctIdentified === null || pctIdentified < 100) &&
+    uncatPacTotal > 0
+  ) {
     const untracedPct = Math.round((uncatPacTotal / totalRaised) * 100);
     if (untracedPct >= 1) {
       rows.push({
@@ -175,10 +217,15 @@ export function FundingSources({ donorCoalition, totalRaised, fundingMix, userIs
           {r.pctLabel && <span className="src-pct">{r.pctLabel}</span>}
           <div className="src-body">
             <div className="src-agenda">{r.agenda}</div>
-            {r.tagLabel && <span className={"src-tag " + r.tagClass}>{r.tagLabel}</span>}
+            {r.tagLabel && (
+              <span className={"src-tag " + r.tagClass}>{r.tagLabel}</span>
+            )}
           </div>
           <div className="src-proportion">
-            <i className={r.dotClass} style={{ width: (r.amount / maxAmount) * 100 + "%" }} />
+            <i
+              className={r.dotClass}
+              style={{ width: (r.amount / maxAmount) * 100 + "%" }}
+            />
           </div>
         </div>
       ))}

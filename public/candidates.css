@@ -103,7 +103,7 @@
   color: var(--keep);
 }
 .cmp .tone-mid {
-  color: var(--gold);
+  color: var(--gold-text);
 }
 .cmp .tone-bad {
   color: var(--replace);

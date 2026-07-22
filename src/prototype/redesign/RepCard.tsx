@@ -801,8 +801,8 @@ export function RepCard({
 
       {/* 1 · Alignment — money-redesign step chrome (numbered dot + mono
           kicker + serif heading). Decorative "1" is aria-hidden; the real
-          heading is the <div className="sec-h">, not a semantic heading
-          element yet — see the a11y pass for promoting these to h2/h3. */}
+          heading is the <h2 className="sec-h"> below (no heading wraps the
+          whole RepCard, so h2 is the top level for these section headings). */}
       <div className="sec step-alignment">
         <div className="step">
           <span className="step-n" aria-hidden="true">
@@ -810,7 +810,7 @@ export function RepCard({
           </span>
           <div>
             <div className="sec-kick">{t("repCard.stepAlignmentKicker")}</div>
-            <div className="sec-h">{t("repCard.stepAlignmentHeading")}</div>
+            <h2 className="sec-h">{t("repCard.stepAlignmentHeading")}</h2>
           </div>
         </div>
         {!seat.researched && (
@@ -901,7 +901,7 @@ export function RepCard({
           </span>
           <div>
             <div className="sec-kick">{t("repCard.stepMoneyKicker")}</div>
-            <div className="sec-h">{t("repCard.stepMoneyHeading")}</div>
+            <h2 className="sec-h">{t("repCard.stepMoneyHeading")}</h2>
           </div>
         </div>
         <MoneyHero totalRaised={cand.totalRaised} peer={cand.peerComparison} />
@@ -945,7 +945,7 @@ export function RepCard({
           </span>
           <div>
             <div className="sec-kick">{t("repCard.stepAttendanceKicker")}</div>
-            <div className="sec-h">{t("repCard.stepAttendanceHeading")}</div>
+            <h2 className="sec-h">{t("repCard.stepAttendanceHeading")}</h2>
           </div>
         </div>
         <AttendanceBand2

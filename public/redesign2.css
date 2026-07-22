@@ -63,7 +63,7 @@
 }
 .rep-card .prov {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -107,7 +107,7 @@
 }
 .seat-office {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -124,7 +124,7 @@
 .seat-next {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--ink-3);
   letter-spacing: 0.03em;
 }
@@ -137,13 +137,15 @@
 /* "Not up for election in 2026" badge up front on the rep card seat strip. */
 .seat-not-up {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   white-space: nowrap;
   background: var(--tag-bg);
-  color: var(--ink-3);
+  /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 (same gap as
+     .cv2-sub.blind .cv2-tag below) — scoped darkened override. */
+  color: oklch(0.5 0.026 260);
   padding: 3px 8px;
   border-radius: 5px;
 }
@@ -299,7 +301,7 @@
 }
 .cv2-notup-eyebrow {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -338,7 +340,7 @@
 .att-chip {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -360,7 +362,7 @@
 }
 .att-src {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
 }
 
 /* ---- researched positions (executive) ---- */
@@ -374,7 +376,7 @@
 }
 .rp-src-note {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--ink-3);
   letter-spacing: 0.04em;
 }
@@ -473,7 +475,7 @@
 /* ---- verdict chips (scorecard + print) ---- */
 .verdict-chip {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.05em;
   padding: 2px 7px;
@@ -573,7 +575,7 @@
    under it rather than doubling the gap. */
 .print-wrap .sheet-section-lab {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   color: var(--scp-brand);
@@ -633,7 +635,7 @@
    letter-spacing 0.08em) — prototype.css's shared `.br .race-name` (used
    by the legacy workspace ballot pane too) is 10.5px/0.12em. */
 .print-wrap .br .race-name {
-  font-size: 9.5px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
 }
 /* "My Scorecard" masthead (canvas .sheet-mast h1: serif 34px) —
@@ -701,7 +703,7 @@
    rendering as a giant pill. This selector's specificity matches
    `.br .pick-name .party` so it wins for every verdict-print use. */
 .print-wrap .br .pick-name .verdict-print {
-  font-size: 10px;
+  font-size: 11.5px;
   padding: 3px 9px;
   letter-spacing: 0.06em;
 }
@@ -740,7 +742,7 @@
   font-family: var(--mono);
   /* Was 8.5px — too small to read even in print; 10px matches this same
      sheet's other mono uppercase captions (.sheet-section-lab above). */
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -750,9 +752,12 @@
 /* "Not on your ballot this year" context row (canvas .dec.notup) — a seat
    excluded from the scored decisions above, shown de-emphasized with a dash
    in place of a checkbox/verdict icon and a neutral (not keep/replace) pill. */
-.print-wrap .br.notup {
-  opacity: 0.62;
-}
+/* No opacity on .br.notup (was 0.62): it uniformly diluted every child's
+   contrast against the page — same failure mode as .dg-excluded above,
+   worse (0.62 vs 0.85) since it also covered .race-name/.pick-name/.my-note
+   real candidate/office text, not just a badge. De-emphasis is already
+   carried by the dash glyph, the "Not on your ballot" group heading, and
+   the .verdict-print.notup pill below. */
 .print-wrap .br.notup .bx {
   border-color: var(--rule);
   display: grid;
@@ -764,7 +769,9 @@
   content: "\2014";
 }
 .print-wrap .verdict-print.notup {
-  color: var(--ink-3);
+  /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
+     .cv2-sub.blind .cv2-tag. */
+  color: oklch(0.5 0.026 260);
   background: var(--tag-bg);
   border-color: var(--rule);
 }
@@ -900,7 +907,7 @@
 }
 .print-wrap .sheet-issues .si-juris {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11.5px;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -933,7 +940,7 @@
   padding: 11px 20px 16px;
   border-top: 1px solid var(--rule-2);
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--ink-3);
   letter-spacing: 0.02em;
 }
@@ -956,7 +963,7 @@
 }
 .elig-src {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   margin-top: 8px;
   display: inline-block;
 }
@@ -1029,7 +1036,7 @@
 }
 .rep-center-head-lab {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -1076,7 +1083,7 @@
 }
 .ti-place {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.16em;
   font-weight: 700;
   /* .ti-place has no other call site (confirmed by grep across src/) —
@@ -1099,7 +1106,7 @@
    keeps after dropping the noisier per-issue Fed/Both/State tags. */
 .lvl-tag {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   padding: 2px 7px;
@@ -1128,7 +1135,7 @@
 }
 .all-done-kick {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   color: var(--civic-2);
@@ -1408,7 +1415,7 @@
 }
 .polisstand2 .kick {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 600;
@@ -1544,7 +1551,7 @@
 }
 .ps-recorded .rk {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -1594,7 +1601,7 @@
 }
 .ps-foot .prog {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--ink-3);
 }
 
@@ -1814,7 +1821,7 @@
 }
 .pe-invite-body .k {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   font-weight: 700;
@@ -1867,7 +1874,7 @@
 .pe-cta .meta {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--ink-3);
 }
 
@@ -2057,7 +2064,7 @@
 }
 .polis-scope .scope-lab {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -2105,7 +2112,7 @@
 .pr-maphead .k,
 .pr-bridgehead .k {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 700;
@@ -2242,7 +2249,7 @@
   position: absolute;
   transform: translate(-50%, -100%);
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2291,7 +2298,7 @@
 }
 .pm-key span {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--ink-2);
   display: inline-flex;
   align-items: center;
@@ -2355,7 +2362,7 @@
 .pr-q .src {
   display: block;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -2457,7 +2464,7 @@
 }
 .pr-split .chip {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   padding: 4px 9px;
   border-radius: 999px;
@@ -2502,7 +2509,7 @@
 }
 .pr-fault > .k {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
   font-weight: 700;
@@ -2581,7 +2588,7 @@
 }
 .pr-note {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--ink-3);
   margin-top: 14px;
 }
@@ -2609,7 +2616,11 @@
 .mgap,
 .median-chip {
   --mg-base: oklch(0.46 0.075 240); /* money raised, up to the median */
-  --mg-lean: oklch(0.74 0.04 240); /* below-median bar — reads as "less" */
+  /* Darkened from oklch(0.74 0.04 240): that value was only ~2.2:1 against
+     .mgap-track's --paper-2 fill, under AA's 3:1 for a graphical object.
+     Never renders next to --mg-base (mutually exclusive .is-below swap), so
+     no boundary conflict from darkening it. */
+  --mg-lean: oklch(0.62 0.04 240); /* below-median bar — reads as "less" */
   --mg-over: var(--gold); /* the excess above the median */
   --mg-overink: oklch(0.5 0.115 74); /* darker gold for readable text */
   --mg-line: var(--ink); /* the median reference line */
@@ -2658,7 +2669,7 @@
   position: absolute;
   bottom: 6px;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 600;
   color: var(--ink-3);
 }
@@ -2690,7 +2701,7 @@
 }
 .mgap-medflag .mf-lab {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.14em;
   color: var(--ink-3);
@@ -2703,7 +2714,7 @@
   margin-top: 1px;
 }
 .mgap-medflag .mf-sub {
-  font-size: 9.5px;
+  font-size: 11.5px;
   color: var(--ink-3);
   margin-top: 1px;
 }
@@ -2735,7 +2746,7 @@
 }
 .mgap-nm .you {
   font-family: var(--mono);
-  font-size: 8px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2746,7 +2757,7 @@
 }
 .mgap-tag {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--ink-3);
   margin-top: 3px;
   letter-spacing: 0.02em;
@@ -2779,6 +2790,12 @@
   background: var(--mg-over);
   border-radius: 0 5px 5px 0;
   z-index: 2;
+  /* Boundary divider (1.4.11): .mgap-over stacks directly against
+     .mgap-bar (--mg-base) when over-median, and raw gold vs. that navy is
+     only ~2.8:1. Best achievable near-black divider gets to ~3.0:1 — same
+     palette-L-spacing gap as the funding-mix bar above, flagged for
+     design rather than darkening the shared --gold fill token. */
+  border-left: 1.5px solid oklch(0.08 0 0);
 }
 .mgap-rem {
   position: absolute;
@@ -2809,7 +2826,7 @@
 }
 .mgap-read span {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: 11.5px;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -2864,7 +2881,7 @@
 .mgap-src {
   margin-top: 12px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--ink-3);
   letter-spacing: 0.02em;
 }
@@ -3004,7 +3021,7 @@
 }
 .iq-locked .ls {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   color: var(--ink-2);
   margin-top: 1px;
 }
@@ -3045,7 +3062,7 @@
 .bf-app .co-context .step {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
@@ -3154,7 +3171,7 @@
 }
 .ori-ey .kick {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.16em;
   text-transform: uppercase;
   font-weight: 600;
@@ -3359,7 +3376,9 @@
   font-size: 20px;
   font-weight: 600;
   letter-spacing: -0.01em;
-  margin-top: 5px;
+  /* Now an <h2> (was a <div>) — reset the UA stylesheet's default h2
+     margin-block so this still lays out exactly like the old div. */
+  margin: 5px 0 0;
   line-height: 1.2;
 }
 .rep-card .sec-note {
@@ -3379,7 +3398,7 @@
   display: flex;
   gap: 14px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -3457,7 +3476,7 @@
 }
 .rep-card .iss-verdict {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   font-weight: 600;
@@ -3522,7 +3541,7 @@
 }
 .rep-card .trk-lab {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.07em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -3707,7 +3726,7 @@
   gap: 6px;
   margin-top: 7px;
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.03em;
   text-transform: uppercase;
   font-weight: 600;
@@ -3725,7 +3744,9 @@
 }
 .rep-card .src-tag.t-none {
   background: var(--tag-bg);
-  color: var(--ink-3);
+  /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
+     .cv2-sub.blind .cv2-tag. */
+  color: oklch(0.5 0.026 260);
 }
 .rep-card .src-proportion {
   grid-column: 2 / 4;
@@ -3753,7 +3774,11 @@
   background: var(--ink-3);
 }
 .rep-card .src-proportion i.d-unknown {
-  background: var(--rule);
+  /* --rule (~L0.88) on this bar's --paper-3 track (~L0.972) is ~1.3:1,
+     nowhere near AA's 3:1 for a graphical object — scoped darker fill,
+     same hue/chroma family as --rule/--ink-3, --rule stays untouched
+     elsewhere (it's fine as a border everywhere else it's used). */
+  background: oklch(0.6 0.01 260);
 }
 
 /* ---- untraced-PAC caveat (mny-caveat) — Tier-A restyle of .cv2-pac-gap ---- */
@@ -3857,7 +3882,7 @@
      which is fine everywhere else it's used. */
   color: oklch(0.5 0.026 260);
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
 }
 /* Canvas variant's blind-mode subtext — a plain sentence (screens.css
@@ -3904,7 +3929,7 @@
    block keeps the big serif treatment untouched. */
 .rep-card .cv2-issues .cv2-block-head .lab {
   font-family: var(--mono) !important;
-  font-size: 10px !important;
+  font-size: 11.5px !important;
   font-weight: 600 !important;
   letter-spacing: 0.09em !important;
   text-transform: uppercase !important;
@@ -3966,7 +3991,7 @@
   background: var(--vote-red);
 }
 .rep-card .cv2-iss-head .meta {
-  font-size: 10px;
+  font-size: 11.5px;
   margin-top: 3px;
   white-space: nowrap;
   overflow: hidden;
@@ -4024,12 +4049,12 @@
   color: var(--ink-3);
 }
 .rep-card .cv2-iss-head .cv2-ws-badge {
-  font-size: 8.5px;
+  font-size: 11.5px;
   padding: 2px 6px;
   font-family: var(--mono);
 }
 .rep-card .cv2-iss-head .cv2-ws-conf {
-  font-size: 8.5px;
+  font-size: 11.5px;
   padding: 1px 4px;
 }
 
@@ -4046,7 +4071,7 @@
 }
 .rep-card .cv2-see-all-btn {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -4069,7 +4094,7 @@
   overflow: hidden;
 }
 .rep-card .cv2-disclose-eyebrow {
-  font-size: 9.5px;
+  font-size: 11.5px;
 }
 /* The whole money glance is the disclosure trigger — canvas's clickable
    .money-line + .money-disclose chevron affordance (screens.css:423,429),
@@ -4112,7 +4137,7 @@
 }
 .rep-card .rc-money-lab {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -4127,6 +4152,16 @@
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid var(--rule-2);
+}
+/* Segment-boundary divider (1.4.11 non-text contrast): the small/large/pac
+   fills abut with no separator, and their raw colors are too close in
+   lightness for any single divider to hit AA's 3:1 against every neighbor
+   (best achievable near-black gets keep|gold to ~2.9:1, gold|red to
+   ~3.6:1) — a residual gap rooted in the palette's L-spacing, flagged for
+   design; this divider is still a real improvement over the ~2.3-2.9:1
+   raw adjacency. */
+.rep-card .rc-money-bars i + i {
+  border-left: 1.5px solid oklch(0.08 0 0);
 }
 .rep-card .rc-money-bars i.small {
   background: var(--rc-keep);
@@ -4150,7 +4185,7 @@
    the right edge even when .rc-money-bars is absent, e.g. no fundingMix). */
 .rep-card .rc-money-disclose {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4251,7 +4286,7 @@
 }
 .rep-card .cv2-industry-row .cir-name small {
   display: block;
-  font-size: 10px;
+  font-size: 11.5px;
   color: var(--ink-3);
   white-space: normal;
 }
@@ -4299,6 +4334,11 @@
   left: -6px;
   top: calc(100% + 9px);
   width: 270px;
+  /* 1.4.10 reflow: fixed 270px can overflow a 320px viewport once the
+     trigger sits near the card edge — clamp to the viewport as a safety
+     net (still needs a live-browser check for directional clipping, since
+     a CSS-only clamp can't reposition the tooltip to the other side). */
+  max-width: calc(100vw - 32px);
   background: var(--paper-2);
   color: var(--ink-2);
   border: 1px solid var(--rule);
@@ -4322,7 +4362,7 @@
 }
 .rep-card .pac-tip b {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4503,7 +4543,7 @@
 }
 .cd-seatlab {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11.5px;
   letter-spacing: 0.1em;
   text-transform: uppercase;
   font-weight: 700;
@@ -4540,7 +4580,9 @@
 }
 .cd-card.blind .cd-avatar {
   background: var(--tag-bg);
-  color: var(--ink-3);
+  /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
+     .cv2-sub.blind .cv2-tag. */
+  color: oklch(0.5 0.026 260);
 }
 .cd-who {
   flex: 1;
@@ -4572,7 +4614,7 @@
    DgProv needs it under .delegation instead. */
 .delegation .prov {
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.07em;
   text-transform: uppercase;
@@ -4618,7 +4660,7 @@
 }
 .cd-align-top .lab {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   letter-spacing: 0.09em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -4638,7 +4680,7 @@
   color: var(--keep);
 }
 .delegation .tone-mid {
-  color: var(--gold);
+  color: var(--gold-text);
 }
 .delegation .tone-bad {
   color: var(--replace);
@@ -4676,7 +4718,7 @@
 }
 .cd-irow .iv {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   font-weight: 600;
   text-align: right;
   color: var(--ink-2);
@@ -4710,7 +4752,7 @@
 }
 .cd-money-top .lab {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
@@ -4778,6 +4820,10 @@
   background: var(--keep);
   border-color: var(--keep);
 }
+.cd-select:focus-visible {
+  outline: 2px solid var(--brand);
+  outline-offset: 2px;
+}
 
 /* ---------- overview shell (DelegationOverview) — ported from delegation.css ---------- */
 .dg {
@@ -4804,7 +4850,7 @@
 }
 .dg-kicker {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -4839,7 +4885,7 @@
 }
 .dg-prog .mlab {
   font-family: var(--mono);
-  font-size: 9.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -4910,7 +4956,7 @@
 /* verdict-status pill in the seat label row */
 .dg-status {
   font-family: var(--mono);
-  font-size: 8.5px;
+  font-size: 11.5px;
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -4920,7 +4966,9 @@
 }
 .dg-status.todo {
   background: var(--tag-bg);
-  color: var(--ink-3);
+  /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
+     .cv2-sub.blind .cv2-tag. */
+  color: oklch(0.5 0.026 260);
 }
 .dg-status.keep {
   background: var(--keep-soft);
@@ -5002,11 +5050,13 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
-  opacity: 0.85;
+  /* No opacity here (was 0.85): it uniformly dilutes every child's contrast
+     against the page, dropping even --ink (the app's darkest text token) to
+     ~4.49:1 — under AA's 4.5:1. De-emphasis is already carried by the muted
+     --tag-bg fill + dashed border + --ink-2/--ink-3 text tones below. */
   cursor: pointer;
 }
 .dg-excluded:hover {
-  opacity: 1;
   border-color: var(--ink-3);
 }
 .dg-excluded .ri {
@@ -5020,7 +5070,10 @@
   font-size: 11px;
   font-weight: 700;
   background: var(--rule);
-  color: var(--ink-3);
+  /* --ink-3 on --rule is ~3.5:1, under AA's 4.5:1 (--rule is darker than
+     --tag-bg, so the .cv2-sub.blind fix's 0.5 isn't dark enough here —
+     needs its own darker override). */
+  color: oklch(0.44 0.026 260);
 }
 .dg-excluded .ex-meta {
   font-size: 13px;
@@ -5034,9 +5087,11 @@
 .dg-excluded .ex-tag {
   margin-left: auto;
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: 0.04em;
-  color: var(--ink-3);
+  /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
+     .cv2-sub.blind .cv2-tag. */
+  color: oklch(0.5 0.026 260);
 }
 .dg-excluded-open {
   font-family: var(--mono);
@@ -5140,7 +5195,7 @@
 }
 .rf-field-lab {
   font-family: var(--mono);
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
