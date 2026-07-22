@@ -2868,4 +2868,25 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
   - (b) DEMOTE to non-required (advisory) — keep it running for signal but stop it blocking merges; revisit references opportunistically.
   - (c) KEEP but fix the workflow so references auto-regenerate as part of an intentional-design PR (so an approved visual change updates its own baseline instead of failing).
 - DECISION NEEDED (Muxin): which of (a)/(b)/(c). Leaning toward remove/demote given how often it false-blocks real design work.
+- OBSERVATIONS (2026-07-22, whiteboard-v4 session — third and fourth instances, plus new evidence):
+  - #427 (whiteboard v4, 11-frame redesign): every real check green (`test`/`e2e`/`mutation`/`check`/`review-gallery`), parity-gate red at **4/28 scenarios passing** — the refs are now one full design generation behind (Keystone canvas vs the whiteboard). Admin-merged.
+  - #428 (a 2-file tooling fix, no visual change at all): blocked identically, because the gate is red on **main itself** — every `design-parity` run since at least 07-21 fails, on pushes and PRs alike. A check that fails on everything discriminates nothing; it can no longer tell a regression from an intentional change from a no-op.
+  - Operational cost is worse than "annoying": the Claude Code auto-mode classifier (correctly) refuses `gh pr merge --admin` from agents, so a required-but-always-red check converts every merge into a manual Muxin action — it broke unattended pipeline merging entirely today.
+  - Counter-evidence worth keeping: the *screenshot artifacts* were genuinely valuable this session — visually auditing the regenerated review-gallery caught 5 real integration bugs the unit/e2e suites missed. All of that signal came from humans/agents LOOKING at the screenshots; none of it came from the pixel-diff pass/fail verdict.
+- RECOMMENDATIONS (2026-07-22):
+  1. IMMEDIATE, regardless of final ruling: **demote to non-required** (option b) — a one-line branch-protection change that unblocks merging today while keeping the workflow running for signal.
+  2. THEN pick the end state: option (a) retire the pixel-diff *verdict* but keep `review-gallery` as the committed human-review artifact (where today's real value was), or option (c) only if it includes **in-PR rebaselining** (an approved intentional-change PR regenerates its own refs + structural probes, so the baseline can never go a design-generation stale again). Plain (c) without auto-rebaseline just re-creates today's situation after the next redesign.
+  3. If any gate stays, fix the ~11-scenario visual-only false-PASS first (the known trust bug) — a gate that both false-fails intentional work and false-passes similar-but-wrong pages is negative signal.
+- STATUS: Backlog
+
+**[P2] Fix the red `audit` CI check (npm audit high: sharp, via next)**
+- ORIGIN: 2026-07-22 — the `audit` job (`dependency-audit.yml`, `npm audit --omit=dev --audit-level=high`) has been red on main since at least 2026-07-21. The Dependabot-evaluation card above dismissed it as "pre-existing/flaky — ignore as signal", but it is NOT flaky: it fails deterministically on two upstream advisories, both pulled in transitively by `next`:
+  - `sharp` <0.35.0 — HIGH (this is what trips `--audit-level=high`)
+  - `postcss` <8.5.10 — moderate (GHSA-qx2v-qp2m-jg93, XSS via unescaped `</style>`)
+- Why it matters even though `audit` is not a required check: a permanently-red advisory check trains everyone to ignore audit output entirely (already happening — see the note above), which is exactly when a real vulnerable-dependency alert gets missed.
+- TASK (pick one, smallest that goes green):
+  - (a) Bump `next` to a release that depends on `sharp` >=0.35.0 / patched `postcss` (check whether one exists yet; may ride along with the queued `eslint-config-next` major evaluation).
+  - (b) If no such `next` release exists, add npm `overrides` for `sharp`/`postcss` in package.json, verify `npm run check` + a prod build still pass (sharp is Next's image pipeline — smoke-test image rendering).
+  - (c) Last resort: scope the advisory out of the audit command with a documented justification + expiry note, so the check goes back to meaning something.
+- Cross-ref: the "[P2] Evaluate the 9 closed Dependabot version bumps" card — whoever does that evaluation should fold this in, since every one of those PRs showed the same red `audit`.
 - STATUS: Backlog
