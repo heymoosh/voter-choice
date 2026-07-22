@@ -30,10 +30,18 @@ Entries for deleted files fail the gate too; remove them in the same PR.
   handoff modals rather than duplicated into each.
 - `DelegationOverview.tsx` — the "everyone who represents you — scored"
   landing grid: one scored SeatCard per up-for-election seat.
-- `DelegationWorkspace.tsx` — the 3-pane workspace (rail / center card /
-  scorecard) that hosts a single seat's deep view.
+- `DelegationWorkspace.tsx` — the single-seat deep view (v3, 2026-07-21: the
+  right rail is gone — the delegation overview is the only nav surface at
+  every breakpoint; this hosts the centered RepCard + all-done panel + ask).
 - `EditIssuesModal.tsx` — workspace modal for editing locked issues via the
   same conversational loop as intake; re-scores on apply.
+- `FundingSources.tsx` — money-redesign's fused "where the big money comes
+  from" ranked source list (individuals + named issue-PACs + industries +
+  untraced remainder as one dollar-sorted list); FunderBars renders the same
+  data as three separate blocks for the legacy ballot CandidateCard, whose
+  DOM this repo has to keep byte-identical — a shared component would need a
+  variant flag replicating that split, which is more coupling than the two
+  surfaces' genuinely different layouts warrant.
 - `HandoffActions.tsx` — continue-elsewhere actions (per-chatbot copy & open,
   .txt download); shared by budget + handoff modals.
 - `HandoffModal.tsx` — "take your scorecard with you" export surface.
