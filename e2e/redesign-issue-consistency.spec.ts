@@ -166,18 +166,29 @@ test.describe("issue set persists across intake, overview, deep view, and voting
       page.locator('[data-testid="delegation-overview"]'),
     ).not.toContainText(PROPERTY);
 
-    // ---- Deep seat view: rail (full list) vs card rows (scoped set) ---
+    // ---- Deep seat view: edit-issues modal (full list) vs card rows
+    // (scoped set) ---
     await firstCard.click();
-    await page.locator(".b-row").first().waitFor({ timeout: 20000 });
-    // The ballot rail is a FULL-LIST surface: all 3 issues, state one included.
-    const rail = page.locator(".ws-ballot .b-issues-list li");
-    await expect(rail).toHaveCount(3);
-    await expect(page.locator(".ws-ballot .b-issues-list")).toContainText(
-      PROPERTY,
-    );
+    await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
+    // v3 rail removal (2026-07-21): the full-list-of-all-issues surface in
+    // the deep view used to be the persistent rail; that's gone, and the
+    // edit-issues modal (reachable via the alignment fine print) is now the
+    // only place the deep view shows every locked issue, state one included.
+    await page.getByTestId("edit-issues-alignment").click();
+    const editModal = page.getByTestId("edit-issues-modal");
+    await editModal.waitFor({ timeout: 15000 });
+    await expect(editModal.locator(".theme-row")).toHaveCount(3);
+    await expect(editModal).toContainText(PROPERTY);
+    await editModal
+      .getByRole("button", { name: "Cancel — keep my current issues" })
+      .click();
+    await expect(editModal).not.toBeVisible();
     // The deep card's alignment rows are the SAME set as the overview card.
+    // (money-redesign v2 renamed the canvas row's name class from
+    // .cv2-iss-name to .iss-name — .iss is the new `.iss`/`.iss-head`/
+    // `.iss-name` per-issue card shape, unrelated to rail removal.)
     await expect(
-      page.locator('[data-testid="voting-record-alignment-row"] .cv2-iss-name'),
+      page.locator('[data-testid="voting-record-alignment-row"] .iss-name'),
     ).toHaveText([INSULIN, RENT]);
 
     // ---- Voting history: same issues, votes joined on -----------------

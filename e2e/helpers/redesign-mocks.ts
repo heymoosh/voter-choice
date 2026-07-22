@@ -558,10 +558,12 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .locator('[data-testid="seat-card"]')
     .first()
     .click({ timeout: 15000 });
-  // Workspace is ready once the scorecard rows appear. On mobile the center
-  // pane (rep-card) starts hidden until a row is tapped; the scorecard rows
-  // are always visible and are the safe signal for both viewports.
-  await page.locator(".b-row").first().waitFor({ timeout: 20000 });
+  // Workspace is ready once the seat's card renders. v3 rail removal
+  // (2026-07-21) deleted the right rail (.b-row/ScorecardPane) entirely, at
+  // every breakpoint — the deep view's own card root is the only signal
+  // left, and it's the same signal on mobile and desktop now (no more
+  // tap-to-open overlay distinction).
+  await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
 }
 
 /**
@@ -583,21 +585,27 @@ export async function goToWorkspace(page: Page): Promise<void> {
  * exercise PolisStand itself).
  */
 export async function goToPolisEntry(page: Page): Promise<void> {
-  // Not-up-2026 rows carry no verdict UI (reviewable, never decidable), so
-  // this shared journey visits only rows that can receive a verdict.
-  const rows = page.locator(".b-row:not(.not-up-2026)");
-  const count = await rows.count();
-  for (let i = 0; i < count; i++) {
-    await rows.nth(i).click();
+  // v3 rail removal (2026-07-21): there's no rail row to iterate anymore —
+  // ride the deep view's own auto-advance-to-next-undecided-seat
+  // (commitVerdict) until every decidable seat is done. Not-up-2026 seats
+  // carry no verdict UI (reviewable, never decidable) and auto-advance
+  // already skips them, same scoping the old .b-row(:not(.not-up-2026))
+  // selector used to enforce. Callers may already be inside a seat's deep
+  // view (e.g. after goToWorkspace) or still on the overview — handle both.
+  const seatCard = page.locator('[data-testid="seat-card"]').first();
+  if (await seatCard.isVisible().catch(() => false)) {
+    await seatCard.click({ timeout: 15000 });
+  }
+  const allDone = page.locator(".all-done");
+  for (let i = 0; i < 10; i++) {
+    if (await allDone.isVisible().catch(() => false)) break;
     const keep = page.getByRole("button", { name: /Worth keeping/ }).first();
     await keep.waitFor({ timeout: 15000 });
     await keep.click();
     // Let the verdict commit (commitVerdict defers the auto-advance ~600ms).
     await page.waitForTimeout(700);
   }
-  // Re-open a seat so the center column (which holds .all-done) is on screen;
-  // on mobile the last verdict closed the overlay.
-  await rows.first().click();
+  await allDone.waitFor({ timeout: 15000 });
   const standingLink = page
     .locator(".all-done")
     .getByRole("button", { name: /where you stand/ });

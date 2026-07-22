@@ -856,6 +856,7 @@ export function RepCard({
             <a
               role="button"
               tabIndex={0}
+              data-testid="edit-issues-alignment"
               onClick={onEditIssues}
               onKeyDown={(e) => {
                 if (e.key === "Enter" || e.key === " ") {
@@ -935,6 +936,18 @@ export function RepCard({
         {!cand.donorCoalition && !cand.fundingMix && cand.donorUnavailable && (
           <p className="sec-note">{cand.donorUnavailable.reason}.</p>
         )}
+        {/* Honest fallback when filings only give a total (no small/large/PAC
+            mix, no per-source breakdown) — FunderBars' own "sparse" case
+            (data-testid preserved for continuity), now surfaced here since
+            the money-redesign section no longer routes through FunderBars
+            at all. */}
+        {!cand.fundingMix &&
+          typeof cand.totalRaised === "number" &&
+          cand.totalRaised > 0 && (
+            <p className="sec-note" data-testid="funding-sparse">
+              {t("funderBars.sparseBreakdownNote")}
+            </p>
+          )}
       </div>
 
       {/* 3 · Attendance */}
