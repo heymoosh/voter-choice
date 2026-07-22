@@ -1042,6 +1042,9 @@ function App2Inner() {
             onReplace={(pickId) => duelReplace(duelSeat.id, pickId)}
             onClose={() => setDuelSeatId(null)}
             onShowBudgetOptions={handleBudgetBlock}
+            blindMode={blindMode}
+            revealed={revealed}
+            onReveal={reveal}
           />
         </>
       );

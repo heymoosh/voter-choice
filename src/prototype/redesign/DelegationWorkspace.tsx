@@ -17,13 +17,14 @@
        plan" CTA was dropped — voting-plan/profile export is no longer part
        of the congress-assessment flow. */
 
-import React from "react";
+import React, { useState } from "react";
 import { AppNav, AppFooter, useI18n, escapeHtml } from "../VoterChoiceApp";
 import { RepCard } from "./RepCard";
 import { SeatChat } from "./SeatChat";
 import { IssueDeltaBanner } from "./IssueDeltaBanner";
 import { DelegationOverview } from "./DelegationOverview";
 import { RosterFeedbackWidget } from "./RosterFeedback";
+import { PolisInvitePanel } from "./PolisEntry";
 import { issuesForLevel, issuesForSeatCard } from "./delegationData";
 import { formatShortDate } from "../../lib/eligibility";
 
@@ -106,6 +107,10 @@ export function DelegationWorkspace({
   onBackToOverview,
 }) {
   const { t } = useI18n();
+  // Local, not lifted: purely a display toggle for the polis-invite panel's
+  // "No thanks" — dismissing it never touches verdicts/print/handoff, so it
+  // doesn't need to survive this component's own unmount/remount cycle.
+  const [polisInviteDismissed, setPolisInviteDismissed] = useState(false);
 
   if (overviewOpen) {
     return (
@@ -116,6 +121,8 @@ export function DelegationWorkspace({
           verdicts={verdicts}
           picks={picks}
           userIssues={userIssues}
+          blindMode={blindMode}
+          revealed={revealed}
           onOpen={onOpenSeat}
           onPrint={onPrint}
         />
@@ -251,7 +258,9 @@ export function DelegationWorkspace({
             <div className="all-done" data-testid="all-done">
               <div className="all-done-kick">{t("scorecard.allDoneKick")}</div>
               <b>{t("scorecard.allDoneHeadline")}</b>
-              <p className="all-done-sub">{t("scorecard.allDoneSub")}</p>
+              <p className="all-done-sub">
+                {t("scorecard.allDoneSub", { n: doneCount })}
+              </p>
               <div className="all-done-actions">
                 <button
                   className="all-done-print"
@@ -306,12 +315,12 @@ export function DelegationWorkspace({
                   )}
                 </div>
               )}
-              <div className="all-done-also">
-                {t("scorecard.allDoneAlsoIntro")}
-                <button className="linklike" onClick={onSeeStanding}>
-                  {t("scorecard.allDoneSeeStanding")}
-                </button>
-              </div>
+              {!polisInviteDismissed && (
+                <PolisInvitePanel
+                  onSeeStanding={onSeeStanding}
+                  onSkip={() => setPolisInviteDismissed(true)}
+                />
+              )}
             </div>
           )}
 

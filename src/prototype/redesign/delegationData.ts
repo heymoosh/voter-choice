@@ -416,7 +416,11 @@ export function buildSeats(
               totalRaised: cardCand?.totalRaised,
               chamberMedian: cardCand?.chamberMedian,
               office: seat.office,
-              cycle: cardCand?.fundingMix?.cycle ?? "2025–26",
+              // The fallback must already be a complete phrase, matching the
+              // real fundingMix.cycle shape (race-data.ts `computeFundingMix`
+              // produces e.g. "2026 cycle") — MoneyHero's i18n template
+              // renders "{cycle}" verbatim with no separate "cycle" suffix.
+              cycle: cardCand?.fundingMix?.cycle ?? "2025–26 cycle",
             }),
             seekingReelection2026: apiCand.seekingReelection2026,
           }
@@ -491,6 +495,325 @@ export function seatIssueAlignmentRows(
       fraction: hasRecord ? `${score.kept}/${score.total}` : null,
     };
   });
+}
+
+// ---------------------------------------------------------------------------
+// Money-influence derivations (money-redesign v2 — GAPS-AND-DATA-AUDIT.md §B1,
+// §E). No LDA lobbying-position data exists in this repo, so "did the money
+// vote?" is an honest proxy: for each issue-PAC cluster in a seat's
+// donorCoalition that has a fixed stance ('in_favor' | 'opposed', never
+// 'mixed') on a canonical issue, score the member's CURATED roll-calls for
+// that issue — AlignmentScore.contributingVotes, the same 2-6 diagnostic
+// votes AllVotesPanel/voteGroups.ts already surface, not the full `total`
+// tally (GAPS: "curated votes per issue, not 18 lobbied bills") — against the
+// PAC's direction. A voting_record AlignmentScore's `resolvedStance` is
+// already the normalized 'in_favor' | 'opposed' the client sent
+// (race-data.ts: `resolvedStance: issue.stance`), so it's directly
+// comparable to `issuePacStance` with no free-text re-parsing.
+//
+// ONE core (scorePacVotesForIssue) computes the per-(issue, PAC) dot strip;
+// deriveMoneyInfluence sums it across the user's issues and deriveVoteLinkage
+// exposes the same per-entity strips for FundingSources — so the overview
+// card, the seat card, and the funding-source rows can never drift apart
+// (GAPS §E, "same numbers on overview card and seat card").
+// ---------------------------------------------------------------------------
+
+/** Minimal donorCoalition slice shape this module reads. Matches the real
+ *  /api/race-data payload (race-data.ts `donorFieldsFromResult`): `alignsWith`
+ *  + `issuePacStance`. `relevantToIssue` is an older prototype-mock alias,
+ *  checked for parity with VoterChoiceApp's `deriveIssuePacAlignment`. */
+export interface DonorCoalitionSlice {
+  label: string;
+  amount?: number;
+  percent?: number;
+  isIssuePAC?: boolean;
+  alignsWith?: string;
+  relevantToIssue?: string;
+  issuePacStance?: "in_favor" | "opposed" | "mixed";
+  fullName?: string;
+  advocates?: string;
+}
+
+/** The subset of AlignmentScore this module reads. `resolvedStance` and
+ *  `contributingVotes` are only populated for voting_record scores — a
+ *  research (web_search) score has neither, so it never contributes here
+ *  (honest gap, not a bug: GAPS §D9, survive missing data by omission). */
+interface MoneyScoreLike {
+  canonicalIssue: string;
+  resolvedStance?: "in_favor" | "opposed";
+  kept?: number;
+  total?: number;
+  contributingVotes?: Array<{ voteCast?: "with" | "against" }>;
+}
+
+function findIssuePacForIssue(
+  donorCoalition: DonorCoalitionSlice[] | null | undefined,
+  canonicalIssue: string,
+): DonorCoalitionSlice | null {
+  return (
+    (donorCoalition || []).find(
+      (s) =>
+        s?.isIssuePAC &&
+        (s.alignsWith === canonicalIssue ||
+          s.relevantToIssue === canonicalIssue),
+    ) ?? null
+  );
+}
+
+export interface PacVoteScore {
+  /** Curated votes that went the donors' way. */
+  k: number;
+  /** Curated votes scored (same denominator for k and userK). */
+  n: number;
+  /** Of the same n votes, how many went the USER's way ("your way" read). */
+  userK: number;
+  dots: Array<"w" | "a">;
+  conflictsWithUser: boolean;
+}
+
+/**
+ * Shared core: score one issue's curated contributing votes against one
+ * issue-PAC's stance. null (honest gap) when the PAC has no fixed stance
+ * ('mixed' / absent), the score has no resolved stance, or there are no
+ * curated votes to check — every caller below is honest-null through this
+ * single choke point, so the three surfaces can't disagree on WHEN to show
+ * a number, only degrade together.
+ */
+function scorePacVotesForIssue(
+  score: MoneyScoreLike | null | undefined,
+  pac: DonorCoalitionSlice | null | undefined,
+): PacVoteScore | null {
+  if (!score?.resolvedStance || !pac?.issuePacStance) return null;
+  if (pac.issuePacStance === "mixed") return null;
+  const votes = score.contributingVotes || [];
+  if (votes.length === 0) return null;
+
+  const conflictsWithUser = pac.issuePacStance !== score.resolvedStance;
+  const dots: Array<"w" | "a"> = votes.map((v) => {
+    const withUser = v.voteCast === "with";
+    const donorsWay = conflictsWithUser ? !withUser : withUser;
+    return donorsWay ? "w" : "a";
+  });
+  return {
+    k: dots.filter((d) => d === "w").length,
+    n: dots.length,
+    userK: votes.filter((v) => v.voteCast === "with").length,
+    dots,
+    conflictsWithUser,
+  };
+}
+
+export interface MoneyInfluence {
+  /** % of scored votes that went the donors' way. */
+  pct: number;
+  k: number;
+  n: number;
+  /** Member's alignment with the USER on the same n votes. */
+  yourWayPct: number;
+  /** "...including $X against your #1 · {issue}" clause data — null when
+   *  not derivable (no rank-1 issue, or no opposing PAC on it). */
+  topDollarAgainst: {
+    amount: number;
+    issue: string;
+    canonicalIssue: string;
+  } | null;
+}
+
+/**
+ * The shared money-influence read (money-redesign v2 Frame 1 item 2 /
+ * mny-verdict) — the SAME numbers the overview card and seat card both
+ * render (GAPS §E). Wording contract for consumers (do not bake into this
+ * helper): "{pct}% — on the issues their PAC donors target, this member's
+ * votes went the donors' way ({k} of {n} scored votes)."
+ * Honest-null: null when donorCoalition/alignmentEntry are missing, or no
+ * user issue has both a matching issue-PAC (fixed stance) AND curated votes
+ * to score — covers null donorCoalition, empty coalition, PAC clusters with
+ * no canonical-issue stance, and a challenger with no roll-calls.
+ */
+export function deriveMoneyInfluence(
+  seat: {
+    candidate: { donorCoalition: DonorCoalitionSlice[] | null } | null;
+    alignmentEntry: { scores: unknown[] | null } | null;
+  },
+  userIssues: UserIssue[],
+): MoneyInfluence | null {
+  const donorCoalition = seat.candidate?.donorCoalition;
+  const scores = seat.alignmentEntry?.scores as
+    | MoneyScoreLike[]
+    | null
+    | undefined;
+  if (!donorCoalition || donorCoalition.length === 0 || !Array.isArray(scores))
+    return null;
+
+  let k = 0;
+  let n = 0;
+  let userK = 0;
+  for (const issue of userIssues || []) {
+    if (!issue.canonicalIssue) continue;
+    const score =
+      scores.find((s) => s?.canonicalIssue === issue.canonicalIssue) ?? null;
+    const pac = findIssuePacForIssue(donorCoalition, issue.canonicalIssue);
+    const result = scorePacVotesForIssue(score, pac);
+    if (!result) continue;
+    k += result.k;
+    n += result.n;
+    userK += result.userK;
+  }
+  if (n === 0) return null;
+
+  return {
+    pct: Math.round((k / n) * 100),
+    k,
+    n,
+    yourWayPct: Math.round((userK / n) * 100),
+    topDollarAgainst: deriveTopDollarAgainst(donorCoalition, userIssues),
+  };
+}
+
+/** "$X against your #1 issue" clause — the PAC-cluster total for the
+ *  rank-1 user issue, ONLY when a matching issue-PAC opposes the user's own
+ *  stated stance on it. Independent of vote scoring on purpose (a rank-1
+ *  issue with no curated votes yet can still surface this clause). null
+ *  when there's no explicit rank-1 issue, no matching PAC, or the PAC's
+ *  stance isn't opposed (aligned/unknown ⇒ omit the clause, never invent
+ *  a conflict). */
+function deriveTopDollarAgainst(
+  donorCoalition: DonorCoalitionSlice[],
+  userIssues: UserIssue[],
+): { amount: number; issue: string; canonicalIssue: string } | null {
+  const top = (userIssues || []).find((i) => i.rank === 1 && i.canonicalIssue);
+  if (!top || !top.canonicalIssue) return null;
+  const pac = findIssuePacForIssue(donorCoalition, top.canonicalIssue);
+  if (!pac?.issuePacStance || pac.issuePacStance === "mixed") return null;
+  if (pac.issuePacStance === toStance(top.stance)) return null; // aligned
+  return {
+    amount: pac.amount || 0,
+    issue: top.interpretation,
+    canonicalIssue: top.canonicalIssue,
+  };
+}
+
+export type IssueMoneyVerdictCls = "v-with" | "v-mixed" | "v-against";
+
+export interface IssueMoneyVerdict {
+  cls: IssueMoneyVerdictCls;
+  label: string;
+}
+
+/**
+ * Per-issue verdict chip (RepCard §1 `.iss-verdict`). Combines the vote side
+ * (score.kept/score.total — the member's alignment with the user) with the
+ * money side (the matching issue-PAC's stance vs. score.resolvedStance —
+ * the same direction comparison deriveMoneyInfluence uses). null when there
+ * is no matching issue-PAC with a fixed stance for this score's canonical
+ * issue: this chip is specifically a money×vote read, and a pure vote status
+ * with no PAC angle is already covered by the seat's regular alignment row.
+ *
+ * The whiteboard (frames 2-3, `.iss-verdict`) only shows three combinations:
+ *   money-conflicts + vote-with-user      → v-mixed  "Votes yes, money says no"
+ *   money-conflicts + vote-missing        → v-against "No record, money against"
+ *   money-aligns    + vote-with-user      → v-with   "Votes & money align"
+ * The other three cells (a scoreable vote that went AGAINST the user, in
+ * either money direction) aren't in the design. This function fills them in
+ * on the same with/mixed/against severity ladder rather than guessing at
+ * unreviewed copy — see the report to Muxin/team-lead for the exact labels.
+ */
+export function deriveIssueMoneyVerdict(
+  score:
+    | {
+        canonicalIssue?: string;
+        resolvedStance?: "in_favor" | "opposed";
+        kept?: number;
+        total?: number;
+      }
+    | null
+    | undefined,
+  pacs: DonorCoalitionSlice[] | null | undefined,
+): IssueMoneyVerdict | null {
+  const canonicalIssue = score?.canonicalIssue;
+  if (!canonicalIssue || !score?.resolvedStance) return null;
+  const pac = findIssuePacForIssue(pacs, canonicalIssue);
+  if (!pac?.issuePacStance || pac.issuePacStance === "mixed") return null;
+
+  const conflictsWithUser = pac.issuePacStance !== score.resolvedStance;
+  const hasVoteRecord =
+    typeof score.total === "number" &&
+    score.total > 0 &&
+    typeof score.kept === "number";
+  const voteWithUser = hasVoteRecord ? score.kept! * 2 >= score.total! : null;
+
+  if (conflictsWithUser) {
+    if (voteWithUser === null)
+      return { cls: "v-against", label: "No record, money against" };
+    if (voteWithUser)
+      return { cls: "v-mixed", label: "Votes yes, money says no" };
+    return { cls: "v-against", label: "Votes no, money against" };
+  }
+  if (voteWithUser === null)
+    return { cls: "v-with", label: "No record, money aligns" };
+  if (voteWithUser) return { cls: "v-with", label: "Votes & money align" };
+  return { cls: "v-mixed", label: "Votes no, money aligns" };
+}
+
+export type VoteLinkageEntry =
+  | { kind: "scored"; k: number; n: number; dots: Array<"w" | "a"> }
+  | { kind: "unscored" }
+  | { kind: "small" }
+  | { kind: "large" }
+  | { kind: "industry" };
+
+/**
+ * Per-funding-entity vote linkage for FundingSources' src-votes sub-block
+ * (work order Frame 7) — same underlying scoring as deriveMoneyInfluence
+ * (scorePacVotesForIssue), so a PAC's dot strip here always sums to the same
+ * k/n that PAC contributed to the overview/seat-card number.
+ *
+ * Shape: Map<string, VoteLinkageEntry> keyed by the SAME string
+ * FundingSources already renders as each row's visible name — fundingMix's
+ * small/large rows use the fixed keys "small"/"large"; every donorCoalition
+ * slice (issue-PAC or industry) is keyed by its own `label`, which is what
+ * FundingSources reads into `r.name` for those rows. A consumer can do
+ * `voteLinkage.get(row.key === "small" || row.key === "large" ? row.key :
+ * row.name)` with no other plumbing. The two synthetic remainder rows
+ * FundingSources computes itself ("industry-other", "pac-untraced") are
+ * deliberately NOT in this map — there is no single donorCoalition entity
+ * behind a remainder bucket to score, and the whiteboard's own copy for
+ * those rows is a static "can't check" sentence, not a computed one.
+ */
+export function deriveVoteLinkage(seat: {
+  candidate: {
+    donorCoalition: DonorCoalitionSlice[] | null;
+    fundingMix?: { small: number; large: number } | null;
+  } | null;
+  alignmentEntry: { scores: unknown[] | null } | null;
+}): Map<string, VoteLinkageEntry> {
+  const out = new Map<string, VoteLinkageEntry>();
+  const donorCoalition = seat.candidate?.donorCoalition || [];
+  const scores = (seat.alignmentEntry?.scores as MoneyScoreLike[] | null) || [];
+  const fundingMix = seat.candidate?.fundingMix;
+
+  if (fundingMix && fundingMix.small > 0) out.set("small", { kind: "small" });
+  if (fundingMix && fundingMix.large > 0) out.set("large", { kind: "large" });
+
+  for (const slice of donorCoalition) {
+    if (!slice) continue;
+    if (!slice.isIssuePAC) {
+      out.set(slice.label, { kind: "industry" });
+      continue;
+    }
+    const canonicalIssue = slice.alignsWith || slice.relevantToIssue;
+    const score = canonicalIssue
+      ? (scores.find((s) => s?.canonicalIssue === canonicalIssue) ?? null)
+      : null;
+    const result = scorePacVotesForIssue(score, slice);
+    out.set(
+      slice.label,
+      result
+        ? { kind: "scored", k: result.k, n: result.n, dots: result.dots }
+        : { kind: "unscored" },
+    );
+  }
+  return out;
 }
 
 // ---------------------------------------------------------------------------

@@ -28,6 +28,7 @@ import {
   formatDollars,
   deriveIssuePacAlignment,
 } from "../VoterChoiceApp";
+import type { VoteLinkageEntry } from "./delegationData";
 
 interface FundingSourcesProps {
   donorCoalition: any[] | null | undefined;
@@ -37,6 +38,116 @@ interface FundingSourcesProps {
     | null
     | undefined;
   userIssues: Array<{ canonicalIssue?: string; interpretation: string }>;
+  /**
+   * Per-entity "did the money vote?" linkage (delegationData.ts
+   * `deriveVoteLinkage(seat)`) — keyed by "small"/"large" for those two
+   * fixed rows, else the row's own donorCoalition `label` (the same string
+   * this component already renders as `r.name`). A parent computes this
+   * once per seat and can pass the identical map into a duel column's
+   * FundingSources instance unchanged — the lookup and rendering here don't
+   * know or care which surface they're in (Frame 7 item 1/2).
+   *
+   * Omitted (undefined/null) ⇒ no `src-votes` sub-blocks render anywhere,
+   * never a blank shell. A row present in the component but absent from the
+   * map (e.g. the synthetic "industry-other"/"pac-untraced" remainder rows,
+   * which have no single donorCoalition entity behind them to score) simply
+   * renders with no sub-block of its own.
+   */
+  voteLinkage?: Map<string, VoteLinkageEntry> | null;
+  /**
+   * True only for a candidate with NO roll-call record at all (e.g. a
+   * challenger who has never held this office) — every row that would
+   * otherwise read "Can't check — agenda untraced" instead reads "No
+   * roll-calls exist to check this money against — the influence read
+   * starts with their first vote." Has no effect on 'scored'/'small'/
+   * 'large' rows. Defaults to false (the ordinary incumbent case).
+   */
+  noRollCallRecord?: boolean;
+}
+
+type T = (key: string, vars?: Record<string, unknown>) => string;
+
+/**
+ * The whiteboard's `src-votes` sub-block (`Voter Choice Whiteboard.html`
+ * lines 245-276) — verbatim markup/classes: `.sv-top`/`.sv-lab`, `.mvr-pct`
+ * (`.hi` at k/n ≥ ⅔), `.mvr-dots` (`.w` donor's way / `.a` against). No
+ * `.mvr-receipt` — GAPS-AND-DATA-AUDIT.md §C2: donor_aggregates carries no
+ * dated transactions, so a receipt line can't be built honestly.
+ */
+function renderVoteLinkage(
+  entry: VoteLinkageEntry | undefined,
+  noRollCallRecord: boolean,
+  t: T,
+): React.ReactNode {
+  if (!entry) return null;
+
+  const label = t("fundingSources.voteLinkageLabel");
+
+  if (entry.kind === "scored") {
+    const hi = entry.n > 0 && entry.k * 3 >= entry.n * 2;
+    return (
+      <div className="src-votes">
+        <div className="sv-top">
+          <span className="sv-lab">{label}</span>
+          <span className={"mvr-pct" + (hi ? " hi" : "")}>
+            {t("fundingSources.voteLinkageScored", {
+              k: entry.k,
+              n: entry.n,
+            })}
+          </span>
+        </div>
+        <div className="mvr-dots">
+          {entry.dots.map((d, i) => (
+            <i key={i} className={d} />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (entry.kind === "small" || entry.kind === "large") {
+    return (
+      <div className="src-votes">
+        <div className="sv-top">
+          <span className="sv-lab">{label}</span>
+          <span className="mvr-pct">
+            {t("fundingSources.voteLinkageIndividuals")}
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  // 'unscored' | 'industry' — untraced agenda, or (noRollCallRecord) a
+  // candidate with no votes yet to check the money against.
+  return (
+    <div className="src-votes">
+      <div className="sv-top">
+        <span className="sv-lab">{label}</span>
+        <span className="mvr-pct">
+          {noRollCallRecord
+            ? t("fundingSources.voteLinkageNoRollcall")
+            : t("fundingSources.voteLinkageUntraced")}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Cheap parent-side check — RepCard needs to know whether at least one
+ * `src-votes` dot strip actually rendered before showing the `.mvc-key`
+ * legend (Frame 7 §2 item 3). Pure and render-independent so a caller can
+ * check it up front rather than threading a render callback through.
+ */
+export function hasScoredVoteLinkage(
+  voteLinkage: Map<string, VoteLinkageEntry> | null | undefined,
+): boolean {
+  if (!voteLinkage) return false;
+  for (const entry of voteLinkage.values()) {
+    if (entry.kind === "scored") return true;
+  }
+  return false;
 }
 
 type Row = {
@@ -55,6 +166,8 @@ export function FundingSources({
   totalRaised,
   fundingMix,
   userIssues,
+  voteLinkage,
+  noRollCallRecord = false,
 }: FundingSourcesProps) {
   const { t } = useI18n() as {
     t: (key: string, vars?: Record<string, unknown>) => string;
@@ -209,26 +322,32 @@ export function FundingSources({
     <div className="srcs">
       <div className="srcs-h">{t("fundingSources.heading")}</div>
       <div className="srcs-sub">{t("fundingSources.subheading")}</div>
-      {rows.map((r) => (
-        <div className="src" key={r.key}>
-          <span className={"src-dot " + r.dotClass} aria-hidden="true" />
-          <span className="src-name">{r.name}</span>
-          <span className="src-amt">{formatDollars(r.amount)}</span>
-          {r.pctLabel && <span className="src-pct">{r.pctLabel}</span>}
-          <div className="src-body">
-            <div className="src-agenda">{r.agenda}</div>
-            {r.tagLabel && (
-              <span className={"src-tag " + r.tagClass}>{r.tagLabel}</span>
-            )}
+      {rows.map((r) => {
+        const linkageKey =
+          r.key === "small" || r.key === "large" ? r.key : r.name;
+        const linkage = voteLinkage?.get(linkageKey);
+        return (
+          <div className="src" key={r.key}>
+            <span className={"src-dot " + r.dotClass} aria-hidden="true" />
+            <span className="src-name">{r.name}</span>
+            <span className="src-amt">{formatDollars(r.amount)}</span>
+            {r.pctLabel && <span className="src-pct">{r.pctLabel}</span>}
+            <div className="src-body">
+              <div className="src-agenda">{r.agenda}</div>
+              {r.tagLabel && (
+                <span className={"src-tag " + r.tagClass}>{r.tagLabel}</span>
+              )}
+              {voteLinkage && renderVoteLinkage(linkage, noRollCallRecord, t)}
+            </div>
+            <div className="src-proportion">
+              <i
+                className={r.dotClass}
+                style={{ width: (r.amount / maxAmount) * 100 + "%" }}
+              />
+            </div>
           </div>
-          <div className="src-proportion">
-            <i
-              className={r.dotClass}
-              style={{ width: (r.amount / maxAmount) * 100 + "%" }}
-            />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

@@ -174,6 +174,10 @@ export function ScorecardPrintView({
             </button>
           </div>
         </div>
+        {/* Frame 10+11 fix 2 (whiteboard line 589) — phones aren't allowed at
+            most polling places, so the print/PDF route is the one that
+            actually reaches the ballot box. */}
+        <p className="print-why-note">{t("scorecardPrint.printWhyNote")}</p>
 
         <div className="print-sheet">
           {/* canvas screens-scorecard.jsx .pflag — a flag-stripe accent on
@@ -286,7 +290,35 @@ export function ScorecardPrintView({
                   const note = reasonLine(s, v, score);
                   return (
                     <div className={"br checked verdict-row " + v} key={s.id}>
-                      <div className="bx"></div>
+                      {/* Frame 10+11 fix 1 (whiteboard lines 604/683) — the
+                          keep box swaps its pseudo-element checkmark for a
+                          real, verbatim inline-SVG check so it centers
+                          correctly at print size (see redesign2.css's
+                          .bx.bx-svg comment). The whiteboard never renders a
+                          "replace" print row and ships no SVG asset for its
+                          swap-arrow glyph, so that box keeps the existing
+                          .bx pseudo-element (already centered there via
+                          redesign2.css's position:static override). */}
+                      {v === "keep" ? (
+                        <div className="bx bx-svg">
+                          <svg
+                            viewBox="0 0 16 16"
+                            width="16"
+                            height="16"
+                            fill="none"
+                          >
+                            <path
+                              d="M3 8.6l3.3 3.3L13 4.4"
+                              stroke="#fff"
+                              strokeWidth="2.3"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="bx"></div>
+                      )}
                       <div className="br-main">
                         <div className="race-name">
                           {s.office} · {s.districtLabel}

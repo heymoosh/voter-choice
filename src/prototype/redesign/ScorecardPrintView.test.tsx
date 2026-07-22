@@ -94,3 +94,107 @@ describe("ScorecardPrintView stale successor picks", () => {
     );
   });
 });
+
+function keepSeat() {
+  return {
+    id: "senate-TX",
+    section: "Washington — Federal",
+    level: "federal",
+    office: "U.S. Senate",
+    districtLabel: "Texas (statewide)",
+    blindLabel: "Your U.S. Senator",
+    nextElection: { label: "Nov 2026", onBallot2026: true },
+    candidate: { id: "incumbent", name: "John Cornyn" },
+    alignmentEntry: { scores: [{ kept: 18, total: 44 }] },
+    challengers: [],
+  };
+}
+
+function openSeat() {
+  return {
+    id: "house-TX-02",
+    section: "Washington — Federal",
+    level: "federal",
+    office: "U.S. House",
+    districtLabel: "TX-02",
+    blindLabel: "Your U.S. Representative",
+    nextElection: { label: "Nov 2026", onBallot2026: true },
+    candidate: {
+      id: "incumbent",
+      name: "Retiring Rep",
+      seekingReelection2026: false,
+    },
+    alignmentEntry: { scores: [] },
+    challengers: [
+      {
+        id: "successor",
+        name: "Maria Alvarez",
+        party: "Democrat",
+        totalReceipts: 50000,
+        rosterProvenance: verifiedRosterProvenance,
+      },
+    ],
+  };
+}
+
+function renderWith(
+  seats: unknown[],
+  verdicts: Record<string, string>,
+  picks: Record<string, string>,
+) {
+  return render(
+    <I18nProvider>
+      <ScorecardPrintView
+        address="Austin, TX"
+        seats={seats}
+        issues={[]}
+        verdicts={verdicts}
+        picks={picks}
+        stateData={{
+          elections: [{ date: "2026-11-03", type: "general" }],
+          earlyVoting: { available: false },
+          votingRules: { idRequired: false },
+        }}
+        pollingInfo={null}
+        districtsLine="U.S. House TX-02 · U.S. Senate Texas (statewide)"
+        onBack={() => {}}
+      />
+    </I18nProvider>,
+  );
+}
+
+describe("ScorecardPrintView print-why-note", () => {
+  it("renders the phones-not-allowed print note under the header", () => {
+    const { container } = renderWith([keepSeat()], { "senate-TX": "keep" }, {});
+
+    expect(container.querySelector(".print-why-note")).toHaveTextContent(
+      "Most polling places don't allow phones at the ballot box",
+    );
+  });
+});
+
+describe("ScorecardPrintView checkbox glyph", () => {
+  it("renders the inline-SVG check for a keep verdict", () => {
+    const { container } = renderWith([keepSeat()], { "senate-TX": "keep" }, {});
+
+    const box = container.querySelector(".br.verdict-row.keep .bx");
+    expect(box).toHaveClass("bx-svg");
+    expect(box?.querySelector("svg path")).not.toBeNull();
+  });
+});
+
+describe("ScorecardPrintView open-seat pill", () => {
+  it("prints the navy open-seat pill, never the replace-red pill", () => {
+    const { container } = renderWith(
+      [openSeat()],
+      { "house-TX-02": "replace" },
+      { "house-TX-02": "successor" },
+    );
+
+    const row = container.querySelector(".br.verdict-row.open-seat");
+    expect(row).not.toBeNull();
+    expect(row?.querySelector(".verdict-print.open-seat")).not.toBeNull();
+    expect(row?.querySelector(".verdict-print.replace")).toBeNull();
+    expect(row?.textContent).toContain("Maria Alvarez");
+  });
+});

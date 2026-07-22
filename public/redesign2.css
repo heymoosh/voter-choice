@@ -436,42 +436,6 @@
   cursor: pointer;
 }
 
-/* ---- verdict buttons (evolve .cv2-actions .pick) ---- */
-.cv2-actions.verdicts {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-.cv2-actions .pick.replace {
-  background: transparent;
-  color: var(--vote-red);
-  border: 1.5px solid oklch(0.8 0.07 28);
-  box-shadow: none;
-}
-.cv2-actions .pick.replace:hover {
-  border-color: var(--vote-red);
-  background: oklch(0.97 0.015 28);
-}
-.cv2-actions .pick.picked-replace {
-  background: oklch(0.93 0.04 28);
-  border-color: var(--vote-red);
-  color: var(--vote-red);
-}
-/* checkbox box on the (light-bg) replace button needs a visible border */
-.cv2-actions .pick.replace .ck {
-  border-color: oklch(0.7 0.1 28);
-}
-.cv2-actions .pick.picked-replace .ck {
-  border-color: var(--vote-red);
-  background: var(--vote-red);
-  color: var(--paper-2);
-}
-@media (max-width: 640px) {
-  .cv2-actions.verdicts {
-    grid-template-columns: 1fr;
-  }
-}
-
 /* ---- verdict chips (scorecard + print) ---- */
 .verdict-chip {
   font-family: var(--mono);
@@ -543,6 +507,15 @@
   --scp-keep-line: oklch(0.62 0.1 159);
   --scp-replace: oklch(0.53 0.205 27);
   --scp-replace-ink: oklch(0.47 0.18 27);
+}
+/* Frames 10+11 fix 2 (whiteboard line 589) — no whiteboard original exists
+   for this note (unstyled there), so it matches the tone of the existing
+   .vm-note below: small, muted meta text under the print header. */
+.print-wrap .print-why-note {
+  font-size: 12px;
+  color: var(--ink-2);
+  line-height: 1.45;
+  margin: 4px 0 0;
 }
 /* .pflag — the flag-stripe accent canvas puts on the sheet card itself
    (screens-scorecard.jsx / screens-home.jsx .sheet .pflag), never ported to
@@ -659,6 +632,20 @@
   display: flex;
   align-items: center;
   justify-content: center;
+}
+/* Checkbox glyph truly centered (Frame 10+11 fix 1) — inline-SVG check
+   instead of the pseudo-element glyphs above, verbatim from the whiteboard
+   (`.sheet-mock .bx.bx-svg`, scoped here to `.print-wrap` like every other
+   rule in this block). The open-seat `→` box (rendered as literal JSX text,
+   see the .br.verdict-row.open-seat comment below) is unaffected. */
+.print-wrap .bx.bx-svg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.print-wrap .bx.bx-svg::before,
+.print-wrap .bx.bx-svg::after {
+  content: none;
 }
 .print-wrap .br.verdict-row.keep .bx {
   border-color: var(--scp-keep-ink);
@@ -1185,6 +1172,7 @@
   display: flex;
   gap: 10px;
   flex-wrap: wrap;
+  margin-top: 14px;
 }
 .all-done-actions .all-done-print {
   margin-top: 0;
@@ -1218,7 +1206,7 @@
 }
 .all-done-handoff .ic {
   color: var(--ink-3, oklch(0.54 0.026 260));
-  font-size: 12px;
+  font-size: 12.5px;
 }
 @media (max-width: 560px) {
   .all-done-actions {
@@ -1241,23 +1229,20 @@
   font-family: var(--sans);
   font-size: inherit;
   font-weight: 600;
+  letter-spacing: 0;
   margin: 0;
 }
 .all-done-deadline a {
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
+  color: var(--bf-brand, oklch(0.4 0.155 262));
 }
 .all-done-deadline .src {
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-3, oklch(0.54 0.026 260));
   margin-top: 5px;
-}
-.all-done-also {
-  margin-top: 12px;
-  font-size: 13px;
-  color: var(--ink-3);
 }
 .linklike {
   background: none;
@@ -1280,6 +1265,166 @@
    navy brand color. */
 .bf-app .linklike {
   color: var(--bf-brand);
+}
+
+/* ---- polis-invite panel (NEW, Frame 8+9 item 1) — replaces the buried
+   .all-done-also + .linklike text link with the mounted <PolisEntry/>
+   component, as the whiteboard's .polis-invite/.pi-* panel inside
+   `.all-done`. NOTE: PolisEntry.tsx today renders its own established
+   markup (.pe-invite/.pe-map/.pe-invite-body/.pe-cta/.go/.no/.meta,
+   .pm-wrap/.pm/.pm-blob/.pm-dot/.pm-you) from the earlier Polis-viz build —
+   this block stages the whiteboard's verbatim polis-invite/pi-* selectors
+   for the mount described above; wiring PolisEntry's JSX to this markup (or
+   translating it) is the pending TSX card, out of scope here. */
+.all-done .polis-invite {
+  margin-top: 16px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 14px;
+  display: flex;
+  gap: 14px;
+  align-items: stretch;
+  background: var(--paper-2);
+}
+.all-done .pi-map {
+  position: relative;
+  flex: 0 0 132px;
+  border-radius: 9px;
+  background: #fff;
+  border: 1px solid var(--rule-2);
+  overflow: hidden;
+  min-height: 112px;
+}
+.all-done .pi-map .blob {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.13;
+}
+.all-done .pi-map .blob.c0 {
+  background: var(--bf-brand, oklch(0.4 0.155 262));
+  left: 8%;
+  top: 14%;
+  width: 44%;
+  height: 44%;
+}
+.all-done .pi-map .blob.c1 {
+  background: var(--keep, oklch(0.44 0.115 159));
+  left: 54%;
+  top: 10%;
+  width: 40%;
+  height: 42%;
+}
+.all-done .pi-map .blob.c2 {
+  background: oklch(0.55 0.12 76);
+  left: 32%;
+  top: 54%;
+  width: 40%;
+  height: 38%;
+}
+.all-done .pi-map .dot {
+  position: absolute;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.75;
+}
+.all-done .pi-map .dot.c0 {
+  background: var(--bf-brand, oklch(0.4 0.155 262));
+}
+.all-done .pi-map .dot.c1 {
+  background: var(--keep, oklch(0.44 0.115 159));
+}
+.all-done .pi-map .dot.c2 {
+  background: oklch(0.55 0.12 76);
+}
+.all-done .pi-map .you {
+  position: absolute;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--ink);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--ink);
+  transform: translate(-50%, -50%);
+}
+.all-done .pi-map .you-lab {
+  position: absolute;
+  transform: translate(-50%, 7px);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.all-done .pi-body {
+  flex: 1;
+  min-width: 0;
+}
+.all-done .pi-kick {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.all-done .pi-h {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  display: block;
+  margin-top: 3px;
+}
+.all-done .pi-body p {
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  margin: 5px 0 10px;
+}
+.all-done .pi-cta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.all-done .pi-cta .go {
+  background: var(--bf-brand, oklch(0.4 0.155 262));
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 14px;
+  font-weight: 600;
+  font-size: 14.5px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.all-done .pi-cta .no {
+  background: none;
+  border: none;
+  color: var(--ink-3);
+  font-size: 12.5px;
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  font-family: inherit;
+}
+.all-done .pi-cta .meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+/* Frame 8+9 item 4 — the whiteboard's .mv class convention becomes a real
+   breakpoint: stack the map above the body under ~480px (this file's
+   .all-done-actions stack is a separate, pre-existing 560px breakpoint —
+   left as-is, out of this port's scope). */
+@media (max-width: 480px) {
+  .all-done .polis-invite {
+    flex-direction: column;
+  }
+  .all-done .pi-map {
+    flex-basis: auto;
+    height: 92px;
+  }
 }
 
 /* ---- .be-eyebrow (BudgetModal, EditIssuesModal, HandoffModal) — same
@@ -3421,28 +3566,6 @@
 .rep-card .al-legend .i-money {
   background: var(--vote-red);
 }
-.rep-card .al-edit {
-  margin-top: 14px;
-  font-size: 13px;
-  color: var(--ink-2);
-  line-height: 1.4;
-}
-.rep-card .al-edit a {
-  display: inline-block;
-  padding: 6px 2px;
-  margin: -6px 0;
-  color: var(--civic);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 2px;
-  cursor: pointer;
-}
-.rep-card .al-edit a:focus-visible {
-  outline: 2px solid var(--civic);
-  outline-offset: 2px;
-  border-radius: 4px;
-}
-
 /* ---- per-issue card — replaces the old single-line cv2-iss-row--canvas ---- */
 .rep-card .iss {
   margin-top: 14px;
@@ -3639,25 +3762,29 @@
 }
 
 /* ---- fused funding-source list (FundingSources.tsx) ---- */
-.rep-card .srcs {
+.rep-card .srcs,
+.dl-money .srcs {
   margin: 22px 18px 0;
   display: flex;
   flex-direction: column;
   gap: 0;
 }
-.rep-card .srcs-h {
+.rep-card .srcs-h,
+.dl-money .srcs-h {
   font-family: var(--serif);
   font-size: 17px;
   font-weight: 600;
   margin-bottom: 2px;
 }
-.rep-card .srcs-sub {
+.rep-card .srcs-sub,
+.dl-money .srcs-sub {
   font-size: 12.5px;
   color: var(--ink-3);
   margin-bottom: 12px;
   line-height: 1.4;
 }
-.rep-card .src {
+.rep-card .src,
+.dl-money .src {
   display: grid;
   grid-template-columns: auto 1fr auto;
   gap: 2px 12px;
@@ -3665,38 +3792,47 @@
   border-top: 1px solid var(--rule-2);
   align-items: start;
 }
-.rep-card .src:first-of-type {
+.rep-card .src:first-of-type,
+.dl-money .src:first-of-type {
   border-top: 1px solid var(--rule);
 }
-.rep-card .src-dot {
+.rep-card .src-dot,
+.dl-money .src-dot {
   grid-row: 1 / 3;
   width: 10px;
   height: 10px;
   border-radius: 3px;
   margin-top: 5px;
 }
-.rep-card .src-dot.d-people {
+.rep-card .src-dot.d-people,
+.dl-money .src-dot.d-people {
   background: var(--civic);
 }
-.rep-card .src-dot.d-pac {
+.rep-card .src-dot.d-pac,
+.dl-money .src-dot.d-pac {
   background: var(--vote-red);
 }
-.rep-card .src-dot.d-good {
+.rep-card .src-dot.d-good,
+.dl-money .src-dot.d-good {
   background: var(--rc-keep);
 }
-.rep-card .src-dot.d-neutral {
+.rep-card .src-dot.d-neutral,
+.dl-money .src-dot.d-neutral {
   background: var(--ink-3);
 }
-.rep-card .src-dot.d-unknown {
+.rep-card .src-dot.d-unknown,
+.dl-money .src-dot.d-unknown {
   background: var(--rule);
 }
-.rep-card .src-name {
+.rep-card .src-name,
+.dl-money .src-name {
   font-size: 14.5px;
   font-weight: 600;
   color: var(--ink);
   line-height: 1.25;
 }
-.rep-card .src-amt {
+.rep-card .src-amt,
+.dl-money .src-amt {
   font-family: var(--mono);
   font-size: 14px;
   font-weight: 600;
@@ -3704,23 +3840,27 @@
   text-align: right;
   white-space: nowrap;
 }
-.rep-card .src-pct {
+.rep-card .src-pct,
+.dl-money .src-pct {
   grid-column: 2 / 4;
   font-family: var(--mono);
   font-size: 11px;
   color: var(--ink-3);
   margin-top: 1px;
 }
-.rep-card .src-body {
+.rep-card .src-body,
+.dl-money .src-body {
   grid-column: 2 / 4;
   margin-top: 6px;
 }
-.rep-card .src-agenda {
+.rep-card .src-agenda,
+.dl-money .src-agenda {
   font-size: 13px;
   color: var(--ink-2);
   line-height: 1.4;
 }
-.rep-card .src-tag {
+.rep-card .src-tag,
+.dl-money .src-tag {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -3734,21 +3874,25 @@
   border-radius: 999px;
   line-height: 1.2;
 }
-.rep-card .src-tag.t-conflict {
+.rep-card .src-tag.t-conflict,
+.dl-money .src-tag.t-conflict {
   background: var(--vote-red-soft);
   color: var(--vote-red);
 }
-.rep-card .src-tag.t-align {
+.rep-card .src-tag.t-align,
+.dl-money .src-tag.t-align {
   background: var(--rc-keep-soft);
   color: var(--rc-keep);
 }
-.rep-card .src-tag.t-none {
+.rep-card .src-tag.t-none,
+.dl-money .src-tag.t-none {
   background: var(--tag-bg);
   /* --ink-3 on --tag-bg is ~4.4:1, just under AA's 4.5:1 — same fix as
      .cv2-sub.blind .cv2-tag. */
   color: oklch(0.5 0.026 260);
 }
-.rep-card .src-proportion {
+.rep-card .src-proportion,
+.dl-money .src-proportion {
   grid-column: 2 / 4;
   height: 4px;
   border-radius: 2px;
@@ -3756,24 +3900,30 @@
   margin-top: 9px;
   overflow: hidden;
 }
-.rep-card .src-proportion i {
+.rep-card .src-proportion i,
+.dl-money .src-proportion i {
   display: block;
   height: 100%;
   border-radius: 2px;
 }
-.rep-card .src-proportion i.d-people {
+.rep-card .src-proportion i.d-people,
+.dl-money .src-proportion i.d-people {
   background: var(--civic);
 }
-.rep-card .src-proportion i.d-pac {
+.rep-card .src-proportion i.d-pac,
+.dl-money .src-proportion i.d-pac {
   background: var(--vote-red);
 }
-.rep-card .src-proportion i.d-good {
+.rep-card .src-proportion i.d-good,
+.dl-money .src-proportion i.d-good {
   background: var(--rc-keep);
 }
-.rep-card .src-proportion i.d-neutral {
+.rep-card .src-proportion i.d-neutral,
+.dl-money .src-proportion i.d-neutral {
   background: var(--ink-3);
 }
-.rep-card .src-proportion i.d-unknown {
+.rep-card .src-proportion i.d-unknown,
+.dl-money .src-proportion i.d-unknown {
   /* --rule (~L0.88) on this bar's --paper-3 track (~L0.972) is ~1.3:1,
      nowhere near AA's 3:1 for a graphical object — scoped darker fill,
      same hue/chroma family as --rule/--ink-3, --rule stays untouched
@@ -3821,6 +3971,553 @@
   color: var(--rc-keep);
   line-height: 1;
   letter-spacing: -0.01em;
+}
+/* NEW (§3 att restyle, Build order item 2) — the copy line + band label
+   accompanying .att-big; .att-band already carries the flex/gap layout
+   above. */
+.rep-card .att-txt {
+  font-size: 14.5px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 150px;
+}
+.rep-card .att-txt b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.rep-card .att-chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: var(--rc-keep-soft);
+  color: var(--rc-keep);
+}
+
+/* ============================================================
+   RepCard §2 — merged money section (Build order items 1-2). Everything
+   below styles MoneyVerdict (mny-verdict), RevolvingDoorBand (rd-band), the
+   expander/collapse chrome, FundingSources' src-votes sub-block, the
+   money & democracy tiles (md-*), and the verdict button pair (.btn-keep/
+   .btn-replace — the old .cv2-actions.verdicts/.pick markup this replaced is
+   gone from both RepCard.tsx and this stylesheet). Same .rep-card-local
+   token aliases as the block above (--civic=navy, --vote-red=red,
+   --rc-keep=green, --gold-text/--amber=amber).
+   ============================================================ */
+
+/* ---- money verdict — "did their votes follow their donors?" ---- */
+.rep-card .mny-verdict,
+.dl-money .mny-verdict {
+  margin: 14px 18px 0;
+  padding: 13px 14px;
+  background: var(--paper-2);
+  border-radius: 11px;
+}
+.rep-card .mvd-head,
+.dl-money .mvd-head {
+  display: flex;
+  align-items: baseline;
+  gap: 11px;
+}
+.rep-card .mvd-head .pct,
+.dl-money .mvd-head .pct {
+  font-family: var(--serif);
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--vote-red);
+  line-height: 1;
+}
+.rep-card .mvd-head span,
+.dl-money .mvd-head span {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.rep-card .mvd-head span b,
+.dl-money .mvd-head span b {
+  color: var(--ink);
+}
+.rep-card .mvd-bars,
+.dl-money .mvd-bars {
+  margin-top: 11px;
+  display: grid;
+  gap: 7px;
+}
+.rep-card .mvd-row,
+.dl-money .mvd-row {
+  display: grid;
+  grid-template-columns: 76px 1fr 42px;
+  gap: 9px;
+  align-items: center;
+}
+.rep-card .mvd-row .k,
+.dl-money .mvd-row .k {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.rep-card .mvd-row .bar,
+.dl-money .mvd-row .bar {
+  height: 8px;
+  border-radius: 4px;
+  background: var(--paper-3);
+  overflow: hidden;
+}
+.rep-card .mvd-row .bar i,
+.dl-money .mvd-row .bar i {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+}
+.rep-card .mvd-row .bar i.bad,
+.dl-money .mvd-row .bar i.bad {
+  background: var(--vote-red);
+}
+.rep-card .mvd-row .bar i.you,
+.dl-money .mvd-row .bar i.you {
+  background: var(--civic);
+}
+.rep-card .mvd-row .v,
+.dl-money .mvd-row .v {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+  text-align: right;
+  color: var(--ink);
+}
+.rep-card .mvd-row .v.bad,
+.dl-money .mvd-row .v.bad {
+  color: var(--vote-red);
+}
+
+/* ---- revolving-door band — documented-record-only, never a guess ---- */
+.rep-card .rd-band {
+  display: flex;
+  gap: 11px;
+  margin: 16px 18px 0;
+  padding: 12px 14px;
+  background: var(--amber-soft);
+  border: 1px solid oklch(0.85 0.09 76);
+  border-radius: 11px;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.rep-card .rd-band .ic {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
+  background: var(--paper);
+  border: 1px solid oklch(0.85 0.09 76);
+  color: var(--gold-text);
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 14.5px;
+  font-weight: 600;
+  margin-top: 1px;
+}
+.rep-card .rd-band b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.rep-card .rd-band .src {
+  display: block;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 4px;
+}
+
+/* ---- money-section expander / collapse chrome ---- */
+.rep-card .mny-expander {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+  border: 1px solid var(--rule);
+  border-radius: 11px;
+  background: var(--paper-2);
+  font-family: var(--sans);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--civic);
+  cursor: pointer;
+  text-align: left;
+}
+.rep-card .mny-expander:hover {
+  border-color: oklch(0.78 0.04 262);
+  background: var(--civic-soft);
+}
+.rep-card .mny-expander small {
+  display: block;
+  font-weight: 400;
+  font-size: 12.5px;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.rep-card .mny-expander .car {
+  font-family: var(--mono);
+  font-size: 12.5px;
+  flex: 0 0 auto;
+}
+.rep-card .mny-collapse {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 16px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--civic);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  padding: 8px 13px;
+  cursor: pointer;
+  font-weight: 500;
+}
+.rep-card .mny-collapse:hover {
+  background: var(--civic-soft);
+}
+
+/* ---- "did their money vote?" — src-votes sub-block per FundingSources
+   row (Frame 7 item 1); grid-column 2/4 to span the row's content columns
+   like its sibling .src-body/.src-proportion above. ---- */
+.rep-card .src-votes,
+.dl-money .src-votes {
+  grid-column: 2 / 4;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px dashed var(--rule-2);
+}
+.rep-card .src-votes .sv-top,
+.dl-money .src-votes .sv-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.rep-card .src-votes .sv-top:last-child,
+.dl-money .src-votes .sv-top:last-child {
+  margin-bottom: 0;
+}
+.rep-card .src-votes .sv-lab,
+.dl-money .src-votes .sv-lab {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.rep-card .src-votes .mvr-receipt,
+.dl-money .src-votes .mvr-receipt {
+  margin-top: 7px;
+}
+.rep-card .mvr-pct,
+.dl-money .mvr-pct {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-weight: 600;
+  padding: 4px 9px;
+  border-radius: 999px;
+}
+.rep-card .mvr-pct.hi,
+.dl-money .mvr-pct.hi {
+  background: var(--vote-red-soft);
+  color: var(--vote-red);
+}
+.rep-card .mvr-pct.lo,
+.dl-money .mvr-pct.lo {
+  background: var(--rc-keep-soft);
+  color: var(--rc-keep);
+}
+.rep-card .mvr-dots,
+.dl-money .mvr-dots {
+  display: flex;
+  gap: 5px;
+  margin-top: 9px;
+  flex-wrap: wrap;
+}
+.rep-card .mvr-dots i,
+.dl-money .mvr-dots i {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+}
+.rep-card .mvr-dots i.w,
+.dl-money .mvr-dots i.w {
+  background: var(--vote-red);
+}
+.rep-card .mvr-dots i.a,
+.dl-money .mvr-dots i.a {
+  background: var(--paper);
+  border: 1.5px solid var(--rc-keep);
+}
+.rep-card .mvr-receipt,
+.dl-money .mvr-receipt {
+  display: flex;
+  gap: 9px;
+  align-items: baseline;
+  margin-top: 8px;
+  padding: 9px 12px;
+  background: var(--paper-2);
+  border-radius: 8px;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.rep-card .mvr-receipt .d,
+.dl-money .mvr-receipt .d {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.rep-card .mvr-receipt .arr,
+.dl-money .mvr-receipt .arr {
+  font-family: var(--mono);
+  color: var(--vote-red);
+  font-weight: 600;
+}
+/* legend after the source list — only when at least one dot strip rendered */
+.rep-card .mvc-key,
+.dl-money .mvc-key {
+  display: flex;
+  gap: 18px;
+  margin-top: 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+  flex-wrap: wrap;
+}
+.rep-card .mvc-key span,
+.dl-money .mvc-key span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.rep-card .mvc-key i,
+.dl-money .mvc-key i {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+}
+.rep-card .mvc-key .kw,
+.dl-money .mvc-key .kw {
+  background: var(--vote-red);
+}
+.rep-card .mvc-key .ka,
+.dl-money .mvc-key .ka {
+  background: var(--paper);
+  border: 1.5px solid var(--rc-keep);
+}
+
+/* ---- "why this matters" band + democracy tiles (§2 EXPANDED item 5) ---- */
+.rep-card .md-why {
+  margin: 14px 18px 0;
+  padding: 13px 16px;
+  border-left: 3px solid var(--civic);
+  background: var(--civic-soft);
+  border-radius: 0 10px 10px 0;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink-2);
+}
+.rep-card .md-why b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.rep-card .md-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin: 14px 18px 0;
+}
+.rep-card .md-tile {
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  padding: 15px 16px;
+}
+.rep-card .md-tile.wide {
+  grid-column: 1 / 3;
+}
+.rep-card .md-k {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  font-weight: 600;
+}
+.rep-card .md-k .ic {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  font-weight: 600;
+  font-family: var(--mono);
+}
+.rep-card .md-k .ic.vote {
+  background: var(--civic-soft);
+  color: var(--civic);
+}
+.rep-card .md-k .ic.roi {
+  background: var(--vote-red-soft);
+  color: var(--vote-red);
+}
+.rep-card .md-k .ic.door {
+  background: var(--amber-soft);
+  color: var(--gold-text);
+}
+.rep-card .md-k .ic.dark {
+  background: var(--tag-bg);
+  color: var(--ink-2);
+}
+.rep-card .md-big {
+  font-family: var(--serif);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-top: 9px;
+  line-height: 1.1;
+}
+.rep-card .md-big small {
+  font-family: var(--sans);
+  font-size: 12.5px;
+  font-weight: 400;
+  color: var(--ink-3);
+  letter-spacing: 0;
+}
+.rep-card .md-txt {
+  font-size: 14.5px;
+  color: var(--ink-2);
+  line-height: 1.5;
+  margin-top: 7px;
+}
+.rep-card .md-txt b {
+  color: var(--ink);
+  font-weight: 600;
+}
+.rep-card .md-src {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  margin-top: 9px;
+}
+.rep-card .md-roi-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 10px;
+}
+.rep-card .md-roi-bar .in {
+  height: 14px;
+  border-radius: 4px;
+  background: var(--vote-red);
+  flex: 0 0 auto;
+}
+.rep-card .md-roi-bar .out {
+  height: 14px;
+  border-radius: 4px;
+  background: repeating-linear-gradient(
+    -45deg,
+    var(--vote-red-soft),
+    var(--vote-red-soft) 6px,
+    oklch(0.93 0.05 27) 6px,
+    oklch(0.93 0.05 27) 12px
+  );
+  border: 1px solid var(--vote-red);
+  flex: 1;
+}
+.rep-card .md-roi-bar .x {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--vote-red);
+  white-space: nowrap;
+}
+
+/* ---- verdict button pair — whiteboard's .verdict/.btn grid, RepCard.tsx's
+   real verdict markup (replaced .cv2-actions.verdicts/.pick; same handlers,
+   same keep/replace semantics). ---- */
+.rep-card .verdict {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+@media (min-width: 520px) {
+  .rep-card .verdict {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+.rep-card .btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  cursor: pointer;
+  text-align: center;
+  border: 1.5px solid transparent;
+  font-family: var(--sans);
+}
+.rep-card .btn b {
+  font-size: 16px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.rep-card .btn small {
+  font-size: 12.5px;
+  opacity: 0.85;
+  font-weight: 400;
+}
+.rep-card .btn-keep {
+  background: var(--rc-keep);
+  color: #fff;
+}
+.rep-card .btn-keep:hover {
+  background: var(--rc-keep-2);
+}
+.rep-card .btn-replace {
+  background: var(--paper);
+  border-color: var(--vote-red);
+  color: var(--vote-red);
+}
+.rep-card .btn-replace:hover {
+  background: var(--vote-red-soft);
+}
+.rep-card .btn .box {
+  width: 17px;
+  height: 17px;
+  border-radius: 5px;
+  border: 2px solid currentColor;
+  flex: 0 0 auto;
 }
 
 /* ---- Ask anything (SeatChat) — money-redesign paper-2 band ---- */
@@ -4449,26 +5146,6 @@
   font-weight: 700;
 }
 
-/* ---- verdict buttons — decouple "worth keeping" from brand-navy --civic
-   so it reads canvas's keep-green instead (see --rc-keep above); "time to
-   replace" already rides --vote-red via the existing .pick.replace
-   override, so it inherits the new flag-red automatically. ---- */
-.rep-card .cv2-actions .pick:not(.replace) {
-  background: var(--rc-keep);
-  border: 1.5px solid var(--rc-keep);
-}
-.rep-card .cv2-actions .pick:not(.replace):hover {
-  background: var(--rc-keep-2);
-  border-color: var(--rc-keep-2);
-}
-.rep-card .cv2-actions .pick.picked {
-  border-color: var(--rc-keep);
-}
-.rep-card .cv2-actions .pick.picked .ck {
-  border-color: var(--rc-keep);
-  background: var(--rc-keep);
-}
-
 /* ====================================================
    § DELEGATION OVERVIEW
    PORT of design-handoff/keystone-canvas/src/delegation.css (its own "§8 ·
@@ -4489,15 +5166,12 @@
    scoped, same as .cmp .tone-good/.tone-mid/.tone-bad above.
    NOT ported: .cd-delta/.cd-pair/.cd-stage/.cd-explain/.cd-pick-tag
    (separate task) and .rh-dots (no matching rail-header-dots element
-   exists in this repo).
-   One source selector doesn't map to a real class here and is retargeted:
-     - ".vbtn.keep.is-on" / ".vbtn.replace.is-on" -> ".pick.picked" /
-       ".pick.replace.picked-replace", RepCard.tsx's real verdict buttons
-       (already fully styled globally via .cv2-actions); scoped under
-       .dg-deep so this only adds emphasis inside the overview's deep
-       view. The source's `.ck::before { content: "⇄" }` accent is
-       dropped — RepCard already renders a "✕" glyph via JSX for the
-       replace state, so the pseudo-element would double the icon.
+   exists in this repo). The source's ".vbtn.keep.is-on"/".vbtn.replace.is-on"
+   emphasis (retargeted here in an earlier pass at ".pick.picked"/".pick.replace
+   .picked-replace") was dropped along with those dead selectors once
+   RepCard.tsx's real verdict buttons became .btn-keep/.btn-replace — no
+   replacement rule needed, .btn-keep.picked/.btn-replace.picked-replace
+   already carry their own emphasis styling above.
    Loaded via redesign2.css's existing <link> in src/app/layout.tsx.
    ==================================================== */
 
@@ -4759,37 +5433,11 @@
   font-weight: 600;
   white-space: nowrap;
 }
-.cd-bars {
-  flex: 1;
-  display: flex;
-  height: 8px;
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid var(--rule-2);
-}
-.cd-bars i.small {
-  background: var(--keep);
-}
-.cd-bars i.large {
-  background: var(--gold);
-}
-.cd-bars i.pac {
-  background: var(--replace);
-}
 .cd-money-top .tot {
   font-family: var(--mono);
   font-size: 11px;
   font-weight: 700;
   color: var(--ink);
-}
-.cd-money-note {
-  font-size: 11px;
-  color: var(--ink-3);
-  margin-top: 6px;
-}
-.cd-money-note b {
-  color: var(--ink-2);
-  font-weight: 600;
 }
 .cd-foot {
   margin-top: auto;
@@ -5008,6 +5656,163 @@
   margin-bottom: 3px;
 }
 
+/* ---- funding row — synced thin mix bar (NEW, Frame 1 item 1) — replaces
+   .cd-bars; same classes/colors/order as the card's own mix bar. DOM confirmed
+   (DelegationOverview.tsx): each segment/swatch is `<i className="mix-sm|
+   mix-lg|mix-pac">`, width set inline per-candidate, color from the class —
+   so .mix-sm/.mix-lg/.mix-pac need real background rules here (below), not
+   inline color as this comment previously (incorrectly) assumed. Matched to
+   the card's own mix bar (.cv2-money-map .seg small/large/pac, prototype.css)
+   via global --bf-brand/--gold/--vote-red, since that's what .seg.small/
+   .seg.large/.seg.pac resolve to and this renders outside .rep-card's local
+   token scope. */
+.cd-mixbar {
+  display: flex;
+  height: 9px;
+  border-radius: 5px;
+  overflow: hidden;
+  flex: 1;
+  min-width: 0;
+  border: 1px solid var(--rule-2);
+}
+.cd-mixbar i {
+  display: block;
+  height: 100%;
+}
+/* shared segment-color classes — used by both .cd-mixbar (bar) and
+   .cd-mixkey (legend swatch) below, and available for the seat card's own
+   future mix-bar markup too (same classes/colors/order, per the work order). */
+.mix-sm {
+  background: var(--bf-brand, oklch(0.4 0.155 262));
+}
+.mix-lg {
+  background: var(--gold);
+}
+.mix-pac {
+  background: var(--vote-red);
+}
+/* legend below the bar (Frame 1 item 1) — zero-width segments still get an
+   entry (0% is information, per honest-data). */
+.cd-mixkey {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 7px 16px 12px;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.cd-mixkey span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.cd-mixkey i {
+  width: 9px;
+  height: 9px;
+  border-radius: 2px;
+  flex: 0 0 auto;
+}
+.cd-mixkey b {
+  font-weight: 600;
+  color: var(--ink);
+}
+.cd-mixkey .sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+/* ---- per-card money-influence callout (NEW, Frame 1 item 2) — replaces the
+   dead delegation-wide money band; same derivation + numbers as the card's
+   own §2 money-verdict read (.mny-verdict below). Red/green matches this
+   surface's existing .delegation .bar-good/.bar-bad convention (--keep/
+   --replace), not .rep-card's locally-scoped --rc-keep/--vote-red aliases,
+   since .cd-influence renders on the overview card, outside .rep-card. */
+.cd-influence {
+  margin: 0 16px 12px;
+  padding: 12px 14px;
+  background: var(--replace-soft, oklch(0.955 0.03 27));
+  border: 1px solid oklch(0.88 0.06 27);
+  border-radius: 11px;
+}
+.cd-influence.low {
+  background: var(--keep-soft, oklch(0.95 0.035 159));
+  border-color: oklch(0.86 0.06 159);
+}
+.cd-influence .k {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--replace);
+  font-weight: 600;
+}
+.cd-influence.low .k {
+  color: var(--keep);
+}
+.cd-influence .big {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 6px;
+}
+.cd-influence .big b {
+  font-family: var(--serif);
+  font-size: 27px;
+  font-weight: 600;
+  color: var(--replace);
+  line-height: 1;
+  letter-spacing: -0.01em;
+}
+.cd-influence.low .big b {
+  color: var(--keep);
+}
+.cd-influence .big span {
+  font-size: 12.5px;
+  color: var(--ink-2);
+  line-height: 1.4;
+  flex: 1;
+  min-width: 0;
+}
+.cd-influence .big span b {
+  font-family: var(--sans);
+  font-size: inherit;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+.cd-influence .chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 9px;
+}
+.cd-influence .chips span {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #fff;
+  border: 1px solid oklch(0.88 0.06 27);
+  color: var(--replace);
+}
+.cd-influence .chips .warn {
+  color: oklch(0.5 0.13 66);
+  border-color: oklch(0.85 0.09 76);
+}
+.cd-influence .chips .ok {
+  color: var(--keep);
+  border-color: oklch(0.86 0.06 159);
+}
+.cd-influence .chips .mut {
+  color: var(--ink-3);
+  border-color: var(--rule);
+}
+
 /* the card is now a button into the deep view */
 .cd-card.dg-open {
   cursor: pointer;
@@ -5132,21 +5937,6 @@
    bar), so the back-to-overview control needs its own always-visible row. */
 .dg-back-row {
   margin: 0 0 14px;
-}
-
-/* retargeted from the source's ".vbtn.keep.is-on" / ".vbtn.replace.is-on"
-   — the real verdict buttons in this repo are RepCard.tsx's .pick.picked /
-   .pick.replace.picked-replace (already fully styled everywhere via
-   .cv2-actions). Scoped under .dg-deep so this only adds emphasis inside
-   the overview's deep view. */
-.dg-deep .pick.picked {
-  box-shadow:
-    0 0 0 3px var(--keep-soft),
-    var(--shadow-soft);
-}
-.dg-deep .pick.replace.picked-replace {
-  background: var(--replace);
-  color: var(--paper-2);
 }
 
 /* ---- Roster feedback ("Missing a rep? Something look wrong?") ----

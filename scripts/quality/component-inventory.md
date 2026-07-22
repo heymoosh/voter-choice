@@ -58,6 +58,11 @@ Entries for deleted files fail the gate too; remove them in the same PR.
 - `MoneyGap.tsx` — "raised vs. the median" money-scale primitives
   (MedianChip glance + MoneyGapScale/GapRow rows); consumed by RepCard and
   HeadToHead rather than re-implemented per surface.
+- `MoneyVerdict.tsx` — the donors'-way money-influence verdict block
+  (whiteboard v4 `.mny-verdict`), rendered from `deriveMoneyInfluence()` on
+  both the seat card and the duel money columns; honest-null (renders
+  nothing without scorable PAC data), so it couldn't live inside
+  FundingSources (which gates on the full funding breakdown instead).
 - `PolisClose.tsx` — the "where you stand" standing report (party-free
   consensus/divided panels).
 - `PolisEntry.tsx` — polis invite/preview interstitial between workspace
@@ -67,6 +72,11 @@ Entries for deleted files fail the gate too; remove them in the same PR.
 - `RepCard.tsx` — the single-seat candidate card (alignment banner, voting
   record entry, provenance, funding glance); the center pane of the
   workspace.
+- `RevolvingDoorBand.tsx` — the "heading for the exit" revolving-door
+  callout (whiteboard v4 `.rd-band`), gated on an explicit curated record
+  prop with a citation; renders nowhere until the curated dataset exists,
+  so it stays a standalone slot rather than a FundingSources/RepCard
+  variant.
 - `ScorecardPrintView.tsx` — the print/export sheet of all seats + verdicts.
 - `SeatChat.tsx` — per-seat "ask anything about this seat" support chat under
   the RepCard.

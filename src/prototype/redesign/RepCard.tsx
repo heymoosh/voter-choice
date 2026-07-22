@@ -26,9 +26,16 @@ import {
   useI18n,
   escapeHtml,
 } from "../VoterChoiceApp";
-import { getChallengerResearch, researchChallenger } from "./delegationData";
+import {
+  getChallengerResearch,
+  researchChallenger,
+  deriveMoneyInfluence,
+  deriveVoteLinkage,
+} from "./delegationData";
 import { MoneyGapScale, MoneyHero } from "./MoneyGap";
-import { FundingSources } from "./FundingSources";
+import { FundingSources, hasScoredVoteLinkage } from "./FundingSources";
+import { MoneyVerdict } from "./MoneyVerdict";
+import { RevolvingDoorBand } from "./RevolvingDoorBand";
 import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 /** Provenance badge — the design's unifier (roll-call vs researched).
@@ -63,6 +70,29 @@ export function topFundingIndustries(donorCoalition, limit = 3) {
     .filter((s) => s && !s.isIssuePAC && s.label)
     .slice(0, limit)
     .map((s) => s.label);
+}
+
+/** "Money we can't trace" md-tile math (work order Frames 2+3 §2 item 5 /
+ * GAPS §A "same namedPacTotal/impliedPacTotal math FundingSources already
+ * computes"). Deliberately NOT imported from FundingSources.tsx (that file
+ * is owned by another lane in this batch) — same formula, recomputed locally
+ * off the fields RepCard already receives. Honest-null: no fundingMix / no
+ * positive total / nothing actually untraced → omit the tile, never a zero. */
+export function deriveUntracedMoneyTile(cand) {
+  const fundingMix = cand?.fundingMix;
+  const totalRaised = cand?.totalRaised;
+  if (!fundingMix || typeof totalRaised !== "number" || totalRaised <= 0)
+    return null;
+  const issuePacs = (cand.donorCoalition || []).filter((p) => p?.isIssuePAC);
+  const namedPacTotal = issuePacs.reduce((s, p) => s + (p.amount || 0), 0);
+  const impliedPacTotal = Math.round(totalRaised * (fundingMix.pac / 100));
+  const uncatPacTotal = Math.max(0, impliedPacTotal - namedPacTotal);
+  if (impliedPacTotal <= 0 || uncatPacTotal <= 0) return null;
+  const pctIdentified = Math.round((namedPacTotal / impliedPacTotal) * 100);
+  if (pctIdentified >= 100) return null;
+  const pct = Math.round((uncatPacTotal / totalRaised) * 100);
+  if (pct < 1) return null;
+  return { pct, amount: uncatPacTotal };
 }
 
 /** Party display metadata, keyed by the raw party name from the data source.
@@ -105,18 +135,31 @@ export function AttendanceBand2({ attendance, researched, level }) {
     bad: t("repCard.attendanceBad"),
   }[attendance.band];
   const presentPct = Math.round((100 - attendance.missedPct) * 10) / 10;
+  // Whiteboard copy is "Present for {a} of {b} floor votes — missed just
+  // {p}%." — a and b are discrete counts. `attendance.of` is a rendered
+  // string ("612 floor votes" or, when the ingest had no eligible-vote
+  // count, the honest fallback "floor votes this term") — only the former
+  // carries a number we can split into present/total without fabricating
+  // one. Parseable → the whiteboard's exact fraction sentence; otherwise
+  // degrade to the existing missed-% + descriptor sentence (still honest,
+  // just without a count that doesn't exist in the data).
+  const ofMatch = /^(\d+) (.+)$/.exec(attendance.of);
+  const total = ofMatch ? Number(ofMatch[1]) : null;
+  const present =
+    total !== null
+      ? Math.round(total * ((100 - attendance.missedPct) / 100))
+      : null;
+  const txtHtml =
+    total !== null && present !== null
+      ? `Present for <b>${present} of ${total}</b> ${escapeHtml(ofMatch[2])} — missed just <b>${escapeHtml(attendance.missedPct)}%</b>.`
+      : t("repCard.attendanceShowsUp", {
+          pct: escapeHtml(attendance.missedPct),
+          of: escapeHtml(attendance.of),
+        });
   return (
     <div className="att-band">
       <span className="att-big">{presentPct}%</span>
-      <span
-        className="txt"
-        dangerouslySetInnerHTML={{
-          __html: t("repCard.attendanceShowsUp", {
-            pct: escapeHtml(attendance.missedPct),
-            of: escapeHtml(attendance.of),
-          }),
-        }}
-      />
+      <span className="att-txt" dangerouslySetInnerHTML={{ __html: txtHtml }} />
       <span className={"att-chip " + attendance.band}>{bandLabel}</span>
       <a
         className="att-src cv2-evidence-link"
@@ -717,10 +760,27 @@ export function RepCard({
   onOpenDuel,
   onShowBudgetOptions,
   onEditIssues,
+  // Curated revolving-door record for THIS seat's incumbent — GAPS §5: no
+  // ingestion pipeline exists yet, so no caller passes this today. Optional
+  // and absent by design; gates both the .rd-band callout and the md-grid
+  // revolving-door tile below. Shape: { memberId, org, role, dateDocumented,
+  // sourceUrl } (see RevolvingDoorBand.tsx).
+  revolvingDoor,
 }) {
   const { t } = useI18n();
-  const [expandedIssue, setExpandedIssue] = useState(null);
+  // Issue #1 open by default (work order Frames 2+3 §1), the rest closed —
+  // matches the whiteboard's default card state. Falls back to nothing open
+  // when the top issue has no canonicalIssue to key on (honest degrade, same
+  // shape the toggle handler below already tolerates).
+  const [expandedIssue, setExpandedIssue] = useState(
+    userIssues?.[0]?.canonicalIssue ?? null,
+  );
   const [allVotesOpen, setAllVotesOpen] = useState(false);
+  // Money expander — collapsed by default (whiteboard Frame 2); Frame 3 is
+  // this same state toggled open. Only the deeper "where it comes from" list
+  // + why-this-matters band live behind it — the hero/mix/verdict/rd-band
+  // stay visible either way.
+  const [moneyOpen, setMoneyOpen] = useState(false);
 
   const cand = seat.candidate;
   if (!cand)
@@ -758,6 +818,43 @@ export function RepCard({
   };
   const last = cand.name.split(" ").pop();
   const notUp2026 = seat.nextElection?.onBallot2026 === false;
+
+  // §2 money-section derivations (work order Frames 2+3) — honest-null
+  // helpers from delegationData.ts; every value below can be null/empty and
+  // the JSX below degrades accordingly (never a fabricated number).
+  const moneyInfluence = deriveMoneyInfluence(seat, userIssues);
+  const voteLinkage = deriveVoteLinkage(seat);
+  // Canonical check from FundingSources.tsx itself (Frame 7 §2 item 3), not
+  // a local re-derivation — this is exactly the "at least one dot strip
+  // rendered" gate FundingSources uses internally, so the two can't drift.
+  const hasScoredLinkage = hasScoredVoteLinkage(voteLinkage);
+  const untracedTile = deriveUntracedMoneyTile(cand);
+  const rankedSourcesCount =
+    (cand.donorCoalition || []).length +
+    (cand.fundingMix?.small > 0 ? 1 : 0) +
+    (cand.fundingMix?.large > 0 ? 1 : 0);
+  // mny-expander's small line composes only the clauses that actually
+  // render below it — "reform votes" / "what PACs get back" never render
+  // (GAPS §4/§6: no curated data exists for either, ever), so those clauses
+  // are permanently absent rather than conditionally computed.
+  const moneyExpanderParts = [
+    rankedSourcesCount > 0
+      ? t(
+          rankedSourcesCount === 1
+            ? "repCard.moneyExpanderRankedSourceSingular"
+            : "repCard.moneyExpanderRankedSourcePlural",
+          { n: rankedSourcesCount },
+        )
+      : null,
+    hasScoredLinkage ? t("repCard.moneyExpanderDidMoneyVote") : null,
+    untracedTile
+      ? t("repCard.moneyExpanderUntraced", { pct: untracedTile.pct })
+      : null,
+  ].filter(Boolean);
+  const revolvingDoorTile =
+    revolvingDoor && revolvingDoor.org && revolvingDoor.role
+      ? revolvingDoor
+      : null;
 
   return (
     <div className={"cv2-card rep-card" + (notUp2026 ? " not-up-2026" : "")}>
@@ -848,27 +945,25 @@ export function RepCard({
           />
         )}
 
-        {/* Quiet edit-issues entry (v3 §3b) — provoked by the score itself;
-            the always-available fallback lives in Settings (nav ⚙). */}
+        {/* Edit-issues entry (work order Frames 2+3 §1) — restyled onto the
+            same mny-expander shell the money section's own expander uses
+            (public/redesign2.css .rep-card .mny-expander is generic chrome,
+            not money-specific); provoked by the score itself, the
+            always-available fallback lives in Settings (nav ⚙). */}
         {onEditIssues && (
-          <div className="al-edit">
-            {t("repCard.editIssuesFinePrint", { n: userIssues.length })}{" "}
-            <a
-              role="button"
-              tabIndex={0}
-              data-testid="edit-issues-alignment"
-              onClick={onEditIssues}
-              onKeyDown={(e) => {
-                if (e.key === "Enter" || e.key === " ") {
-                  e.preventDefault();
-                  onEditIssues();
-                }
-              }}
-            >
-              {t("repCard.editIssuesLink")}
-            </a>{" "}
-            {t("repCard.editIssuesFinePrintSuffix")}
-          </div>
+          <button
+            className="mny-expander"
+            data-testid="edit-issues-alignment"
+            onClick={onEditIssues}
+          >
+            <span>
+              {t("repCard.editIssuesButtonLabel", { n: userIssues.length })}
+              <small>{t("repCard.editIssuesButtonSub")}</small>
+            </span>
+            <span className="car" aria-hidden="true">
+              ✎
+            </span>
+          </button>
         )}
       </div>
 
@@ -905,8 +1000,14 @@ export function RepCard({
             <h2 className="sec-h">{t("repCard.stepMoneyHeading")}</h2>
           </div>
         </div>
+        {/* Collapsed-default content (Frame 2) — hero, mix, the shared
+            donors'-way verdict, and the revolving-door callout (gated,
+            absent today) all stay visible whether or not the expander below
+            is open; the subject-vs-median scale moves INSIDE the expander
+            (Frame 3 only — MoneyGapScale is no longer unconditional). */}
         <MoneyHero totalRaised={cand.totalRaised} peer={cand.peerComparison} />
-        {cand.peerComparison != null &&
+        {moneyOpen &&
+          cand.peerComparison != null &&
           typeof cand.totalRaised === "number" && (
             <MoneyGapScale
               subject={{
@@ -922,32 +1023,165 @@ export function RepCard({
             <FundingMixBar fundingMix={cand.fundingMix} variant="canvas" />
           </div>
         )}
-        <FundingSources
-          donorCoalition={cand.donorCoalition}
-          totalRaised={cand.totalRaised}
-          fundingMix={cand.fundingMix}
-          userIssues={userIssues}
-        />
-        <PacGapCaveat
-          issuePacs={(cand.donorCoalition || []).filter((s) => s?.isIssuePAC)}
-          fundingMix={cand.fundingMix}
-          totalRaised={cand.totalRaised}
-        />
-        {!cand.donorCoalition && !cand.fundingMix && cand.donorUnavailable && (
-          <p className="sec-note">{cand.donorUnavailable.reason}.</p>
+        <MoneyVerdict influence={moneyInfluence} />
+        <RevolvingDoorBand record={revolvingDoorTile} />
+
+        {!moneyOpen ? (
+          <button
+            className="mny-expander"
+            data-testid="money-expander-toggle"
+            onClick={() => setMoneyOpen(true)}
+          >
+            <span>
+              {t("repCard.moneyExpanderLabel")}
+              {moneyExpanderParts.length > 0 && (
+                <small>{moneyExpanderParts.join(" · ")}</small>
+              )}
+            </span>
+            <span className="car" aria-hidden="true">
+              ▼
+            </span>
+          </button>
+        ) : (
+          <>
+            <button
+              className="mny-collapse"
+              data-testid="money-expander-toggle"
+              style={{ marginTop: 16 }}
+              onClick={() => setMoneyOpen(false)}
+            >
+              <span className="car" aria-hidden="true">
+                ▲
+              </span>
+              {t("repCard.moneyCollapseLabel")}
+            </button>
+            <FundingSources
+              donorCoalition={cand.donorCoalition}
+              totalRaised={cand.totalRaised}
+              fundingMix={cand.fundingMix}
+              userIssues={userIssues}
+              voteLinkage={voteLinkage}
+              noRollCallRecord={isResearchedBasis(seat)}
+            />
+            {hasScoredLinkage && (
+              <div className="mvc-key" style={{ marginTop: 10 }}>
+                <span>
+                  <i className="kw" aria-hidden="true" />
+                  {t("repCard.mvcKeyDonorsWay")}
+                </span>
+                <span>
+                  <i className="ka" aria-hidden="true" />
+                  {t("repCard.mvcKeyAgainstDonor")}
+                </span>
+              </div>
+            )}
+            <PacGapCaveat
+              issuePacs={(cand.donorCoalition || []).filter(
+                (s) => s?.isIssuePAC,
+              )}
+              fundingMix={cand.fundingMix}
+              totalRaised={cand.totalRaised}
+            />
+            {!cand.donorCoalition &&
+              !cand.fundingMix &&
+              cand.donorUnavailable && (
+                <p className="sec-note">{cand.donorUnavailable.reason}.</p>
+              )}
+            {/* Honest fallback when filings only give a total (no
+                small/large/PAC mix, no per-source breakdown) — FunderBars'
+                own "sparse" case (data-testid preserved for continuity). */}
+            {!cand.fundingMix &&
+              typeof cand.totalRaised === "number" &&
+              cand.totalRaised > 0 && (
+                <p className="sec-note" data-testid="funding-sparse">
+                  {t("funderBars.sparseBreakdownNote")}
+                </p>
+              )}
+
+            {/* "Why this matters" band — editorial, shown for every
+                candidate regardless of which democracy tiles have data
+                (work order: "if zero tiles AND no .md-why applicability,
+                still render .md-why"). Reform-votes and PAC-ROI tiles are
+                permanently omitted (GAPS §4/§6: no curated data exists for
+                either) — only the untraced-money tile (always derivable
+                when funding data exists) and the revolving-door tile
+                (citation-gated, same record as rd-band) can ever appear. */}
+            <div className="srcs-h" style={{ marginTop: 24 }}>
+              {t("repCard.whyThisMattersHeading")}
+            </div>
+            <div
+              className="md-why"
+              dangerouslySetInnerHTML={{
+                __html: t("repCard.moneyWhySentence"),
+              }}
+            />
+            {(untracedTile || revolvingDoorTile) && (
+              <div className="md-grid">
+                {untracedTile && (
+                  <div className="md-tile" data-testid="md-tile-untraced">
+                    <div className="md-k">
+                      <span className="ic dark" aria-hidden="true">
+                        ?
+                      </span>
+                      {t("repCard.tileUntracedLabel")}
+                    </div>
+                    <div className="md-big">
+                      {untracedTile.pct}% · {formatDollars(untracedTile.amount)}{" "}
+                      <small>{t("repCard.tileUntraceableWord")}</small>
+                    </div>
+                    <div className="md-txt">
+                      {t("repCard.tileUntracedBody")}
+                    </div>
+                    <div className="md-src">{t("repCard.tileUntracedSrc")}</div>
+                  </div>
+                )}
+                {revolvingDoorTile && (
+                  <div className="md-tile" data-testid="md-tile-revolving">
+                    <div className="md-k">
+                      <span className="ic door" aria-hidden="true">
+                        ⟳
+                      </span>
+                      {t("repCard.tileRevolvingLabel")}
+                    </div>
+                    <div className="md-big">
+                      {t("repCard.tileRevolvingAnnouncedPrefix")}{" "}
+                      <small>{revolvingDoorTile.role},</small>{" "}
+                      {revolvingDoorTile.org}
+                    </div>
+                    <div
+                      className="md-txt"
+                      dangerouslySetInnerHTML={{
+                        __html: t("repCard.tileRevolvingBody"),
+                      }}
+                    />
+                    <div className="md-src">
+                      {t("repCard.tileRevolvingDocumentedPrefix", {
+                        date: revolvingDoorTile.dateDocumented,
+                      })}{" "}
+                      <a
+                        href={revolvingDoorTile.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t("repCard.sourceArrowLink")}
+                      </a>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            <button
+              className="mny-collapse"
+              style={{ marginTop: 16 }}
+              onClick={() => setMoneyOpen(false)}
+            >
+              <span className="car" aria-hidden="true">
+                ▲
+              </span>
+              {t("repCard.moneyCollapseLabel")}
+            </button>
+          </>
         )}
-        {/* Honest fallback when filings only give a total (no small/large/PAC
-            mix, no per-source breakdown) — FunderBars' own "sparse" case
-            (data-testid preserved for continuity), now surfaced here since
-            the money-redesign section no longer routes through FunderBars
-            at all. */}
-        {!cand.fundingMix &&
-          typeof cand.totalRaised === "number" &&
-          cand.totalRaised > 0 && (
-            <p className="sec-note" data-testid="funding-sparse">
-              {t("funderBars.sparseBreakdownNote")}
-            </p>
-          )}
       </div>
 
       {/* 3 · Attendance */}
@@ -1108,22 +1342,36 @@ export function RepCard({
                   </p>
                 </div>
               )}
-              <div className="cv2-actions verdicts">
+              {/* Whiteboard's .verdict grid (work order Frames 2+3, verdict +
+                  sources) — same onVerdict/onOpenDuel handlers and
+                  data-testid as the prior .cv2-actions pair, just the
+                  markup/classes. The main labels keep the existing translated
+                  repCard.worthKeeping / repCard.timeToReplace keys (and their
+                  undo/change/replacingWith variants); the <small> sublines
+                  are repCard.verdictKeepSub / repCard.verdictReplaceSub. */}
+              <div className="verdict">
                 <button
-                  className={"pick " + (verdict === "keep" ? "picked" : "")}
+                  className={
+                    "btn btn-keep" + (verdict === "keep" ? " picked" : "")
+                  }
                   onClick={() => onVerdict(verdict === "keep" ? null : "keep")}
                 >
-                  <span className="ck">{verdict === "keep" ? "✓" : ""}</span>
-                  <span>
+                  <b>
+                    <span className="box" aria-hidden="true">
+                      {verdict === "keep" ? "✓" : ""}
+                    </span>
                     {verdict === "keep"
                       ? t("repCard.worthKeepingUndo")
                       : `${t("repCard.worthKeeping")}${blind ? "" : " · " + last}`}
-                  </span>
+                  </b>
+                  {verdict !== "keep" && (
+                    <small>{t("repCard.verdictKeepSub")}</small>
+                  )}
                 </button>
                 <button
                   className={
-                    "pick replace " +
-                    (verdict === "replace" ? "picked-replace" : "")
+                    "btn btn-replace" +
+                    (verdict === "replace" ? " picked-replace" : "")
                   }
                   data-testid="open-duel"
                   onClick={() => {
@@ -1134,14 +1382,19 @@ export function RepCard({
                     }
                   }}
                 >
-                  <span className="ck">{verdict === "replace" ? "✕" : ""}</span>
-                  <span>
+                  <b>
+                    <span className="box" aria-hidden="true">
+                      {verdict === "replace" ? "✕" : ""}
+                    </span>
                     {verdict === "replace"
                       ? successor
                         ? t("repCard.replacingWith", { name: successor.name })
                         : t("repCard.timeToReplaceChange")
                       : t("repCard.timeToReplace")}
-                  </span>
+                  </b>
+                  {verdict !== "replace" && (
+                    <small>{t("repCard.verdictReplaceSub")}</small>
+                  )}
                 </button>
               </div>
             </>
