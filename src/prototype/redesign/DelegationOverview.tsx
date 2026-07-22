@@ -35,9 +35,44 @@ import { useI18n, formatDollars } from "../VoterChoiceApp";
 import {
   seatOverviewAlignmentPct,
   seatIssueAlignmentRows,
+  deriveMoneyInfluence,
   type DelegationSeatVM,
   type UserIssue,
 } from "./delegationData";
+
+/** Untraced-PAC-dollar % for the `{p}% untraced` chip — same math
+ *  FundingSources.tsx/PacGapCaveat already compute (namedPacTotal vs.
+ *  fundingMix.pac's implied share of totalRaised), duplicated locally
+ *  because this component can't import from either of those (out of this
+ *  card's file scope). null when there's no fundingMix/totalRaised to
+ *  compute a baseline against, or nothing is actually untraced. */
+function deriveUntracedPct(
+  candidate: {
+    donorCoalition?: unknown[] | null;
+    fundingMix?: { pac: number } | null;
+    totalRaised?: number;
+  } | null,
+): number | null {
+  const donorCoalition = candidate?.donorCoalition;
+  const fundingMix = candidate?.fundingMix;
+  const totalRaised = candidate?.totalRaised;
+  if (
+    !Array.isArray(donorCoalition) ||
+    !fundingMix ||
+    typeof totalRaised !== "number" ||
+    totalRaised <= 0
+  )
+    return null;
+  const issuePacs = donorCoalition.filter(
+    (s): s is { amount?: number; isIssuePAC?: boolean } =>
+      !!s && (s as { isIssuePAC?: boolean }).isIssuePAC === true,
+  );
+  const namedPacTotal = issuePacs.reduce((s, p) => s + (p.amount || 0), 0);
+  const impliedPacTotal = Math.round(totalRaised * (fundingMix.pac / 100));
+  const uncatPacTotal = Math.max(0, impliedPacTotal - namedPacTotal);
+  if (impliedPacTotal <= 0 || uncatPacTotal <= 0) return null;
+  return Math.round((uncatPacTotal / totalRaised) * 100);
+}
 
 /* 3-way tone for the overview cards (matches SeatCard's design source) */
 function dg3(v: number | null): "na" | "good" | "mid" | "bad" {
@@ -59,6 +94,8 @@ function SeatCard({
   verdict,
   pickId,
   userIssues,
+  blindMode,
+  revealed,
   t,
   onOpen,
 }: {
@@ -66,12 +103,16 @@ function SeatCard({
   verdict: "keep" | "replace" | null | undefined;
   pickId?: string | null;
   userIssues: UserIssue[];
+  blindMode?: boolean;
+  revealed?: Set<string>;
   t: (key: string, vars?: Record<string, unknown>) => string;
   onOpen: (seatId: string) => void;
 }) {
   const align = seatOverviewAlignmentPct(seat, userIssues);
   const rows = seatIssueAlignmentRows(seat, userIssues);
   const cand = seat.candidate;
+  const moneyInfluence = deriveMoneyInfluence(seat, userIssues);
+  const untracedPct = deriveUntracedPct(cand);
   // Open seat (v3 §6b): the incumbent isn't seeking re-election, so "worth
   // keeping" isn't a real decision — the only path is picking a successor
   // via the duel. Only an explicit `false` triggers this; undefined/null
@@ -80,8 +121,13 @@ function SeatCard({
   const successor = openSeat
     ? (seat.challengers || []).find((c) => c.id === pickId)
     : null;
+  // Blind class (Frame 1 item 3): same contract as RepCard's `blind = blindMode
+  // && !isRevealed`, resolved here per-seat against the caller's `revealed` set
+  // since one overview grid holds many seats at once.
+  const blind = !!blindMode && !revealed?.has(seat.id);
   const cls =
     "cd-card dg-open" +
+    (blind ? " blind" : "") +
     (verdict === "keep"
       ? " is-pick"
       : verdict === "replace"
@@ -182,28 +228,99 @@ function SeatCard({
       </div>
 
       {cand?.fundingMix && (
-        <div className="cd-money">
-          <div className="cd-money-top">
-            <span className="lab">{t("repCard.fundingInfluence")}</span>
-            <span className="cd-bars">
-              <i
-                className="small"
-                style={{ width: `${cand.fundingMix.small}%` }}
-              />
-              <i
-                className="large"
-                style={{ width: `${cand.fundingMix.large}%` }}
-              />
-              <i className="pac" style={{ width: `${cand.fundingMix.pac}%` }} />
+        <>
+          <div className="cd-money">
+            <div className="cd-money-top">
+              <span className="lab">{t("repCard.fundingInfluence")}</span>
+              <span className="cd-mixbar">
+                {/* Zero-width segments are skipped in the BAR (nothing to
+                    paint) but still get a legend entry below — 0% is
+                    information, not absence, per the whiteboard mock. */}
+                {cand.fundingMix.small > 0 && (
+                  <i
+                    className="mix-sm"
+                    style={{ width: `${cand.fundingMix.small}%` }}
+                  />
+                )}
+                {cand.fundingMix.large > 0 && (
+                  <i
+                    className="mix-lg"
+                    style={{ width: `${cand.fundingMix.large}%` }}
+                  />
+                )}
+                {cand.fundingMix.pac > 0 && (
+                  <i
+                    className="mix-pac"
+                    style={{ width: `${cand.fundingMix.pac}%` }}
+                  />
+                )}
+              </span>
+              {typeof cand.totalRaised === "number" && (
+                <span className="tot">{formatDollars(cand.totalRaised)}</span>
+              )}
+            </div>
+          </div>
+          <div className="cd-mixkey">
+            <span>
+              <i className="mix-sm" />
+              <b>{cand.fundingMix.small}%</b> small donors{" "}
+              <span className="sub">under $200</span>
             </span>
-            {typeof cand.totalRaised === "number" && (
-              <span className="tot">{formatDollars(cand.totalRaised)}</span>
-            )}
+            <span>
+              <i className="mix-lg" />
+              <b>{cand.fundingMix.large}%</b> large donors{" "}
+              <span className="sub">$200+</span>
+            </span>
+            <span>
+              <i className="mix-pac" />
+              <b>{cand.fundingMix.pac}%</b> PACs{" "}
+              <span className="sub">groups &amp; lobbies</span>
+            </span>
           </div>
-          <div className="cd-money-note">
-            <b>{cand.fundingMix.pac}% PAC-funded</b> · {cand.fundingMix.small}%
-            small-dollar
+        </>
+      )}
+
+      {moneyInfluence && (
+        <div
+          className={"cd-influence" + (moneyInfluence.pct < 50 ? " low" : "")}
+        >
+          <div className="k">$ · Money influence</div>
+          <div className="big">
+            <b>{moneyInfluence.pct}%</b>
+            <span>
+              — on the issues their PAC donors target, this member's votes went
+              the <b>donors' way</b> ({moneyInfluence.k} of {moneyInfluence.n}{" "}
+              scored votes)
+              {moneyInfluence.pct < 50 ? (
+                <>
+                  {" "}
+                  — <b>money leads this record less than most</b>
+                </>
+              ) : (
+                moneyInfluence.topDollarAgainst && (
+                  <>
+                    {" "}
+                    — including{" "}
+                    <b>
+                      {formatDollars(moneyInfluence.topDollarAgainst.amount)}
+                    </b>{" "}
+                    against your #1 · {moneyInfluence.topDollarAgainst.issue}
+                  </>
+                )
+              )}
+            </span>
           </div>
+          {/* Reform-votes chip ("{k} of {n} reform votes with you") and the
+              revolving-door chip ("⟳ revolving door · documented") are
+              omitted here — no curated reform-vote set or revolving-door
+              record exists in the data layer yet (GAPS-AND-DATA-AUDIT.md
+              §C4/§C5). Wire them in alongside `untracedPct` below once
+              those curated fields land on DelegationSeatVM/candidate. */}
+          {untracedPct != null && (
+            <div className="chips">
+              <span className="mut">{untracedPct}% untraced</span>
+            </div>
+          )}
         </div>
       )}
 
@@ -233,6 +350,8 @@ export function DelegationOverview({
   verdicts,
   picks,
   userIssues,
+  blindMode,
+  revealed,
   onOpen,
   onPrint,
 }: {
@@ -240,6 +359,8 @@ export function DelegationOverview({
   verdicts: Record<string, "keep" | "replace" | undefined>;
   picks?: Record<string, string | undefined>;
   userIssues: UserIssue[];
+  blindMode?: boolean;
+  revealed?: Set<string>;
   onOpen: (seatId: string) => void;
   onPrint?: () => void;
 }) {
@@ -278,7 +399,15 @@ export function DelegationOverview({
           >
             {ready
               ? t("delegationOverview.printReady")
-              : t("delegationOverview.printNotReady", { n: total })}
+              : // Frame 1 item 4: counts REMAINING seats, not the total — the
+                // i18n string table (VoterChoiceApp.tsx, out of this file's
+                // edit scope) still has the old "Decide {n} seats to print"
+                // key, so this is hardcoded here rather than routed through
+                // t(), same as the app's other un-i18n'd plural ternaries
+                // (e.g. "{n} candidate{n === 1 ? '' : 's'}").
+                `Decide ${total - decided} more seat${
+                  total - decided === 1 ? "" : "s"
+                } to print your scorecard`}
           </button>
         </div>
       </div>
@@ -291,6 +420,8 @@ export function DelegationOverview({
             verdict={verdicts[s.id]}
             pickId={picks?.[s.id]}
             userIssues={userIssues}
+            blindMode={blindMode}
+            revealed={revealed}
             t={t}
             onOpen={onOpen}
           />

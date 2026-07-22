@@ -113,11 +113,15 @@ describe("DelegationOverview", () => {
     renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
     // both the big align % and the issue row's fraction fall back to the
     // same honest dash — assert on the specific % slot, not just "some '—'
-    // exists somewhere", so this stays a real regression check.
+    // exists somewhere", so this stays a real regression check. Scoped to
+    // .cd-align (not the whole card): the funding mixkey legitimately shows
+    // "0%" for a zero-width large-donor segment elsewhere on this same
+    // fixture — that's honest data, not a fabricated alignment score.
+    const align = screen.getByTestId("seat-card").querySelector(".cd-align");
+    expect(align).toHaveTextContent("—");
     expect(
-      screen.getByTestId("seat-card").querySelector(".cd-pct"),
-    ).toHaveTextContent("—");
-    expect(screen.queryByText("0%")).not.toBeInTheDocument();
+      within(align as HTMLElement).queryByText("0%"),
+    ).not.toBeInTheDocument();
   });
 
   it("clicking a card calls onOpen with that seat's id", async () => {
@@ -164,9 +168,30 @@ describe("DelegationOverview", () => {
     expect(onOpen).toHaveBeenCalledWith("senate-TX-b");
   });
 
-  it("gates the print CTA on every up-2026 seat being decided", () => {
+  it("gates the print CTA on every up-2026 seat being decided, counting REMAINING seats (not the total)", () => {
     const seats = [mkSeat({ id: "a" }), mkSeat({ id: "b" })];
     const { rerender } = render(
+      <I18nProvider>
+        <DelegationOverview
+          seats={seats}
+          verdicts={{}}
+          userIssues={userIssues}
+          onOpen={() => {}}
+        />
+      </I18nProvider>,
+    );
+    // 0 of 2 decided -> 2 remaining, plural "seats" — exact match on the
+    // print CTA's full "not ready" copy. A loose /decide/i regex also
+    // matches SeatCard's "Not yet decided" status pill (itself rendered
+    // with role="button" for click-through), which isn't the control under
+    // test here.
+    expect(
+      screen.getByRole("button", {
+        name: "Decide 2 more seats to print your scorecard",
+      }),
+    ).toBeDisabled();
+
+    rerender(
       <I18nProvider>
         <DelegationOverview
           seats={seats}
@@ -176,14 +201,13 @@ describe("DelegationOverview", () => {
         />
       </I18nProvider>,
     );
-    // exact match on the print CTA's full "not ready" copy (canvas's "Decide
-    // N seats to print", N = the real up-2026 seat count) — a loose /decide/i
-    // regex also matches SeatCard's "Not yet decided" status pill (itself
-    // rendered with role="button" for click-through), which isn't the
-    // control under test here.
+    // 1 of 2 decided -> 1 remaining, singular "seat".
     expect(
-      screen.getByRole("button", { name: "Decide 2 seats to print" }),
+      screen.getByRole("button", {
+        name: "Decide 1 more seat to print your scorecard",
+      }),
     ).toBeDisabled();
+
     rerender(
       <I18nProvider>
         <DelegationOverview
@@ -195,5 +219,184 @@ describe("DelegationOverview", () => {
       </I18nProvider>,
     );
     expect(screen.getByRole("button", { name: /print/i })).toBeEnabled();
+  });
+
+  it("shows a synced mix bar + mixkey legend, giving zero-width segments a legend entry even though the bar skips them", () => {
+    const seats = [mkSeat()]; // fundingMix: small 40 / large 0 / pac 60
+    renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
+    const card = screen.getByTestId("seat-card");
+    // bar: only non-zero segments render as fill elements
+    expect(card.querySelectorAll(".cd-mixbar .mix-sm")).toHaveLength(1);
+    expect(card.querySelectorAll(".cd-mixbar .mix-lg")).toHaveLength(0);
+    expect(card.querySelectorAll(".cd-mixbar .mix-pac")).toHaveLength(1);
+    // legend: all three entries always present, including the 0% one
+    const key = card.querySelector(".cd-mixkey");
+    expect(key).toHaveTextContent("40%");
+    expect(key).toHaveTextContent("0%");
+    expect(key).toHaveTextContent("60%");
+    expect(key?.querySelectorAll(".mix-lg")).toHaveLength(1);
+  });
+
+  it("omits the whole cd-influence block when deriveMoneyInfluence has no PAC/vote data to score", () => {
+    // default mkSeat() has donorCoalition: null -> deriveMoneyInfluence is null
+    const seats = [mkSeat()];
+    renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
+    expect(
+      screen.getByTestId("seat-card").querySelector(".cd-influence"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("renders cd-influence with the honest-wording sentence + untraced chip when PAC/vote data exists, and applies .low under 50%", () => {
+    const seats = [
+      mkSeat({
+        candidate: {
+          id: "federal-TEST1",
+          name: "Alex Rivera",
+          incumbent: true,
+          priorRole: "U.S. Representative since 2019",
+          totalRaised: 1_000_000,
+          fundingMix: {
+            small: 40,
+            large: 0,
+            pac: 60,
+            total: 1_000_000,
+            cycle: "2026",
+          },
+          donorSource: undefined,
+          donorCoalition: [
+            {
+              label: "PhRMA & Hospital PACs",
+              amount: 300_000,
+              isIssuePAC: true,
+              alignsWith: "healthcare_affordability",
+              issuePacStance: "opposed",
+            },
+          ],
+          peerComparison: null,
+        },
+        alignmentEntry: {
+          candidateId: "federal-TEST1",
+          scores: [
+            {
+              canonicalIssue: "healthcare_affordability",
+              resolvedStance: "in_favor",
+              kept: 1,
+              total: 3,
+              contributingVotes: [
+                { voteCast: "with" },
+                { voteCast: "against" },
+                { voteCast: "against" },
+              ],
+            },
+          ],
+        },
+      }),
+    ];
+    renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
+    const card = screen.getByTestId("seat-card");
+    const influence = card.querySelector(".cd-influence");
+    expect(influence).toBeInTheDocument();
+    // PAC opposed vs user in_favor -> conflicts -> dots against user's votes:
+    // with -> 'a', against -> 'w', against -> 'w' => k=2, n=3 -> 67%, not low
+    expect(influence).toHaveTextContent("67%");
+    expect(influence).not.toHaveClass("low");
+    expect(influence).toHaveTextContent(
+      "on the issues their PAC donors target",
+    );
+    expect(influence).toHaveTextContent("2 of 3 scored votes");
+    // implied PAC total = round(1_000_000 * 0.6) = 600_000; named = 300_000
+    // -> uncatPacTotal 300_000 -> untraced% = round(300_000/1_000_000*100) = 30
+    expect(influence).toHaveTextContent("30% untraced");
+  });
+
+  it("applies the .low variant and its distinct sentence when money leads less than most (pct < 50)", () => {
+    const seats = [
+      mkSeat({
+        candidate: {
+          id: "federal-TEST1",
+          name: "Alex Rivera",
+          incumbent: true,
+          priorRole: "U.S. Representative since 2019",
+          totalRaised: 1_000_000,
+          fundingMix: {
+            small: 40,
+            large: 0,
+            pac: 60,
+            total: 1_000_000,
+            cycle: "2026",
+          },
+          donorSource: undefined,
+          donorCoalition: [
+            {
+              label: "Labor Union PACs",
+              amount: 100_000,
+              isIssuePAC: true,
+              alignsWith: "healthcare_affordability",
+              issuePacStance: "opposed",
+            },
+          ],
+          peerComparison: null,
+        },
+        alignmentEntry: {
+          candidateId: "federal-TEST1",
+          scores: [
+            {
+              canonicalIssue: "healthcare_affordability",
+              resolvedStance: "in_favor",
+              kept: 3,
+              total: 3,
+              contributingVotes: [
+                { voteCast: "with" },
+                { voteCast: "with" },
+                { voteCast: "with" },
+              ],
+            },
+          ],
+        },
+      }),
+    ];
+    renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
+    const influence = screen
+      .getByTestId("seat-card")
+      .querySelector(".cd-influence");
+    // PAC opposed vs user's 3 "with" votes -> all 'a' (against) -> k=0,n=3 -> 0%
+    expect(influence).toHaveClass("low");
+    expect(influence).toHaveTextContent("0%");
+    expect(influence).toHaveTextContent(
+      "money leads this record less than most",
+    );
+  });
+
+  it("gives the seat card a blind class only while blindMode is on and the seat isn't in the revealed set", () => {
+    const seats = [mkSeat({ id: "house-TX-37" })];
+    const { rerender } = renderOverview({
+      seats,
+      verdicts: {},
+      userIssues,
+      onOpen: () => {},
+      blindMode: true,
+      revealed: new Set(),
+    });
+    expect(screen.getByTestId("seat-card").className).toContain("blind");
+
+    rerender(
+      <I18nProvider>
+        <DelegationOverview
+          seats={seats}
+          verdicts={{}}
+          userIssues={userIssues}
+          onOpen={() => {}}
+          blindMode={true}
+          revealed={new Set(["house-TX-37"])}
+        />
+      </I18nProvider>,
+    );
+    expect(screen.getByTestId("seat-card").className).not.toContain("blind");
+  });
+
+  it("never adds the blind class when blindMode is off (default, unchanged behavior)", () => {
+    const seats = [mkSeat({ id: "house-TX-37" })];
+    renderOverview({ seats, verdicts: {}, userIssues, onOpen: () => {} });
+    expect(screen.getByTestId("seat-card").className).not.toContain("blind");
   });
 });

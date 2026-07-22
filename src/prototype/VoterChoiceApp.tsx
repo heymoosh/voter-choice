@@ -771,6 +771,8 @@ const TRANSLATIONS = {
       heading: 'Your printable scorecard',
       backToScorecard: '← Back to your scorecard',
       printSave: 'Print / save as PDF',
+      printWhyNote:
+        "Most polling places don't allow phones at the ballot box — print this or save it as a PDF so you can bring your decisions in on paper.",
       myScorecard: 'My Scorecard',
       brand: 'Voter Choice',
       electionGeneral: 'General Election',
@@ -1456,6 +1458,8 @@ const TRANSLATIONS = {
       heading: 'Tu tarjeta imprimible',
       backToScorecard: '← Volver a tu tarjeta',
       printSave: 'Imprimir / guardar como PDF',
+      printWhyNote:
+        'La mayoría de los centros de votación no permite teléfonos en la cabina — imprime esto o guárdalo como PDF para llevar tus decisiones en papel.',
       myScorecard: 'Mi tarjeta',
       brand: 'Voter Choice',
       electionGeneral: 'Elección General',

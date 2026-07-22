@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, beforeAll, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { I18nProvider } from "../VoterChoiceApp";
@@ -167,6 +167,10 @@ describe("RepCard money-gap scale — subject vs. median only", () => {
       ],
     });
     const { container } = renderCard(seat);
+    // The scale (.mgap) now lives inside the money expander (work order
+    // Frames 2+3 §2: collapsed by default, Frame 3 is this same state
+    // opened) — open it before looking for the subject row.
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
 
     const rows = container.querySelectorAll(".mgap-row");
     expect(rows).toHaveLength(1);
@@ -192,6 +196,7 @@ describe("RepCard money-gap scale — subject vs. median only", () => {
       blindMode: true,
       isRevealed: false,
     });
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
 
     const rows = container.querySelectorAll(".mgap-row");
     expect(rows).toHaveLength(1);
@@ -235,7 +240,14 @@ describe("RepCard evidence hierarchy (Round-4)", () => {
         scores: [
           {
             ...vote("healthcare_affordability", 3, 4),
-            contributingVotes: [{}, {}, {}],
+            // Issue #1 opens by default now (work order Frames 2+3 §1), so
+            // AlignmentDrilldown renders immediately — each vote needs the
+            // minimal shape ContributingVoteCard reads (voteCast + source).
+            contributingVotes: [
+              { voteCast: "with", source: { name: "GovTrack" } },
+              { voteCast: "with", source: { name: "GovTrack" } },
+              { voteCast: "against", source: { name: "GovTrack" } },
+            ],
           },
         ],
       },
@@ -310,6 +322,9 @@ describe("RepCard canvas issue-PAC advocates line", () => {
     const { container } = renderCard(
       seatWithPac("Pushes for lower prescription drug prices"),
     );
+    // FundingSources now renders inside the money expander (Frame 3) — open
+    // it before looking for source rows.
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
     const row = Array.from(container.querySelectorAll(".srcs .src")).find(
       (el) => el.textContent?.includes("Better Care PAC"),
     );
@@ -321,6 +336,7 @@ describe("RepCard canvas issue-PAC advocates line", () => {
 
   it("falls back to the PAC's own label as the agenda line when p.advocates is absent", () => {
     const { container } = renderCard(seatWithPac(undefined));
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
     const row = Array.from(container.querySelectorAll(".srcs .src")).find(
       (el) => el.textContent?.includes("Better Care PAC"),
     );
@@ -592,5 +608,274 @@ describe("RepCard open seats (incumbent not seeking re-election)", () => {
 
     expect(screen.getByText(/Worth keeping/)).toBeInTheDocument();
     expect(screen.getByText("Time to replace")).toBeInTheDocument();
+  });
+});
+
+// Work order v4 "Frames 2 + 3 — Seat card default & expanded" additions below.
+
+describe("RepCard §1 — issue #1 open by default", () => {
+  it("opens the first issue row and leaves the rest closed", () => {
+    const seat = mkSeat({
+      alignmentEntry: {
+        candidateId: "federal-TEST1",
+        scores: [
+          { ...vote("healthcare_affordability", 3, 4), contributingVotes: [] },
+        ],
+      },
+    });
+    const twoIssues: UserIssue[] = [
+      {
+        canonicalIssue: "healthcare_affordability",
+        interpretation: "Lower drug prices",
+        level: "federal",
+      },
+      {
+        canonicalIssue: "housing_affordability",
+        interpretation: "Rent & cost of living",
+        level: "federal",
+      },
+    ];
+    const { container } = render(
+      <I18nProvider>
+        <RepCard
+          seat={seat}
+          userIssues={twoIssues}
+          stateCode="TX"
+          research={undefined}
+          blindMode={false}
+          isRevealed={false}
+          onReveal={() => {}}
+          onHide={() => {}}
+          verdict={null}
+          pickId={null}
+          onVerdict={() => {}}
+          onOpenDuel={() => {}}
+          onShowBudgetOptions={() => {}}
+        />
+      </I18nProvider>,
+    );
+    const rows = container.querySelectorAll(".iss");
+    expect(rows.length).toBe(2);
+    expect(rows[0].classList.contains("open")).toBe(true);
+    expect(rows[1].classList.contains("open")).toBe(false);
+  });
+});
+
+describe("RepCard §2 — MoneyVerdict (honest-null)", () => {
+  const seatWithScoredPac = () =>
+    mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: [
+          {
+            label: "Better Care PAC",
+            amount: 250_000,
+            isIssuePAC: true,
+            alignsWith: "healthcare_affordability",
+            issuePacStance: "opposed",
+          },
+        ],
+        peerComparison: peer,
+      },
+      alignmentEntry: {
+        candidateId: "federal-TEST1",
+        scores: [
+          {
+            ...vote("healthcare_affordability", 3, 4),
+            contributingVotes: [
+              { voteCast: "with", source: { name: "GovTrack" } },
+              { voteCast: "with", source: { name: "GovTrack" } },
+              { voteCast: "against", source: { name: "GovTrack" } },
+            ],
+          },
+        ],
+      },
+    });
+
+  it("omits the whole block when there's no donorCoalition to score against", () => {
+    const { container } = renderCard(mkSeat());
+    expect(container.querySelector(".mny-verdict")).toBeNull();
+  });
+
+  it("renders the shared deriveMoneyInfluence numbers when a scoreable issue-PAC exists", () => {
+    const { container } = renderCard(seatWithScoredPac());
+    const block = container.querySelector(".mny-verdict");
+    expect(block).not.toBeNull();
+    // conflictsWithUser (pac opposed vs. resolvedStance in_favor): 1 of the
+    // 3 curated votes went the donors' way, 2 went the user's way.
+    expect(block?.querySelector(".mvd-head .pct")?.textContent).toBe("33%");
+    const rows = block?.querySelectorAll(".mvd-row") || [];
+    expect(rows).toHaveLength(2);
+    expect(rows[0].textContent).toContain("33%");
+    expect(rows[1].textContent).toContain("67%");
+  });
+});
+
+describe("RepCard §2 — RevolvingDoorBand (absent by default)", () => {
+  it("renders no .rd-band when no curated record is passed (today's default)", () => {
+    const { container } = renderCard(mkSeat());
+    expect(container.querySelector(".rd-band")).toBeNull();
+  });
+
+  it("renders the callout only when a curated record is explicitly passed", () => {
+    const { container } = renderCard(mkSeat(), {
+      revolvingDoor: {
+        memberId: "federal-TEST1",
+        org: "HealthCo Inc.",
+        role: "an advisory role",
+        dateDocumented: "Jan 2026",
+        sourceUrl: "https://example.com/source",
+      },
+    });
+    const band = container.querySelector(".rd-band");
+    expect(band).not.toBeNull();
+    expect(band?.textContent).toContain("HealthCo Inc.");
+    expect(band?.querySelector("a")).toHaveAttribute(
+      "href",
+      "https://example.com/source",
+    );
+  });
+});
+
+describe("RepCard §2 — money expander (collapsed by default)", () => {
+  it("keeps the source list + why-this-matters band collapsed until opened, then shows them", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 4_200_000,
+        fundingMix: { small: 15, large: 39, pac: 46 },
+        donorSource: undefined,
+        donorCoalition: [
+          {
+            label: "Better Care PAC",
+            amount: 250_000,
+            isIssuePAC: true,
+            alignsWith: "healthcare_affordability",
+            issuePacStance: "opposed",
+          },
+        ],
+        peerComparison: peer,
+      },
+      alignmentEntry: {
+        candidateId: "federal-TEST1",
+        scores: [
+          {
+            ...vote("healthcare_affordability", 3, 4),
+            contributingVotes: [
+              { voteCast: "with", source: { name: "GovTrack" } },
+              { voteCast: "with", source: { name: "GovTrack" } },
+              { voteCast: "against", source: { name: "GovTrack" } },
+            ],
+          },
+        ],
+      },
+    });
+    const { container } = renderCard(seat);
+
+    expect(container.querySelector(".srcs")).toBeNull();
+    expect(container.querySelector(".md-why")).toBeNull();
+    const toggle = screen.getByTestId("money-expander-toggle");
+    // Composed small line drops the permanently-omitted reform-votes/ROI
+    // clauses (GAPS §4/§6) and only includes what actually renders below.
+    expect(toggle.textContent).toContain("ranked source");
+    expect(toggle.textContent).toContain("did the money vote?");
+    expect(toggle.textContent).not.toContain("reform vote");
+    expect(toggle.textContent).not.toContain("PACs get back");
+
+    fireEvent.click(toggle);
+    expect(container.querySelector(".srcs")).not.toBeNull();
+    expect(container.querySelector(".md-why")).not.toBeNull();
+    expect(container.querySelectorAll(".mny-collapse").length).toBeGreaterThan(
+      0,
+    );
+  });
+
+  it("renders the untraced-money md-tile but never the reform-vote or ROI tiles (no data for either)", () => {
+    const seat = mkSeat({
+      candidate: {
+        id: "federal-TEST1",
+        name: "Theo Vance",
+        incumbent: true,
+        priorRole: "U.S. Representative since 2019",
+        totalRaised: 1_000_000,
+        fundingMix: { small: 10, large: 10, pac: 80 },
+        donorSource: undefined,
+        donorCoalition: [
+          { label: "Named PAC", amount: 100_000, isIssuePAC: true },
+        ],
+        peerComparison: peer,
+      },
+    });
+    const { container } = renderCard(seat);
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
+
+    expect(
+      container.querySelector('[data-testid="md-tile-untraced"]'),
+    ).not.toBeNull();
+    expect(screen.queryByText(/reform votes/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/What PACs get back/)).not.toBeInTheDocument();
+    expect(
+      container.querySelector('[data-testid="md-tile-revolving"]'),
+    ).toBeNull();
+  });
+});
+
+describe("RepCard §3 — attendance restyled to .att markup", () => {
+  it("renders the exact present/total fraction when the eligible-vote count is parseable", () => {
+    const seat = mkSeat({
+      attendance: { missedPct: 1.4, of: "612 floor votes", band: "good" },
+    });
+    const { container } = renderCard(seat);
+    const band = container.querySelector(".att-band");
+    expect(band).not.toBeNull();
+    expect(band?.querySelector(".att-big")?.textContent).toBe("98.6%");
+    expect(band?.querySelector(".att-txt")?.textContent).toContain(
+      "603 of 612",
+    );
+    expect(band?.querySelector(".att-txt")?.textContent).toContain("1.4%");
+    expect(band?.querySelector(".att-chip")).not.toBeNull();
+    expect(
+      container.querySelector('.att-src[href="https://www.govtrack.us/"]'),
+    ).not.toBeNull();
+  });
+
+  it("degrades honestly (no fabricated count) when the denominator isn't a parseable number", () => {
+    const seat = mkSeat({
+      attendance: {
+        missedPct: 3.2,
+        of: "floor votes this term",
+        band: "mid",
+      },
+    });
+    const { container } = renderCard(seat);
+    const txt = container.querySelector(".att-txt")?.textContent || "";
+    expect(txt).not.toMatch(/\d+ of \d+/);
+    expect(txt).toContain("3.2%");
+  });
+});
+
+describe("RepCard verdict + sources — .verdict grid", () => {
+  it("renders btn-keep/btn-replace with the .box glyph, same handlers as before", () => {
+    const onVerdict = vi.fn();
+    const { container } = renderCard(mkSeat(), { onVerdict });
+
+    const keepBtn = container.querySelector(".verdict .btn-keep");
+    const replaceBtn = container.querySelector(".verdict .btn-replace");
+    expect(keepBtn).not.toBeNull();
+    expect(replaceBtn).not.toBeNull();
+    expect(keepBtn?.querySelector(".box")).not.toBeNull();
+    expect(replaceBtn?.querySelector(".box")).not.toBeNull();
+
+    keepBtn?.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    expect(onVerdict).toHaveBeenCalledWith("keep");
   });
 });

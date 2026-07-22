@@ -5699,12 +5699,15 @@
 }
 
 /* ---- funding row — synced thin mix bar (NEW, Frame 1 item 1) — replaces
-   .cd-bars; same classes/colors/order as the card's own mix bar
-   (.cv2-money-map .seg small/large/pac, prototype.css), so this thinner
-   overview strip reads as the same bar, just compressed. Per-segment fill
-   color is applied inline (flexBasis + background) by the component, same
-   as the whiteboard mock — no .small/.large/.pac variant rules exist here
-   because none exist in the whiteboard source either. */
+   .cd-bars; same classes/colors/order as the card's own mix bar. DOM confirmed
+   (DelegationOverview.tsx): each segment/swatch is `<i className="mix-sm|
+   mix-lg|mix-pac">`, width set inline per-candidate, color from the class —
+   so .mix-sm/.mix-lg/.mix-pac need real background rules here (below), not
+   inline color as this comment previously (incorrectly) assumed. Matched to
+   the card's own mix bar (.cv2-money-map .seg small/large/pac, prototype.css)
+   via global --bf-brand/--gold/--vote-red, since that's what .seg.small/
+   .seg.large/.seg.pac resolve to and this renders outside .rep-card's local
+   token scope. */
 .cd-mixbar {
   display: flex;
   height: 9px;
@@ -5717,6 +5720,18 @@
 .cd-mixbar i {
   display: block;
   height: 100%;
+}
+/* shared segment-color classes — used by both .cd-mixbar (bar) and
+   .cd-mixkey (legend swatch) below, and available for the seat card's own
+   future mix-bar markup too (same classes/colors/order, per the work order). */
+.mix-sm {
+  background: var(--bf-brand, oklch(0.4 0.155 262));
+}
+.mix-lg {
+  background: var(--gold);
+}
+.mix-pac {
+  background: var(--vote-red);
 }
 /* legend below the bar (Frame 1 item 1) — zero-width segments still get an
    entry (0% is information, per honest-data). */

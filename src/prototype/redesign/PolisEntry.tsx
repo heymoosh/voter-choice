@@ -100,6 +100,91 @@ function PolisMapPreview() {
   );
 }
 
+/* ---------- polis-invite panel (Frame 8+9 item 1) ----------
+   Mounted inside DelegationWorkspace's `.all-done` block, replacing the
+   buried "see where you stand" text link/`.all-done-also`. Markup/classes
+   are verbatim from the whiteboard's `.polis-invite`/`.pi-*` structure
+   (Voter Choice Whiteboard.html frames 8+9) — CSS already ported to
+   public/redesign2.css scoped `.all-done .polis-invite`. This is a
+   separate, smaller export from `PolisEntry` below: DelegationWorkspace's
+   own all-done headline/print/handoff already cover the "scorecard's
+   ready" moment, so only the invite fragment mounts there, not the whole
+   screen (which stays a full-screen stage — see App2.tsx's PolisEntry
+   mount — and is untouched here). Dot positions are verbatim from the
+   whiteboard mock: an illustrative, party-free, aria-hidden teaser, same
+   spirit as PolisMapPreview above, never the real map (that's PolisClose). */
+const PI_DOTS = [
+  { cls: "c0", left: "20%", top: "30%" },
+  { cls: "c0", left: "34%", top: "26%" },
+  { cls: "c0", left: "26%", top: "46%" },
+  { cls: "c0", left: "38%", top: "42%" },
+  { cls: "c0", left: "16%", top: "44%" },
+  { cls: "c1", left: "64%", top: "24%" },
+  { cls: "c1", left: "76%", top: "30%" },
+  { cls: "c1", left: "70%", top: "40%" },
+  { cls: "c1", left: "82%", top: "22%" },
+  { cls: "c2", left: "44%", top: "64%" },
+  { cls: "c2", left: "56%", top: "72%" },
+  { cls: "c2", left: "48%", top: "80%" },
+  { cls: "c2", left: "60%", top: "64%" },
+];
+
+/**
+ * onSeeStanding — accept: proceeds to the real standing/report view (same
+ *   hand-off the full `<PolisEntry/>` screen's "go" button uses).
+ * onSkip — decline: dismiss the invite. Never touches print/handoff —
+ *   this panel doesn't gate them (they're siblings in `.all-done`, not a
+ *   surface you have to pass through this panel to reach).
+ */
+export function PolisInvitePanel({ onSeeStanding, onSkip }) {
+  return (
+    <div className="polis-invite">
+      <div className="pi-map" aria-hidden="true">
+        <i className="blob c0" />
+        <i className="blob c1" />
+        <i className="blob c2" />
+        {PI_DOTS.map((d, i) => (
+          <span
+            key={i}
+            className={"dot " + d.cls}
+            style={{ left: d.left, top: d.top }}
+          />
+        ))}
+        <span className="you" style={{ left: "44%", top: "55%" }} />
+        <span className="you-lab" style={{ left: "44%", top: "55%" }}>
+          You
+        </span>
+      </div>
+      <div className="pi-body">
+        <div className="pi-kick">Before you go · optional</div>
+        <b className="pi-h">See where you stand.</b>
+        <p>
+          You judged your delegation on the record, not the party. See how your
+          answers line up with your county's — where you bridge with neighbors,
+          and where you don't. It never touches your scorecard.
+        </p>
+        <div className="pi-cta">
+          <button
+            className="go"
+            onClick={onSeeStanding}
+            data-testid="polis-invite-see-standing"
+          >
+            See where I stand <span aria-hidden="true">→</span>
+          </button>
+          <button
+            className="no"
+            onClick={onSkip}
+            data-testid="polis-invite-skip"
+          >
+            No thanks — I'm done
+          </button>
+          <span className="meta">~1 min · anonymous</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /**
  * The optional Polis invite/preview screen — reached once every seat has a
  * verdict, in place of the old one-line "where you stand among your
