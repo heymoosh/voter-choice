@@ -1,6 +1,7 @@
 # Donor-bucket framing + candidate accountability data — plan
 
-> Status: **plan, awaiting external vetting.** No code changes accompany this doc.
+> Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
+> judgment calls recorded in Open risks (see Review log at the end). No code changes accompany this doc.
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -45,8 +46,13 @@ Important correction to the premise: **$200 is not our methodology.** `federal-d
 reads FEC's `individual_unitemized_contributions` vs `individual_itemized_contributions`. Federal
 law requires itemization once a donor's cycle aggregate passes $200; below that the FEC publishes
 one undifferentiated lump. So (a) there is nothing to game — it is public statute, and (b) we
-_cannot_ re-cut at $100 even if we wanted to, because sub-$200 money has no per-donation detail in
-any filing. The fix is therefore **labelling**, not re-bucketing: describe _who_ each bucket is,
+_cannot_ re-cut at $100 even if we wanted to, because sub-$200 money is **not decomposable from
+candidate committee reports**. (Precision matters in the wording: the threshold is a $200 _cycle
+aggregate_, not per-donation, and conduit committees — ActBlue, WinRed — itemize every earmarked
+contribution in their own Schedule A filings regardless of size. So "no per-donation detail in any
+filing" is publicly falsifiable; the candidate-side lump still cannot be re-cut, which is what
+matters for our buckets. `/methodology` must use the softer wording.) The fix is therefore
+**labelling**, not re-bucketing: describe _who_ each bucket is,
 the way `PACs · groups & lobbies` already does.
 
 Muxin's honest question — do corporations fall in the "large individual" bucket? **No.**
@@ -56,6 +62,9 @@ super-PAC independent expenditures → not in candidate receipts, so absent from
 entirely. Worth fixing alongside: our **industry** buckets ("Healthcare industry") are derived
 from the _employer field on individual donations_ — people who work in that sector, not the
 company. Current copy implies the company wrote a cheque.
+
+Muxin's follow-up question — _then how do we show which industries and companies actually back a
+candidate?_ — has a real data answer, and most of the plumbing already exists: **Part 6**.
 
 **2. "No FEC filing data" is mostly wrong.** Live prod query
 (`npx tsx --env-file=.env.local scripts/ingest/_coverage-by-layer.ts 2026`, run 2026-07-23):
@@ -95,8 +104,8 @@ DB, not resolved by live web search, so answers are reproducible and trustworthy
 ## Part 1 — Donor bucket copy
 
 Surgical: change display strings only. Do **not** touch `donor_aggregates.bucket_label` — that
-string is the ingest contract shared by `federal-donors.ts`, `federal-sectors-bulk.ts` and ~40
-state ingests, and `race-data.ts:248-249` already filters funding-mix labels out of
+string is the ingest contract shared by `federal-donors.ts`, `federal-sectors-bulk.ts` and 53
+state donor ingests, and `race-data.ts:248-249` already filters funding-mix labels out of
 `donorCoalition` so they never reach the UI on the DB path.
 
 **`src/prototype/VoterChoiceApp.tsx`** (en block, then mirror in the `es` block at ~:1260/:1643/:1669):
@@ -108,8 +117,8 @@ state ingests, and `race-data.ts:248-249` already filters funding-mix labels out
 - `:854` `smallDonorsAgenda` → `'Individual people giving in small amounts. No single agenda.'`
 - `:856` `largeDonorsAgenda` → `'Individual people giving large amounts. Still individuals — companies cannot donate to a candidate directly.'`
 - `:2405-2406` — **hardcoded, not i18n**: `Small donors <small>&lt;$200</small>` / `Large donors <small>≥$200</small>`. Route through `t()` like the `:3269` and `:3463` legends already do.
-- New legend gloss beside the existing `pacGlossDefinition` (`:836`): _"Individual donors are people. Companies cannot donate to a candidate directly — their money moves through PACs."_
-- `:826` `industryAgenda` (in `fundingSources`) — reword so it reads as _donors who work in that industry_, not the company.
+- New legend gloss beside the existing `pacGlossDefinition` (`:833`): _"Individual donors are people. Companies cannot donate to a candidate directly — their money moves through PACs."_
+- `:858` `industryAgenda` (in `fundingSources`) — reword so it reads as _donors who work in that industry_, not the company.
 
 **`src/lib/translations.ts:947` (en) and `:1649` (es)** — `racePatternsDonorMethodologyNote` currently
 `"% by total contribution amount · Small donor = under $200 per donation"`. Drop the threshold clause;
@@ -120,9 +129,25 @@ raw, so the parenthetical must leave the vocabulary too:
 
 - `docs/PATTERN_TAXONOMIES.md:26-27` — `Small individual donors` / `Large individual donors`
 - `docs/BALLOT_PROMPT.md:253-254` — same, plus rewrite the "means individual contributions under $200
-  per donation" gloss to say _aggregated by dollar amount, split at the federal itemization line_
+  per donation" gloss to say _aggregated by dollar amount, split at the federal itemization line_.
+  (The old gloss was factually wrong anyway — itemization triggers on a $200 _cycle aggregate_,
+  not per-donation.)
+- `docs/BALLOT_PROMPT.md` **example JSON blocks** at `:235`, `:241`, `:427-428` — all four carry
+  `"Small individual donors (under $200)"` and teach the model harder than the vocabulary list does.
+  Editing only `:253-254` leaves the examples contradicting the new vocabulary.
 - Regenerate `src/lib/generated/ballotPromptEn.generated.ts` (do not hand-edit)
-- `docs/BALLOT_PROMPT_ES.md` if it carries the same vocabulary
+- `docs/BALLOT_PROMPT_ES.md` — verified: carries **no** $200 vocabulary (older `topFunders` shape),
+  no change needed
+
+**Chat tool path — the biggest miss the review found.** `resolveLookupDonorTool`
+(`src/app/api/chat/route.ts:1151-1157`) serializes `lookupDonorCoalition` output verbatim, and those
+buckets carry the frozen ingest labels `"Small individual donors (under $200)"` /
+`"Large individual donors ($200+)"` (`src/lib/server/donors.ts:335-360`) — while
+`BALLOT_PROMPT.md:255` explicitly tells the model **not** to override tool labels. So prompt-vocabulary
+edits alone leave `$200` rendering on chat surfaces; the plan would have passed its own verification
+while still failing there. Fix deterministically, never via the LLM: map the funding-mix bucket labels
+to the new display labels (or filter them, mirroring what `race-data.ts:248-249` does on the DB path)
+inside `resolveLookupDonorTool` before serialization.
 
 **`/methodology`** — the "Donor data comes from FEC + state filings" block at
 `src/prototype/VoterChoiceApp.tsx:6159`. Add a _How we count donations_ paragraph that does name the
@@ -130,6 +155,7 @@ $200 FEC itemization threshold, states that corporations cannot donate directly,
 industry buckets come from donor employer fields.
 
 Tests to update: `src/lib/server/donors.test.ts`, `race-data.test.ts`, `RepCard.test.tsx`,
+`src/lib/structured-blocks.test.ts` (fixtures at `:190-191`, `:518` carry the old labels),
 `e2e/prototype-core.spec.ts`, `design-tokens.test.ts` if it snapshots copy.
 
 > **Note for a later card, not this one:** "Small donors" still frames sub-$200 as the everyday
@@ -144,12 +170,23 @@ Tests to update: `src/lib/server/donors.test.ts`, `race-data.test.ts`, `RepCard.
    three distinct reasons into prose. Log the raw `reason` plus `(name, jurisdiction, stateCode)`
    server-side so we can count `candidate_not_resolved` vs `no_donor_data` in production.
 2. **Measure it offline.** New read-only `scripts/ingest/_resolution-miss-report.ts`, modelled on
-   `_coverage-by-layer.ts`: replay every 2026 federal ballot name through `resolveCandidateId` and
+   `_coverage-by-layer.ts`: replay 2026 federal ballot names through `resolveCandidateId` and
    report which fail. Expected causes, from the tier logic at `alignment.ts:284-339`: mixed
    `[D-NJ]` state decoration in `candidates.full_name`, nicknames, suffixes, hyphenated surnames.
+   **Open question the review raised: what corpus does the replay use?** Replaying
+   `candidates.full_name` through the resolver trivially exact-matches at tier 1/2
+   (`alignment.ts:284-288`) and measures nothing — misses happen on _ballot-rendered_ names that
+   differ from stored names. The replay must use names from ballot sources
+   (`official_roster_candidates` where present); if no adequate stored ballot-name corpus exists,
+   the step-1 production logging is the only honest instrument and this script should be dropped
+   rather than reporting a fake 100%.
 3. **Fix the top classes**, and add a regression fixture per class. `resolveCandidateId` is already
    known to be latently vulnerable on the chat/ballot path — the earlier House mis-resolution fix
-   only threaded the resolved id through delegation.
+   only threaded the resolved id through delegation. **Precision guard, non-negotiable:** every fix
+   class loosens matching in a function shared by donors, alignment and the chat tools, and a false
+   positive shows the _wrong person's_ donor data — strictly worse than "no data". Each class ships
+   with a never-resolve-when-ambiguous test (two plausible candidates → resolver returns null), not
+   just a recall fixture.
 4. **Honest copy for the real gap.** Where data genuinely is absent (state/local), the message
    should say _we don't have state filings for this office yet_, not imply the candidate filed nothing.
 
@@ -158,9 +195,11 @@ Tests to update: `src/lib/server/donors.test.ts`, `race-data.test.ts`, `RepCard.
 ## Part 3 — Committee assignments
 
 Source: **`unitedstates/congress-legislators`** — `committees-current.yaml` +
-`committee-membership-current.yaml`. CC0 public domain, keyed by bioguide ID (we already store
-`bioguide_id` on `member_civic_positions`). Cheapest correct source; almost certainly where
-Integrity Index's committees page comes from too.
+`committee-membership-current.yaml`. CC0 public domain, keyed by bioguide ID. The join basis is the
+`federal-<BIOGUIDE>` candidate-id convention that `member-stats.ts` already uses
+(`scripts/ingest/member-stats.ts:108-112`) — **not** `member_civic_positions`, which is Senate-only
+(`db/schema.ts:968-972`) and cannot crosswalk the House. Cheapest correct source; almost certainly
+where Integrity Index's committees page comes from too.
 
 - Migration: `committees` (thomas_id, name, chamber, jurisdiction, parent_committee_id) and
   `committee_memberships` (candidate_id FK, committee_id FK, rank, title, congress).
@@ -169,6 +208,10 @@ Integrity Index's committees page comes from too.
 - Read layer in `src/lib/server/` beside `alignment.ts`; surface on the seat card as
   _what this member has formal jurisdiction over_ — chair/ranking flagged, since that is the
   actual power lever.
+- **Honest empty state for non-incumbents** (applies to Part 4 too): committees and cosponsorships
+  exist only for sitting members — the large majority of ballot candidates have neither. The card
+  must say _not currently a member of Congress, so no committee record_, not render a blank that
+  implies missing data — the exact failure mode Part 2 step 4 exists to fix.
 
 ## Part 4 — Collaborator network (cosponsorship)
 
@@ -178,7 +221,12 @@ already has a working client against `api.congress.gov/v3`.
 
 - Migration: `bill_cosponsors` (bill_id FK, candidate_id FK, is_original, date_cosponsored).
 - `scripts/ingest/bill-cosponsors.ts` — reuse the `crs-summaries.ts` fetch/backoff helpers;
-  backfill over the `bills` rows we already hold.
+  backfill over the `bills` rows we already hold. **One real step the review surfaced:** `bills` has
+  no structured congress/type/number columns — identity is packed into the id string
+  (`"govtrack-hr1234-118"`) with `source` distinguishing `openstates` state bills that have no
+  congress.gov counterpart (`db/schema.ts:198-232`). The backfill must parse ids and filter to
+  federal before calling the API; `crs-summaries.ts` consumes already-structured
+  `{congress, type, number}`, so this parsing is new work.
 - Derived read: top same-party and top cross-party collaborators by shared-bill count, computed
   in SQL at request time (no derived table until it's slow).
 - External benchmark: **Lugar Center–Georgetown Bipartisan Index** as a citable cross-check —
@@ -218,12 +266,90 @@ adjudicate (LLM, outcome-based like PolitiFact, not effort-based).
 
 **Because this is a scored verdict we own, it needs the same rigour as the bill tagger:**
 a hand-labelled gold set and a scored oracle pass, mirroring
-`scripts/_gold-oracle.workflow.js` / `_gold-sample.ts` / `_subissue-gold-score.ts`. Ship no
-verdict to production until the gold pass clears. Attribute _agenda-setting_ separately from
-_outcome_ — never credit a member for a law merely because they introduced a similar bill.
+`scripts/ingest/_gold-oracle.workflow.js` / `scripts/ingest/_gold-sample.ts` /
+`scripts/ingest/_subissue-gold-score.ts`. Ship no verdict to production until the gold pass clears.
+Attribute _agenda-setting_ separately from _outcome_ — never credit a member for a law merely
+because they introduced a similar bill.
+
+**But note where the bill-tagger analogy breaks** (review finding): issue-tagging is a fairly
+objective task; kept/broken is a contested judgment, and a single-annotator gold set quietly
+reintroduces the exact bias Open Risk #3 warns about. Required beyond the tagger workflow: a
+written adjudication rubric versioned alongside `adjudicator_version`, and a second annotator on
+the gold set with inter-annotator agreement reported next to the oracle score.
+
+**Two more states the pipeline must handle honestly:**
+
+- _Zero promises found_ for a candidate is legitimate and must render as "no promise corpus for
+  this candidate", never as a blank.
+- Campaign sites change mid-campaign. Pick and record a canonical-capture policy (e.g. last
+  Wayback capture before election day) — `archive_url` must point at the exact capture the
+  promise was extracted from, or verdicts are unreproducible.
 
 **Every verdict must show its evidence inline**: `not_yet_rated` is a legitimate, visible state,
 never a hidden one.
+
+---
+
+## Part 6 — Which industries and companies actually back a candidate
+
+New scope from Muxin's review of this doc: fixing the industry copy (Part 1) makes the buckets
+honest, but the question she actually wants answered — _which industries and businesses support
+this candidate_ — is currently unanswered anywhere in the product. The data exists, and most of
+the plumbing is already in the repo.
+
+**Where corporate-adjacent money is findable, per channel:**
+
+| Channel                              | In candidate receipts? | Data source                                    | Status                             |
+| ------------------------------------ | ---------------------- | ---------------------------------------------- | ---------------------------------- |
+| Individual donors by employer sector | Yes                    | FEC bulk `indiv` (employer field)              | Wired (`federal-sectors-bulk.ts`)  |
+| Corporate/trade PAC → candidate      | Yes                    | FEC bulk `pas2` + committee master `cm`        | Wired for issue-PACs only — extend |
+| Super-PAC independent expenditures   | **No**                 | FEC Schedule E (bulk IE file or OpenFEC API)   | Not ingested — net-new             |
+
+**6a — PAC money attributed to sponsor + industry.** `scripts/ingest/federal-issue-pacs.ts`
+already consumes `pas2{cycle}.zip` (every committee→candidate contribution) joined to
+`cm{cycle}.zip`, and its committee-master parse already extracts the exact fields needed:
+`CMTE_TP`, `ORG_TP` (Corporation / Labor / Trade / Membership / Coop) and
+`CONNECTED_ORG` — the sponsoring company's name (`federal-issue-pacs.ts:159-173`). Today those
+fields are used only to classify _issue_ PACs via `src/lib/issuePacRules.ts`; everything else
+collapses into the single unclassified "PACs" total (`federal-donors.ts:419-443`, the
+`other_political_committee_contributions` aggregate). Build: a sibling ingest modelled on
+`federal-issue-pacs.ts` that classifies committees by `CONNECTED_ORG` + `ORG_TP` into industry
+buckets (reuse/extend the `_bucket-mapping.ts` employer→sector table so individual-employer
+sectors and PAC-sponsor sectors use one vocabulary). This is the honest answer to "which
+corporations support this candidate": the corporate-sponsored-PAC money, attributed to the
+sponsor. Bulk path needs no API key (`_fec-bulk.ts` client is keyless).
+
+Schema decision to take at build time: per-PAC identity currently survives only inside
+`raw_metadata.committees[]` JSON on issue-PAC rows (`federal-issue-pacs.ts:291-300`). If the UI
+should name top PACs/sponsors (it should), promote committees to a first-class table rather than
+growing the JSON.
+
+**6b — Super-PAC independent expenditures.** The doc's Context is right that IEs are absent from
+candidate receipts — but they are public: FEC Schedule E, available as the bulk
+independent-expenditure file or OpenFEC `/schedules/schedule_e/`, itemized per spender with a
+**support/oppose** flag per candidate. (The `24A`/`24E` transaction types our issue-PAC ingest
+deliberately drops at `federal-issue-pacs.ts:57,200` are this money.) Spender committee id joins
+to committee master for sponsor/industry attribution. Net-new ingest, same `_fec-bulk.ts`
+scaffold.
+
+**Display rule, non-negotiable:** outside spending is _not_ the candidate's money and legally
+cannot be coordinated with the campaign. It must render as its own "Outside spending about this
+race" block — spent _for_ and _against_, never summed into the funding mix — or we misstate
+campaign finance law on the surface whose whole point is precision.
+
+---
+
+## Data hygiene — `2026-05-public.pgdump` verdict
+
+Vetted 2026-07-23 (this was the open backlog card at `docs/operations/voter-choice-backlog.md:2793`):
+**safe to delete.** The 9.8 GB file is the OpenStates monthly Postgres dump, downloaded to bypass
+API 429s for the one-time state backfill (`.ai/work-packets/launch-openstates-bulk-ingest.md:17-26`).
+Its only two consumers — `scripts/ingest/state-votes-from-dump.ts` and
+`scripts/ingest/_summary-stream-filter.ts` — were one-shot backfills that completed, with results
+durable in Neon; ongoing ingest is API-based (`scripts/ingest/state-votes.ts`); the file is
+gitignored (`.gitignore:101`). Caveat: the exact May-2026 snapshot is unrecoverable after deletion
+(a re-download would be a later month) — acceptable since all derived data is persisted. The 696 KB
+sibling `2026-05-schema.pgdump` can go with it.
 
 ---
 
@@ -249,7 +375,10 @@ from the PAC gloss.
 e2e/prototype-core.spec.ts`; then run the app and screenshot a federal seat card with a full
   breakdown (Cornyn or Nehls, both confirmed to have 2026 mix rows) to prove no `$200` renders
   anywhere and the corporations gloss reads correctly. A code-reading claim is not sufficient
-  evidence for a visual change.
+  evidence for a visual change. **Plus the chat path** — the screenshot exercises only the DB path;
+  also render a RACE_PATTERNS chat response for a funding-mix-bearing candidate and confirm no
+  `$200` appears in the LLM output (this is the surface the review found the original checklist
+  would have missed).
 - **Part 2** — `npx tsx --env-file=.env.local scripts/ingest/_resolution-miss-report.ts` before
   and after; miss count must drop, and every fixed class needs a unit test.
 - **Parts 3-4** — ingest with `--dry-run` first, then a scoped live run; spot-check one member's
@@ -257,6 +386,10 @@ e2e/prototype-core.spec.ts`; then run the app and screenshot a federal seat card
   congress.gov page.
 - **Part 5** — gold-set score reported before any verdict is enabled; keep it behind a flag
   (`PROMISE_TRACKER_ENABLED`) in the `CAN2026_DISPLAY_ENABLED` pattern until Muxin signs off.
+- **Part 6** — `--dry-run` first; spot-check one corporate PAC's attributed sponsor/industry
+  against its fec.gov committee page, and one candidate's IE totals against the fec.gov
+  independent-expenditure view for that race; assert in a unit test that IE amounts never enter
+  `donor_aggregates` funding-mix math.
 
 ## Open risks
 
@@ -267,8 +400,17 @@ e2e/prototype-core.spec.ts`; then run the app and screenshot a federal seat card
 3. **Scored verdicts are an editorial liability.** Muxin's own observation that Integrity Index
    skews toward one party applies to us the moment we render `BROKEN`. The gold set is the
    mitigation, and per-verdict evidence is non-negotiable.
-4. **Migration + security gate.** Parts 3-5 touch `db/**`, which trips the required
+4. **Migration + security gate.** Parts 3-6 touch `db/**`, which trips the required
    `security-reviewed` label gate.
+5. **Part 2's offline miss report may measure nothing.** Replaying stored names trivially
+   exact-matches; without a ballot-rendered name corpus the script reports a fake 100% (see Part 2
+   step 2). Resolve the corpus question before writing the script.
+6. **Gold-set annotator bias (Part 5).** A single annotator's kept/broken labels are the editorial
+   bias of Open Risk #3 wearing a lab coat. Second annotator + agreement stats are part of the
+   definition of done, not a nice-to-have.
+7. **Part 6b framing liability.** Summing or visually mingling independent expenditures with
+   candidate receipts would misstate campaign-finance law. The "outside spending" separation is a
+   correctness requirement, enforced by test.
 
 ## Source appendix
 
@@ -285,10 +427,49 @@ Sources evaluated while writing this plan, with the verdict on each.
 | LoC US Elections Web Archive                 | Campaign promises                          | **Rejected** — bulk package is 2000–2016 only                        |
 | Wayback Machine CDX API                      | Campaign promises                          | **Adopt for Part 5** — but needs a campaign-URL list we don't have   |
 | Ballotpedia Candidate Connection             | Self-reported positions                    | Candidate; **licence unconfirmed**                                   |
-| Google Political Ads Transparency (BigQuery) | Promises in paid ads                       | Candidate; 2018→, 7-yr retention                                     |
+| Google Political Ads Transparency (BigQuery) | Promises in paid ads                       | Candidate; 2018→, 7-yr retention (earliest years already aging out)  |
 | Lugar Center Bipartisan Index                | Cross-party benchmark                      | Cite, don't ingest                                                   |
-| PolitiFact promise trackers                  | Methodology reference                      | Reference only — presidents only, not Congress                       |
+| FEC bulk `pas2` + `cm` (committee master)    | PAC→candidate money, sponsor/industry      | Already wired for issue-PACs (`federal-issue-pacs.ts`); **extend for Part 6a** |
+| FEC Schedule E (bulk IE file / OpenFEC API)  | Super-PAC independent expenditures         | **Adopt for Part 6b** — support/oppose flag per candidate            |
+| PolitiFact promise trackers                  | Methodology reference                      | Reference only — mostly presidents; their 2010 congressional GOP Pledge-O-Meter is the precedent worth reading |
 | OpenSecrets                                  | Money context                              | Secondary to FEC                                                     |
 | Quiver Quantitative                          | Stock activity                             | Already wired (`stock-transactions.ts`)                              |
 | integrityindex.us                            | —                                          | **Do not scrape.** Credit + ask permission                           |
 | ProPublica Congress API                      | —                                          | Dead                                                                 |
+
+---
+
+## Review log
+
+**2026-07-23 — adversarial review** (fresh-eyes agent over the plan alone, every checkable claim
+verified against the codebase), plus two scoped investigations (pgdump usage; PAC/IE data
+availability). A separate Perplexity resource list on Muxin's machine
+(`~/Downloads/give me a list of all the best resoruces to find t.md`) was **not** reviewable from
+the remote session — cross-check it against the Source appendix in a local session.
+
+Mechanical fixes applied in this revision:
+
+- **Chat-path label leak** — the highest-leverage find: `resolveLookupDonorTool` serializes
+  `(under $200)` labels the prompt forbids the model to override. Part 1 now requires a
+  deterministic mapping, and Verification gains a chat-path check.
+- `BALLOT_PROMPT.md` example JSON blocks (`:235`, `:241`, `:427-428`) added to the edit list.
+- Line-number corrections: `pacGlossDefinition` `:833` (was `:836`), `industryAgenda` `:858`
+  (was `:826`); gold scripts live under `scripts/ingest/`; "~40 state ingests" → 53.
+- Part 3 join basis corrected — `member_civic_positions` is Senate-only; use the
+  `federal-<BIOGUIDE>` id convention from `member-stats.ts`.
+- Part 4 gains the bill-id parsing step (`bills` ids are packed strings, mixed with state bills).
+- Sub-$200 "no detail in any filing" claim softened — conduit committees (ActBlue/WinRed) itemize
+  all sizes; threshold is a cycle aggregate, not per-donation.
+- `structured-blocks.test.ts` added to the Part 1 test list; `BALLOT_PROMPT_ES.md` verified as
+  carrying no $200 vocabulary.
+- Non-incumbent empty states (Parts 3-4), resolver precision guard (Part 2), gold-set second
+  annotator + rubric and Wayback canonical-capture policy (Part 5) added as requirements;
+  judgment-level versions recorded as Open Risks #5-7.
+
+Verified correct and left as-is: all Part 1 `VoterChoiceApp.tsx` and `translations.ts` citations
+(en and es), the `donor_aggregates.bucket_label` ingest-contract claim and `race-data.ts:248-249`
+filtering, `alignment.ts` tier logic and cited failure classes, `federal-donors.ts:414-431`,
+Congress.gov key presence and `crs-summaries.ts` client, `congress-legislators` filenames + CC0,
+the §30118 corporate ban and §30104(b)(3)(A) itemization threshold, the security-gate risk, and
+the flag-pattern analogy. Not verifiable from the repo (re-check at implementation time): the prod
+coverage table, Cornyn/Nehls 2026 mix rows, the median-donor statistics, Ballotpedia licensing.
