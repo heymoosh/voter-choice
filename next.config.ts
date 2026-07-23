@@ -58,9 +58,10 @@ const nextConfig: NextConfig = {
       },
     ];
   },
-  // tsc + eslint run in CI; skip redundant checks during Vercel remote build
+  // tsc runs in CI; skip the redundant check during Vercel remote build.
+  // (Next 16 removed its built-in eslint integration entirely, so there's
+  // no `eslint` config key anymore — lint is CI-only via `npm run lint`.)
   typescript: { ignoreBuildErrors: true },
-  eslint: { ignoreDuringBuilds: true },
   // PDF extraction route uses pdfjs-dist + @napi-rs/canvas to render PDF
   // pages to PNG for Claude vision. Both are native/CJS-heavy packages
   // that should NOT be bundled by Webpack — keep them external so the
