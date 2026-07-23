@@ -419,9 +419,9 @@ const TRANSLATIONS = {
         ' — including <b>{amount}</b> against your #1 · {issue}',
       untracedPctChip: '{p}% untraced',
       mixKeySmallLabel: 'small donors',
-      mixKeySmallSub: 'under $200',
+      mixKeySmallSub: 'individuals',
       mixKeyLargeLabel: 'large donors',
-      mixKeyLargeSub: '$200+',
+      mixKeyLargeSub: 'individuals',
       mixKeyPacLabel: 'PACs',
       mixKeyPacSub: 'groups & lobbies',
     },
@@ -825,13 +825,15 @@ const TRANSLATIONS = {
       lessLabel: 'LESS',
       raisedThanPrefix: 'raised than ',
       smallDonorsLabel: 'Small donors',
-      smallDonorsThreshold: '<$200',
+      smallDonorsThreshold: 'individuals',
       largeDonorsLabel: 'Large donors',
-      largeDonorsThreshold: '≥$200',
+      largeDonorsThreshold: 'individuals',
       pacsLabel: 'PACs',
       pacsThreshold: 'groups & lobbies',
       pacGlossDefinition:
         ' = Political Action Committee — companies, unions, or advocacy groups that pool donations to back candidates. High PAC share signals reliance on organized interests over individual voters.',
+      individualDonorsGloss:
+        'Individual donors are people. Companies cannot donate to a candidate directly — their money moves through PACs.',
       namedIssuePacs: 'Named issue PACs',
       namedIssuePacsSub:
         'organized groups we’ve vetted, each with a publicly stated agenda',
@@ -851,11 +853,11 @@ const TRANSLATIONS = {
       heading: 'Where the big money comes from',
       subheading: "The largest sources behind this seat, and what each one is pushing for — flagged against your issues.",
       smallDonorsName: 'Small individual donors',
-      smallDonorsAgenda: 'Everyday people giving under $200 — no single agenda.',
+      smallDonorsAgenda: 'Individual people giving in small amounts. No single agenda.',
       largeDonorsName: 'Large individual donors',
-      largeDonorsAgenda: 'Individual donors giving $200 or more — no single agenda.',
+      largeDonorsAgenda: 'Individual people giving large amounts. Still individuals — companies cannot donate to a candidate directly.',
       pctOfAllMoney: '{pct}% of all money',
-      industryAgenda: 'Industry-sector donations; not linked to your ranked issues.',
+      industryAgenda: 'Donations from people who work in this industry; not a corporate contribution.',
       untracedPacsName: 'Other & untraced PACs',
       untracedPacsAgenda: "Smaller PACs we haven't linked to a public agenda yet.",
       outsideNamedSectorsAgenda: 'Mostly small-dollar & individual donations that don’t fit a single sector tag.',
@@ -1257,9 +1259,9 @@ const TRANSLATIONS = {
         ' — incluyendo <b>{amount}</b> en contra de tu tema #1 · {issue}',
       untracedPctChip: '{p}% sin rastrear',
       mixKeySmallLabel: 'pequeños donantes',
-      mixKeySmallSub: 'menos de $200',
+      mixKeySmallSub: 'individuos',
       mixKeyLargeLabel: 'grandes donantes',
-      mixKeyLargeSub: '$200 o más',
+      mixKeyLargeSub: 'individuos',
       mixKeyPacLabel: 'PAC',
       mixKeyPacSub: 'grupos y lobbies',
     },
@@ -1640,13 +1642,15 @@ const TRANSLATIONS = {
       lessLabel: 'MENOS',
       raisedThanPrefix: 'recaudado que ',
       smallDonorsLabel: 'Pequeños donantes',
-      smallDonorsThreshold: '<$200',
+      smallDonorsThreshold: 'individuos',
       largeDonorsLabel: 'Grandes donantes',
-      largeDonorsThreshold: '≥$200',
+      largeDonorsThreshold: 'individuos',
       pacsLabel: 'PACs',
       pacsThreshold: 'grupos y lobbies',
       pacGlossDefinition:
         ' = Comité de Acción Política — empresas, sindicatos o grupos de defensa que agrupan donaciones para respaldar candidatos. Una alta participación de PACs indica dependencia de intereses organizados en lugar de votantes individuales.',
+      individualDonorsGloss:
+        'Los donantes individuales son personas. Las empresas no pueden donar directamente a un candidato — su dinero se mueve a través de PACs.',
       namedIssuePacs: 'PACs de temas nombrados',
       namedIssuePacsSub:
         'grupos organizados que hemos investigado, cada uno con una agenda pública declarada',
@@ -1666,11 +1670,11 @@ const TRANSLATIONS = {
       heading: 'De dónde viene el gran dinero',
       subheading: 'Las mayores fuentes detrás de este puesto, y qué busca cada una — marcadas contra tus temas.',
       smallDonorsName: 'Pequeños donantes individuales',
-      smallDonorsAgenda: 'Personas comunes donando menos de $200 — sin una agenda única.',
+      smallDonorsAgenda: 'Personas individuales que dan montos pequeños. Sin una agenda única.',
       largeDonorsName: 'Grandes donantes individuales',
-      largeDonorsAgenda: 'Donantes individuales que dan $200 o más — sin una agenda única.',
+      largeDonorsAgenda: 'Personas individuales que dan montos grandes. Siguen siendo individuos — las empresas no pueden donar directamente a un candidato.',
       pctOfAllMoney: '{pct}% de todo el dinero',
-      industryAgenda: 'Donaciones del sector industrial; no vinculadas a tus temas priorizados.',
+      industryAgenda: 'Donaciones de personas que trabajan en esta industria; no es una contribución corporativa.',
       untracedPacsName: 'Otros PACs sin rastrear',
       untracedPacsAgenda: 'PACs más pequeños que aún no hemos vinculado a una agenda pública.',
       outsideNamedSectorsAgenda: 'Principalmente donaciones individuales y de pequeña cuantía que no encajan en una sola etiqueta de sector.',
@@ -2387,6 +2391,7 @@ function CandidateCard({ candidate, alignmentEntry, userIssues, party, picked, o
      labelMin: hide the inline % label on segments narrower than this
                (default 12) so tiny segments don't show cramped text */
 function FundingMixBars({ mix, labelMin = 12 }) {
+  const { t } = useI18n();
   if (!mix) return null;
   return (
     <div className="fmix">
@@ -2402,10 +2407,11 @@ function FundingMixBars({ mix, labelMin = 12 }) {
         </div>
       </div>
       <div className="fmix-legend">
-        <div><span className="sw small" /> <b>{mix.small}%</b> Small donors <small>&lt;$200</small></div>
-        <div><span className="sw large" /> <b>{mix.large}%</b> Large donors <small>≥$200</small></div>
-        <div><span className="sw pac" /> <b>{mix.pac}%</b> PACs <small>groups &amp; lobbies</small></div>
+        <div><span className="sw small" /> <b>{mix.small}%</b> {t('funderBars.smallDonorsLabel')} <small>{t('funderBars.smallDonorsThreshold')}</small></div>
+        <div><span className="sw large" /> <b>{mix.large}%</b> {t('funderBars.largeDonorsLabel')} <small>{t('funderBars.largeDonorsThreshold')}</small></div>
+        <div><span className="sw pac" /> <b>{mix.pac}%</b> {t('funderBars.pacsLabel')} <small>{t('funderBars.pacsThreshold')}</small></div>
       </div>
+      <div className="fmix-gloss">{t('funderBars.individualDonorsGloss')}</div>
     </div>
   );
 }
@@ -3284,9 +3290,12 @@ export function FundingMixBar({ fundingMix, variant = 'legacy' }) {
         )}
       </div>
       {variant !== 'canvas' && (
-        <p className="cv2-pac-gloss">
-          <b>PAC</b>{t('funderBars.pacGlossDefinition')}
-        </p>
+        <>
+          <p className="cv2-pac-gloss">
+            <b>PAC</b>{t('funderBars.pacGlossDefinition')}
+          </p>
+          <p className="cv2-individual-gloss">{t('funderBars.individualDonorsGloss')}</p>
+        </>
       )}
     </div>
   );
@@ -3470,6 +3479,7 @@ function FunderBars({ donorCoalition, totalRaised, donorDataSource, donorSource,
             <p className="cv2-pac-gloss">
               <b>PAC</b>{t('funderBars.pacGlossDefinition')}
             </p>
+            <p className="cv2-individual-gloss">{t('funderBars.individualDonorsGloss')}</p>
           </div>
         );
       })()}
@@ -6158,6 +6168,7 @@ function MethodologyPage({ onBack }) {
         <div>
           <h3>Donor data comes from FEC + state filings</h3>
           <p>Federal from the <a href="https://www.fec.gov" target="_blank" rel="noopener noreferrer">FEC</a> and <a href="https://www.opensecrets.org" target="_blank" rel="noopener noreferrer">OpenSecrets</a>; state from ethics commissions. Named issue PACs are broken out only when they have a public, citable agenda.</p>
+          <p><b>How we count donations.</b> Federal law requires a donor's name and employer to be itemized once their cycle total passes $200; below that, the FEC publishes one undifferentiated lump sum with no per-donor detail, so we can't split "small" further no matter the threshold. Corporations cannot donate to a federal candidate directly (52 U.S.C. §30118) — corporate money reaches a candidate only through a company-sponsored PAC, which is why our "Large donors" bucket is still individual people, never a company. Industry breakdowns (e.g. "Healthcare industry") come from the <i>employer field</i> on individual donations — people who work in that sector — not a company writing a check.</p>
         </div>
       </div>
       <div className="sp-step">

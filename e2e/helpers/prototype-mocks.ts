@@ -344,7 +344,7 @@ export async function gotoWorkspace(
 ): Promise<void> {
   await page.goto("/");
   await page
-    .getByPlaceholder(/1600 Pennsylvania/i)
+    .getByPlaceholder(/1100 Congress Ave/i)
     .fill("50 Park Pl, Newark, NJ 07102");
   await page.getByRole("button", { name: /Pull my representatives/i }).click();
   // Cold-open: deterministic sample → preset issues → lock.

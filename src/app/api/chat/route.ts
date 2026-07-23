@@ -20,7 +20,10 @@ import {
   type BlockReason,
 } from "../../../lib/server/usage-telemetry";
 import { recordChatUsage } from "../../../lib/server/chat-usage-metrics";
-import { lookupDonorCoalition } from "../../../lib/server/donors";
+import {
+  lookupDonorCoalition,
+  toDisplayBucketLabel,
+} from "../../../lib/server/donors";
 import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
 import {
   routePrompt,
@@ -1154,6 +1157,18 @@ async function resolveLookupDonorTool(
     jurisdiction,
     election_cycle,
   );
+  // Serialized verbatim to the model, which BALLOT_PROMPT.md instructs not to
+  // override — so the $200 threshold must be stripped here, deterministically,
+  // not left to the LLM to reword.
+  if (result.found) {
+    return {
+      ...result,
+      buckets: result.buckets.map((b) => ({
+        ...b,
+        label: toDisplayBucketLabel(b.label),
+      })),
+    } as unknown as { found: boolean; [key: string]: unknown };
+  }
   return result as unknown as { found: boolean; [key: string]: unknown };
 }
 

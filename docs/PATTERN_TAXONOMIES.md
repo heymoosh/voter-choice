@@ -23,8 +23,8 @@ Fixed ~20 categories. The model picks 2–4 per candidate from this list. Labels
 - Trade unions (non-public-safety)
 - Public safety unions
 - Education employees
-- Small individual donors (under $200) — individual contribution under $200 per donation; aggregated by dollar amount, not by donor count
-- Large individual donors ($200+)
+- Small individual donors — individual contributions aggregated by dollar amount, split at the federal itemization line, not by donor count
+- Large individual donors
 - Self-funded
 - Party committees
 - Issue-aligned PACs — \<issue\> _(suffix the live issue, e.g., "Issue-aligned PACs — gun rights")_

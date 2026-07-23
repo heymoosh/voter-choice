@@ -57,9 +57,16 @@ vi.mock("../../../lib/server/alignment", () => ({
   }),
 }));
 
-vi.mock("../../../lib/server/donors", () => ({
-  lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),
-}));
+vi.mock("../../../lib/server/donors", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../../lib/server/donors")>(
+      "../../../lib/server/donors",
+    );
+  return {
+    ...actual,
+    lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),
+  };
+});
 
 // Mock the research sub-agent so the route's tool-dispatch test can assert
 // on the distilled summary it returns WITHOUT making a real Anthropic call
@@ -112,6 +119,7 @@ import {
   lookupAlignment,
 } from "../../../lib/server/alignment";
 import { runResearchSubAgent } from "../../../lib/server/research-sub-agent";
+import { lookupDonorCoalition } from "../../../lib/server/donors";
 
 // ---------------------------------------------------------------------------
 // Test helpers
@@ -978,6 +986,75 @@ describe("POST /api/chat — alignment notice forwarded to model", () => {
     expect(toolResultBlock.tool_use_id).toBe("toolu_xyz");
     expect(typeof toolResultBlock.content).toBe("string");
     expect(toolResultBlock.content).toContain('"notice":"Limited data: only 3');
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Donor-bucket copy — the chat tool result must never leak the frozen
+// $200 ingest labels to the model (BALLOT_PROMPT.md tells the model not to
+// override tool-provided donorCoalition labels, so the strip must happen
+// deterministically before serialization, not be left to the LLM).
+// ---------------------------------------------------------------------------
+
+describe("POST /api/chat — donor coalition bucket labels", () => {
+  it("strips the $200 threshold from small/large donor bucket labels in the tool_result", async () => {
+    vi.stubEnv("PROMPT_FLEET_V2", "1");
+    vi.mocked(lookupDonorCoalition).mockResolvedValue({
+      found: true,
+      candidateId: "federal-B000944",
+      totalRaised: 461539,
+      source: "fec_api",
+      sourceUrl: "https://www.fec.gov/data/candidate/B000944",
+      electionCycle: "2026",
+      buckets: [
+        {
+          label: "Small individual donors (under $200)",
+          amount: 240000,
+          percent: 52,
+        },
+        {
+          label: "Large individual donors ($200+)",
+          amount: 138462,
+          percent: 30,
+        },
+        { label: "Healthcare industry", amount: 83077, percent: 18 },
+      ],
+    });
+
+    queueStreams(
+      toolUseStream("lookup_donor_coalition", "toolu_donor_1", {
+        candidate_name: "Jane Incumbent",
+        state_code: "TX",
+        jurisdiction: "federal-house",
+      }),
+      simpleTextStream("Here's the funding breakdown."),
+    );
+
+    const req = makeChatRequest({
+      view: "workspace-race",
+      activeRaceType: "choice",
+      raceContext: {
+        raceLabel: "US House — TX-07",
+        state: "TX",
+        county: "Harris",
+        themesList: "healthcare",
+        candidatesJson: "[]",
+        decidedSummary: "",
+      },
+    });
+    const res = await POST(req as never);
+    await drainResponseBody(res);
+
+    const secondCallParams = messagesCreateMock.mock.calls[1][0];
+    const continuationMessages = secondCallParams.messages;
+    const lastMessage = continuationMessages[continuationMessages.length - 1];
+    const toolResultBlock = lastMessage.content[0];
+    expect(toolResultBlock.type).toBe("tool_result");
+    expect(toolResultBlock.tool_use_id).toBe("toolu_donor_1");
+    expect(toolResultBlock.content).not.toContain("$200");
+    expect(toolResultBlock.content).toContain('"label":"Small individual donors"');
+    expect(toolResultBlock.content).toContain('"label":"Large individual donors"');
+    expect(toolResultBlock.content).toContain('"label":"Healthcare industry"');
   });
 });
 

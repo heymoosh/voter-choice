@@ -37,7 +37,7 @@ test("ballot measure renders its verbatim body text", async ({ page }) => {
 
   await page.goto("/");
   await page
-    .getByPlaceholder(/1600 Pennsylvania/i)
+    .getByPlaceholder(/1100 Congress Ave/i)
     .fill("50 Park Pl, Newark, NJ 07102");
   await page.getByRole("button", { name: /Pull my representatives/i }).click();
 

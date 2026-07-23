@@ -140,6 +140,19 @@ export function isFundingMixBucket(label: string): boolean {
 }
 
 /**
+ * User-facing bucket label, stripped of the $200 dollar-threshold callout.
+ * `FUNDING_MIX_LABELS` stays byte-identical to the ingest contract
+ * (`donor_aggregates.bucket_label`) — this only renames the small/large
+ * labels at the point they're handed to a display surface (e.g. the chat
+ * tool result), never in storage.
+ */
+export function toDisplayBucketLabel(label: string): string {
+  if (label === FUNDING_MIX_LABELS.small) return "Small individual donors";
+  if (label === FUNDING_MIX_LABELS.large) return "Large individual donors";
+  return label;
+}
+
+/**
  * Industry/sector bucket labels.
  *
  * In the FEDERAL ingest these are an ADDITIVE re-cut of dollars already counted

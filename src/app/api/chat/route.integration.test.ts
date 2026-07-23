@@ -45,9 +45,16 @@ vi.mock("../../../lib/server/alignment", () => ({
   lookupAlignment: vi.fn(),
 }));
 
-vi.mock("../../../lib/server/donors", () => ({
-  lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),
-}));
+vi.mock("../../../lib/server/donors", async () => {
+  const actual =
+    await vi.importActual<typeof import("../../../lib/server/donors")>(
+      "../../../lib/server/donors",
+    );
+  return {
+    ...actual,
+    lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),
+  };
+});
 
 // The research sub-agent (driven by the research_candidate tool) records
 // anonymous usage; stub it so the real sub-agent path runs without touching a DB.
