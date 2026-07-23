@@ -1,12 +1,13 @@
 #!/usr/bin/env node
 // scripts/design/review-gallery.ts
 //
-// Phase 1 of docs/operations/keystone-fidelity-fix-plan-2026-07-08.md — the
-// review artifact Muxin actually uses to check Keystone canvas fidelity.
+// The review artifact Muxin actually uses to check Keystone canvas fidelity.
 // Replaces the old `keystone-contact-sheet.html` approach (a 15MB single
 // file with 56 base64-inlined images, screenshots viewport-cropped at
-// ~900px instead of full-page, and silent coverage holes — see
-// docs/operations/keystone-parity-failure-handoff-2026-07-08.md).
+// ~900px instead of full-page, and silent coverage holes). This is now the
+// primary design-fidelity signal in CI (design-parity.yml) — a human or the
+// pipeline's self-vet agent eyeballs it — since the pixel parity-gate verdict
+// was retired.
 //
 // Unlike parity-gallery.ts (which diffs a "before" ref against an "after"
 // ref), this captures ONE checkout — whatever branch you point it at — and

@@ -20,7 +20,7 @@ below is the diff base for the next run.
 - **Maturity stage: 0 (per rubric default)** — `docs/maturity.md` does not exist in this
   repo, and the rubric says to default to Stage 0 when it's absent. Flagging this as a
   likely **mismatch worth fixing**, not acting on it: the repo's actual CI posture looks
-  well past Stage 0 (branch protection requires `test`, `e2e`, `mutation`, `parity-gate`;
+  well past Stage 0 (branch protection requires `test`, `e2e`, `mutation`;
   GitHub secret scanning + push protection are already ON at the repo-settings level; a
   live mutation-testing gate exists). Recommend a follow-up to write `docs/maturity.md` so
   future audits (and the maturity ladder that gates other tooling) reflect reality instead
