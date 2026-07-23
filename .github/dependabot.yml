@@ -45,6 +45,19 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "@vitejs/plugin-react"
         update-types: ["version-update:semver-major"]
+      # typescript 7 — deferred: incompatible with Next.js 15.5. TS 7 is the
+      # native (Go) compiler rewrite and no longer exposes `ts.sys` the classic
+      # way; Next 15.5's own config loader
+      # (next/dist/build/next-config-ts/transpile-config.js) calls
+      # `ts.findConfigFile(cwd, ts.sys.fileExists, …)` while transpiling
+      # next.config.ts, which throws "Cannot read properties of undefined
+      # (reading 'fileExists')" under TS 7 — breaking both `next lint` and
+      # `next build` at config-load time. Not patchable on our side; needs a
+      # Next release that supports the TS 7 API. There is no stable TS 6.x
+      # (npm `latest` is 7.0.2), so ignore >=7.0.0 to keep taking TS 5.x
+      # patches. Remove when Next supports TypeScript 7.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
