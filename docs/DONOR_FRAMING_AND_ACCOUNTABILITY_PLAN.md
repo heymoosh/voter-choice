@@ -173,13 +173,16 @@ Tests to update: `src/lib/server/donors.test.ts`, `race-data.test.ts`, `RepCard.
    `_coverage-by-layer.ts`: replay 2026 federal ballot names through `resolveCandidateId` and
    report which fail. Expected causes, from the tier logic at `alignment.ts:284-339`: mixed
    `[D-NJ]` state decoration in `candidates.full_name`, nicknames, suffixes, hyphenated surnames.
-   **Open question the review raised: what corpus does the replay use?** Replaying
-   `candidates.full_name` through the resolver trivially exact-matches at tier 1/2
-   (`alignment.ts:284-288`) and measures nothing — misses happen on _ballot-rendered_ names that
-   differ from stored names. The replay must use names from ballot sources
-   (`official_roster_candidates` where present); if no adequate stored ballot-name corpus exists,
-   the step-1 production logging is the only honest instrument and this script should be dropped
-   rather than reporting a fake 100%.
+   **Replay corpus — resolved.** Replaying `candidates.full_name` through the resolver would
+   trivially exact-match at tier 1/2 (`alignment.ts:284-288`) and measure nothing — misses happen
+   on names _as rendered on ballots_, which differ from the FEC-derived stored names. The right
+   corpus already exists: **`official_roster_candidates`** — the hand-transcribed Secretary-of-State
+   rosters covering all 50 states for 2026 (`scripts/ingest/official-roster.ts`,
+   `scripts/congressional-rosters/*-official-roster-2026.ts`). Those names are exactly how official
+   sources spell candidates ("SMITH, JOHN A. JR." vs our "John Smith [R-TX]"), independent of the
+   `candidates` table. The script replays roster `name` + state + office through
+   `resolveCandidateId` and reports the misses. Step-1 production logging stays as the complement:
+   it catches the LLM-ballot path, where user-supplied ballot text can spell names a third way.
 3. **Fix the top classes**, and add a regression fixture per class. `resolveCandidateId` is already
    known to be latently vulnerable on the chat/ballot path — the earlier House mis-resolution fix
    only threaded the resolved id through delegation. **Precision guard, non-negotiable:** every fix
@@ -269,13 +272,21 @@ a hand-labelled gold set and a scored oracle pass, mirroring
 `scripts/ingest/_gold-oracle.workflow.js` / `scripts/ingest/_gold-sample.ts` /
 `scripts/ingest/_subissue-gold-score.ts`. Ship no verdict to production until the gold pass clears.
 Attribute _agenda-setting_ separately from _outcome_ — never credit a member for a law merely
-because they introduced a similar bill.
+because they introduced a similar bill. The Perplexity research pass sharpens this into a
+three-label evidence standard worth adopting verbatim for `promise_actions`: **Activity**
+(introduced/cosponsored/offered an amendment) vs **Advancement** (committee action, markup,
+amendment adopted, floor consideration) vs **Outcome** (provision in enacted law) — a verdict may
+only cite the highest label the official record actually supports.
 
 **But note where the bill-tagger analogy breaks** (review finding): issue-tagging is a fairly
 objective task; kept/broken is a contested judgment, and a single-annotator gold set quietly
-reintroduces the exact bias Open Risk #3 warns about. Required beyond the tagger workflow: a
-written adjudication rubric versioned alongside `adjudicator_version`, and a second annotator on
-the gold set with inter-annotator agreement reported next to the oracle score.
+reintroduces the exact bias Open Risk #3 warns about. To be clear about roles: the _adjudicator_
+is the LLM that scores every promise in production; the _annotators_ are the humans who hand-label
+the small gold set the adjudicator is graded against. Required beyond the tagger workflow: a
+written adjudication rubric versioned alongside `adjudicator_version`, and a second human
+annotator on the gold set (Muxin plus one other person — ideally someone whose politics differ)
+with inter-annotator agreement reported next to the oracle score. Where the two humans disagree,
+the promise is a genuinely contested case and belongs in `not_yet_rated`, not in the gold set.
 
 **Two more states the pipeline must handle honestly:**
 
@@ -322,7 +333,12 @@ sponsor. Bulk path needs no API key (`_fec-bulk.ts` client is keyless).
 Schema decision to take at build time: per-PAC identity currently survives only inside
 `raw_metadata.committees[]` JSON on issue-PAC rows (`federal-issue-pacs.ts:291-300`). If the UI
 should name top PACs/sponsors (it should), promote committees to a first-class table rather than
-growing the JSON.
+growing the JSON. Muxin's Perplexity research (independently) converges on the same shape and
+names the real bottleneck — entity resolution, not data access: the table should be
+`committee_id → PAC name → parent/sponsor → sector → evidence_url → confidence/status`, seeded
+from FEC `CONNECTED_ORG` (which is a filing, i.e. evidence, not an inference) and expanded only
+while the false-match rate stays acceptable. Start with the largest PACs; every sponsor
+relationship carries its evidence link.
 
 **6b — Super-PAC independent expenditures.** The doc's Context is right that IEs are absent from
 candidate receipts — but they are public: FEC Schedule E, available as the bulk
@@ -336,6 +352,17 @@ scaffold.
 cannot be coordinated with the campaign. It must render as its own "Outside spending about this
 race" block — spent _for_ and _against_, never summed into the funding mix — or we misstate
 campaign finance law on the surface whose whole point is precision.
+
+**Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
+
+- _Who funds the super PAC_ (its own Schedule A receipts, incl. corporate donors) is a third,
+  distinct dataset. If ever shown, the only honest label is "funded a group that spent
+  independently" — never attribute a super PAC's candidate-specific spending proportionally to
+  its corporate donors.
+- _Electioneering communications_ are a separate FEC category (ads naming a candidate without
+  express support/oppose) — not IEs, not receipts. Out of scope for 6b.
+- _Dark-money nonprofits_ need not disclose donors. Where an outside spender is a nonprofit, the
+  honest render is "donors not publicly disclosed", not a blank — same principle as Part 2 step 4.
 
 ---
 
@@ -402,9 +429,9 @@ e2e/prototype-core.spec.ts`; then run the app and screenshot a federal seat card
    mitigation, and per-verdict evidence is non-negotiable.
 4. **Migration + security gate.** Parts 3-6 touch `db/**`, which trips the required
    `security-reviewed` label gate.
-5. **Part 2's offline miss report may measure nothing.** Replaying stored names trivially
-   exact-matches; without a ballot-rendered name corpus the script reports a fake 100% (see Part 2
-   step 2). Resolve the corpus question before writing the script.
+5. **Part 2's offline miss report — resolved.** The replay corpus is
+   `official_roster_candidates` (nationwide 2026 SoS rosters, already ingested); see Part 2
+   step 2. Residual risk is only the LLM-ballot spelling variants, covered by step-1 logging.
 6. **Gold-set annotator bias (Part 5).** A single annotator's kept/broken labels are the editorial
    bias of Open Risk #3 wearing a lab coat. Second annotator + agreement stats are part of the
    definition of done, not a nice-to-have.
@@ -424,7 +451,7 @@ Sources evaluated while writing this plan, with the verdict on each.
 | GovTrack API                                 | Votes, member stats                        | Already wired (`federal-votes.ts`, `member-stats.ts`)                |
 | `dwillis/congress-press` (MIT)               | In-office statements                       | Already wired (`congress-press-rationales.ts`)                       |
 | capitolreleases.com                          | In-office statements                       | **Redundant** — same House/Senate press-page corpus as above; no API |
-| LoC US Elections Web Archive                 | Campaign promises                          | **Rejected** — bulk package is 2000–2016 only                        |
+| LoC US Elections Web Archive                 | Campaign promises                          | **Rejected** — bulk package is 2000–2016 only (browsable archive continues past 2016, but has no bulk access) |
 | Wayback Machine CDX API                      | Campaign promises                          | **Adopt for Part 5** — but needs a campaign-URL list we don't have   |
 | Ballotpedia Candidate Connection             | Self-reported positions                    | Candidate; **licence unconfirmed**                                   |
 | Google Political Ads Transparency (BigQuery) | Promises in paid ads                       | Candidate; 2018→, 7-yr retention (earliest years already aging out)  |
@@ -432,7 +459,8 @@ Sources evaluated while writing this plan, with the verdict on each.
 | FEC bulk `pas2` + `cm` (committee master)    | PAC→candidate money, sponsor/industry      | Already wired for issue-PACs (`federal-issue-pacs.ts`); **extend for Part 6a** |
 | FEC Schedule E (bulk IE file / OpenFEC API)  | Super-PAC independent expenditures         | **Adopt for Part 6b** — support/oppose flag per candidate            |
 | PolitiFact promise trackers                  | Methodology reference                      | Reference only — mostly presidents; their 2010 congressional GOP Pledge-O-Meter is the precedent worth reading |
-| OpenSecrets                                  | Money context                              | Secondary to FEC                                                     |
+| OpenSecrets                                  | Money context, PAC→parent/industry enrichment | Secondary to FEC; **public API shut down April 2025** — manual/reference use only; licensing of bulk data unconfirmed |
+| FollowTheMoney                               | State-level campaign finance               | Future — for the state/local gap, never for federal                  |
 | Quiver Quantitative                          | Stock activity                             | Already wired (`stock-transactions.ts`)                              |
 | integrityindex.us                            | —                                          | **Do not scrape.** Credit + ask permission                           |
 | ProPublica Congress API                      | —                                          | Dead                                                                 |
@@ -443,9 +471,14 @@ Sources evaluated while writing this plan, with the verdict on each.
 
 **2026-07-23 — adversarial review** (fresh-eyes agent over the plan alone, every checkable claim
 verified against the codebase), plus two scoped investigations (pgdump usage; PAC/IE data
-availability). A separate Perplexity resource list on Muxin's machine
-(`~/Downloads/give me a list of all the best resoruces to find t.md`) was **not** reviewable from
-the remote session — cross-check it against the Source appendix in a local session.
+availability). Muxin's two Perplexity research docs were cross-checked against the Source appendix
+in a follow-up pass: they independently converge on the same source stack (FEC primary,
+Congress.gov, official committee rosters, Lugar as benchmark) and contributed the entity-resolution
+table shape and attribution rules in Part 6, the Activity/Advancement/Outcome standard in Part 5,
+the OpenSecrets-API-is-dead and FollowTheMoney appendix rows, and Part 6's deferred-scope list
+(super-PAC donors, electioneering communications, dark-money nondisclosure). Their GitHub survey
+also confirmed no existing open-source project delivers the corporation→PAC→candidate chain —
+building it ourselves is the only option.
 
 Mechanical fixes applied in this revision:
 
