@@ -15,6 +15,19 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    ignore:
+      # eslint 10 + eslint-config-next 16 are coupled to a Next.js 16 upgrade.
+      # config-next 15.x declares `eslint@^7||^8||^9` and its bundled
+      # @rushstack/eslint-patch hard-fails under eslint 10 ("Failed to patch
+      # ESLint … unsupported version"); config-next 16 requires Next 16, and
+      # `next lint` itself is removed in Next 16 (the lint setup migrates to the
+      # ESLint CLI). So both majors ride WITH the Next 16 migration, not as
+      # standalone bumps. Minor/patch updates still flow. Remove these two rules
+      # when Next is upgraded to 16. See the [P2] Dependabot-evaluation card.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
