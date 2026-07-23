@@ -24,7 +24,11 @@ vi.mock("./alignment", () => ({
 
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { resolveCandidateId } from "./alignment";
-import { lookupDonorCoalition } from "./donors";
+import {
+  lookupDonorCoalition,
+  toDisplayBucketLabel,
+  FUNDING_MIX_LABELS,
+} from "./donors";
 
 // ---------------------------------------------------------------------------
 // Helper: build a minimal chainable Drizzle mock
@@ -693,5 +697,25 @@ describe("lookupDonorCoalition — happy path", () => {
     expect(result.buckets).toHaveLength(1);
     expect(result.buckets[0]!.percent).toBe(100);
     expect(result.totalRaised).toBeCloseTo(12345.67, 2);
+  });
+});
+
+describe("toDisplayBucketLabel", () => {
+  it("strips the $200 threshold from the small/large funding-mix labels", () => {
+    expect(toDisplayBucketLabel(FUNDING_MIX_LABELS.small)).toBe(
+      "Small individual donors",
+    );
+    expect(toDisplayBucketLabel(FUNDING_MIX_LABELS.large)).toBe(
+      "Large individual donors",
+    );
+  });
+
+  it("leaves non-funding-mix labels (sectors, issue-PACs) unchanged", () => {
+    expect(toDisplayBucketLabel("Healthcare industry")).toBe(
+      "Healthcare industry",
+    );
+    expect(toDisplayBucketLabel(FUNDING_MIX_LABELS.pac)).toBe(
+      FUNDING_MIX_LABELS.pac,
+    );
   });
 });

@@ -943,8 +943,7 @@ const en: Translations = {
     racePatternsCoalitionHeading: "Donor coalition",
     racePatternsCoalitionUnavailablePrefix: "Donor data unavailable \u2014",
     racePatternsSeeDonors: "See individual donors",
-    racePatternsDonorMethodologyNote:
-      "% by total contribution amount \u00b7 Small donor = under $200 per donation",
+    racePatternsDonorMethodologyNote: "% by total contribution amount",
     racePatternsEndorsementPartisan: "Partisan",
     racePatternsEndorsementNonpartisan: "Nonpartisan",
     racePatternsEndorsementMixed: "Mixed",
@@ -1645,8 +1644,7 @@ const es: Translations = {
     racePatternsCoalitionHeading: "Donor coalition",
     racePatternsCoalitionUnavailablePrefix: "Donor data unavailable \u2014",
     racePatternsSeeDonors: "See individual donors",
-    racePatternsDonorMethodologyNote:
-      "% by total contribution amount \u00b7 Small donor = under $200 per donation",
+    racePatternsDonorMethodologyNote: "% by total contribution amount",
     racePatternsEndorsementPartisan: "Partisan",
     racePatternsEndorsementNonpartisan: "Nonpartisan",
     racePatternsEndorsementMixed: "Mixed",
