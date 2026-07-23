@@ -28,6 +28,23 @@ updates:
         update-types: ["version-update:semver-major"]
       - dependency-name: "eslint-config-next"
         update-types: ["version-update:semver-major"]
+      # vitest 4 cluster — deferred. These are dev-only test tooling (never in
+      # the shipped bundle; Next builds with turbopack, not vite), so the major
+      # buys no runtime/product/security benefit — `npm audit --omit=dev`
+      # already scopes the audit gate to prod deps. The upgrade is a real
+      # migration: vitest 4 forbids `new` on arrow-function mock implementations
+      # (breaks the AWS/Anthropic SDK mocks) and changes async module-resolution
+      # timing (breaks the next/dynamic stub in page.test.tsx); and
+      # @vitejs/plugin-react 6 forces vite 8 + a full lockfile regen. Not worth
+      # the churn now — revisit deliberately, ideally with the Next 16 / vite
+      # work. Minor/patch (incl. security) still flow within the current major.
+      # See the [P2] Dependabot-evaluation card.
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/coverage-v8"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
