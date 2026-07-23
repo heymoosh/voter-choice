@@ -257,15 +257,32 @@ CDX API** (free, public) against campaign-site URLs, plus:
 
 - `candidate_promises` — candidate_id, canonical_issue, sub_issue, promise_text, made_at,
   venue (`campaign_site` | `ad` | `press_release` | `questionnaire` | `debate`), source_url,
-  archive_url, extraction_model_version.
+  archive_url, extraction_model_version, **promise_type** (`vote` | `introduce_bill` |
+  `oversight` | `funding` | `outcome`), **conditions_deadline**. The last two implement the
+  core anti-bias rule from Muxin's promise-tracking research: **the test for "kept" is declared
+  at extraction time, before any outcome is known** — never chosen after seeing how things
+  turned out. A promise with no falsifiable action, scope, or deadline is filtered at
+  extraction as unverifiable rhetoric, not carried forward to be judged.
 - `promise_actions` — promise_id, action_type (`vote` | `sponsorship` | `cosponsorship` |
   `amendment` | `committee_action`), ref to `votes` / `bills` / `bill_cosponsors`, direction.
-- `promise_verdicts` — promise_id, verdict (`kept` | `broken` | `compromise` | `stalled` |
-  `not_yet_rated`), rationale, evidence refs, adjudicator_version, adjudicated_at.
+- `promise_verdicts` — promise_id, verdict, rationale, evidence refs, adjudicator_version,
+  adjudicated_at. **Recommended verdict enum refinement (Muxin to confirm — the _scored tracker_
+  decision stands, this only sharpens the labels):** `kept` | `attempted_blocked` | `compromise` |
+  `broken` | `not_yet_testable`, where `attempted_blocked` means the member took the promised
+  controllable action but other institutions stopped the outcome. The unit of evaluation is the
+  **action the member plausibly controlled**: a House member who promised "vote against X" and
+  did so has _kept_ the promise even if X passed; "no law materialized" is never by itself
+  `broken`. This is the mirror image of the agenda-setting rule below — never credit an outcome
+  they didn't drive, never blame an outcome they couldn't control.
 
 **Pipeline:** extract promises (LLM over archived campaign pages + press releases) → link to
 actions (deterministic issue-tag join over `issue_tags`, which already carries `stance_lens`) →
-adjudicate (LLM, outcome-based like PolitiFact, not effort-based).
+adjudicate (LLM, outcome-based like PolitiFact, not effort-based). Framing that matters for
+public defensibility: **the LLM is not the judge — it is an evidence assembler applying a
+published, versioned rubric** (the rubric requirement below). The rubric is the editorial
+judgment we own; the model executes it and flags ambiguous cases for human review instead of
+forcing a verdict. Start small: pilot on one state's House delegation (~20-50 members) for one
+cycle before going nationwide.
 
 **Because this is a scored verdict we own, it needs the same rigour as the bill tagger:**
 a hand-labelled gold set and a scored oracle pass, mirroring
@@ -287,6 +304,19 @@ written adjudication rubric versioned alongside `adjudicator_version`, and a sec
 annotator on the gold set (Muxin plus one other person — ideally someone whose politics differ)
 with inter-annotator agreement reported next to the oracle score. Where the two humans disagree,
 the promise is a genuinely contested case and belongs in `not_yet_rated`, not in the gold set.
+
+**Bootstrap the gold set with labels humans already wrote.** Hand-labeled promise verdicts do
+exist — PolitiFact's presidential promise meters (Obameter, Trump-O-Meter/MAGA-meter, Biden
+tracker) and the academic Polimeter/Poltext project — and the adjudicator should be scored
+against a sample of those _first_, as an external calibration pass against professional
+fact-checkers' judgments before our own gold set is graded. Two hard limits on this shortcut:
+(1) coverage — those corpora label **presidents and governments, not members of Congress**, so
+they calibrate the _method_ but cannot substitute for hand-labeling our actual 2026
+congressional promises (they shrink the gold set we must label ourselves; they don't eliminate
+it); (2) licensing — PolitiFact ratings are Poynter's copyrighted editorial content; scoring
+against them internally with citation is defensible, republishing their labels is not
+(same confirm-before-ingest posture as Ballotpedia). Full Fact's promise-tracking research is
+the methodology reference for the rubric itself.
 
 **Two more states the pipeline must handle honestly:**
 
@@ -458,7 +488,9 @@ Sources evaluated while writing this plan, with the verdict on each.
 | Lugar Center Bipartisan Index                | Cross-party benchmark                      | Cite, don't ingest                                                   |
 | FEC bulk `pas2` + `cm` (committee master)    | PAC→candidate money, sponsor/industry      | Already wired for issue-PACs (`federal-issue-pacs.ts`); **extend for Part 6a** |
 | FEC Schedule E (bulk IE file / OpenFEC API)  | Super-PAC independent expenditures         | **Adopt for Part 6b** — support/oppose flag per candidate            |
-| PolitiFact promise trackers                  | Methodology reference                      | Reference only — mostly presidents; their 2010 congressional GOP Pledge-O-Meter is the precedent worth reading |
+| PolitiFact promise trackers                  | Methodology reference + calibration corpus | Score adjudicator against their presidential labels as an external calibration pass (cite, never republish — Poynter copyright); their 2010 congressional GOP Pledge-O-Meter is the precedent worth reading |
+| Polimeter / Poltext (academic)               | Promise-tracking methodology + labels      | Methodology reference; second calibration corpus (governments, not Congress) |
+| Full Fact promise-tracking research          | Rubric design                              | Reference for the adjudication rubric — progress = achievement of stated aim, primary sources |
 | OpenSecrets                                  | Money context, PAC→parent/industry enrichment | Secondary to FEC; **public API shut down April 2025** — manual/reference use only; licensing of bulk data unconfirmed |
 | FollowTheMoney                               | State-level campaign finance               | Future — for the state/local gap, never for federal                  |
 | Quiver Quantitative                          | Stock activity                             | Already wired (`stock-transactions.ts`)                              |
@@ -478,7 +510,10 @@ table shape and attribution rules in Part 6, the Activity/Advancement/Outcome st
 the OpenSecrets-API-is-dead and FollowTheMoney appendix rows, and Part 6's deferred-scope list
 (super-PAC donors, electioneering communications, dark-money nondisclosure). Their GitHub survey
 also confirmed no existing open-source project delivers the corporation→PAC→candidate chain —
-building it ourselves is the only option.
+building it ourselves is the only option. A third research doc (promise-tracking judgment)
+contributed Part 5's declare-the-test-at-extraction rule, the controllable-action unit of
+evaluation with the recommended `attempted_blocked` verdict, the LLM-as-rubric-applier framing,
+the one-state pilot, and the PolitiFact/Polimeter calibration-corpus bootstrap for the gold set.
 
 Mechanical fixes applied in this revision:
 
