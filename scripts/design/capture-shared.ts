@@ -1,10 +1,9 @@
 // scripts/design/capture-shared.ts
 //
 // The single screenshot-capture path shared by parity-gallery.ts (before/
-// after diff) and review-gallery.ts (single-branch review artifact, Phase 1
-// of docs/operations/keystone-fidelity-fix-plan-2026-07-08.md). Centralizing
-// this means both tools get scroll-trap handling for free instead of each
-// carrying its own (partial) full-page capture logic.
+// after diff) and review-gallery.ts (single-branch review artifact).
+// Centralizing this means both tools get scroll-trap handling for free
+// instead of each carrying its own (partial) full-page capture logic.
 //
 // Also hosts the git-ref → running-app-instance resolution (resolveAppInstance)
 // that both tools need, so it lives in a plain library module with no
