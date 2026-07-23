@@ -46,10 +46,9 @@ vi.mock("../../../lib/server/alignment", () => ({
 }));
 
 vi.mock("../../../lib/server/donors", async () => {
-  const actual =
-    await vi.importActual<typeof import("../../../lib/server/donors")>(
-      "../../../lib/server/donors",
-    );
+  const actual = await vi.importActual<
+    typeof import("../../../lib/server/donors")
+  >("../../../lib/server/donors");
   return {
     ...actual,
     lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),

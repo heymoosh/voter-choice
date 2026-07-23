@@ -58,10 +58,9 @@ vi.mock("../../../lib/server/alignment", () => ({
 }));
 
 vi.mock("../../../lib/server/donors", async () => {
-  const actual =
-    await vi.importActual<typeof import("../../../lib/server/donors")>(
-      "../../../lib/server/donors",
-    );
+  const actual = await vi.importActual<
+    typeof import("../../../lib/server/donors")
+  >("../../../lib/server/donors");
   return {
     ...actual,
     lookupDonorCoalition: vi.fn().mockResolvedValue({ found: false }),
@@ -1052,8 +1051,12 @@ describe("POST /api/chat — donor coalition bucket labels", () => {
     expect(toolResultBlock.type).toBe("tool_result");
     expect(toolResultBlock.tool_use_id).toBe("toolu_donor_1");
     expect(toolResultBlock.content).not.toContain("$200");
-    expect(toolResultBlock.content).toContain('"label":"Small individual donors"');
-    expect(toolResultBlock.content).toContain('"label":"Large individual donors"');
+    expect(toolResultBlock.content).toContain(
+      '"label":"Small individual donors"',
+    );
+    expect(toolResultBlock.content).toContain(
+      '"label":"Large individual donors"',
+    );
     expect(toolResultBlock.content).toContain('"label":"Healthcare industry"');
   });
 });
