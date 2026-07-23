@@ -2858,7 +2858,17 @@ CLARIFICATION (Muxin, 2026-07-12): I'm not sure which phase three cards are misl
     - `eslint` 9.39.4 -> 10.7.0 (was #419) — `test`+`e2e` red, major
     - `react-dom` 19.1.0 -> 19.2.8 (was #420) — `test`+`e2e` red
     - `@vitejs/plugin-react` 5.1.4 -> 6.0.3 (was #421) — `test`+`e2e` red, major
-- STATUS: Backlog
+- RESOLVED 2026-07-22 — all 9 REMAINING bumps evaluated on their own branches (bump → `npm run check` + build, e2e where the failure was runtime, release-note read). Each verified locally, then PR'd with auto-merge-after-self-vet:
+  - MERGE (took):
+    - `react` + `react-dom` 19.1.0→19.2.8 — PR #434 (MERGED). Minor; check+build+e2e (39 passed) green.
+    - `jscpd` 4.0.5→5.0.12 (dev) — PR #435. jscpd 5's detector finds intra-file clones the v4 baseline lacked → regenerated `scripts/quality/duplication-baseline.json` (zero source changes; report shape unchanged). check+build+dup:check green.
+    - `prettier` 3.5.3→3.9.6 — PR #433. The real churn was 26 lint-gated `src` files (3.9 collapses short union types onto one line); also hardened `.prettierignore` to keep `npm run format` out of vendored `design-handoff/` + harness `.claude/` (else ~47k lines of churn). NOTE: trips the security-review-label gate because prettier cosmetically reformats 3 `src/app/api/**` route files — diff is whitespace/union-syntax only; `security-reviewed` label applied 2026-07-22 to unblock.
+  - DEFER (`.github/dependabot.yml` ignore rules, all in PR #436 — minor/patch incl. security still flow):
+    - `eslint` 9→10 + `eslint-config-next` 15→16 (majors): coupled to a **Next 16** upgrade. config-next 15 peers `eslint ^7||^8||^9`; eslint 10 + config-next 15 hard-fails `next lint` (bundled `@rushstack/eslint-patch` rejects eslint 10); config-next 16 requires Next 16; `next lint` itself is removed in Next 16.
+    - `typescript` 7 (>=7.0.0 ignored): **incompatible with Next 15.5**. TS 7 (native compiler) drops the classic `ts.sys`; Next 15.5's `next.config.ts` loader calls `ts.findConfigFile(cwd, ts.sys.fileExists, …)` → crashes, breaking `next lint` AND `next build`. Not patchable here; no stable TS 6.x exists (npm latest = 7.0.2). Aside from that, TS 7 type-checked the repo with one trivial `declare module "*.css"` fix — the blocker is purely the Next integration. Revisit with Next 16.
+    - `vitest` 4 + `@vitest/coverage-v8` 4 + `@vitejs/plugin-react` 6 (majors): dev-only test tooling, no runtime/product benefit (Next builds with turbopack, not vite; `npm audit --omit=dev` already scopes the audit gate). Real migration: vitest 4 forbids `new` on arrow-fn mock impls (breaks AWS/Anthropic SDK mocks) + changed async module-resolution timing (breaks the `next/dynamic` stub in `page.test.tsx`); plugin-react 6 forces vite 8 + a full lock regen. Fixes are known/small; the cost is the vite-8 churn. Revisit deliberately.
+- FOLLOW-UP (separate, optional): a `depcheck`-style pass for genuinely-dead dependencies (imported nowhere) — distinct from these bumps.
+- STATUS: Done
 
 **[P2] Evaluate removing the parity-gate check entirely (is it earning its keep?)**
 - ORIGIN: 2026-07-21 — Muxin: increasingly skeptical the parity-gate is doing us any favors. As a *required* status check on `main` it now blocks legitimate merges whenever copy or visuals intentionally change — which is most design work — and the references go stale the moment we ship a redesign, so the gate flags the intended change as a failure. Two concrete instances today (both had ALL real checks — `test`/`e2e`/`mutation`/`check`/`review-gallery` — green, blocked only by parity-gate, and were admin-merged past it):
