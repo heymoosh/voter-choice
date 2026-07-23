@@ -96,7 +96,7 @@ DB, not resolved by live web search, so answers are reproducible and trustworthy
 | --------------- | ----------------------------------------------------------------------------------------------------------------- |
 | Bucket copy     | Keep the names "Small donors" / "Large donors"; delete the `<$200` / `≥$200` sub-labels; add a corporations gloss |
 | $200 disclosure | Scrubbed from every card/legend/prompt surface; **kept on `/methodology`** so numbers stay reproducible           |
-| Promise display | **Scored kept / broken / compromise / stalled** tracker (PolitiFact-style) — an editorial judgment we own         |
+| Promise display | **Scored tracker** (PolitiFact-style) — an editorial judgment we own. Verdict enum signed off 2026-07-23: `kept` / `attempted_blocked` / `compromise` / `broken` / `not_yet_testable` (see Part 5) |
 | Scope           | All of it, fully planned. Multi-PR, multi-session                                                                 |
 
 ---
@@ -266,10 +266,12 @@ CDX API** (free, public) against campaign-site URLs, plus:
 - `promise_actions` — promise_id, action_type (`vote` | `sponsorship` | `cosponsorship` |
   `amendment` | `committee_action`), ref to `votes` / `bills` / `bill_cosponsors`, direction.
 - `promise_verdicts` — promise_id, verdict, rationale, evidence refs, adjudicator_version,
-  adjudicated_at. **Recommended verdict enum refinement (Muxin to confirm — the _scored tracker_
-  decision stands, this only sharpens the labels):** `kept` | `attempted_blocked` | `compromise` |
-  `broken` | `not_yet_testable`, where `attempted_blocked` means the member took the promised
-  controllable action but other institutions stopped the outcome. The unit of evaluation is the
+  adjudicated_at. **Verdict enum (signed off by Muxin 2026-07-23):** `kept` |
+  `attempted_blocked` | `compromise` | `broken` | `not_yet_testable` | `not_yet_rated` —
+  `attempted_blocked` means the member took the promised controllable action but other
+  institutions stopped the outcome; `not_yet_testable` is a real adjudication (no relevant
+  vote/deadline has occurred yet); `not_yet_rated` means not yet adjudicated, or contested
+  (human annotators disagreed). The unit of evaluation is the
   **action the member plausibly controlled**: a House member who promised "vote against X" and
   did so has _kept_ the promise even if X passed; "no law materialized" is never by itself
   `broken`. This is the mirror image of the agenda-setting rule below — never credit an outcome
