@@ -57,9 +57,7 @@ export interface DonorCoalitionResult {
 export interface DonorCoalitionNotFound {
   found: false;
   reason:
-    | "candidate_not_resolved"
-    | "no_donor_data"
-    | "non_legislative_candidate";
+    "candidate_not_resolved" | "no_donor_data" | "non_legislative_candidate";
 }
 
 export type DonorLookupResult = DonorCoalitionResult | DonorCoalitionNotFound;

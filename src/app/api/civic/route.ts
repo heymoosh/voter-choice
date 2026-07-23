@@ -174,7 +174,7 @@ function hasLocations(data: {
 }): boolean {
   return Boolean(
     (data.pollingLocations && data.pollingLocations.length > 0) ||
-      (data.earlyVoteSites && data.earlyVoteSites.length > 0),
+    (data.earlyVoteSites && data.earlyVoteSites.length > 0),
   );
 }
 

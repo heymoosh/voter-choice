@@ -31,8 +31,7 @@ export function invalidBodyResponse(): NextResponse {
 }
 
 export type JsonRouteGateResult<T> =
-  | { ok: true; body: T }
-  | { ok: false; response: NextResponse };
+  { ok: true; body: T } | { ok: false; response: NextResponse };
 
 /**
  * Runs the shared rate-limit → parse-JSON → validate sequence for a simple

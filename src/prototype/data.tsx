@@ -928,7 +928,10 @@ export function computeOverallAlignmentPct(alignmentEntry, userIssues) {
     .map((iss) => getScoreForIssue(alignmentEntry, iss.canonicalIssue))
     .filter((s) => s && s.total > 0);
   return scored.length
-    ? Math.round(scored.reduce((sum, s) => sum + (s.kept / s.total) * 100, 0) / scored.length)
+    ? Math.round(
+        scored.reduce((sum, s) => sum + (s.kept / s.total) * 100, 0) /
+          scored.length,
+      )
     : null;
 }
 

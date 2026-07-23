@@ -639,9 +639,7 @@ export function deriveMoneyInfluence(
 ): MoneyInfluence | null {
   const donorCoalition = seat.candidate?.donorCoalition;
   const scores = seat.alignmentEntry?.scores as
-    | MoneyScoreLike[]
-    | null
-    | undefined;
+    MoneyScoreLike[] | null | undefined;
   if (!donorCoalition || donorCoalition.length === 0 || !Array.isArray(scores))
     return null;
 

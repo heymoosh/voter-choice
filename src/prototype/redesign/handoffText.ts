@@ -80,9 +80,10 @@ function rosterSection(
     .map((s) => {
       const rows = (s.challengers || []).filter(predicate);
       if (rows.length === 0) return null;
-      return [`  ${s.office} · ${s.districtLabel}:`, ...rows.map(challengerLine)].join(
-        "\n",
-      );
+      return [
+        `  ${s.office} · ${s.districtLabel}:`,
+        ...rows.map(challengerLine),
+      ].join("\n");
     })
     .filter(Boolean)
     .join("\n");

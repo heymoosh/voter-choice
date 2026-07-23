@@ -103,14 +103,7 @@ export interface CongressionalSourceInventoryRecord {
     stages: Array<"primary" | "convention" | "runoff" | "general">;
   };
   sourceFormat:
-    | "csv"
-    | "xlsx"
-    | "json"
-    | "xml"
-    | "html"
-    | "pdf"
-    | "portal"
-    | "manual";
+    "csv" | "xlsx" | "json" | "xml" | "html" | "pdf" | "portal" | "manual";
   parserFamily:
     | "csv"
     | "xlsx"
@@ -258,9 +251,7 @@ function isFecUrl(value: unknown): boolean {
 function validateRequiredUrl(
   record: Record<string, unknown>,
   field:
-    | "officialLandingPage"
-    | "calendarSource"
-    | "candidatePublicationSource",
+    "officialLandingPage" | "calendarSource" | "candidatePublicationSource",
   label: string,
   errors: string[],
 ): void {

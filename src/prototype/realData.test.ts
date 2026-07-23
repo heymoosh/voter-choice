@@ -146,7 +146,8 @@ describe("ballot roster provenance", () => {
             provider: "Google Civic Information API",
             confidence: "exact_official",
             electionName: "2026 General Election",
-            message: "Google Civic returned official contests for this address.",
+            message:
+              "Google Civic returned official contests for this address.",
             sourceLinks: [
               {
                 label: "Google Civic Information API",

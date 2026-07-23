@@ -905,9 +905,7 @@ function isBillableTool(name: string): boolean {
 
 // The SDK's usage type (0.39.0) doesn't know about server tool counts yet.
 type UsageWithServerTools =
-  | { server_tool_use?: { web_search_requests?: number } }
-  | null
-  | undefined;
+  { server_tool_use?: { web_search_requests?: number } } | null | undefined;
 
 function extractSearchCount(usage: UsageWithServerTools): number | undefined {
   return (usage as { server_tool_use?: { web_search_requests?: number } })

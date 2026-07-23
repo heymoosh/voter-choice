@@ -61,10 +61,7 @@
  *   change its default — out of scope for this convention.
  */
 export type LaunchFlagStatus =
-  | "pre_launch_dark"
-  | "uncertain"
-  | "operational"
-  | "already_live";
+  "pre_launch_dark" | "uncertain" | "operational" | "already_live";
 
 export type LaunchFlagSurface = "server" | "client";
 

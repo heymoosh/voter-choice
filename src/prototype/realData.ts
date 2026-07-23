@@ -301,7 +301,10 @@ export async function fetchBallotFromAddress(
               rosterProvenance,
             }))
           : contests;
-        return { races: deriveRaces({ contests: contestsWithProvenance }), stateCode };
+        return {
+          races: deriveRaces({ contests: contestsWithProvenance }),
+          stateCode,
+        };
       }
       return { races: [], stateCode };
     }

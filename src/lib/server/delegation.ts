@@ -68,8 +68,7 @@ export interface DelegationSeat {
 }
 
 export type DelegationLookupResult =
-  | { status: "ok"; seats: DelegationSeat[] }
-  | { status: "db_unavailable" };
+  { status: "ok"; seats: DelegationSeat[] } | { status: "db_unavailable" };
 
 // ---------------------------------------------------------------------------
 // Decoration / metadata parsing

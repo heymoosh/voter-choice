@@ -13,9 +13,7 @@ function mkRace(office: string, party_context: string | null = null) {
     office,
     vote_for_n: 1,
     party_context: party_context as
-      | "Democratic Primary"
-      | "Republican Primary"
-      | null,
+      "Democratic Primary" | "Republican Primary" | null,
     candidates: [
       {
         name: "Jane Doe",
