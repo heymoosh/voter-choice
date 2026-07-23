@@ -15,6 +15,49 @@ updates:
     open-pull-requests-limit: 10
     labels:
       - "dependencies"
+    ignore:
+      # eslint 10 + eslint-config-next 16 are coupled to a Next.js 16 upgrade.
+      # config-next 15.x declares `eslint@^7||^8||^9` and its bundled
+      # @rushstack/eslint-patch hard-fails under eslint 10 ("Failed to patch
+      # ESLint … unsupported version"); config-next 16 requires Next 16, and
+      # `next lint` itself is removed in Next 16 (the lint setup migrates to the
+      # ESLint CLI). So both majors ride WITH the Next 16 migration, not as
+      # standalone bumps. Minor/patch updates still flow. Remove these two rules
+      # when Next is upgraded to 16. See the [P2] Dependabot-evaluation card.
+      - dependency-name: "eslint"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "eslint-config-next"
+        update-types: ["version-update:semver-major"]
+      # vitest 4 cluster — deferred. These are dev-only test tooling (never in
+      # the shipped bundle; Next builds with turbopack, not vite), so the major
+      # buys no runtime/product/security benefit — `npm audit --omit=dev`
+      # already scopes the audit gate to prod deps. The upgrade is a real
+      # migration: vitest 4 forbids `new` on arrow-function mock implementations
+      # (breaks the AWS/Anthropic SDK mocks) and changes async module-resolution
+      # timing (breaks the next/dynamic stub in page.test.tsx); and
+      # @vitejs/plugin-react 6 forces vite 8 + a full lockfile regen. Not worth
+      # the churn now — revisit deliberately, ideally with the Next 16 / vite
+      # work. Minor/patch (incl. security) still flow within the current major.
+      # See the [P2] Dependabot-evaluation card.
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitest/coverage-v8"
+        update-types: ["version-update:semver-major"]
+      - dependency-name: "@vitejs/plugin-react"
+        update-types: ["version-update:semver-major"]
+      # typescript 7 — deferred: incompatible with Next.js 15.5. TS 7 is the
+      # native (Go) compiler rewrite and no longer exposes `ts.sys` the classic
+      # way; Next 15.5's own config loader
+      # (next/dist/build/next-config-ts/transpile-config.js) calls
+      # `ts.findConfigFile(cwd, ts.sys.fileExists, …)` while transpiling
+      # next.config.ts, which throws "Cannot read properties of undefined
+      # (reading 'fileExists')" under TS 7 — breaking both `next lint` and
+      # `next build` at config-load time. Not patchable on our side; needs a
+      # Next release that supports the TS 7 API. There is no stable TS 6.x
+      # (npm `latest` is 7.0.2), so ignore >=7.0.0 to keep taking TS 5.x
+      # patches. Remove when Next supports TypeScript 7.
+      - dependency-name: "typescript"
+        versions: [">=7.0.0"]
 
   - package-ecosystem: "github-actions"
     directory: "/"
