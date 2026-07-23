@@ -27,11 +27,7 @@ const SEARCH_COST_PER_THOUSAND = 10.0;
 export const MONTHLY_BUDGET_USD = 50.0;
 
 export type BudgetTier =
-  | "normal"
-  | "notice"
-  | "soft_close"
-  | "handoff"
-  | "exhausted";
+  "normal" | "notice" | "soft_close" | "handoff" | "exhausted";
 
 interface BudgetState {
   totalInputTokens: number;

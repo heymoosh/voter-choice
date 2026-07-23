@@ -89,9 +89,9 @@ export function isSelectableReplacement(candidate: RosterCandidate): boolean {
   const provenance = candidate.rosterProvenance;
   return Boolean(
     provenance?.selectableAsReplacement === true &&
-      provenance.ballotStatus === "verified_current_ballot" &&
-      (provenance.confidence === "verified_current_ballot" ||
-        provenance.confidence === "official_address_election_tied"),
+    provenance.ballotStatus === "verified_current_ballot" &&
+    (provenance.confidence === "verified_current_ballot" ||
+      provenance.confidence === "official_address_election_tied"),
   );
 }
 

@@ -377,9 +377,8 @@ describe("/api/extract-ballot", () => {
   });
 
   it("returns 500 on hard PDF parse failure", async () => {
-    const { extractTextFromPdf } = await import(
-      "../../../lib/server/extract-pdfjs"
-    );
+    const { extractTextFromPdf } =
+      await import("../../../lib/server/extract-pdfjs");
     vi.mocked(extractTextFromPdf).mockRejectedValueOnce(
       new Error("Corrupt PDF"),
     );

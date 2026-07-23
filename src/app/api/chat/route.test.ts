@@ -195,9 +195,7 @@ function simpleTextStream(
  * so the route's continuation loop fires. */
 function toolUseStream(
   toolName:
-    | "lookup_alignment"
-    | "lookup_donor_coalition"
-    | "research_candidate",
+    "lookup_alignment" | "lookup_donor_coalition" | "research_candidate",
   toolUseId: string,
   input: Record<string, unknown>,
 ): AsyncIterable<Anthropic.MessageStreamEvent> {
@@ -259,9 +257,7 @@ function toolUseStream(
  * return a polite error tool_result for the excess. */
 function multiToolUseStream(
   toolName:
-    | "lookup_alignment"
-    | "lookup_donor_coalition"
-    | "research_candidate",
+    "lookup_alignment" | "lookup_donor_coalition" | "research_candidate",
   inputs: Record<string, unknown>[],
 ): AsyncIterable<Anthropic.MessageStreamEvent> {
   const events: Anthropic.MessageStreamEvent[] = [

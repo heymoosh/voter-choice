@@ -47,8 +47,7 @@ async function addressFromSelectEvent(e: Event): Promise<string> {
   if (address) return address;
 
   const fetchFn = place.fetchFields as
-    | ((opts: { fields: string[] }) => Promise<unknown>)
-    | undefined;
+    ((opts: { fields: string[] }) => Promise<unknown>) | undefined;
   if (!fetchFn) return "";
 
   await fetchFn.call(place, { fields: ["formattedAddress"] });
@@ -88,9 +87,8 @@ export function useGooglePlacesAutocomplete({
     }
 
     async function init() {
-      const { setOptions, importLibrary } = await import(
-        "@googlemaps/js-api-loader"
-      );
+      const { setOptions, importLibrary } =
+        await import("@googlemaps/js-api-loader");
       setOptions({ key: apiKey! });
       const placesLib = (await importLibrary(
         "places",

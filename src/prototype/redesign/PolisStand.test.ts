@@ -8,9 +8,7 @@ import {
 
 describe("countAnswered", () => {
   it("counts every recorded statement, including pass", () => {
-    expect(
-      countAnswered({ a: "agree", b: "disagree", c: "pass" }),
-    ).toBe(3);
+    expect(countAnswered({ a: "agree", b: "disagree", c: "pass" })).toBe(3);
   });
 
   it("is 0 for an empty answer set", () => {
@@ -84,6 +82,8 @@ describe("recordedCopy", () => {
   });
 
   it("honest degrade: a write 'error' gets the SAME honest copy as 'skipped' — never a scary error", () => {
-    expect(recordedCopy("agree", "error")).toBe(recordedCopy("agree", "skipped"));
+    expect(recordedCopy("agree", "error")).toBe(
+      recordedCopy("agree", "skipped"),
+    );
   });
 });

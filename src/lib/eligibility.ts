@@ -90,7 +90,7 @@ function primaryRuleHtml(stateData: StateElectionData): {
   const participation = stateData.primaryParticipation;
   const runoffLock = Boolean(
     stateData.runoffRules?.hasRunoff &&
-      stateData.runoffRules?.partyLockedToFirstRoundPrimary,
+    stateData.runoffRules?.partyLockedToFirstRoundPrimary,
   );
 
   const parts: string[] = [];

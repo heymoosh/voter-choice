@@ -207,9 +207,8 @@ describe("NJ accuracy oracle", () => {
     // Pillar-3 leak sweep against regression. The full rendered-DOM zero-
     // forbidden-strings assertion requires Playwright (noted below).
     it("[WS3 C3 / Phase B] POLLING_INFO and STATE_ELECTION_DATA constants contain ZERO forbidden strings", async () => {
-      const { POLLING_INFO, STATE_ELECTION_DATA } = await import(
-        "../../prototype/data"
-      );
+      const { POLLING_INFO, STATE_ELECTION_DATA } =
+        await import("../../prototype/data");
       const serialized = JSON.stringify({ POLLING_INFO, STATE_ELECTION_DATA });
       for (const forbidden of NJ_GROUND_TRUTH.forbiddenForNj) {
         expect(serialized).not.toContain(forbidden);

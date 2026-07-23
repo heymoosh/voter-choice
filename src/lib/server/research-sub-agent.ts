@@ -60,9 +60,7 @@ const UNAVAILABLE_MIN_CHARS = 20;
 // The SDK 0.39.0 doesn't yet type the server tool counter; use the same
 // shape the chat route uses to extract it.
 type UsageWithServerTools =
-  | { server_tool_use?: { web_search_requests?: number } }
-  | null
-  | undefined;
+  { server_tool_use?: { web_search_requests?: number } } | null | undefined;
 
 function extractSearchCount(usage: UsageWithServerTools): number {
   return (

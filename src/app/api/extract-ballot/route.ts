@@ -343,9 +343,8 @@ async function visionFallbackForPage(
   page: PageImage,
   _totalPages: number,
 ): Promise<import("../../../lib/server/extract-vision").PageVisionResult> {
-  const { extractWithVision: _ev } = await import(
-    "../../../lib/server/extract-vision"
-  );
+  const { extractWithVision: _ev } =
+    await import("../../../lib/server/extract-vision");
   const result = await _ev(anthropicClient, [page]);
   return (
     result.pageResults[0] ?? {

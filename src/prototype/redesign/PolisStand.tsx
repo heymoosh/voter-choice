@@ -58,7 +58,10 @@ export function buildRespondPayload(
  *  both POLIS_VECTOR_COLLECTION_ENABLED being off and a network/write
  *  failure — from the voter's side both mean "this didn't leave my device,"
  *  so neither claims a false "it's in the aggregate now." */
-export function recordedCopy(answer: PolisAnswer, outcome: WriteOutcome): string {
+export function recordedCopy(
+  answer: PolisAnswer,
+  outcome: WriteOutcome,
+): string {
   if (outcome !== "stored") {
     return "Noted — thanks. Contribution collection isn't live yet, so this stays with you, not the aggregate.";
   }
@@ -182,7 +185,9 @@ export function PolisStand({
       ),
     })
       .then((res) => res.json())
-      .then((json) => setOutcome(json.outcome === "stored" ? "stored" : "skipped"))
+      .then((json) =>
+        setOutcome(json.outcome === "stored" ? "stored" : "skipped"),
+      )
       .catch(() => setOutcome("error"));
   }
 
@@ -199,10 +204,10 @@ export function PolisStand({
           You judged them on the record — <em>not the party.</em>
         </h1>
         <p className="ps-lede">
-          Your scorecard is done and ready to print — this won&rsquo;t touch
-          it. React to a few statements if you like. You answer blind — no
-          running score — and at the end you&rsquo;ll see the full picture:
-          where the groups line up, and where they don&rsquo;t.
+          Your scorecard is done and ready to print — this won&rsquo;t touch it.
+          React to a few statements if you like. You answer blind — no running
+          score — and at the end you&rsquo;ll see the full picture: where the
+          groups line up, and where they don&rsquo;t.
         </p>
 
         <div className="ps-cards">

@@ -101,11 +101,7 @@ export interface Theme {
  * RouterTrigger) to pick which task prompt to send.
  */
 export type RouterView =
-  | "cold-open"
-  | "workspace-race"
-  | "workspace-prop"
-  | "amend"
-  | "handoff";
+  "cold-open" | "workspace-race" | "workspace-prop" | "amend" | "handoff";
 
 /** Whether the active race is a candidate choice or a ballot proposition. */
 export type RaceType = "choice" | "proposition";

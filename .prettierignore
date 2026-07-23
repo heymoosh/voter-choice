@@ -18,3 +18,12 @@ src/lib/prompts/__tests__/*.golden.md
 # a wholesale prettier reformat produces a multi-thousand-line churn over the
 # generated source. Never auto-format.
 src/prototype/VoterChoiceApp.tsx
+
+# Vendored design-canvas exports (Claude Design handoff): CSS/JSX + raw canvas
+# dumps that are copied verbatim, not authored here. Formatting them produces
+# tens of thousands of lines of churn over source we don't own.
+design-handoff/
+
+# Harness-managed skill files (session-installed Claude Code skills). Not part
+# of the app source; must not be reformatted.
+.claude/

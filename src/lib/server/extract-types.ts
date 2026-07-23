@@ -25,10 +25,7 @@
  * - `null`: a real candidate.
  */
 export type PlaceholderReason =
-  | "no_petition_filed"
-  | "write_in"
-  | "illegible"
-  | null;
+  "no_petition_filed" | "write_in" | "illegible" | null;
 
 /**
  * Section names — kept open to a fixed list per the bake-off's section_name
