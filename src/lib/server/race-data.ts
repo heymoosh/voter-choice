@@ -218,6 +218,37 @@ function computeFundingMix(
   };
 }
 
+/**
+ * Say what is actually missing, and never imply the candidate filed nothing.
+ *
+ * The three lookup misses have genuinely different meanings and used to read
+ * almost the same:
+ *   • candidate_not_resolved — we hold filings but couldn't match the name.
+ *   • no_donor_data, federal — federal filings ARE ingested (78% of federal
+ *     candidates have a full breakdown), so this candidate specifically has
+ *     none on file with the FEC yet.
+ *   • no_donor_data, state/local — we have not ingested that state's filings
+ *     for this office. The candidate may well have filed; we don't hold it.
+ * The last distinction is the point: a blank where WE lack the data must not
+ * read as a candidate who raised nothing.
+ */
+function donorUnavailableReason(result: {
+  reason:
+    "candidate_not_resolved" | "no_donor_data" | "non_legislative_candidate";
+  jurisdiction?: string;
+}): string {
+  if (result.reason === "non_legislative_candidate") {
+    return "No campaign-finance record for this office in our data";
+  }
+  if (result.reason === "candidate_not_resolved") {
+    return "Couldn't match this candidate in our campaign-finance data";
+  }
+  const isFederal = result.jurisdiction?.startsWith("federal-") ?? false;
+  return isFederal
+    ? "No FEC filings on record for this candidate this cycle"
+    : "We don't have campaign-finance filings for this office yet";
+}
+
 export function donorFieldsFromResult(
   result: Awaited<ReturnType<typeof lookupDonorCoalition>>,
 ): Pick<
@@ -230,13 +261,10 @@ export function donorFieldsFromResult(
   | "fundingMix"
 > {
   if (!result.found) {
-    const reason =
-      result.reason === "non_legislative_candidate"
-        ? "No campaign-finance record for this office in our data"
-        : result.reason === "candidate_not_resolved"
-          ? "Couldn't match this candidate in our campaign-finance data"
-          : "No donor data available for this candidate yet";
-    return { donorCoalition: null, donorUnavailable: { reason } };
+    return {
+      donorCoalition: null,
+      donorUnavailable: { reason: donorUnavailableReason(result) },
+    };
   }
   // donorCoalition feeds the UI's "Industry breakdown" (sector slices) and the
   // issue-PAC teaser, so it must carry ONLY sector + issue-PAC buckets. The

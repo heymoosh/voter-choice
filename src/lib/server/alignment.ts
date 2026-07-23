@@ -164,6 +164,77 @@ export function attachLimitedDataNotice(
 // ---------------------------------------------------------------------------
 
 /**
+ * Generational / professional suffixes, stripped from the END of a name.
+ * Official Secretary-of-State rosters carry them ("FREDERICK D. HAYNES III",
+ * "Clyde W. Jones, Jr.") while our FEC-derived rows usually don't. Before this
+ * was handled, `candidateNameParts` read "III" as the SURNAME — which resolved
+ * a Texas candidate onto "Rep. Nicholas Begich III [R-AK]".
+ */
+const NAME_SUFFIX_TOKENS = new Set([
+  "jr",
+  "sr",
+  "ii",
+  "iii",
+  "iv",
+  "v",
+  "md",
+  "phd",
+  "esq",
+  "dds",
+  "jd",
+]);
+
+/**
+ * Honorifics stripped from ANY position. FEC-derived rows splice the filer's
+ * prefix field mid-name — "Clyde W Mr. Jones", "Raymond Edward Dr. Smith",
+ * "Thomas E. Colonel Chalifoux" — so a leading-only strip misses them.
+ * Deliberately excludes name-like titles ("Major", "Duke") that are real
+ * given names or surnames.
+ */
+const NAME_HONORIFIC_TOKENS = new Set([
+  "mr",
+  "mrs",
+  "ms",
+  "dr",
+  "sen",
+  "rep",
+  "del",
+  "com",
+  "res",
+  "gov",
+  "hon",
+  "senator",
+  "representative",
+  "congressman",
+  "congresswoman",
+  "colonel",
+]);
+
+/** Lowercase, drop diacritics and name punctuation. Comparison key only. */
+function foldNameToken(token: string): string {
+  return token
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase()
+    .replace(/[.'’]/gu, "");
+}
+
+/**
+ * Fold a whole name for comparison: diacritics and punctuation removed,
+ * whitespace collapsed. "LAUREN B. PEÑA" and "Lauren B. Pena" both fold to
+ * "lauren b pena", so they match exactly instead of falling through every tier.
+ * Never used for display — `cleanCandidateName` keeps the original spelling.
+ */
+function foldName(raw: string): string {
+  return (raw ?? "")
+    .trim()
+    .split(/\s+/u)
+    .map(foldNameToken)
+    .filter(Boolean)
+    .join(" ");
+}
+
+/**
  * Strip GovTrack-style decorations from a stored candidate name so it can be
  * matched against a clean ballot name.
  *
@@ -172,6 +243,10 @@ export function attachLimitedDataNotice(
  * and occasionally the sortname form "Collins, Susan (Sen.) [R-ME]". Ballot
  * rosters (Google Civic / uploaded ballots) use the plain "Firstname Lastname"
  * form. This reduces the stored name to "Andrew Kim" / "Susan Collins".
+ *
+ * Also removes quoted nicknames (`James "Rus" Russell`), trailing suffixes and
+ * mid-name honorifics — all three appear in official rosters and in the
+ * FEC-derived `candidates.full_name` rows we match them against.
  *
  * Exported for unit testing.
  */
@@ -183,21 +258,40 @@ export function cleanCandidateName(raw: string): string {
   // federal-donors.ts); without it Norcross's last name read as "[d-nj1]" and
   // resolveCandidateId missed him (breaking BOTH alignment and donors).
   s = s.replace(/\s*\[[A-Za-z]+-[A-Za-z]{2}\d*\]\s*$/u, "");
-  // Sortname "Collins, Susan (Sen.) [R-ME]" → "Susan Collins".
-  const sortname = s.match(
-    /^([^,]+),\s*(.+?)(?:\s*\((?:Sen|Rep|Del|Res|Com)\.?\))?$/u,
-  );
-  if (s.includes(",") && sortname) {
-    s = `${sortname[2].trim()} ${sortname[1].trim()}`;
+  // Quoted nickname: `Lateresa "LA" Jones`, `Shevrin “Shev” Jones`. Single
+  // quotes are NOT treated as nickname delimiters — they are apostrophes in
+  // "O'Brien" / "D'Angelo".
+  s = s.replace(/"[^"]*"|“[^”]*”/gu, " ");
+  // Any parenthetical, which covers the "(Sen.)" the sortname form carries.
+  s = s.replace(/\s*\([^)]*\)\s*/gu, " ");
+  // Sortname "Collins, Susan" → "Susan Collins". A comma that only introduces
+  // a suffix ("Clyde W. Jones, Jr.") is NOT a sortname — flipping it would
+  // produce "Jr. Clyde W. Jones".
+  const commaIdx = s.indexOf(",");
+  if (commaIdx > 0) {
+    const head = s.slice(0, commaIdx).trim();
+    const tail = s.slice(commaIdx + 1).trim();
+    const tailTokens = tail.split(/\s+/u).filter(Boolean);
+    const tailIsSuffixOnly =
+      tailTokens.length > 0 &&
+      tailTokens.every((t) => NAME_SUFFIX_TOKENS.has(foldNameToken(t)));
+    if (head && tail)
+      s = tailIsSuffixOnly ? `${head} ${tail}` : `${tail} ${head}`;
   }
-  // Leading honorific title.
-  s = s.replace(
-    /^(?:sen|rep|del|com|res|gov|senator|representative)\.?\s+/iu,
-    "",
+  let toks = s.split(/\s+/u).filter(Boolean);
+  // Honorifics anywhere; never strip the name down to nothing.
+  const withoutHonorifics = toks.filter(
+    (t) => !NAME_HONORIFIC_TOKENS.has(foldNameToken(t)),
   );
-  // Stray "(Sen.)" left mid-string.
-  s = s.replace(/\s*\((?:sen|rep|del|res|com)\.?\)\s*/iu, " ");
-  return s.replace(/\s+/g, " ").trim();
+  if (withoutHonorifics.length > 0) toks = withoutHonorifics;
+  // Trailing suffixes, keeping at least one token.
+  while (
+    toks.length > 1 &&
+    NAME_SUFFIX_TOKENS.has(foldNameToken(toks[toks.length - 1]))
+  ) {
+    toks.pop();
+  }
+  return toks.join(" ");
 }
 
 /** Extract the 2-letter state from a "[D-NJ]" or House "[D-NJ1]" decoration. */
@@ -216,14 +310,55 @@ export function candidateNameParts(clean: string): {
   return { first: toks[0], last: toks[toks.length - 1] };
 }
 
+/**
+ * True when two surnames are the same name written differently across a
+ * hyphen — "Kacker" ↔ "Devgan-Kacker", "Arreguin" ↔ "Acevedo-Arreguin".
+ * Official rosters and FEC filings routinely disagree about which half of a
+ * hyphenated surname survives. Only consulted by tiers that ALSO require an
+ * exact first-name match, so it never widens a surname-only match.
+ */
+function surnameSharesHyphenPart(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const parts = (s: string) => new Set(s.split("-").filter(Boolean));
+  const [pa, pb] = [parts(a), parts(b)];
+  if (pa.size <= 1 && pb.size <= 1) return false;
+  for (const p of pa) if (pb.has(p)) return true;
+  return false;
+}
+
 interface ParsedCandidateRow {
   id: string;
   rawLower: string;
   clean: string;
   cleanLower: string;
   state: string | null;
+  /**
+   * Where `state` came from. "column" is `candidates.state`, populated by the
+   * FEC roster ingest for ~97% of federal rows and therefore trustworthy
+   * enough to EXCLUDE a candidate. "decoration" is parsed out of a GovTrack
+   * "[D-NJ]" tag, which prod data shows can be stale or wrong — it may narrow
+   * a match but must never be the sole reason to reject one.
+   */
+  stateSource: "column" | "decoration" | null;
   first: string;
   last: string;
+  /**
+   * Which PERSON this row is, as opposed to which row it is. Sitting members
+   * exist twice in `candidates`: once as `federal-<BIOGUIDE>` from the votes
+   * ingest ("Rep. Dale Strong [R-AL5]") and once as `fec-<FECID>` from the FEC
+   * roster ingest ("Dale Whitney Strong"). Both carry the SAME
+   * `fec_candidate_id`, so that column — the FEC's own identity key, not a
+   * name guess — collapses them. Falls back to the row id when absent.
+   */
+  identityKey: string;
+  /**
+   * Preference within one identity: 0 for the incumbent row, 1 otherwise. The
+   * `federal-<BIOGUIDE>` row is strictly richer — it carries the voting record
+   * and at least as many donor rows — so resolving a sitting member onto the
+   * voteless FEC duplicate is the failure this ordering prevents.
+   */
+  preference: number;
 }
 
 /**
@@ -234,18 +369,28 @@ interface ParsedCandidateRow {
  *   2. Exact match on the decoration-stripped stored name — handles
  *      "Sen. John Cornyn [R-TX]" ↔ "John Cornyn".
  *   3. Lastname + state — handles ballot nicknames vs GovTrack formal names
- *      ("Andy Kim" ↔ "Andrew Kim [D-NJ]"). State is taken from the stored
- *      decoration; the caller passes the ballot's state to disambiguate. When
- *      one lastname+state row exists it wins; multiple are broken by first
- *      initial, and a still-ambiguous set is left to the prefix tiers rather
- *      than guessed.
- *   4. Prefix / reverse-prefix on the cleaned name (middle initials, suffixes).
+ *      ("Andy Kim" ↔ "Andrew Kim [D-NJ]"). The caller passes the ballot's
+ *      state to disambiguate. When one lastname+state row exists it wins;
+ *      multiple are broken by first initial, and a still-ambiguous set is left
+ *      to the later tiers rather than guessed.
+ *   3b. First + last name, ignoring middle names and hyphen halves
+ *      ("Michael Don Johnson" ↔ "Michael Johnson", "Sonia Kacker" ↔
+ *      "Sonia Devgan-Kacker"). Requires an exact first-name match.
+ *   4. Prefix / reverse-prefix on the cleaned name (middle initials).
  *
  * `stateCode` is optional for back-compat (the chat tools pass it; older
- * callers may not). Without it, tier 3 is skipped.
+ * callers may not). Without it, tiers 3/3b are skipped.
  *
  * The jurisdiction narrows the search to the right chamber so same-name
  * candidates across chambers don't collide.
+ *
+ * PRECISION FIRST. Every tier below is shared by donors, alignment and the
+ * chat tools, and a false positive renders the WRONG person's money and voting
+ * record — strictly worse than showing nothing. Where a tier cannot pick one
+ * person it returns null and the caller shows an honest "we couldn't match
+ * this candidate" state. `scripts/ingest/_resolution-miss-report.ts` measures
+ * both directions (misses AND suspect mismatches) against the 50-state
+ * official rosters; run it before and after touching this function.
  */
 export async function resolveCandidateId(
   candidateName: string,
@@ -257,65 +402,116 @@ export async function resolveCandidateId(
 
   const rawQuery = candidateName.trim();
   if (!rawQuery) return null;
-  const queryLower = rawQuery.toLowerCase();
+  const queryLower = foldName(rawQuery);
   const cleanQuery = cleanCandidateName(rawQuery);
-  const cleanQueryLower = cleanQuery.toLowerCase();
+  const cleanQueryLower = foldName(cleanQuery);
   const queryParts = candidateNameParts(cleanQuery);
 
   const rows = await db
-    .select({ id: schema.candidates.id, fullName: schema.candidates.fullName })
+    .select({
+      id: schema.candidates.id,
+      fullName: schema.candidates.fullName,
+      state: schema.candidates.state,
+      fecCandidateId: schema.candidates.fecCandidateId,
+      isIncumbent: schema.candidates.isIncumbent,
+    })
     .from(schema.candidates)
     .where(eq(schema.candidates.jurisdiction, jurisdiction));
 
   const parsed: ParsedCandidateRow[] = rows.map((r) => {
     const clean = cleanCandidateName(r.fullName);
     const parts = candidateNameParts(clean);
+    // Prefer the structured `candidates.state` column over the name
+    // decoration: it is populated for ~97% of federal rows (vs ~20% decorated)
+    // and, where both exist, prod shows zero disagreement between them.
+    const columnState = r.state?.trim().toUpperCase() || null;
+    const decorationState = stateFromCandidateName(r.fullName);
     return {
       id: r.id,
-      rawLower: r.fullName.trim().toLowerCase(),
+      rawLower: foldName(r.fullName),
       clean,
-      cleanLower: clean.toLowerCase(),
-      state: stateFromCandidateName(r.fullName),
-      first: parts.first,
-      last: parts.last,
+      cleanLower: foldName(clean),
+      state: columnState ?? decorationState,
+      stateSource: columnState
+        ? "column"
+        : decorationState
+          ? "decoration"
+          : null,
+      first: foldNameToken(parts.first),
+      last: foldNameToken(parts.last),
+      identityKey: r.fecCandidateId?.trim() || r.id,
+      preference: r.isIncumbent ? 0 : 1,
     };
   });
 
-  // 1 + 2. Exact on raw, then on cleaned.
-  const exact =
-    parsed.find((p) => p.rawLower === queryLower) ??
-    parsed.find((p) => p.cleanLower === cleanQueryLower);
-  if (exact) return exact.id;
+  /**
+   * Rows this candidate CANNOT be, given the ballot state. Only an
+   * authoritative `candidates.state` disqualifies — a stale "[D-XX]"
+   * decoration must not, or real ballot surnames stop resolving.
+   */
+  const notInBallotState = (p: ParsedCandidateRow, st: string) =>
+    p.stateSource === "column" && p.state !== st;
+  const eligible = stateCode
+    ? parsed.filter((p) => !notInBallotState(p, stateCode.toUpperCase()))
+    : parsed;
+
+  /** Best row for one person: the incumbent row first, then lowest id. */
+  const bestOf = (rows: ParsedCandidateRow[]): string =>
+    [...rows].sort(
+      (a, b) => a.preference - b.preference || (a.id < b.id ? -1 : 1),
+    )[0].id;
+
+  /**
+   * The single distinct PERSON in a row set, else null. Three things collapse
+   * to one answer, in decreasing order of confidence:
+   *   • the same row id (one person ingested for two Congresses);
+   *   • rows sharing an `fec_candidate_id` (a sitting member's votes-ingest row
+   *     and FEC-roster row — the FEC's own identity key, not a name guess);
+   *   • rows whose CLEANED NAME is identical under different ids (duplicate FEC
+   *     filings for one person — "Shay Williams" twice). Identical names are
+   *     indistinguishable to us anyway, so refusing to answer would only hide
+   *     data, and the pick is deterministic.
+   * Two rows that are genuinely different people never collapse — that is the
+   * ambiguity guard, and it is what keeps a loosened tier from showing the
+   * wrong person's money.
+   */
+  const onlyDistinct = (rows: ParsedCandidateRow[]): string | null => {
+    if (rows.length === 0) return null;
+    if (new Set(rows.map((p) => p.id)).size === 1) return rows[0].id;
+    if (new Set(rows.map((p) => p.identityKey)).size === 1) return bestOf(rows);
+    if (new Set(rows.map((p) => p.cleanLower)).size === 1) return bestOf(rows);
+    return null;
+  };
+
+  // 1 + 2. Exact on raw, then on cleaned. Both are ambiguity-guarded: an exact
+  // name shared by two DIFFERENT ids in the ballot state is not a match we can
+  // make safely.
+  const exactRaw = eligible.filter((p) => p.rawLower === queryLower);
+  const exactClean = eligible.filter((p) => p.cleanLower === cleanQueryLower);
+  const exact = onlyDistinct(exactRaw) ?? onlyDistinct(exactClean);
+  if (exact) return exact;
 
   // 3. Lastname (+ state when available). Ballots usually list SURNAMES only
   // ("NORCROSS", "BOOKER"), so this tier must resolve a bare lastname when it
   // maps to one person.
   //
-  // The stored name's state is parsed from a GovTrack-style "[D-NJ]"
-  // decoration — but the prod DB has MIXED formats: some rows are decorated
-  // (re-ingest), some are clean with no state on file (older dump). So state
-  // is used to EXCLUDE contradicting rows, not as a hard requirement: a row
-  // whose state matches the ballot OR has no state on file is "compatible";
-  // a row with a different state is not.
+  // Rows authoritatively in another state are already out (`eligible`). Within
+  // what's left, the "[D-NJ]" decoration still can't be trusted as a filter —
+  // prod has decorated rows, clean rows with no state, and rows with a stale
+  // tag — so it only narrows, never rejects.
   if (stateCode && queryParts.last) {
     const st = stateCode.toUpperCase();
-    const qLast = queryParts.last.toLowerCase();
-    const byLast = parsed.filter((p) => p.last.toLowerCase() === qLast);
-    const queryIsSurnameOnly = queryParts.first.toLowerCase() === qLast;
-    // Resolve to the single distinct candidate in a row set, else null.
-    const onlyDistinct = (rows: ParsedCandidateRow[]): string | null => {
-      const ids = new Set(rows.map((p) => p.id));
-      return ids.size === 1 ? rows[0].id : null;
-    };
-    // Most specific → least specific. The DB's "[D-NJ]" state decoration is
-    // INCONSISTENT (some rows decorated, some clean with no state, some with a
-    // stale/wrong state), so we can't treat it as authoritative:
+    const qLast = foldNameToken(queryParts.last);
+    const byLast = eligible.filter((p) => p.last === qLast);
+    const queryIsSurnameOnly = foldNameToken(queryParts.first) === qLast;
+    // Most specific → least specific:
     //   (a) exact state match;
     //   (b) state matches OR is unknown on file (don't contradict the ballot);
-    //   (c) last resort — a surname that is UNIQUE in this chamber resolves
-    //       regardless of the unreliable state tag (a federal surname maps to
-    //       one member; this is what makes "NORCROSS"/"PALLONE" resolve when
-    //       their stored state is missing/wrong).
+    //   (c) last resort — a surname UNIQUE in this chamber resolves even when
+    //       its state tag is missing or stale. Safe only because `eligible`
+    //       already dropped rows the authoritative state rules out; without
+    //       that, this tier matched an Alaska ballot's "GOLDFARB" onto a
+    //       Goldfarb running in another state.
     const stateMatched = byLast.filter((p) => p.state === st);
     const compatible = byLast.filter((p) => p.state === st || p.state === null);
     const resolved =
@@ -327,26 +523,54 @@ export async function resolveCandidateId(
     // (skip for a surname-only query, which has no real first name), preferring
     // rows whose state matches the ballot.
     if (!queryIsSurnameOnly) {
-      const qInitial = queryParts.first[0]?.toLowerCase();
+      const qInitial = foldNameToken(queryParts.first)[0];
       const pool = stateMatched.length > 0 ? stateMatched : byLast;
-      const byInitial = pool.filter(
-        (p) => p.first[0]?.toLowerCase() === qInitial,
-      );
+      const byInitial = pool.filter((p) => p.first[0] === qInitial);
       const initResolved = onlyDistinct(byInitial);
       if (initResolved) return initResolved;
     }
-    // Genuinely ambiguous → fall through to the prefix tiers rather than guess.
+    // Genuinely ambiguous → fall through to the later tiers rather than guess.
   }
 
-  // 4. Prefix / reverse-prefix on the cleaned name.
-  const prefix = parsed.find(
-    (p) => cleanQueryLower && p.cleanLower.startsWith(cleanQueryLower),
-  );
-  if (prefix) return prefix.id;
-  const reversePrefix = parsed.find(
-    (p) => p.cleanLower && cleanQueryLower.startsWith(p.cleanLower),
-  );
-  if (reversePrefix) return reversePrefix.id;
+  // 3b. First + last, ignoring middle names and hyphen halves. Official
+  // rosters spell out middle names our FEC rows omit ("Michael Don Johnson" ↔
+  // "Michael Johnson") and disagree about hyphenated surnames ("Sonia Kacker"
+  // ↔ "Sonia Devgan-Kacker"). Requires an EXACT first-name match plus state
+  // eligibility, so it stays narrower than the surname tier above.
+  if (stateCode && queryParts.first && queryParts.last) {
+    const qFirst = foldNameToken(queryParts.first);
+    const qLast = foldNameToken(queryParts.last);
+    // A bare initial ("J. Smith") is not a first-name match.
+    if (qFirst !== qLast && qFirst.length > 1) {
+      const byFirstLast = eligible.filter(
+        (p) => p.first === qFirst && surnameSharesHyphenPart(p.last, qLast),
+      );
+      const resolved = onlyDistinct(byFirstLast);
+      if (resolved) return resolved;
+    }
+  }
+
+  // 4. Prefix / reverse-prefix on the cleaned name — middle initials and other
+  // leftovers the tiers above don't catch.
+  //
+  // A SINGLE-TOKEN query is excluded. A bare ballot surname is a surname, and
+  // prefix-matching it against a full name matches on the FIRST name instead:
+  // the Arizona ballot's "Gordon" resolved to "Gordon Chaffin", "James" to
+  // "James M Brown", "Glenn" to "Rep. Glenn Grothman [R-WI6]". Bare surnames
+  // are tier 3's job, where the ambiguity guard applies.
+  const queryIsSingleToken = !cleanQuery.includes(" ");
+  if (cleanQueryLower && !queryIsSingleToken) {
+    const prefix = eligible.filter((p) =>
+      p.cleanLower.startsWith(`${cleanQueryLower} `),
+    );
+    const prefixResolved = onlyDistinct(prefix);
+    if (prefixResolved) return prefixResolved;
+    const reversePrefix = eligible.filter(
+      (p) => p.cleanLower && cleanQueryLower.startsWith(`${p.cleanLower} `),
+    );
+    const reverseResolved = onlyDistinct(reversePrefix);
+    if (reverseResolved) return reverseResolved;
+  }
 
   return null;
 }

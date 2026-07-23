@@ -1,7 +1,8 @@
 # Donor-bucket framing + candidate accountability data — plan
 
 > Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
-> judgment calls recorded in Open risks (see Review log at the end). No code changes accompany this doc.
+> judgment calls recorded in Open risks (see Review log at the end).
+> **Parts 1 and 2 are built** (see "Part 2 — executed"); Parts 3-6 are still plan only.
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -92,12 +93,12 @@ DB, not resolved by live web search, so answers are reproducible and trustworthy
 
 ## Decisions taken
 
-| Decision        | Choice                                                                                                            |
-| --------------- | ----------------------------------------------------------------------------------------------------------------- |
-| Bucket copy     | Keep the names "Small donors" / "Large donors"; delete the `<$200` / `≥$200` sub-labels; add a corporations gloss |
-| $200 disclosure | Scrubbed from every card/legend/prompt surface; **kept on `/methodology`** so numbers stay reproducible           |
+| Decision        | Choice                                                                                                                                                                                             |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Bucket copy     | Keep the names "Small donors" / "Large donors"; delete the `<$200` / `≥$200` sub-labels; add a corporations gloss                                                                                  |
+| $200 disclosure | Scrubbed from every card/legend/prompt surface; **kept on `/methodology`** so numbers stay reproducible                                                                                            |
 | Promise display | **Scored tracker** (PolitiFact-style) — an editorial judgment we own. Verdict enum signed off 2026-07-23: `kept` / `attempted_blocked` / `compromise` / `broken` / `not_yet_testable` (see Part 5) |
-| Scope           | All of it, fully planned. Multi-PR, multi-session                                                                 |
+| Scope           | All of it, fully planned. Multi-PR, multi-session                                                                                                                                                  |
 
 ---
 
@@ -192,6 +193,62 @@ Tests to update: `src/lib/server/donors.test.ts`, `race-data.test.ts`, `RepCard.
    just a recall fixture.
 4. **Honest copy for the real gap.** Where data genuinely is absent (state/local), the message
    should say _we don't have state filings for this office yet_, not imply the candidate filed nothing.
+
+### Part 2 — executed 2026-07-23
+
+Measured against all 1,884 2026 federal roster names, before → after:
+
+|                                  | before  | after | note                                    |
+| -------------------------------- | ------- | ----- | --------------------------------------- |
+| recall (rows with a counterpart) | 88%     | 99%   | 1,209/1,370 → 1,270/1,285               |
+| misses                           | 59      | 12    | remainder are correct refusals (below)  |
+| **suspect mismatches**           | **102** | **3** | wrong person's data — the precision bug |
+
+The three surviving "mismatches" are all the same person under two spellings ("Ashley Hinson" ↔
+"Ashley Hinson Arenholz") — artefacts of the report's surname-level expectation, not resolver
+errors. Effective false-positive rate is zero.
+
+`official_roster_candidates.our_candidate_id` is **empty in production** (the crosswalk was never
+backfilled), so the report derives its own expectation: a roster row has a _plausible counterpart_
+when some `candidates` row in the same chamber shares its normalized surname without contradicting
+its state. That is looser than the resolver by design — it can catch what the resolver misses — but
+it means `miss` is an upper bound, not a defect count.
+
+Fixed classes (each with a recall fixture **and** a never-resolve-when-ambiguous fixture in
+`alignment.test.ts`):
+
+- **Authoritative state.** The resolver read state only from the `[D-NJ]` name decoration, present
+  on ~20% of federal rows, while `candidates.state` is populated on ~97% and, where both exist,
+  never disagrees. Reading the column lets a wrong-state row be excluded — this alone killed most
+  of the 102 mismatches, e.g. an Alaska ballot's "GOLDFARB" resolving onto a Goldfarb elsewhere.
+  The decoration still only narrows, never rejects, since prod shows stale tags.
+- **Generational suffixes.** `candidateNameParts` read "III" as the surname, so "FREDERICK D.
+  HAYNES III" (TX) resolved onto "Rep. Nicholas Begich III [R-AK]". Suffixes are now stripped, and
+  a comma that only introduces one ("Clyde W. Jones, Jr.") no longer flips as a sortname.
+- **Bare surname prefix-matching a FIRST name.** Tier 4 matched the Arizona ballot's "Gordon" onto
+  "Gordon Chaffin" and "James" onto "James M Brown". Single-token queries are surnames; they are
+  tier 3's job, where the ambiguity guard applies.
+- **Diacritics and mid-name honorifics.** "LAUREN B. PEÑA" ↔ "Lauren B. Pena"; FEC rows splice the
+  filer prefix mid-name ("Clyde W Mr. Jones", "Stephen A The Hon Womack").
+- **Middle names and hyphenated surnames**, via a first+last tier requiring an exact first-name
+  match ("Michael Don Johnson" ↔ "Michael Johnson", "Sonia Kacker" ↔ "Sonia Devgan-Kacker").
+- **One person stored twice.** Every sitting member exists as both `federal-<BIOGUIDE>` (votes
+  ingest) and `fec-<FECID>` (FEC roster ingest) — and the two share `fec_candidate_id`. Collapsing
+  on that column is the FEC's own identity key, not a name guess, and the incumbent row wins
+  because it carries the voting record plus at least as many donor rows. This is the same
+  voteless-duplicate hazard the earlier House mis-resolution fix worked around in `delegation.ts`.
+
+Deliberately **not** fixed — the resolver is right to return null:
+
+- Two FEC candidacies for one person with no shared id (Mark Harris's 2016 NC-9 and current NC-8
+  filings). Needs person-level dedup in `candidates`, not a looser matcher.
+- Genuinely different people sharing a surname and state (Robert Menendez Sr. and Rob Menendez Jr.;
+  "Victor M. Arias" vs "Vincent Michael Arias").
+- Nickname-only differences where the rows are also duplicates ("Bob Onder" ↔ "Robert Frank
+  Onder"). Resolving these would require guessing between two people.
+
+Also open: 123 of 629 federal incumbents have a null `fec_candidate_id`, so the duplicate collapse
+can't reach them. That is an ingest backfill, tracked separately from this matcher work.
 
 ---
 
@@ -342,11 +399,11 @@ the plumbing is already in the repo.
 
 **Where corporate-adjacent money is findable, per channel:**
 
-| Channel                              | In candidate receipts? | Data source                                    | Status                             |
-| ------------------------------------ | ---------------------- | ---------------------------------------------- | ---------------------------------- |
-| Individual donors by employer sector | Yes                    | FEC bulk `indiv` (employer field)              | Wired (`federal-sectors-bulk.ts`)  |
-| Corporate/trade PAC → candidate      | Yes                    | FEC bulk `pas2` + committee master `cm`        | Wired for issue-PACs only — extend |
-| Super-PAC independent expenditures   | **No**                 | FEC Schedule E (bulk IE file or OpenFEC API)   | Not ingested — net-new             |
+| Channel                              | In candidate receipts? | Data source                                  | Status                             |
+| ------------------------------------ | ---------------------- | -------------------------------------------- | ---------------------------------- |
+| Individual donors by employer sector | Yes                    | FEC bulk `indiv` (employer field)            | Wired (`federal-sectors-bulk.ts`)  |
+| Corporate/trade PAC → candidate      | Yes                    | FEC bulk `pas2` + committee master `cm`      | Wired for issue-PACs only — extend |
+| Super-PAC independent expenditures   | **No**                 | FEC Schedule E (bulk IE file or OpenFEC API) | Not ingested — net-new             |
 
 **6a — PAC money attributed to sponsor + industry.** `scripts/ingest/federal-issue-pacs.ts`
 already consumes `pas2{cycle}.zip` (every committee→candidate contribution) joined to
@@ -439,7 +496,9 @@ e2e/prototype-core.spec.ts`; then run the app and screenshot a federal seat card
   `$200` appears in the LLM output (this is the surface the review found the original checklist
   would have missed).
 - **Part 2** — `npx tsx --env-file=.env.local scripts/ingest/_resolution-miss-report.ts` before
-  and after; miss count must drop, and every fixed class needs a unit test.
+  and after; miss count must drop, and every fixed class needs a unit test. **Done** — see
+  "Part 2 — executed" above. Watch `suspect_mismatch` as the guard rail: it must never grow, since
+  a false positive renders the wrong person's money.
 - **Parts 3-4** — ingest with `--dry-run` first, then a scoped live run; spot-check one member's
   committees against `clerk.house.gov/committees` and one bill's cosponsors against its
   congress.gov page.
@@ -475,29 +534,29 @@ e2e/prototype-core.spec.ts`; then run the app and screenshot a federal seat card
 
 Sources evaluated while writing this plan, with the verdict on each.
 
-| Source                                       | Use                                        | Verdict                                                              |
-| -------------------------------------------- | ------------------------------------------ | -------------------------------------------------------------------- |
-| FEC `/candidates/totals/`, bulk files        | Funding mix, sectors                       | Already wired (`federal-donors.ts`, `federal-sectors-bulk.ts`)       |
-| Congress.gov API v3                          | Cosponsors, amendments, committee activity | **Adopt for Part 4** — key already held                              |
-| `unitedstates/congress-legislators` (CC0)    | Committee assignments                      | **Adopt for Part 3** — cheapest correct source                       |
-| GovTrack API                                 | Votes, member stats                        | Already wired (`federal-votes.ts`, `member-stats.ts`)                |
-| `dwillis/congress-press` (MIT)               | In-office statements                       | Already wired (`congress-press-rationales.ts`)                       |
-| capitolreleases.com                          | In-office statements                       | **Redundant** — same House/Senate press-page corpus as above; no API |
-| LoC US Elections Web Archive                 | Campaign promises                          | **Rejected** — bulk package is 2000–2016 only (browsable archive continues past 2016, but has no bulk access) |
-| Wayback Machine CDX API                      | Campaign promises                          | **Adopt for Part 5** — but needs a campaign-URL list we don't have   |
-| Ballotpedia Candidate Connection             | Self-reported positions                    | Candidate; **licence unconfirmed**                                   |
-| Google Political Ads Transparency (BigQuery) | Promises in paid ads                       | Candidate; 2018→, 7-yr retention (earliest years already aging out)  |
-| Lugar Center Bipartisan Index                | Cross-party benchmark                      | Cite, don't ingest                                                   |
-| FEC bulk `pas2` + `cm` (committee master)    | PAC→candidate money, sponsor/industry      | Already wired for issue-PACs (`federal-issue-pacs.ts`); **extend for Part 6a** |
-| FEC Schedule E (bulk IE file / OpenFEC API)  | Super-PAC independent expenditures         | **Adopt for Part 6b** — support/oppose flag per candidate            |
-| PolitiFact promise trackers                  | Methodology reference + calibration corpus | Score adjudicator against their presidential labels as an external calibration pass (cite, never republish — Poynter copyright); their 2010 congressional GOP Pledge-O-Meter is the precedent worth reading |
-| Polimeter / Poltext (academic)               | Promise-tracking methodology + labels      | Methodology reference; second calibration corpus (governments, not Congress) |
-| Full Fact promise-tracking research          | Rubric design                              | Reference for the adjudication rubric — progress = achievement of stated aim, primary sources |
-| OpenSecrets                                  | Money context, PAC→parent/industry enrichment | Secondary to FEC; **public API shut down April 2025** — manual/reference use only; licensing of bulk data unconfirmed |
-| FollowTheMoney                               | State-level campaign finance               | Future — for the state/local gap, never for federal                  |
-| Quiver Quantitative                          | Stock activity                             | Already wired (`stock-transactions.ts`)                              |
-| integrityindex.us                            | —                                          | **Do not scrape.** Credit + ask permission                           |
-| ProPublica Congress API                      | —                                          | Dead                                                                 |
+| Source                                       | Use                                           | Verdict                                                                                                                                                                                                     |
+| -------------------------------------------- | --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FEC `/candidates/totals/`, bulk files        | Funding mix, sectors                          | Already wired (`federal-donors.ts`, `federal-sectors-bulk.ts`)                                                                                                                                              |
+| Congress.gov API v3                          | Cosponsors, amendments, committee activity    | **Adopt for Part 4** — key already held                                                                                                                                                                     |
+| `unitedstates/congress-legislators` (CC0)    | Committee assignments                         | **Adopt for Part 3** — cheapest correct source                                                                                                                                                              |
+| GovTrack API                                 | Votes, member stats                           | Already wired (`federal-votes.ts`, `member-stats.ts`)                                                                                                                                                       |
+| `dwillis/congress-press` (MIT)               | In-office statements                          | Already wired (`congress-press-rationales.ts`)                                                                                                                                                              |
+| capitolreleases.com                          | In-office statements                          | **Redundant** — same House/Senate press-page corpus as above; no API                                                                                                                                        |
+| LoC US Elections Web Archive                 | Campaign promises                             | **Rejected** — bulk package is 2000–2016 only (browsable archive continues past 2016, but has no bulk access)                                                                                               |
+| Wayback Machine CDX API                      | Campaign promises                             | **Adopt for Part 5** — but needs a campaign-URL list we don't have                                                                                                                                          |
+| Ballotpedia Candidate Connection             | Self-reported positions                       | Candidate; **licence unconfirmed**                                                                                                                                                                          |
+| Google Political Ads Transparency (BigQuery) | Promises in paid ads                          | Candidate; 2018→, 7-yr retention (earliest years already aging out)                                                                                                                                         |
+| Lugar Center Bipartisan Index                | Cross-party benchmark                         | Cite, don't ingest                                                                                                                                                                                          |
+| FEC bulk `pas2` + `cm` (committee master)    | PAC→candidate money, sponsor/industry         | Already wired for issue-PACs (`federal-issue-pacs.ts`); **extend for Part 6a**                                                                                                                              |
+| FEC Schedule E (bulk IE file / OpenFEC API)  | Super-PAC independent expenditures            | **Adopt for Part 6b** — support/oppose flag per candidate                                                                                                                                                   |
+| PolitiFact promise trackers                  | Methodology reference + calibration corpus    | Score adjudicator against their presidential labels as an external calibration pass (cite, never republish — Poynter copyright); their 2010 congressional GOP Pledge-O-Meter is the precedent worth reading |
+| Polimeter / Poltext (academic)               | Promise-tracking methodology + labels         | Methodology reference; second calibration corpus (governments, not Congress)                                                                                                                                |
+| Full Fact promise-tracking research          | Rubric design                                 | Reference for the adjudication rubric — progress = achievement of stated aim, primary sources                                                                                                               |
+| OpenSecrets                                  | Money context, PAC→parent/industry enrichment | Secondary to FEC; **public API shut down April 2025** — manual/reference use only; licensing of bulk data unconfirmed                                                                                       |
+| FollowTheMoney                               | State-level campaign finance                  | Future — for the state/local gap, never for federal                                                                                                                                                         |
+| Quiver Quantitative                          | Stock activity                                | Already wired (`stock-transactions.ts`)                                                                                                                                                                     |
+| integrityindex.us                            | —                                             | **Do not scrape.** Credit + ask permission                                                                                                                                                                  |
+| ProPublica Congress API                      | —                                             | Dead                                                                                                                                                                                                        |
 
 ---
 

@@ -343,6 +343,267 @@ describe("resolveCandidateId", () => {
     const result = await resolveCandidateId("SMITH", "federal-house", "WA");
     expect(result).toBe("fed-wa-smith");
   });
+
+  // -------------------------------------------------------------------------
+  // Official-roster miss classes — DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN Part 2.
+  //
+  // Each class below was measured as a real failure by
+  // scripts/ingest/_resolution-miss-report.ts, replaying the 50-state
+  // Secretary-of-State rosters through this resolver. Every recall fixture is
+  // paired with a never-resolve-when-ambiguous fixture: each fix loosens a
+  // matcher shared by donors, alignment and the chat tools, and a false
+  // positive shows the WRONG person's money — strictly worse than "no data".
+  // -------------------------------------------------------------------------
+
+  // --- Class: generational suffix parsed as the surname ---
+
+  it("matches a roster name carrying a generational suffix", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-haynes", fullName: "Frederick D Haynes", state: "TX" },
+      {
+        id: "federal-B001330",
+        fullName: "Rep. Nicholas Begich III [R-AK]",
+        state: "AK",
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Before the suffix fix, candidateNameParts read "III" as the SURNAME and
+    // this Texas ballot name resolved onto the Alaska member.
+    const result = await resolveCandidateId(
+      "FREDERICK D. HAYNES III",
+      "federal-house",
+      "TX",
+    );
+    expect(result).toBe("fec-haynes");
+  });
+
+  it("does NOT match a suffixed roster name onto an unrelated member with the same suffix", async () => {
+    const { select } = makeSelectMock([
+      {
+        id: "federal-B001330",
+        fullName: "Rep. Nicholas Begich III [R-AK]",
+        state: "AK",
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "RAFAEL ALCOSER III",
+      "federal-house",
+      "TX",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("keeps a comma-introduced suffix from flipping into a sortname", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-jones", fullName: "Clyde W Mr. Jones", state: "AL" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Clyde W. Jones, Jr.",
+      "federal-house",
+      "AL",
+    );
+    expect(result).toBe("fec-jones");
+  });
+
+  // --- Class: authoritative `candidates.state` vs unreliable name decoration ---
+
+  it("does NOT resolve a surname onto a candidate the state column places elsewhere", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-cory-mills", fullName: "Cory Mills", state: "FL" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Unique surname in the chamber, but `candidates.state` authoritatively
+    // says Florida. An Alabama ballot must not resolve onto him.
+    const result = await resolveCandidateId(
+      "John Mills",
+      "federal-house",
+      "AL",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("still trusts a UNIQUE surname when only the unreliable decoration disagrees", async () => {
+    const { select } = makeSelectMock([
+      // No `state` column — the "[D-XX]" decoration is all we have, and prod
+      // shows those tags can be stale. They must not veto a match.
+      { id: "fed-norcross", fullName: "Rep. Donald Norcross [D-XX]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("NORCROSS", "federal-house", "NJ");
+    expect(result).toBe("fed-norcross");
+  });
+
+  // --- Class: diacritics ---
+
+  it("matches across diacritics (PEÑA ↔ Pena)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-pena", fullName: "Lauren B. Pena", state: "TX" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "LAUREN B. PEÑA",
+      "federal-house",
+      "TX",
+    );
+    expect(result).toBe("fec-pena");
+  });
+
+  // --- Class: middle names and hyphenated surnames ---
+
+  it("matches on first + last when the roster spells out a middle name", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-johnson", fullName: "Michael Johnson", state: "FL" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Michael Don Johnson",
+      "federal-house",
+      "FL",
+    );
+    expect(result).toBe("fec-johnson");
+  });
+
+  it("matches a hyphenated surname against its unhyphenated half", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-devgan-kacker", fullName: "Sonia Devgan-Kacker", state: "CA" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Sonia Kacker",
+      "federal-house",
+      "CA",
+    );
+    expect(result).toBe("fec-devgan-kacker");
+  });
+
+  it("does NOT use a shared surname half to match a DIFFERENT first name", async () => {
+    const { select } = makeSelectMock([
+      {
+        id: "fec-acevedo",
+        fullName: "Luis Antonio Acevedo-Arreguin",
+        state: "CA",
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Ana Luz Acevedo-Cabrera",
+      "federal-house",
+      "CA",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("does NOT resolve two same-surname people in one state via the middle-name tier", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-victor", fullName: "Victor M. Arias", state: "FL" },
+      { id: "fec-vincent", fullName: "Vincent Michael Arias", state: "FL" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "V. Michael Arias",
+      "federal-house",
+      "FL",
+    );
+    expect(result).toBeNull();
+  });
+
+  // --- Class: a bare surname prefix-matching someone's FIRST name ---
+
+  it("does NOT prefix-match a bare ballot surname onto a candidate's first name", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-chaffin", fullName: "Gordon Chaffin", state: "AZ" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // "Gordon" on an Arizona ballot is a SURNAME. Prefix-matching it resolved
+    // onto Gordon Chaffin — a different person entirely.
+    const result = await resolveCandidateId("Gordon", "federal-house", "AZ");
+    expect(result).toBeNull();
+  });
+
+  // --- Class: one person stored twice (votes ingest + FEC roster ingest) ---
+
+  it("collapses a sitting member's duplicate rows onto the incumbent row", async () => {
+    const { select } = makeSelectMock([
+      {
+        id: "fec-H2AL05102",
+        fullName: "Dale Whitney Strong",
+        state: "AL",
+        fecCandidateId: "H2AL05102",
+        isIncumbent: false,
+      },
+      {
+        id: "federal-S001220",
+        fullName: "Rep. Dale Strong [R-AL5]",
+        state: "AL",
+        fecCandidateId: "H2AL05102",
+        isIncumbent: true,
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Same fec_candidate_id → one person. The incumbent row wins: it carries
+    // the voting record and at least as many donor rows as the FEC duplicate.
+    const result = await resolveCandidateId(
+      "Dale W. Strong",
+      "federal-house",
+      "AL",
+    );
+    expect(result).toBe("federal-S001220");
+  });
+
+  it("strips an honorific spliced mid-name by the FEC ingest", async () => {
+    const { select } = makeSelectMock([
+      {
+        id: "fec-womack",
+        fullName: "Stephen A The Hon Womack",
+        state: "AR",
+        fecCandidateId: "H0AR03055",
+        isIncumbent: false,
+      },
+      {
+        id: "federal-W000809",
+        fullName: "Rep. Steve Womack [R-AR3]",
+        state: "AR",
+        fecCandidateId: "H0AR03055",
+        isIncumbent: true,
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Congressman Steve Womack",
+      "federal-house",
+      "AR",
+    );
+    expect(result).toBe("federal-W000809");
+  });
+
+  it("does NOT collapse two DIFFERENT people who share a name but not an FEC id", async () => {
+    const { select } = makeSelectMock([
+      {
+        id: "fec-H2NJ13075",
+        fullName: "Robert Menendez",
+        state: "NJ",
+        fecCandidateId: "H2NJ13075",
+        isIncumbent: false,
+      },
+      {
+        id: "federal-M001226",
+        fullName: "Rep. Robert Jacobsen Menendez [D-NJ8]",
+        state: "NJ",
+        fecCandidateId: "H2NJ08232",
+        isIncumbent: true,
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Father and son. Distinct FEC candidacies → we must not pick one.
+    const result = await resolveCandidateId(
+      "ROB MENENDEZ",
+      "federal-house",
+      "NJ",
+    );
+    expect(result).toBeNull();
+  });
 });
 
 describe("candidate-name helpers", () => {

@@ -291,6 +291,38 @@ describe("donorFieldsFromResult", () => {
     expect(fields.donorCoalition).toBeNull();
     expect(fields.donorUnavailable?.reason).toMatch(/office/i);
   });
+
+  // A federal candidate with no rows genuinely has nothing on file with the
+  // FEC; a state/local one usually means WE haven't ingested that state's
+  // filings. Saying the same thing for both implies a state candidate raised
+  // nothing, which is not something we know.
+  it("says the FILINGS are missing for federal, not that the candidate raised nothing", () => {
+    const fields = donorFieldsFromResult({
+      found: false,
+      reason: "no_donor_data",
+      jurisdiction: "federal-house",
+    });
+    expect(fields.donorUnavailable?.reason).toMatch(/FEC/);
+  });
+
+  it("says WE lack the data for a state office, never that the candidate filed nothing", () => {
+    const fields = donorFieldsFromResult({
+      found: false,
+      reason: "no_donor_data",
+      jurisdiction: "state-TX-house",
+    });
+    const reason = fields.donorUnavailable?.reason ?? "";
+    expect(reason).toMatch(/we don't have/i);
+    expect(reason).not.toMatch(/FEC/);
+  });
+
+  it("falls back to the state-office wording when no jurisdiction is carried", () => {
+    const fields = donorFieldsFromResult({
+      found: false,
+      reason: "no_donor_data",
+    });
+    expect(fields.donorUnavailable?.reason).toMatch(/we don't have/i);
+  });
 });
 
 describe("alignmentEntryFromResults", () => {
