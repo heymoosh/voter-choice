@@ -138,10 +138,10 @@ Two layers of narrowing keep it off the critical path:
    not the whole `mutate` array. Before this, one changed file re-mutated all
    ~8,300 scoped lines: ~85 minutes, almost all of it on untouched code.
 
-Full scope still runs **nightly**, and at PR time whenever the scope
-definition itself changes (`stryker.config.json`, `tsconfig.stryker.json`, or
-the workflow). So coverage is unchanged — only the moment you hear about drift
-outside your diff moves from merge time to that night.
+Full scope still runs **nightly**, and at PR time when `stryker.config.json`
+changes (the mutate array and thresholds _are_ the scope) or when the changed
+files map to nothing to mutate. So coverage is unchanged — only the moment you
+hear about drift outside your diff moves from merge time to that night.
 
 One consequence worth knowing: `thresholds.break` applies to whatever was
 mutated. Against a single file that is a sharper gate than against the whole

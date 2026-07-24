@@ -130,9 +130,19 @@ jobs:
         #   • --mutate replaces the config's `!**/*.test.ts` negations, so
         #     test files are filtered out explicitly — otherwise Stryker would
         #     mutate the tests themselves.
-        # FULL SCOPE is restored whenever the scope DEFINITION changes
-        # (stryker.config.json / tsconfig.stryker.json / this workflow) or
-        # when the mapping yields nothing — never silently narrow to zero.
+        # FULL SCOPE is restored when `stryker.config.json` changes — the
+        # mutate array and thresholds ARE the scope, so a narrowed run can't
+        # validate an edit to them — or when the mapping yields nothing, so we
+        # never silently narrow to zero.
+        #
+        # Deliberately NOT full-scope triggers, though both were in the first
+        # draft of this step:
+        #   • tsconfig.stryker.json — Stryker's TS checker compiles the whole
+        #     `include` set no matter what --mutate selects, so a narrowed run
+        #     already validates a tsconfig edit completely.
+        #   • this workflow — forcing full scope here would mean the narrowing
+        #     path never executes on the PR that changes it, which is exactly
+        #     backwards. A narrowed run exercises the new logic end to end.
         #
         # THRESHOLDS: a narrowed run also drops `thresholds.break` to 0 (see
         # the run step). 22 was calibrated against the AGGREGATE score of the
@@ -155,8 +165,10 @@ jobs:
           targets=""
           for f in $CHANGED; do
             case "$f" in
-              stryker.config.json|tsconfig.stryker.json|.github/workflows/mutation.yml)
+              stryker.config.json)
                 full="yes"
+                ;;
+              tsconfig.stryker.json|.github/workflows/mutation.yml)
                 ;;
               *.test.ts|*.test.tsx|*.spec.ts|*.spec.tsx)
                 base="${f%.test.ts}"
