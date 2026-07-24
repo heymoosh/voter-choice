@@ -58,6 +58,13 @@ export interface DonorCoalitionNotFound {
   found: false;
   reason:
     "candidate_not_resolved" | "no_donor_data" | "non_legislative_candidate";
+  /**
+   * The jurisdiction the lookup ran against, e.g. "federal-house" or
+   * "state-TX-house". Carried on the miss so callers can write honest copy:
+   * federal filings are 78%-covered, state/local filings are largely not
+   * ingested at all, and the two cases must not read the same.
+   */
+  jurisdiction?: string;
 }
 
 export type DonorLookupResult = DonorCoalitionResult | DonorCoalitionNotFound;
@@ -240,6 +247,30 @@ function issuePacDisplayFieldsFromMetadata(rawMetadata: unknown): {
   };
 }
 
+/**
+ * Emit one structured line per donor-lookup miss.
+ *
+ * "No FEC filing data" is mostly wrong: 78% of federal candidates have a full
+ * breakdown, so a federal card showing nothing is usually a name-match failure,
+ * not absent data. The three reasons collapse into one sentence by the time
+ * they reach the UI, so without this we cannot count `candidate_not_resolved`
+ * against `no_donor_data` in production. Candidate names and jurisdictions are
+ * public ballot data; no user input is logged.
+ */
+function logDonorLookupMiss(payload: {
+  reason: DonorCoalitionNotFound["reason"];
+  candidate_name: string;
+  jurisdiction: string;
+  state_code: string;
+  election_cycle: string;
+}): void {
+  try {
+    console.warn(JSON.stringify({ event: "donors.lookup_miss", ...payload }));
+  } catch {
+    // Never throw from telemetry.
+  }
+}
+
 export async function lookupDonorCoalition(
   candidateName: string,
   stateCode: string,
@@ -247,6 +278,18 @@ export async function lookupDonorCoalition(
   electionCycle?: string,
 ): Promise<DonorLookupResult> {
   const cycle = electionCycle?.trim() || DEFAULT_ELECTION_CYCLE;
+  const miss = (
+    reason: DonorCoalitionNotFound["reason"],
+  ): DonorCoalitionNotFound => {
+    logDonorLookupMiss({
+      reason,
+      candidate_name: candidateName,
+      jurisdiction,
+      state_code: stateCode,
+      election_cycle: cycle,
+    });
+    return { found: false, reason, jurisdiction };
+  };
 
   // 1. Resolve candidate via the shared alignment matcher. Pass stateCode so
   // the matcher can disambiguate ballot nicknames vs GovTrack formal names
@@ -257,7 +300,7 @@ export async function lookupDonorCoalition(
     stateCode,
   );
   if (!candidateId) {
-    return { found: false, reason: "candidate_not_resolved" };
+    return miss("candidate_not_resolved");
   }
 
   const db = getDb();
@@ -265,7 +308,7 @@ export async function lookupDonorCoalition(
     // We resolved a candidate id from a configured DB but somehow lost the
     // connection between calls — treat as no donor data so the chat tool can
     // gracefully fall through rather than throwing.
-    return { found: false, reason: "no_donor_data" };
+    return miss("no_donor_data");
   }
 
   // 2. Query donor_aggregates for this candidate + cycle.
@@ -339,7 +382,7 @@ export async function lookupDonorCoalition(
   }
 
   if (rows.length === 0) {
-    return { found: false, reason: "no_donor_data" };
+    return miss("no_donor_data");
   }
 
   // 3. Aggregate.

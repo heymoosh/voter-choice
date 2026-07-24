@@ -69,7 +69,29 @@ describe("lookupDonorCoalition — candidate not resolved", () => {
     expect(result).toEqual({
       found: false,
       reason: "candidate_not_resolved",
+      jurisdiction: "state-TX-house",
     });
+  });
+
+  // "No FEC filing data" is mostly a name-match failure, not absent data —
+  // but the three reasons collapse into one sentence by the time they reach
+  // the card, so production can only tell them apart from this log line.
+  it("logs a structured miss so candidate_not_resolved can be counted in production", async () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    mockedResolve.mockResolvedValue(null);
+
+    await lookupDonorCoalition("Unknown Person", "TX", "federal-house", "2026");
+
+    expect(warn).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(warn.mock.calls[0][0] as string)).toEqual({
+      event: "donors.lookup_miss",
+      reason: "candidate_not_resolved",
+      candidate_name: "Unknown Person",
+      jurisdiction: "federal-house",
+      state_code: "TX",
+      election_cycle: "2026",
+    });
+    warn.mockRestore();
   });
 
   it("returns candidate_not_resolved for non-legislative jurisdiction (resolution falls through)", async () => {
@@ -118,7 +140,11 @@ describe("lookupDonorCoalition — no donor data", () => {
       "state-TX-house",
     );
 
-    expect(result).toEqual({ found: false, reason: "no_donor_data" });
+    expect(result).toEqual({
+      found: false,
+      reason: "no_donor_data",
+      jurisdiction: "state-TX-house",
+    });
   });
 
   it("returns no_donor_data when DB sentinel is hit after resolution", async () => {
