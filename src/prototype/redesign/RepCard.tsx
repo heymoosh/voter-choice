@@ -173,6 +173,46 @@ export function AttendanceBand2({ attendance, researched, level }) {
   );
 }
 
+/* ---- Committees [Part 3] — standing committee assignments; honest
+   omission when the (confirmed sitting) member has none on file yet. This
+   component only ever runs for a resolved incumbent (RepCard returns
+   UnresolvedSeatCard before reaching it), so an empty list here always
+   means "not on file yet" (federal) or "not tracked at this level" (state)
+   — never "not a member of Congress." That copy belongs to the
+   challenger/unresolved surfaces once they gain their own committee lookup
+   (currently deferred, same as challenger donor data). Same federal/state
+   split as AttendanceBand2 above — committees are a federal-only source
+   (unitedstates/congress-legislators has no state-legislature coverage). ---- */
+export function CommitteesBand({ committees, level }) {
+  const { t } = useI18n();
+  const list = committees || [];
+  if (list.length === 0) {
+    return (
+      <div className="att-band na">
+        <span className="txt">
+          {level === "federal"
+            ? t("repCard.committeesUnavailableFederal")
+            : t("repCard.committeesUnavailableState")}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="att-band cmt-band">
+      <ul className="cmt-list">
+        {list.map((c) => (
+          <li key={c.committeeId} className="cmt-row">
+            <span className="cmt-name">
+              {c.parentName ? `${c.parentName} — ${c.name}` : c.name}
+            </span>
+            {c.title && <span className="cmt-title-chip">{c.title}</span>}
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 /* ---- Researched positions — no roll calls; same structure as the
    voting card so both modes are visually identical. ---- */
 function ResearchedPositionRow({ issue, pos }) {
@@ -1200,6 +1240,25 @@ export function RepCard({
           researched={seat.researched}
           level={seat.level}
         />
+      </div>
+
+      {/* 4 · Committees [Part 3] — what this member has formal jurisdiction
+          over; chair/ranking is surfaced via the title chip, since that's
+          the actual power lever. Executive/state seats never carry
+          committee data (federal-only source), so this only renders
+          meaningfully for federal House/Senate seats — CommitteesBand's
+          own honest-empty state covers every other case identically. */}
+      <div className="sec step-committees">
+        <div className="step">
+          <span className="step-n" aria-hidden="true">
+            4
+          </span>
+          <div>
+            <div className="sec-kick">{t("repCard.stepCommitteesKicker")}</div>
+            <h2 className="sec-h">{t("repCard.stepCommitteesHeading")}</h2>
+          </div>
+        </div>
+        <CommitteesBand committees={seat.committees} level={seat.level} />
       </div>
 
       {/* The old inline "candidates simply listed below the rep"

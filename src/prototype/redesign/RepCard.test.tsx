@@ -942,6 +942,78 @@ describe("RepCard §3 — attendance restyled to .att markup", () => {
   });
 });
 
+describe("RepCard §4 — committees [Part 3]", () => {
+  it("renders assignments with the parent committee name and title chip", () => {
+    const seat = mkSeat({
+      committees: [
+        {
+          committeeId: "SSAP",
+          name: "Senate Committee on Appropriations",
+          chamber: "senate",
+          parentName: null,
+          title: "Chairman",
+          isLeadership: true,
+          rank: 1,
+        },
+        {
+          committeeId: "SSAP08",
+          name: "Legislative Branch",
+          chamber: "senate",
+          parentName: "Senate Committee on Appropriations",
+          title: null,
+          isLeadership: false,
+          rank: 4,
+        },
+      ],
+    });
+    const { container } = renderCard(seat);
+    const band = container.querySelector(".cmt-band");
+    expect(band).not.toBeNull();
+    const rows = band?.querySelectorAll(".cmt-row");
+    expect(rows).toHaveLength(2);
+    expect(rows?.[0].querySelector(".cmt-name")?.textContent).toBe(
+      "Senate Committee on Appropriations",
+    );
+    expect(rows?.[0].querySelector(".cmt-title-chip")?.textContent).toBe(
+      "Chairman",
+    );
+    expect(rows?.[1].querySelector(".cmt-name")?.textContent).toBe(
+      "Senate Committee on Appropriations — Legislative Branch",
+    );
+    expect(rows?.[1].querySelector(".cmt-title-chip")).toBeNull();
+  });
+
+  it("renders the honest federal empty state when there are no assignments on file", () => {
+    const seat = mkSeat({ level: "federal", committees: [] });
+    const { container } = renderCard(seat);
+    const bands = container.querySelectorAll(".att-band.na");
+    const text = Array.from(bands)
+      .map((b) => b.textContent)
+      .join(" | ");
+    expect(text).toContain("No committee record on file for this member yet");
+  });
+
+  it("renders the honest state-level empty state, distinct from the federal copy", () => {
+    const seat = mkSeat({ level: "state", committees: [] });
+    const { container } = renderCard(seat);
+    const bands = container.querySelectorAll(".att-band.na");
+    const text = Array.from(bands)
+      .map((b) => b.textContent)
+      .join(" | ");
+    expect(text).toContain(
+      "Committee assignments aren't tracked at the state level yet",
+    );
+  });
+
+  it("degrades to the empty state when committees is undefined (no crash)", () => {
+    const seat = mkSeat();
+    delete (seat as { committees?: unknown }).committees;
+    const { container } = renderCard(seat);
+    expect(container.querySelector(".cmt-band")).toBeNull();
+    expect(container.querySelector(".att-band.na")).not.toBeNull();
+  });
+});
+
 describe("RepCard verdict + sources — .verdict grid", () => {
   it("renders btn-keep/btn-replace with the .box glyph, same handlers as before", () => {
     const onVerdict = vi.fn();

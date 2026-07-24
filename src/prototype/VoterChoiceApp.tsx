@@ -477,6 +477,10 @@ const TRANSLATIONS = {
       attendanceGood: 'Rarely misses',
       attendanceMid: 'About average',
       attendanceBad: 'Misses a lot',
+      committeesUnavailableFederal:
+        "No committee record on file for this member yet — we don't fake it.",
+      committeesUnavailableState:
+        "Committee assignments aren't tracked at the state level yet.",
       attendanceShowsUp: 'Shows up — missed <b>{pct}%</b> of {of}.',
       withYou: 'WITH YOU',
       againstYou: 'AGAINST YOU',
@@ -602,6 +606,8 @@ const TRANSLATIONS = {
       stepMoneyHeading: 'Who funds this seat — and did it buy their votes?',
       stepAttendanceKicker: 'Do they show up',
       stepAttendanceHeading: 'On the job',
+      stepCommitteesKicker: 'Where they sit',
+      stepCommitteesHeading: 'Committee assignments',
       legendVote: 'How they voted',
       legendMoney: 'Whose money they take',
       votedWithYouOfFraction: '{pct}% of your key votes went your way · {kept} of {total}',
@@ -1318,6 +1324,10 @@ const TRANSLATIONS = {
       attendanceGood: 'Rara vez falta',
       attendanceMid: 'Promedio',
       attendanceBad: 'Falta mucho',
+      committeesUnavailableFederal:
+        'Aún no hay registro de comités para este miembro — no lo inventamos.',
+      committeesUnavailableState:
+        'Las asignaciones de comités aún no se rastrean a nivel estatal.',
       attendanceShowsUp: 'Se presenta — faltó a <b>{pct}%</b> de {of}.',
       withYou: 'CONTIGO',
       againstYou: 'EN CONTRA',
@@ -1439,6 +1449,8 @@ const TRANSLATIONS = {
       stepMoneyHeading: 'Quién financia este puesto — ¿y compró sus votos?',
       stepAttendanceKicker: '¿Se presentan?',
       stepAttendanceHeading: 'En el trabajo',
+      stepCommitteesKicker: 'Dónde se sientan',
+      stepCommitteesHeading: 'Asignaciones de comités',
       legendVote: 'Cómo votaron',
       legendMoney: 'De quién reciben dinero',
       votedWithYouOfFraction: '{pct}% de tus votos clave coincidieron contigo · {kept} de {total}',
