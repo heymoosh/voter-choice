@@ -599,6 +599,14 @@ All ballot upload/parse/extraction, party gates, measures, and a reliable ballot
 
 ## Cross-cutting / Operations (any phase)
 
+**[P2] Mutation scope has three files with no real test coverage**
+- The 47% repo-wide mutation score hides three files with near-zero scores, measured from the 2026-07-22 nightly Stryker artifact (artifacts expire — numbers captured here):
+  - `src/lib/generatePrompt.ts` — **0%**, 343 mutants, **270 NoCoverage**. No scoped test reaches this file at all.
+  - `src/lib/prompts/research-candidate-structured.ts` — 0%, 5 mutants, 4 survived.
+  - `src/lib/getStateData.ts` — 13%, 94 survived vs 14 killed.
+- They're in `stryker.config.json`'s `mutate` array, so the nightly pays to mutate them and learns nothing. Either write tests or drop them from the scope — carrying them untested is the worst of both.
+- Context (PR #453, 2026-07-24): PR-time mutation is now score-free (`thresholds.break: 0` on narrowed runs) precisely because these would fail a per-file gate on pre-existing debt. The nightly full run still gates the *aggregate* at 22. Consequence: a green PR mutation check does NOT mean the touched file has coverage.
+
 **[P1] #151 usage metrics miss the research sub-agent (the likely spike source)**
 - Found 2026-06-30 reviewing held PR #151 (anon chat usage metrics). `recordChatUsage` only fires in the main chat SSE stream (`callKind:"chat"`, `src/app/api/chat/route.ts:1394`). The research sub-agent (`research-sub-agent.ts:161`) makes its OWN Haiku + web_search call and records only to the budget, never to `chat_usage_metrics` — so `call_kind:"research"` is never written and the most likely budget-spike driver is INVISIBLE in the table. As-is the metrics only partially answer "where is the Haiku spend going."
 - Fix: also record the research sub-agent's model + token + web-search cost with `call_kind:"research"`. Do BEFORE relying on #151 to diagnose the budget.
