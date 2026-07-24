@@ -16,12 +16,18 @@ vi.mock("./member-stats", () => ({
   lookupMemberStats: vi.fn().mockResolvedValue(new Map()),
 }));
 
+vi.mock("./committees", () => ({
+  lookupCommittees: vi.fn().mockResolvedValue(new Map()),
+}));
+
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { lookupMemberStats } from "./member-stats";
+import { lookupCommittees } from "./committees";
 import { parseNameDecoration, resolveDelegation } from "./delegation";
 
 const mockedGetDb = vi.mocked(getDb);
 const mockedStats = vi.mocked(lookupMemberStats);
+const mockedCommittees = vi.mocked(lookupCommittees);
 
 /**
  * The resolver issues selects in order: candidates, candidate_offices
@@ -59,6 +65,7 @@ function candidateRow(
 beforeEach(() => {
   vi.clearAllMocks();
   mockedStats.mockResolvedValue(new Map());
+  mockedCommittees.mockResolvedValue(new Map());
 });
 
 // ---------------------------------------------------------------------------
@@ -435,5 +442,62 @@ describe("resolveDelegation — attendance wiring", () => {
     const senate = out.seats.find((s) => s.candidate?.id === "s1");
     expect(senate?.attendance?.missedPct).toBe(8.1);
     expect(senate?.onBallot2026).toBe(false);
+  });
+});
+
+describe("resolveDelegation — committees wiring", () => {
+  it("attaches committees only for resolved incumbents, keyed by candidate id", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        [
+          candidateRow("p1", "Rep. Frank Pallone [D-NJ6]", "federal-house"),
+          candidateRow("s1", "Sen. Andrew Kim [D-NJ]", "federal-senate"),
+        ],
+        [],
+      ]),
+    );
+    mockedCommittees.mockResolvedValue(
+      new Map([
+        [
+          "s1",
+          [
+            {
+              committeeId: "SSAP",
+              name: "Senate Committee on Appropriations",
+              chamber: "senate",
+              parentName: null,
+              title: "Chairman",
+              isLeadership: true,
+              rank: 1,
+            },
+          ],
+        ],
+      ]),
+    );
+
+    const out = await resolveDelegation("NJ", "New Jersey", 6);
+    if (out.status !== "ok") return;
+
+    const house = out.seats.find((s) => s.candidate?.id === "p1");
+    const senate = out.seats.find((s) => s.candidate?.id === "s1");
+    // p1 has no entry in the mocked map — must degrade to [], never crash.
+    expect(house?.committees).toEqual([]);
+    expect(senate?.committees).toEqual([
+      expect.objectContaining({ committeeId: "SSAP", title: "Chairman" }),
+    ]);
+    // Called with exactly the resolved incumbent ids, never a challenger id.
+    expect(mockedCommittees).toHaveBeenCalledWith(
+      expect.arrayContaining(["p1", "s1"]),
+    );
+  });
+
+  it("returns an empty committees array for an unresolved seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([[], []]));
+
+    const out = await resolveDelegation("NJ", "New Jersey", 6);
+    if (out.status !== "ok") return;
+
+    expect(out.seats[0].candidate).toBeNull();
+    expect(out.seats[0].committees).toEqual([]);
   });
 });

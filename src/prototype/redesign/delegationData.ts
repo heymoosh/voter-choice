@@ -74,6 +74,16 @@ export interface ApiSeatChallenger {
   rosterProvenance: RosterProvenance;
 }
 
+export interface ApiCommitteeAssignment {
+  committeeId: string;
+  name: string;
+  chamber: string;
+  parentName: string | null;
+  title: string | null;
+  isLeadership: boolean;
+  rank: number | null;
+}
+
 export interface ApiDelegationSeat {
   seatId: string;
   office: "U.S. House" | "U.S. Senate";
@@ -92,6 +102,8 @@ export interface ApiDelegationSeat {
     seekingReelection2026?: boolean;
   } | null;
   attendance: { missedPct: number; of: string; band: string } | null;
+  /** Standing committee assignments — see DelegationSeat.committees. */
+  committees: ApiCommitteeAssignment[];
   onBallot2026: boolean | null;
   nextElectionYear: number | null;
   /** 2026 FEC filers for this seat (empty when seat isn't up / no roster). */
@@ -314,6 +326,8 @@ export interface DelegationSeatVM {
   researched: boolean;
   nextElection: { label: string; onBallot2026: boolean } | null;
   attendance: { missedPct: number; of: string; band: string } | null;
+  /** Standing committee assignments — see DelegationSeat.committees. */
+  committees: ApiCommitteeAssignment[];
   eligibility: SeatEligibility;
   candidate: {
     id: string;
@@ -398,6 +412,7 @@ export function buildSeats(
       researched: false,
       nextElection: nextElectionLabel(eligibility, seat.onBallot2026),
       attendance: seat.attendance,
+      committees: seat.committees ?? [],
       eligibility,
       candidate: apiCand
         ? {

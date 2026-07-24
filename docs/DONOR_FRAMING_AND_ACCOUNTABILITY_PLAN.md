@@ -2,7 +2,7 @@
 
 > Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
 > judgment calls recorded in Open risks (see Review log at the end).
-> **Parts 1 and 2 are built** (see "Part 2 — executed"); Parts 3-6 are still plan only.
+> **Parts 1, 2 and 3 are built** (see "Part 2 — executed" / "Part 3 — executed"); Parts 4-6 are still plan only.
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -272,6 +272,58 @@ where Integrity Index's committees page comes from too.
   exist only for sitting members — the large majority of ballot candidates have neither. The card
   must say _not currently a member of Congress, so no committee record_, not render a blank that
   implies missing data — the exact failure mode Part 2 step 4 exists to fix.
+
+### Part 3 — executed 2026-07-23
+
+Built and verified against prod (all 1,884-candidate scale, not a sample):
+
+- **Migration `0018_add_committees.sql`** — `committees` (thomas_id PK,
+  self-referencing `parent_committee_id`) + `committee_memberships`
+  (candidate_id/committee_id/congress unique index). Applied to prod.
+- **`scripts/ingest/committee-assignments.ts`** — fetches
+  `committees-current.yaml` + `committee-membership-current.yaml` from
+  `unitedstates/congress-legislators` via the GitHub Contents API
+  (`accept: application/vnd.github.raw+json`), not raw.githubusercontent.com.
+  `js-yaml` added as a new dependency (none existed in the repo). Live run:
+  230 committees, 3,881 of 3,891 memberships upserted (10 skipped —
+  no matching `candidates` row, logged not thrown). `--dry-run` and
+  `--congress` override both supported; 8 unit tests on the pure
+  parse/flatten/join functions.
+- **`src/lib/server/committees.ts`** — read layer mirroring
+  `member-stats.ts`'s shape: soft-degrades to an empty map on
+  `DB_NOT_CONFIGURED` or query failure, joins a subcommittee row to its
+  parent's name, sorts leadership seats first. Spot-checked against a known
+  fact (Susan Collins chairs Senate Appropriations) — correct. 7 unit tests.
+- **`delegation.ts`**: committees are looked up only for the resolved
+  incumbents (`houseMember` + `rankedSenators`) — never for `challengers`,
+  which by construction have never held the seat. Threaded through the API
+  route (`...seat` spread, no route change needed) and `delegationData.ts`'s
+  `ApiDelegationSeat`/`DelegationSeatVM`.
+- **RepCard.tsx** — new "4 · Committee assignments" section, same numbered
+  step chrome as Alignment/Money/Attendance. Chair/ranking surfaced via a
+  title chip. Honest empty state distinguishes federal ("no committee record
+  on file for this member yet") from state ("not tracked at the state
+  level") — mirroring `AttendanceBand2`'s existing federal/state split,
+  since `unitedstates/congress-legislators` has no state-legislature
+  coverage. Screenshot-verified both the populated and empty states.
+  Non-incumbent honest-empty copy ("not currently a member of Congress") is
+  **not yet wired to any UI surface** — HeadToHead/challengers don't render
+  committees at all today, matching the existing donor-data precedent
+  (GAPS-AND-DATA-AUDIT.md §D7); the structural guarantee (committees are
+  never looked up for a challenger id) is in place so that surface needs no
+  changes once Part 4's challenger-committee crosswalk lands.
+- i18n: `repCard.stepCommitteesKicker/Heading`,
+  `repCard.committeesUnavailableFederal/State` added to both `en` and `es`
+  blocks in `VoterChoiceApp.tsx`.
+
+Verification: `npx tsc --noEmit` clean; `npm run lint` 0 errors; full
+`npm test` — 3,639 passed (the only 3 failures, in
+`capture-shared.test.ts`, are a pre-existing Playwright/sandbox artifact
+unrelated to this change, confirmed by re-running outside the sandbox).
+19 new/changed tests across `committees.test.ts`,
+`committee-assignments.test.ts`, `delegation.test.ts`, `RepCard.test.tsx`.
+
+---
 
 ## Part 4 — Collaborator network (cosponsorship)
 

@@ -20,6 +20,7 @@ import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 import { cleanCandidateName } from "./alignment";
 import { lookupMemberStats, type MemberAttendance } from "./member-stats";
+import { lookupCommittees, type CommitteeAssignment } from "./committees";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -54,6 +55,15 @@ export interface DelegationSeat {
   /** Null when the sitting member couldn't be resolved from our data. */
   candidate: DelegationCandidate | null;
   attendance: MemberAttendance | null;
+  /**
+   * Standing committee assignments — meaningful only when `candidate` is a
+   * sitting member (always true when this array is populated, since
+   * committees are looked up only for resolved incumbents; never for
+   * `challengers`, who by construction have never held the seat). Empty
+   * when unresolved, or when the member genuinely has none on file yet —
+   * callers must not collapse those two cases into the same copy.
+   */
+  committees: CommitteeAssignment[];
   /** True when this seat is up in the Nov 2026 general; null = unknown. */
   onBallot2026: boolean | null;
   /** Calendar year of the seat's next general election; null = unknown. */
@@ -275,8 +285,12 @@ export async function resolveDelegation(
 
   const firstTermYear = new Map<string, number>();
   let coverageFloorYear: number | null = null;
+  // Committees are looked up only for these resolved incumbents — never for
+  // challengers, who by construction have never held the seat (see the
+  // `committees` field doc on DelegationSeat).
+  let committeesMap = new Map<string, CommitteeAssignment[]>();
   if (memberIds.length > 0) {
-    const [officeRows, floorRows] = await Promise.all([
+    const [officeRows, floorRows, committees] = await Promise.all([
       db
         .select({
           candidateId: schema.candidateOffices.candidateId,
@@ -305,7 +319,9 @@ export async function resolveDelegation(
             "federal-senate",
           ]),
         ),
+      lookupCommittees(memberIds),
     ]);
+    committeesMap = committees;
     for (const office of officeRows) {
       const year = Number(String(office.termStart).slice(0, 4));
       if (!Number.isFinite(year)) continue;
@@ -360,6 +376,7 @@ export async function resolveDelegation(
     attendance: houseMember
       ? (stats.get(houseMember.id)?.attendance ?? null)
       : null,
+    committees: houseMember ? (committeesMap.get(houseMember.id) ?? []) : [],
     // House terms are two years: every seat is up in the 2026 general.
     onBallot2026: true,
     nextElectionYear: 2026,
@@ -388,6 +405,7 @@ export async function resolveDelegation(
           )
         : null,
       attendance: senatorStats?.attendance ?? null,
+      committees: senator ? (committeesMap.get(senator.id) ?? []) : [],
       onBallot2026: senatorStats?.onBallot2026 ?? null,
       nextElectionYear: senatorStats?.nextElectionYear ?? null,
     });

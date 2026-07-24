@@ -11,6 +11,7 @@ import {
   index,
   uniqueIndex,
   unique,
+  type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 
 // ---------------------------------------------------------------------------
@@ -1009,6 +1010,74 @@ export const memberCivicPositions = pgTable(
     uniqueIndex("member_civic_positions_external_id_uidx").on(t.externalId),
     index("member_civic_positions_candidate_idx").on(t.candidateId),
     index("member_civic_positions_filing_year_idx").on(t.filingYear),
+  ],
+);
+
+// ---------------------------------------------------------------------------
+// committees / committee_memberships — standing committee assignments for
+// sitting Members of Congress. Source: unitedstates/congress-legislators
+// (CC0, thomas_id-keyed: committees-current.yaml + committee-membership-
+// current.yaml). Populated by scripts/ingest/committee-assignments.ts.
+//
+// Join basis is the federal-<BIOGUIDE> candidate-id convention that
+// member-stats.ts already uses — NOT member_civic_positions, which is
+// Senate-only and cannot crosswalk the House.
+//
+// committees.thomas_id is the source's own id: parent committees use their
+// 4-letter code (e.g. "HSAG"); subcommittees concatenate the parent id with
+// their own numeric suffix (e.g. "HSAG15"), matching how
+// committee-membership-current.yaml keys its rows.
+// ---------------------------------------------------------------------------
+export const committees = pgTable(
+  "committees",
+  {
+    thomasId: text("thomas_id").primaryKey(),
+    name: text("name").notNull(),
+    chamber: text("chamber").notNull(), // "house" | "senate" | "joint"
+    jurisdiction: text("jurisdiction"), // prose description; mostly parent committees only
+    parentCommitteeId: text("parent_committee_id").references(
+      (): AnyPgColumn => committees.thomasId,
+    ), // null for parent committees
+    source: text("source").notNull().default("congress-legislators"),
+    sourceUrl: text("source_url").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index("committees_parent_idx").on(t.parentCommitteeId)],
+);
+
+// One row per (member, committee, congress) — a member's seat, rank and
+// title on that committee for that congress. What this member has formal
+// jurisdiction over; chair/ranking is the "title" field, since that's the
+// actual power lever (see Part 3 of DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md).
+export const committeeMemberships = pgTable(
+  "committee_memberships",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    committeeId: text("committee_id")
+      .notNull()
+      .references(() => committees.thomasId),
+    rank: integer("rank"),
+    title: text("title"), // "Chairman" | "Ranking Member" | "Vice Chairman" | "Ex Officio" | null
+    congress: integer("congress").notNull(),
+    source: text("source").notNull().default("congress-legislators"),
+    sourceUrl: text("source_url").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("committee_memberships_member_congress_uidx").on(
+      t.candidateId,
+      t.committeeId,
+      t.congress,
+    ),
+    index("committee_memberships_candidate_idx").on(t.candidateId),
+    index("committee_memberships_committee_idx").on(t.committeeId),
   ],
 );
 

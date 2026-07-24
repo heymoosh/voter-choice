@@ -365,6 +365,63 @@
   font-size: 11.5px;
 }
 
+/* ---- committees [Part 3] — own wrapper class (not .att-band): the
+   redesign-core e2e suite locates the attendance box with a bare
+   `.att-band` selector expecting exactly one match per card, so the
+   committees box (same paper/border/na chrome, deliberately) must not
+   share that class. ---- */
+.cmt-outer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin: 12px 18px 0;
+  padding: 10px 13px;
+  border-radius: 9px;
+  background: var(--paper);
+  border: 1px solid var(--rule-2);
+  font-size: 13px;
+}
+.cmt-outer .txt {
+  color: var(--ink-2);
+}
+.cmt-outer.na .txt {
+  font-style: italic;
+  color: var(--ink-3);
+  font-size: 12.5px;
+}
+.cmt-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 6px;
+  width: 100%;
+}
+.cmt-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.cmt-name {
+  color: var(--ink-2);
+  font-size: 13px;
+}
+.cmt-title-chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: oklch(0.9 0.025 170);
+  color: var(--civic-2);
+  white-space: nowrap;
+}
+
 /* ---- researched positions (executive) ---- */
 .rp-row .cv2-iss-head {
   cursor: default;
@@ -3963,6 +4020,10 @@
   align-items: center;
   gap: 12px;
   flex-wrap: wrap;
+}
+.rep-card .cmt-outer {
+  margin: 14px 18px 0;
+  gap: 12px;
 }
 .rep-card .att-big {
   font-family: var(--serif);
