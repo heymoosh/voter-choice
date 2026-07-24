@@ -84,6 +84,19 @@ export interface ApiCommitteeAssignment {
   rank: number | null;
 }
 
+export interface ApiCollaborator {
+  candidateId: string;
+  name: string;
+  party: "D" | "R" | "I" | null;
+  sharedBills: number;
+}
+
+/** Cosponsorship collaborator network — see DelegationSeat.collaborators. */
+export interface ApiCollaboratorNetwork {
+  sameParty: ApiCollaborator[];
+  crossParty: ApiCollaborator[];
+}
+
 export interface ApiDelegationSeat {
   seatId: string;
   office: "U.S. House" | "U.S. Senate";
@@ -104,6 +117,8 @@ export interface ApiDelegationSeat {
   attendance: { missedPct: number; of: string; band: string } | null;
   /** Standing committee assignments — see DelegationSeat.committees. */
   committees: ApiCommitteeAssignment[];
+  /** Cosponsorship collaborator network — see DelegationSeat.collaborators. */
+  collaborators: ApiCollaboratorNetwork | null;
   onBallot2026: boolean | null;
   nextElectionYear: number | null;
   /** 2026 FEC filers for this seat (empty when seat isn't up / no roster). */
@@ -328,6 +343,8 @@ export interface DelegationSeatVM {
   attendance: { missedPct: number; of: string; band: string } | null;
   /** Standing committee assignments — see DelegationSeat.committees. */
   committees: ApiCommitteeAssignment[];
+  /** Cosponsorship collaborator network — see DelegationSeat.collaborators. */
+  collaborators: ApiCollaboratorNetwork | null;
   eligibility: SeatEligibility;
   candidate: {
     id: string;
@@ -413,6 +430,7 @@ export function buildSeats(
       nextElection: nextElectionLabel(eligibility, seat.onBallot2026),
       attendance: seat.attendance,
       committees: seat.committees ?? [],
+      collaborators: seat.collaborators ?? null,
       eligibility,
       candidate: apiCand
         ? {

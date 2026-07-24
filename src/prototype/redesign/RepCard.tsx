@@ -213,6 +213,72 @@ export function CommitteesBand({ committees, level }) {
   );
 }
 
+/* ---- Collaborators [Part 4] — the member's closest cosponsorship partners,
+   split cross-party (led first — bipartisan reach is the interesting signal)
+   and same-party. Same resolved-incumbent-only guarantee and federal/state
+   honest-empty split as CommitteesBand above (cosponsorship is a federal-only
+   source). The count is UNWEIGHTED co-cosponsorship — a rough proxy — so the
+   band cites the Lugar Center–Georgetown Bipartisan Index as the rigorous
+   external benchmark rather than claiming a bipartisanship score of our own. ---- */
+function CollaboratorGroup({ label, people }) {
+  const { t } = useI18n();
+  return (
+    <div className="collab-group">
+      <div className="collab-group-label">{label}</div>
+      <ul className="cmt-list collab-list">
+        {people.map((p) => (
+          <li key={p.candidateId} className="cmt-row collab-row">
+            <span className="cmt-name">
+              {p.name}
+              {p.party && <span className="collab-party"> ({p.party})</span>}
+            </span>
+            <span className="collab-count-chip">
+              {t("repCard.collaboratorsSharedBills", { n: p.sharedBills })}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export function CollaboratorsBand({ collaborators, level }) {
+  const { t } = useI18n();
+  const net = collaborators || null;
+  const hasAny =
+    !!net && (net.sameParty.length > 0 || net.crossParty.length > 0);
+  if (!hasAny) {
+    return (
+      <div className="cmt-outer na collab-na">
+        <span className="txt">
+          {level === "federal"
+            ? t("repCard.collaboratorsUnavailableFederal")
+            : t("repCard.collaboratorsUnavailableState")}
+        </span>
+      </div>
+    );
+  }
+  return (
+    <div className="cmt-outer collab-band">
+      <div className="collab-groups">
+        {net.crossParty.length > 0 && (
+          <CollaboratorGroup
+            label={t("repCard.collaboratorsCrossParty")}
+            people={net.crossParty}
+          />
+        )}
+        {net.sameParty.length > 0 && (
+          <CollaboratorGroup
+            label={t("repCard.collaboratorsSameParty")}
+            people={net.sameParty}
+          />
+        )}
+      </div>
+      <p className="collab-cite">{t("repCard.collaboratorsCite")}</p>
+    </div>
+  );
+}
+
 /* ---- Researched positions — no roll calls; same structure as the
    voting card so both modes are visually identical. ---- */
 function ResearchedPositionRow({ issue, pos }) {
@@ -1259,6 +1325,28 @@ export function RepCard({
           </div>
         </div>
         <CommitteesBand committees={seat.committees} level={seat.level} />
+      </div>
+
+      {/* 5 · Collaborators [Part 4] — who this member most often cosponsors
+          bills with, cross-party first. Federal-only source, so this only
+          renders meaningfully for federal House/Senate seats —
+          CollaboratorsBand's own honest-empty state covers every other case. */}
+      <div className="sec step-collaborators">
+        <div className="step">
+          <span className="step-n" aria-hidden="true">
+            5
+          </span>
+          <div>
+            <div className="sec-kick">
+              {t("repCard.stepCollaboratorsKicker")}
+            </div>
+            <h2 className="sec-h">{t("repCard.stepCollaboratorsHeading")}</h2>
+          </div>
+        </div>
+        <CollaboratorsBand
+          collaborators={seat.collaborators}
+          level={seat.level}
+        />
       </div>
 
       {/* The old inline "candidates simply listed below the rep"

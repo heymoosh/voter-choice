@@ -21,6 +21,11 @@ import * as schema from "../../../db/schema";
 import { cleanCandidateName } from "./alignment";
 import { lookupMemberStats, type MemberAttendance } from "./member-stats";
 import { lookupCommittees, type CommitteeAssignment } from "./committees";
+import {
+  lookupCollaborators,
+  type CollaboratorNetwork,
+  type PartyLetter,
+} from "./collaborators";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -64,6 +69,14 @@ export interface DelegationSeat {
    * callers must not collapse those two cases into the same copy.
    */
   committees: CommitteeAssignment[];
+  /**
+   * Closest cosponsorship collaborators — same-party and cross-party — for the
+   * resolved sitting member. Looked up only for resolved incumbents, never for
+   * `challengers` (same guarantee as `committees`). Null when unresolved, when
+   * the member has too little cosponsorship data to rank, or when the ingest
+   * hasn't run; callers must distinguish that from a genuine empty network.
+   */
+  collaborators: CollaboratorNetwork | null;
   /** True when this seat is up in the Nov 2026 general; null = unknown. */
   onBallot2026: boolean | null;
   /** Calendar year of the seat's next general election; null = unknown. */
@@ -92,6 +105,16 @@ const PARTY_BY_LETTER: Record<
   R: "Republican",
   I: "Independent",
 };
+
+/** Map the display party name back to the D/R/I letter collaborators uses. */
+function partyLetterOf(
+  party: "Democrat" | "Republican" | "Independent" | null,
+): PartyLetter | null {
+  if (party === "Democrat") return "D";
+  if (party === "Republican") return "R";
+  if (party === "Independent") return "I";
+  return null;
+}
 
 export interface MemberFacts {
   state: string | null;
@@ -289,39 +312,51 @@ export async function resolveDelegation(
   // challengers, who by construction have never held the seat (see the
   // `committees` field doc on DelegationSeat).
   let committeesMap = new Map<string, CommitteeAssignment[]>();
+  let collaboratorsMap = new Map<string, CollaboratorNetwork>();
   if (memberIds.length > 0) {
-    const [officeRows, floorRows, committees] = await Promise.all([
-      db
-        .select({
-          candidateId: schema.candidateOffices.candidateId,
-          termStart: schema.candidateOffices.termStart,
-        })
-        .from(schema.candidateOffices)
-        .where(inArray(schema.candidateOffices.candidateId, memberIds)),
-      // How far back our FEDERAL office data reaches — "since YYYY" claims
-      // are only reliable for members whose first term starts after this.
-      // (State-legislature office rows reach further back; including them
-      // made a 2023-era federal floor look like real tenure data.)
-      db
-        .select({
-          minTermStart: sql<
-            string | null
-          >`min(${schema.candidateOffices.termStart})`,
-        })
-        .from(schema.candidateOffices)
-        .innerJoin(
-          schema.candidates,
-          eq(schema.candidateOffices.candidateId, schema.candidates.id),
-        )
-        .where(
-          inArray(schema.candidates.jurisdiction, [
-            "federal-house",
-            "federal-senate",
-          ]),
+    const [officeRows, floorRows, committees, collaborators] =
+      await Promise.all([
+        db
+          .select({
+            candidateId: schema.candidateOffices.candidateId,
+            termStart: schema.candidateOffices.termStart,
+          })
+          .from(schema.candidateOffices)
+          .where(inArray(schema.candidateOffices.candidateId, memberIds)),
+        // How far back our FEDERAL office data reaches — "since YYYY" claims
+        // are only reliable for members whose first term starts after this.
+        // (State-legislature office rows reach further back; including them
+        // made a 2023-era federal floor look like real tenure data.)
+        db
+          .select({
+            minTermStart: sql<
+              string | null
+            >`min(${schema.candidateOffices.termStart})`,
+          })
+          .from(schema.candidateOffices)
+          .innerJoin(
+            schema.candidates,
+            eq(schema.candidateOffices.candidateId, schema.candidates.id),
+          )
+          .where(
+            inArray(schema.candidates.jurisdiction, [
+              "federal-house",
+              "federal-senate",
+            ]),
+          ),
+        lookupCommittees(memberIds),
+        // Same resolved-incumbent-only guarantee as committees. Party letter for
+        // the same-/cross-party split comes from the same facts.party the card
+        // already displays, so the buckets agree with the seat's shown party.
+        lookupCollaborators(
+          [...senators, ...(houseMember ? [houseMember] : [])].map((m) => ({
+            id: m.id,
+            party: partyLetterOf(m.facts.party),
+          })),
         ),
-      lookupCommittees(memberIds),
-    ]);
+      ]);
     committeesMap = committees;
+    collaboratorsMap = collaborators;
     for (const office of officeRows) {
       const year = Number(String(office.termStart).slice(0, 4));
       if (!Number.isFinite(year)) continue;
@@ -377,6 +412,9 @@ export async function resolveDelegation(
       ? (stats.get(houseMember.id)?.attendance ?? null)
       : null,
     committees: houseMember ? (committeesMap.get(houseMember.id) ?? []) : [],
+    collaborators: houseMember
+      ? (collaboratorsMap.get(houseMember.id) ?? null)
+      : null,
     // House terms are two years: every seat is up in the 2026 general.
     onBallot2026: true,
     nextElectionYear: 2026,
@@ -406,6 +444,9 @@ export async function resolveDelegation(
         : null,
       attendance: senatorStats?.attendance ?? null,
       committees: senator ? (committeesMap.get(senator.id) ?? []) : [],
+      collaborators: senator
+        ? (collaboratorsMap.get(senator.id) ?? null)
+        : null,
       onBallot2026: senatorStats?.onBallot2026 ?? null,
       nextElectionYear: senatorStats?.nextElectionYear ?? null,
     });

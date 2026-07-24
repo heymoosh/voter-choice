@@ -1082,6 +1082,56 @@ export const committeeMemberships = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// bill_cosponsors — who put their name on which federal bill, as sponsor or
+// cosponsor (`role`). Source: Congress.gov API — the bill detail endpoint for
+// the sponsor, /bill/{congress}/{type}/{number}/cosponsors for the cosponsors.
+// Populated by scripts/ingest/bill-cosponsors.ts over the govtrack (federal)
+// rows in `bills`. Join basis is the same federal-<BIOGUIDE> candidate-id
+// convention as committee_memberships (bioguide is the key Congress.gov returns).
+//
+// The collaborator network (src/lib/server/collaborators.ts) reads this as a
+// bill-participation graph: two members "collaborate" on a bill when both put
+// their name on it (sponsor OR cosponsor), and their closeness is the count of
+// bills they share. Storing the sponsor as a role='sponsor' row is what lets
+// the graph capture sponsor↔cosponsor edges — the strongest collaboration
+// signal — not just cosponsor↔cosponsor. The (bill_id, candidate_id) unique
+// key still holds: a member is never both sponsor and cosponsor of one bill.
+// See Part 4 of DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md.
+// ---------------------------------------------------------------------------
+export const billCosponsors = pgTable(
+  "bill_cosponsors",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    billId: text("bill_id")
+      .notNull()
+      .references(() => bills.id),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    // "sponsor" | "cosponsor" — how this member put their name on the bill.
+    role: text("role").notNull().default("cosponsor"),
+    // True when the member cosponsored at introduction (isOriginalCosponsor),
+    // i.e. co-authored the bill rather than signing on later. Always false for
+    // the sponsor row (the sponsor doesn't "cosponsor").
+    isOriginal: boolean("is_original").notNull().default(false),
+    dateCosponsored: date("date_cosponsored"), // sponsorshipDate; null for the sponsor
+    source: text("source").notNull().default("congress-gov"),
+    sourceUrl: text("source_url").notNull(),
+    fetchedAt: timestamp("fetched_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("bill_cosponsors_bill_candidate_uidx").on(
+      t.billId,
+      t.candidateId,
+    ),
+    index("bill_cosponsors_candidate_idx").on(t.candidateId),
+    index("bill_cosponsors_bill_idx").on(t.billId),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // roster_feedback — user-submitted "Missing a rep? Something look wrong?"
 // reports from the results/roster surfaces (card "[P1] Ballot-accuracy
 // feedback intake"). Muxin's post-launch correction channel for roster/

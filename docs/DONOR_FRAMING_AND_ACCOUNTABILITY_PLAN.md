@@ -2,7 +2,7 @@
 
 > Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
 > judgment calls recorded in Open risks (see Review log at the end).
-> **Parts 1, 2 and 3 are built** (see "Part 2 — executed" / "Part 3 — executed"); Parts 4-6 are still plan only.
+> **Parts 1, 2, 3 and 4 are built** (see the "Part N — executed" notes); Parts 5-6 are still plan only.
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -343,6 +343,70 @@ already has a working client against `api.congress.gov/v3`.
   in SQL at request time (no derived table until it's slow).
 - External benchmark: **Lugar Center–Georgetown Bipartisan Index** as a citable cross-check —
   cite it, don't ingest it.
+
+### Part 4 — executed 2026-07-24
+
+Built following Part 3's committee vertical slice (migration → ingest → read layer → delegation
+thread → seat card → i18n → tests). `npx tsc --noEmit` clean; `npm run lint` 0 errors; full
+`npm test` — 3,671 passed (the only 3 failures, in `capture-shared.test.ts`, are the same
+pre-existing Playwright/sandbox artifact noted for Part 3, unrelated to this change).
+
+- **Migration `0019_add_bill_cosponsors.sql` + `billCosponsors` schema** — `bill_cosponsors`
+  (bill_id FK, candidate_id FK, is_original, date_cosponsored, source/source_url/fetched_at),
+  unique index on (bill_id, candidate_id) plus per-bill and per-candidate indexes. Additive;
+  **not yet applied to any DB** (ships in the PR, applied separately — trips the
+  `security-reviewed` gate per Open Risk #4).
+- **`scripts/ingest/bill-cosponsors.ts`** — backfills the participation of the federal bills we
+  hold, both **sponsor and cosponsors**. Reads `bills WHERE source='govtrack'`, parses the packed
+  id (`govtrack-hr1234-118` → {congress,type,number}, mirroring `federal-votes.ts`'s
+  `parsePlannedBillId`), filters to federal before any API call. Per bill it fetches two
+  Congress.gov endpoints — the bill detail (for the sponsor) and `/cosponsors` (paginated) — with
+  the same key/backoff shape as `crs-summaries.ts`, maps bioguide → `federal-<BIOGUIDE>`, and
+  upserts only members with a matching `candidates` row (FK-safe; others counted, not thrown).
+  The sponsor is stored as a `role='sponsor'` row and excluded from the cosponsor rows so the
+  `(bill_id, candidate_id)` unique key holds; the sponsor fetch **fails soft** (a flaky detail
+  call never drops the bill's cosponsor edges). `--dry-run`, `--congress`, `--limit`; 21 unit
+  tests on the pure parse/flatten/build/sponsor functions + pagination + the dry-run loop.
+  **Dry-run validated against prod**: 626 federal bills found, parsed, filtered; both endpoints
+  fire per bill and the sponsor path degrades independently of the cosponsor path (confirmed
+  live). The full backfill needs `CONGRESS_GOV_API_KEY` in the environment (held per
+  `.env.example`; absent from this local checkout — calls 403, handled soft).
+- **`src/lib/server/collaborators.ts`** — reads `bill_cosponsors` as a **bill-participation**
+  graph via a self-join computed in SQL at request time (no derived table, per the plan). The
+  join is on `bill_id` irrespective of role, so it captures **sponsor↔cosponsor** edges (the
+  strongest collaboration signal — a member's own sponsored bills now count) as well as
+  cosponsor↔cosponsor. For each member: top same-party and top cross-party collaborators by
+  shared-bill count, party letter taken from the same `[D-NJ5]` decoration the card already uses
+  (FEC-code fallback), soft-degrading to an empty map on `DB_NOT_CONFIGURED` / query failure.
+  11 unit tests. **One documented limitation**: the shared-bill count is unweighted (a
+  widely-cosponsored resolution counts the same as a narrow bipartisan bill) — which is exactly
+  why the card cites the Lugar Center–Georgetown Bipartisan Index as the rigorous benchmark
+  rather than claiming a bipartisanship score.
+- **`delegation.ts`**: collaborators looked up only for the resolved incumbents
+  (`senators` + `houseMember`), never for challengers — same structural guarantee as committees.
+  Threaded through the API route (`...seat` spread, no route change), `delegationData.ts`
+  (`ApiCollaboratorNetwork` + VM field + buildSeats), and a `resolveDelegation` wiring test.
+- **RepCard.tsx** — new "5 · Collaborators" section reusing Part 3's numbered-step chrome.
+  Cross-party group leads (bipartisan reach is the interesting signal), each row a name +
+  party letter + shared-bill count chip, with the Lugar citation footnote. Honest federal/state
+  empty split mirrors `CommitteesBand`. **Screenshot-verified** both populated and empty states
+  against the real `redesign2.css`.
+- i18n: `repCard.stepCollaboratorsKicker/Heading`, `collaboratorsCrossParty/SameParty`,
+  `collaboratorsSharedBills`, `collaboratorsCite`, `collaboratorsUnavailableFederal/State`
+  added to both `en` and `es`.
+
+Note on the schema vs. the plan: the plan specced `bill_cosponsors (bill_id, candidate_id,
+is_original, date_cosponsored)`. Storing cosponsors alone would have captured cosponsor↔cosponsor
+edges only and silently understated collaboration with prolific sponsors (often chairs /
+leadership — exactly the "power levers" the user's verbatim ask names). We added a `role` column
+and the sponsor row to close that; the source is the same Congress.gov API we already use, so it
+was an ingest extension, not a new source. This is the one deliberate deviation from the plan's
+schema, made because the plan's own goal ("closest collaborators") required it.
+
+Deliberately deferred (not this card): the live backfill run + migration application (gated,
+done separately); challenger collaborators (challengers never held the seat — same precedent as
+challenger donor/committee data); a **weighted** collaboration metric (the count is unweighted by
+design — Lugar is cited as the rigorous benchmark instead).
 
 ## Part 5 — Promise ledger + kept/broken scoring
 
