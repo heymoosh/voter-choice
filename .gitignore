@@ -73,6 +73,9 @@ docs/operations/.idea-scout-stamp
 # Stryker mutation testing (reports + working dir)
 reports/
 .stryker-tmp/
+# Generated in CI by the mutation workflow's narrowed PR run — a copy of
+# stryker.config.json with thresholds.break dropped to 0. Never committed.
+stryker.pr.config.json
 
 # Drizzle Kit journal / meta (generated, not committed)
 db/migrations/meta/

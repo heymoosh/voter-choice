@@ -126,8 +126,27 @@ bash scripts/ai-tdd-red.test.sh
 
 ## Mutation Testing
 
-CI is the normal gate (`.github/workflows/mutation.yml`): path-filtered on
-PRs, full scope nightly. Do not run Stryker in a working session.
+CI is the normal gate (`.github/workflows/mutation.yml`). Do not run Stryker in
+a working session.
+
+Two layers of narrowing keep it off the critical path:
+
+1. **Path filter** — a PR that touches no scoped file skips Stryker entirely
+   and the check reports green in seconds.
+2. **Changed-file scope** — a PR that _does_ touch a scoped file mutates only
+   the source files it changed (a changed `foo.test.ts` maps to `foo.ts`),
+   not the whole `mutate` array. Before this, one changed file re-mutated all
+   ~8,300 scoped lines: ~85 minutes, almost all of it on untouched code.
+
+Full scope still runs **nightly**, and at PR time whenever the scope
+definition itself changes (`stryker.config.json`, `tsconfig.stryker.json`, or
+the workflow). So coverage is unchanged — only the moment you hear about drift
+outside your diff moves from merge time to that night.
+
+One consequence worth knowing: `thresholds.break` applies to whatever was
+mutated. Against a single file that is a sharper gate than against the whole
+scope, where a weak file can hide behind strong ones — so a PR can trip the
+break on a file that was always weak.
 
 For the rare explicit local need, the universal `/code-reviewer` command
 uses this repo-local adapter when changed files touch Stryker-scoped paths.

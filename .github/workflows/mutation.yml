@@ -17,6 +17,13 @@ name: Mutation
 # runs keep full coverage; template drift is caught that night instead of
 # at PR time. When adding a prompt file with real logic (parsing,
 # branching), add it AND its test here as well as to the mutate array.
+#
+# TWO layers of narrowing, not one. The paths filter decides WHETHER Stryker
+# runs; the "Narrow the PR run" step decides WHAT it mutates. A PR touching one
+# scoped file used to re-mutate the entire ~8,300-line mutate array (~85 min,
+# nearly all of it code the PR never touched) — now it mutates only its own
+# changed sources. Full scope is preserved on nightly/dispatch and whenever the
+# scope definition itself changes.
 
 on:
   pull_request:
@@ -55,6 +62,12 @@ jobs:
         if: github.event_name == 'pull_request'
         uses: dorny/paths-filter@7b450fff21473bca461d4b92ce414b9d0420d706 # v4.0.2
         with:
+          # `shell` emits the matched paths as a space-separated, shell-quoted
+          # list on `scoped_files`, which the next step turns into Stryker's
+          # --mutate argument. Without it we only learn THAT something in scope
+          # changed, not what — and every PR touching one file re-mutates all
+          # ~8,300 lines of the mutate array.
+          list-files: shell
           filters: |
             scoped:
               - 'src/lib/server/budget.ts'
@@ -98,6 +111,80 @@ jobs:
           echo "actor=${{ github.actor }}"
           echo "scoped=${{ steps.filter.outputs.scoped }}"
 
+      - name: Narrow the PR run to the files this PR changed
+        id: scope
+        # A PR that touches ONE scoped file used to re-mutate the entire
+        # ~8,300-line mutate array — ~85 minutes, of which the overwhelming
+        # majority mutates code the PR never went near. Stryker's --mutate
+        # overrides the config array, so PR runs pass only the changed source
+        # files and the nightly/dispatch runs keep full coverage. What you
+        # learn is unchanged; WHEN you learn about drift elsewhere moves from
+        # merge time to that night.
+        #
+        # Mapping rules:
+        #   • a changed source file mutates itself;
+        #   • a changed `foo.test.ts` mutates its sibling `foo.ts`, since
+        #     weakening a test is exactly what this gate exists to catch;
+        #   • a test with no sibling source (the prompts/__tests__ golden
+        #     files) contributes nothing on its own;
+        #   • --mutate replaces the config's `!**/*.test.ts` negations, so
+        #     test files are filtered out explicitly — otherwise Stryker would
+        #     mutate the tests themselves.
+        # FULL SCOPE is restored whenever the scope DEFINITION changes
+        # (stryker.config.json / tsconfig.stryker.json / this workflow) or
+        # when the mapping yields nothing — never silently narrow to zero.
+        #
+        # THRESHOLDS: a narrowed run also drops `thresholds.break` to 0 (see
+        # the run step). 22 was calibrated against the AGGREGATE score of the
+        # whole scope, where weak files hide behind strong ones — applying it
+        # to a single file invents a far stricter, per-file gate as a side
+        # effect of a speed change. Measured against the 2026-07-22 nightly,
+        # three files in the scope would fail it on pre-existing debt:
+        # generatePrompt.ts (0%, 270 of 343 mutants uncovered), getStateData.ts
+        # (13%) and prompts/research-candidate-structured.ts (0%). Enforcement
+        # is therefore unchanged from today: the nightly full run still gates
+        # the aggregate at 22, and narrowed PR runs still fail on compile
+        # errors, test failures and Stryker errors — they just don't invent a
+        # score gate that never existed.
+        if: github.event_name == 'pull_request' && steps.decide.outputs.should_run == 'true'
+        env:
+          CHANGED: ${{ steps.filter.outputs.scoped_files }}
+        run: |
+          set -uo pipefail
+          full=""
+          targets=""
+          for f in $CHANGED; do
+            case "$f" in
+              stryker.config.json|tsconfig.stryker.json|.github/workflows/mutation.yml)
+                full="yes"
+                ;;
+              *.test.ts|*.test.tsx|*.spec.ts|*.spec.tsx)
+                base="${f%.test.ts}"
+                base="${base%.test.tsx}"
+                base="${base%.spec.ts}"
+                base="${base%.spec.tsx}"
+                for ext in ts tsx; do
+                  if [ -f "$base.$ext" ]; then
+                    targets="$targets $base.$ext"
+                  fi
+                done
+                ;;
+              *.ts|*.tsx)
+                targets="$targets $f"
+                ;;
+            esac
+          done
+          if [ -n "$targets" ]; then
+            targets=$(printf '%s\n' $targets | sort -u | paste -sd, -)
+          fi
+          if [ -n "$full" ] || [ -z "$targets" ]; then
+            echo "::notice::Mutating the full configured scope."
+            echo "mutate=" >> "$GITHUB_OUTPUT"
+          else
+            echo "::notice::Mutating only this PR's changed files: $targets"
+            echo "mutate=$targets" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Note skip when Stryker did not run
         if: github.event_name == 'pull_request' && steps.decide.outputs.should_run == 'false'
         run: |
@@ -128,8 +215,31 @@ jobs:
         run: npm run sync:ballot-prompt
 
       - name: Run Stryker mutation testing
+        # `mutate` is empty on nightly/dispatch runs and on any PR that needs
+        # the full scope, in which case Stryker falls back to stryker.config.json
+        # verbatim — same command, same thresholds, as before this change.
+        #
+        # A narrowed run needs `thresholds.break: 0` for the reason documented
+        # on the narrowing step. Stryker exposes no CLI flag for it, so the
+        # config is copied with that one field overridden; everything else,
+        # including the mutate array (which --mutate then supersedes), is
+        # inherited so the two paths can't drift.
         if: steps.decide.outputs.should_run == 'true'
-        run: npx stryker run
+        env:
+          MUTATE: ${{ steps.scope.outputs.mutate }}
+        run: |
+          set -euo pipefail
+          if [ -n "$MUTATE" ]; then
+            node -e '
+              const fs = require("fs");
+              const cfg = JSON.parse(fs.readFileSync("stryker.config.json", "utf8"));
+              cfg.thresholds = { ...cfg.thresholds, break: 0 };
+              fs.writeFileSync("stryker.pr.config.json", JSON.stringify(cfg, null, 2));
+            '
+            npx stryker run stryker.pr.config.json --mutate "$MUTATE"
+          else
+            npx stryker run
+          fi
 
       - name: Upload mutation report
         # Always upload — even on failure — so reviewers can inspect the
