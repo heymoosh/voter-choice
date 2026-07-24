@@ -986,21 +986,17 @@ describe("RepCard §4 — committees [Part 3]", () => {
   it("renders the honest federal empty state when there are no assignments on file", () => {
     const seat = mkSeat({ level: "federal", committees: [] });
     const { container } = renderCard(seat);
-    const bands = container.querySelectorAll(".att-band.na");
-    const text = Array.from(bands)
-      .map((b) => b.textContent)
-      .join(" | ");
-    expect(text).toContain("No committee record on file for this member yet");
+    const band = container.querySelector(".cmt-outer.na");
+    expect(band?.textContent).toContain(
+      "No committee record on file for this member yet",
+    );
   });
 
   it("renders the honest state-level empty state, distinct from the federal copy", () => {
     const seat = mkSeat({ level: "state", committees: [] });
     const { container } = renderCard(seat);
-    const bands = container.querySelectorAll(".att-band.na");
-    const text = Array.from(bands)
-      .map((b) => b.textContent)
-      .join(" | ");
-    expect(text).toContain(
+    const band = container.querySelector(".cmt-outer.na");
+    expect(band?.textContent).toContain(
       "Committee assignments aren't tracked at the state level yet",
     );
   });
@@ -1010,7 +1006,34 @@ describe("RepCard §4 — committees [Part 3]", () => {
     delete (seat as { committees?: unknown }).committees;
     const { container } = renderCard(seat);
     expect(container.querySelector(".cmt-band")).toBeNull();
-    expect(container.querySelector(".att-band.na")).not.toBeNull();
+    expect(container.querySelector(".cmt-outer.na")).not.toBeNull();
+  });
+
+  it("never collides with the bare .att-band selector the e2e suite uses", () => {
+    // redesign-core.spec.ts locates the attendance box with a bare
+    // `.att-band` locator expecting exactly one match — the committees box
+    // must never carry that class, populated or empty.
+    const populated = mkSeat({
+      committees: [
+        {
+          committeeId: "HSAG",
+          name: "House Committee on Agriculture",
+          chamber: "house",
+          parentName: null,
+          title: "Chairman",
+          isLeadership: true,
+          rank: 1,
+        },
+      ],
+    });
+    expect(
+      renderCard(populated).container.querySelectorAll(".att-band"),
+    ).toHaveLength(1);
+
+    const empty = mkSeat({ committees: [] });
+    expect(
+      renderCard(empty).container.querySelectorAll(".att-band"),
+    ).toHaveLength(1);
   });
 });
 

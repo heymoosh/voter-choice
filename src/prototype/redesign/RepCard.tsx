@@ -188,7 +188,7 @@ export function CommitteesBand({ committees, level }) {
   const list = committees || [];
   if (list.length === 0) {
     return (
-      <div className="att-band na">
+      <div className="cmt-outer na">
         <span className="txt">
           {level === "federal"
             ? t("repCard.committeesUnavailableFederal")
@@ -198,7 +198,7 @@ export function CommitteesBand({ committees, level }) {
     );
   }
   return (
-    <div className="att-band cmt-band">
+    <div className="cmt-outer cmt-band">
       <ul className="cmt-list">
         {list.map((c) => (
           <li key={c.committeeId} className="cmt-row">
