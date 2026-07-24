@@ -422,6 +422,47 @@
   white-space: nowrap;
 }
 
+/* ---- collaborators (cosponsorship network) ---- */
+.collab-band {
+  align-items: stretch;
+  flex-direction: column;
+}
+.collab-groups {
+  display: grid;
+  gap: 12px;
+  width: 100%;
+}
+.collab-group-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: 5px;
+}
+.collab-party {
+  color: var(--ink-3);
+  font-size: 12px;
+}
+.collab-count-chip {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.collab-cite {
+  margin: 4px 0 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+
 /* ---- researched positions (executive) ---- */
 .rp-row .cv2-iss-head {
   cursor: default;

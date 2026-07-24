@@ -481,6 +481,15 @@ const TRANSLATIONS = {
         "No committee record on file for this member yet — we don't fake it.",
       committeesUnavailableState:
         "Committee assignments aren't tracked at the state level yet.",
+      collaboratorsUnavailableFederal:
+        "Not enough cosponsorship data on file yet to name this member's closest collaborators.",
+      collaboratorsUnavailableState:
+        "Cosponsorship isn't tracked at the state level yet.",
+      collaboratorsCrossParty: 'Reaches across the aisle to',
+      collaboratorsSameParty: 'Most often works with',
+      collaboratorsSharedBills: '{n} bills',
+      collaboratorsCite:
+        'By bills cosponsored together. For a rigorous bipartisanship score, see the Lugar Center–Georgetown Bipartisan Index.',
       attendanceShowsUp: 'Shows up — missed <b>{pct}%</b> of {of}.',
       withYou: 'WITH YOU',
       againstYou: 'AGAINST YOU',
@@ -608,6 +617,8 @@ const TRANSLATIONS = {
       stepAttendanceHeading: 'On the job',
       stepCommitteesKicker: 'Where they sit',
       stepCommitteesHeading: 'Committee assignments',
+      stepCollaboratorsKicker: 'Who they work with',
+      stepCollaboratorsHeading: 'Closest collaborators',
       legendVote: 'How they voted',
       legendMoney: 'Whose money they take',
       votedWithYouOfFraction: '{pct}% of your key votes went your way · {kept} of {total}',
@@ -1328,6 +1339,15 @@ const TRANSLATIONS = {
         'Aún no hay registro de comités para este miembro — no lo inventamos.',
       committeesUnavailableState:
         'Las asignaciones de comités aún no se rastrean a nivel estatal.',
+      collaboratorsUnavailableFederal:
+        'Aún no hay suficientes datos de copatrocinio para nombrar a los colaboradores más cercanos de este miembro.',
+      collaboratorsUnavailableState:
+        'El copatrocinio aún no se rastrea a nivel estatal.',
+      collaboratorsCrossParty: 'Cruza el pasillo con',
+      collaboratorsSameParty: 'Trabaja más seguido con',
+      collaboratorsSharedBills: '{n} proyectos',
+      collaboratorsCite:
+        'Según proyectos copatrocinados juntos. Para una puntuación rigurosa de bipartidismo, consulta el Índice Bipartidista Lugar Center–Georgetown.',
       attendanceShowsUp: 'Se presenta — faltó a <b>{pct}%</b> de {of}.',
       withYou: 'CONTIGO',
       againstYou: 'EN CONTRA',
@@ -1451,6 +1471,8 @@ const TRANSLATIONS = {
       stepAttendanceHeading: 'En el trabajo',
       stepCommitteesKicker: 'Dónde se sientan',
       stepCommitteesHeading: 'Asignaciones de comités',
+      stepCollaboratorsKicker: 'Con quién trabajan',
+      stepCollaboratorsHeading: 'Colaboradores más cercanos',
       legendVote: 'Cómo votaron',
       legendMoney: 'De quién reciben dinero',
       votedWithYouOfFraction: '{pct}% de tus votos clave coincidieron contigo · {kept} de {total}',

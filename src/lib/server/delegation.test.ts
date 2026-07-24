@@ -20,13 +20,19 @@ vi.mock("./committees", () => ({
   lookupCommittees: vi.fn().mockResolvedValue(new Map()),
 }));
 
+vi.mock("./collaborators", () => ({
+  lookupCollaborators: vi.fn().mockResolvedValue(new Map()),
+}));
+
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { lookupMemberStats } from "./member-stats";
 import { lookupCommittees } from "./committees";
+import { lookupCollaborators } from "./collaborators";
 import { parseNameDecoration, resolveDelegation } from "./delegation";
 
 const mockedGetDb = vi.mocked(getDb);
 const mockedStats = vi.mocked(lookupMemberStats);
+const mockedCollaborators = vi.mocked(lookupCollaborators);
 const mockedCommittees = vi.mocked(lookupCommittees);
 
 /**
@@ -499,5 +505,60 @@ describe("resolveDelegation — committees wiring", () => {
 
     expect(out.seats[0].candidate).toBeNull();
     expect(out.seats[0].committees).toEqual([]);
+  });
+});
+
+describe("resolveDelegation — collaborators wiring", () => {
+  it("attaches the collaborator network for resolved incumbents, keyed by id, with the member's party letter", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        [
+          candidateRow("p1", "Rep. Frank Pallone [D-NJ6]", "federal-house"),
+          candidateRow("s1", "Sen. Andrew Kim [D-NJ]", "federal-senate"),
+        ],
+        [],
+      ]),
+    );
+    const network = {
+      sameParty: [
+        { candidateId: "x", name: "Ally", party: "D" as const, sharedBills: 9 },
+      ],
+      crossParty: [
+        {
+          candidateId: "y",
+          name: "Reacher",
+          party: "R" as const,
+          sharedBills: 4,
+        },
+      ],
+    };
+    mockedCollaborators.mockResolvedValue(new Map([["s1", network]]));
+
+    const out = await resolveDelegation("NJ", "New Jersey", 6);
+    if (out.status !== "ok") return;
+
+    const house = out.seats.find((s) => s.candidate?.id === "p1");
+    const senate = out.seats.find((s) => s.candidate?.id === "s1");
+    // p1 has no entry in the mocked map — must degrade to null, never crash.
+    expect(house?.collaborators).toBeNull();
+    expect(senate?.collaborators).toEqual(network);
+    // Called with {id, party} for each resolved incumbent — the D-NJ
+    // decoration maps to the "D" letter the same-/cross-party split needs.
+    expect(mockedCollaborators).toHaveBeenCalledWith(
+      expect.arrayContaining([
+        { id: "p1", party: "D" },
+        { id: "s1", party: "D" },
+      ]),
+    );
+  });
+
+  it("returns null collaborators for an unresolved seat", async () => {
+    mockedGetDb.mockReturnValue(makeDbMock([[], []]));
+
+    const out = await resolveDelegation("NJ", "New Jersey", 6);
+    if (out.status !== "ok") return;
+
+    expect(out.seats[0].candidate).toBeNull();
+    expect(out.seats[0].collaborators).toBeNull();
   });
 });

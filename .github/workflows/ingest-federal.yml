@@ -110,6 +110,17 @@ jobs:
           FEDERAL_RESET_VOTES: ${{ github.event_name == 'workflow_dispatch' && inputs.reset_votes || false }}
         run: npx tsx scripts/ingest/federal-votes.ts
 
+      - name: Run bill cosponsors ingest
+        # Depends on the `bills` rows the votes step above populates — it
+        # backfills sponsor + cosponsors for the federal bills we hold, feeding
+        # the collaborator network (Part 4, DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md).
+        # Runs unless the job was cancelled, so a votes-step failure for an
+        # unrelated reason doesn't skip it. Reads DATABASE_URL +
+        # CONGRESS_GOV_API_KEY from $GITHUB_ENV (pulled from Bitwarden above);
+        # degrades soft if the Congress.gov key is absent.
+        if: ${{ !cancelled() }}
+        run: npx tsx scripts/ingest/bill-cosponsors.ts
+
       - name: Run FEC 2026 candidate roster ingest
         # Decoupled from the votes step: the candidate roster (which seats the
         # voter's challenger cards) must refresh even if the GovTrack vote

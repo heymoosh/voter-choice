@@ -1037,6 +1037,75 @@ describe("RepCard §4 — committees [Part 3]", () => {
   });
 });
 
+describe("RepCard §5 — collaborators [Part 4]", () => {
+  const network = {
+    sameParty: [
+      {
+        candidateId: "d1",
+        name: "Ada Lane",
+        party: "D" as const,
+        sharedBills: 14,
+      },
+    ],
+    crossParty: [
+      {
+        candidateId: "r1",
+        name: "Boone Kerr",
+        party: "R" as const,
+        sharedBills: 6,
+      },
+    ],
+  };
+
+  it("renders the network, cross-party group first, with count chips and the Lugar citation", () => {
+    const { container } = renderCard(mkSeat({ collaborators: network }));
+    const band = container.querySelector(".collab-band");
+    expect(band).not.toBeNull();
+
+    const groups = band?.querySelectorAll(".collab-group");
+    expect(groups).toHaveLength(2);
+    // Cross-party leads.
+    expect(groups?.[0].querySelector(".collab-group-label")?.textContent).toBe(
+      "Reaches across the aisle to",
+    );
+    expect(groups?.[0].querySelector(".cmt-name")?.textContent).toContain(
+      "Boone Kerr",
+    );
+    expect(groups?.[0].querySelector(".collab-count-chip")?.textContent).toBe(
+      "6 bills",
+    );
+    expect(band?.querySelector(".collab-cite")?.textContent).toContain(
+      "Lugar Center",
+    );
+  });
+
+  it("renders the honest federal empty state when there is no network", () => {
+    const { container } = renderCard(
+      mkSeat({ level: "federal", collaborators: null }),
+    );
+    const band = container.querySelector(".collab-na");
+    expect(band?.textContent).toContain("Not enough cosponsorship data");
+  });
+
+  it("renders the honest state-level empty state, distinct from the federal copy", () => {
+    const { container } = renderCard(
+      mkSeat({ level: "state", collaborators: null }),
+    );
+    const band = container.querySelector(".collab-na");
+    expect(band?.textContent).toContain(
+      "Cosponsorship isn't tracked at the state level yet",
+    );
+  });
+
+  it("degrades to the empty state when collaborators is undefined (no crash)", () => {
+    const seat = mkSeat();
+    delete (seat as { collaborators?: unknown }).collaborators;
+    const { container } = renderCard(seat);
+    expect(container.querySelector(".collab-band")).toBeNull();
+    expect(container.querySelector(".collab-na")).not.toBeNull();
+  });
+});
+
 describe("RepCard verdict + sources — .verdict grid", () => {
   it("renders btn-keep/btn-replace with the .box glyph, same handlers as before", () => {
     const onVerdict = vi.fn();
