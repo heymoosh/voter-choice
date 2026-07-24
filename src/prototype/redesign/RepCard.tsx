@@ -219,7 +219,20 @@ export function CommitteesBand({ committees, level }) {
    honest-empty split as CommitteesBand above (cosponsorship is a federal-only
    source). The count is UNWEIGHTED co-cosponsorship — a rough proxy — so the
    band cites the Lugar Center–Georgetown Bipartisan Index as the rigorous
-   external benchmark rather than claiming a bipartisanship score of our own. ---- */
+   external benchmark rather than claiming a bipartisanship score of our own.
+
+   ⚠️ FE DESIGN NOT REVIEWED — PROVISIONAL (Muxin, 2026-07-24). This markup was
+   built to prove the data path end-to-end; it passed code/render self-vet only,
+   NOT a design review, and the layout/copy/IA may be reworked or dropped. Open
+   questions before it's treated as shipped design: whether collaborators
+   deserve their own numbered step (this §5 pushes Money/Attendance down) vs.
+   living inside an existing section or behind a disclosure; whether the
+   cross-party-first "Reaches across the aisle" framing is the right editorial
+   call; and whether the raw "N bills" chip should surface the unweighted-count
+   proxy to readers at all (a designed treatment might show rank only, or lean
+   entirely on the Lugar link). The durable part of Part 4 is the data layer
+   (ingest + read + schema); this component is a placeholder. See the matching
+   note in docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md (Part 4 — executed). ---- */
 function CollaboratorGroup({ label, people }) {
   const { t } = useI18n();
   return (

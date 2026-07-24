@@ -391,6 +391,21 @@ pre-existing Playwright/sandbox artifact noted for Part 3, unrelated to this cha
   party letter + shared-bill count chip, with the Lugar citation footnote. Honest federal/state
   empty split mirrors `CommitteesBand`. **Screenshot-verified** both populated and empty states
   against the real `redesign2.css`.
+
+  > ⚠️ **FE design NOT reviewed — treat RepCard §5 as provisional (Muxin, 2026-07-24).**
+  > The section was built to prove the data path end-to-end and self-vetted only for
+  > code/render correctness; it has **not** had a design review and the layout/copy may be
+  > reworked or dropped. Known open questions if/when it's revisited: (1) is a second
+  > numbered step (now §5, pushing Money/Attendance down) the right information architecture,
+  > or should collaborators live inside an existing section / behind a disclosure? (2) the
+  > cross-party-first ordering and "Reaches across the aisle" framing is an editorial choice,
+  > not a designed decision; (3) the raw "N bills" chip exposes the unweighted-count proxy
+  > directly to the reader — a designed treatment might hide the number and show only rank,
+  > or omit the metric entirely and lean on the Lugar link. **Do not treat this as shipped
+  > design.** The data layer (ingest + read + schema) is the durable part; the FE is a
+  > placeholder. See the corresponding note in `RepCard.tsx` at the `CollaboratorsBand`
+  > component.
+
 - i18n: `repCard.stepCollaboratorsKicker/Heading`, `collaboratorsCrossParty/SameParty`,
   `collaboratorsSharedBills`, `collaboratorsCite`, `collaboratorsUnavailableFederal/State`
   added to both `en` and `es`.
