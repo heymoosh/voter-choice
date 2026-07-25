@@ -823,8 +823,12 @@ sequencing.
   ambiguity-escalation rules, and the two-annotator gold process with external calibration
   (PolitiFact/Polimeter) first. Ship-gate numbers (κ ≥ 0.70, ≥ 90% gold agreement, zero
   kept↔broken polarity flips) are **proposed, not settled** — flagged for sign-off.
-- `.env.example` gains `FEC_API_KEY` (api.data.gov key — same infrastructure as
-  `CONGRESS_GOV_API_KEY`, which the spike falls back to, then `DEMO_KEY`).
+- **API key note:** the spike reads `FEC_API_KEY`, falling back to `CONGRESS_GOV_API_KEY`
+  (both are api.data.gov keys — same infrastructure), then `DEMO_KEY`; the resolution order is
+  documented in the script header. The `.env.example` entry for `FEC_API_KEY` was deliberately
+  left out of the step-0 PR — the CI security gate flags any `.env*` edit for human security
+  review, which a comment-only change didn't warrant. Add it in the migration-0021 PR, which
+  trips that gate anyway (Open Risk #4).
 
 **Not run in this session** — the session's sandbox had no external network (OpenFEC, Wayback,
 Wikidata and fec.gov all policy-blocked) and no `.env.local`, so the spike is built and
