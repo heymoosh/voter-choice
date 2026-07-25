@@ -4,7 +4,9 @@
 > judgment calls recorded in Open risks (see Review log at the end).
 > **Parts 1, 2, 3 and 4 are built and shipped to prod** (see the "Part N — executed" notes),
 > including Part 4's candidate-data follow-up (backfilled + verified 2026-07-25).
-> **Parts 5-6 are still plan only — Part 5 is the next thing to pick up.**
+> **Part 5 step 0 is built (2026-07-25): the sourcing spike + rubric draft — see "Part 5 —
+> step 0 built". The spike still needs a networked run before the schema is committed.
+> Part 6 is still plan only.**
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -784,6 +786,63 @@ the methodology reference for the rubric itself.
 
 **Every verdict must show its evidence inline**: `not_yet_rated` is a legitimate, visible state,
 never a hidden one.
+
+### Part 5 — step 0 built 2026-07-25 (sourcing spike + rubric draft; NOT yet run)
+
+Open Risk #1 says the campaign-site URL list "could gate Part 5 entirely — recommend a spike
+before committing to the schema." This session built that spike and the rubric scaffolding.
+**Deliberately NOT built: the schema.** Migration 0021 waits until the spike has run and the
+corpus-ready number is known — committing `candidate_promises` first would invert the plan's own
+sequencing.
+
+- **`scripts/ingest/_promise-corpus-spike.ts`** — read-only, no schema, no writes. For each
+  candidate on a pilot state's 2026 official roster (default TX: 38 House districts, inside the
+  plan's 20-50-member pilot band): resolve to our `candidates` row (Part 2 machinery) →
+  `fec_candidate_id` → the principal campaign committee's **FEC Form 1 `website`** via OpenFEC →
+  Wayback CDX capture check with the plan's canonical-capture policy executable (last capture at
+  or before election day). Nine outcome buckets from `unresolved` through `website_archived` (the
+  corpus-ready headline number), with `social_media_only` split out because a Facebook-page
+  "website" is a different extraction problem, and `website_no_captures` surfacing the
+  Save-Page-Now-while-still-live action item. 29 unit tests on the pure URL/parse/policy
+  functions; `npx tsc --noEmit` clean; lint 0 errors.
+- **Source choice, recorded:** FEC Form 1 is a _filing_ — the committee declared its own URL, so
+  it is evidence, not an inference, and joins on `fec_candidate_id` with no name matching (the
+  same "a filing is evidence" standard Part 6a applies to `CONNECTED_ORG`). **Ballotpedia is not
+  queried at all**, even by the spike — Open Risk #2's confirm-before-ingest posture applies to
+  spike HTTP calls too. Wikidata P856 (CC0) is the designated fallback _only if_ Form 1 coverage
+  disappoints, because it needs name-based entity resolution — exactly the false-match class
+  Part 2 exists to control. Incidentally, the spike also measures how the known
+  123-null-`fec_candidate_id` backfill gap (Part 2 leftover) bites Part 5: those rows land in its
+  `no_fec_id` bucket.
+- **`docs/PROMISE_ADJUDICATION_RUBRIC.md` (0.1.0-draft)** — the written, versioned rubric the
+  plan requires alongside `adjudicator_version`, drafted so Muxin and the second annotator have
+  a text to argue with rather than a blank page. Encodes: the signed-off verdict enum, the
+  four-gate extraction test (committed actor / falsifiable action / determinable scope / testable
+  window), declare-the-test-at-extraction, the controllable-action unit with the
+  never-credit/never-blame mirror rule, the Activity/Advancement/Outcome evidence ladder, the
+  ambiguity-escalation rules, and the two-annotator gold process with external calibration
+  (PolitiFact/Polimeter) first. Ship-gate numbers (κ ≥ 0.70, ≥ 90% gold agreement, zero
+  kept↔broken polarity flips) are **proposed, not settled** — flagged for sign-off.
+- **API key note:** the spike reads `FEC_API_KEY`, falling back to `CONGRESS_GOV_API_KEY`
+  (both are api.data.gov keys — same infrastructure), then `DEMO_KEY`; the resolution order is
+  documented in the script header. The `.env.example` entry for `FEC_API_KEY` was deliberately
+  left out of the step-0 PR — the CI security gate flags any `.env*` edit for human security
+  review, which a comment-only change didn't warrant. Add it in the migration-0021 PR, which
+  trips that gate anyway (Open Risk #4).
+
+**Not run in this session** — the session's sandbox had no external network (OpenFEC, Wayback,
+Wikidata and fec.gov all policy-blocked) and no `.env.local`, so the spike is built and
+unit-tested but has produced no coverage numbers yet. It is one command from a dev machine:
+
+```
+npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts --state TX
+```
+
+**Next actions, in order:** (1) run the spike; (2) read the `website_archived` share and decide
+whether Form 1 coverage carries the corpus or the Wikidata fallback/Ballotpedia-licensing paths
+need opening; (3) Muxin reviews the rubric draft and picks the second annotator; (4) only then
+commit the Part 5 schema (migration 0021) shaped by what the spike found. Pilot-state default is
+TX — Muxin can override with `--state`.
 
 ---
 
