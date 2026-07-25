@@ -418,10 +418,113 @@ and the sponsor row to close that; the source is the same Congress.gov API we al
 was an ingest extension, not a new source. This is the one deliberate deviation from the plan's
 schema, made because the plan's own goal ("closest collaborators") required it.
 
-Deliberately deferred (not this card): the live backfill run + migration application (gated,
-done separately); challenger collaborators (challengers never held the seat — same precedent as
-challenger donor/committee data); a **weighted** collaboration metric (the count is unweighted by
-design — Lugar is cited as the rigorous benchmark instead).
+Shipped to prod (2026-07-24, PR #456 merged):
+
+- **Migration `0019` applied to prod** — `bill_cosponsors` live (9 columns incl. `role`).
+- **Backfill run + verified** via `ingest-federal.yml` (dispatched on the branch, now on `main`
+  so it runs every Sunday): `federal_bills=626 processed=626 cosponsors=11448 sponsors=626
+rows=12073 skipped_no_candidate=0 failed=0`. Read-path spot-check against prod returned a
+  sensible network for the busiest member (Claudia Tenney, R-NY24). Row counts confirmed:
+  11,447 cosponsor + 626 sponsor = 12,073, across 626 distinct members. (The same workflow run
+  showed a **pre-existing, unrelated** failure in the FEC candidate-roster step — FEC API 429
+  rate-limit — not caused by Part 4; it self-retries on the Sunday schedule.)
+
+Deliberately deferred (not this card): challenger collaborators (challengers never held the seat
+— same precedent as challenger donor/committee data); a **weighted** collaboration metric (the
+count is unweighted by design — Lugar is cited as the rigorous benchmark instead).
+
+### Part 4 — follow-up: candidate-data fixes (CONTINUE HERE next session)
+
+> Prompt to resume: **"continue from Part 4."** The live backfill spot-check (2026-07-24)
+> surfaced **two defects and one product question**. All three are **data-layer**, NOT the
+> FE-design deferral noted above — the `bill_cosponsors` data itself is correct (12,073 rows
+> verified); these are quality problems in the `candidates` table that this feature renders
+> faithfully. Root causes below are confirmed against real prod rows, not inferred.
+
+**Defect A — party mislabel → wrong same/cross-party bucket (correctness).**
+
+- **Symptom:** Kevin Kiley rendered `(I)` and placed in a Republican member's **cross-party**
+  ("Reaches across the aisle to") list — overstating that member's bipartisanship.
+- **Root cause:** `candidates` row `federal-K000401` (GovTrack votes ingest) stores
+  `full_name="Rep. Kevin Kiley [I-CA3]"` **and** `party="I"` — both wrong; Kiley is Republican.
+  His FEC-derived row `fec-H2CA03157` stores `party="OTH"`. **No row we hold has his correct
+  party**, so there is no internal source to cross-check against. `partyLetter()`
+  (`src/lib/server/collaborators.ts`) is faithful to the stored value — the code is not the bug,
+  the ingested data is.
+- **Scope (630 federal incumbents):** party = REP 271 · DEM 257 · null 95 · I 3 · DFL 2 · UNK 1.
+  Of the non-DEM/REP: King + Sanders (`I`) are correct Independents; Omar + Kelly Morrison
+  (`DFL`, the MN Democratic-Farmer-Labor affiliate) and Risch (`UNK`) are currently saved only
+  because their `[D-..]`/`[R-..]` **name decoration** resolves correctly in `partyLetter`; the 95
+  `null` rows are former members (Defect B). **Kiley is the only genuinely-wrong _current_
+  member** — but he is the proof that the party field is untrustworthy.
+- **Fix (proposed):**
+  1. Add an **authoritative party source**: ingest the `party` field from
+     `unitedstates/congress-legislators` (`legislators-current.yaml` +
+     `legislators-historical.yaml`), keyed by bioguide — the **same repo Part 3 already pulls
+     committees from**, so the client/pattern exists. Prefer it over the GovTrack
+     decoration/`party` column. This fixes Kiley and hardens the whole field.
+  2. Harden `partyLetter` regardless: map `DFL→D` (and any other state-affiliate codes), and
+     keep the **precision-over-recall** guard — when no authoritative source agrees, return
+     `null` (drop from a bucket) rather than guess a side. A wrong bucket is worse than an
+     omission (same principle as Part 2's resolver).
+- **No schema change** (a party backfill is an `UPDATE` to `candidates`, additive-in-spirit).
+
+**Defect B — mangled display names for former members (~95 rows).**
+
+- **Symptom:** `2019-2024] David Trone [D-MD6` instead of `David Trone`.
+- **Root cause:** 95 former members carry a **non-standard decoration**
+  `[party-district, start-end]`, e.g. `federal-T000483` =
+  `"Rep. David Trone [D-MD6, 2019-2024]"`, with structured `party/state/district` all NULL.
+  `cleanCandidateName` (`src/lib/server/alignment.ts:253`) strips the trailing tag with
+  `/\s*\[[A-Za-z]+-[A-Za-z]{2}\d*\]\s*$/`, which requires the bracket to close right after the
+  district digit — the `, 2019-2024` defeats it, so the tag survives; then the **comma inside
+  the bracket** trips the sortname comma-flip (`head="Rep. David Trone [D-MD6"`,
+  `tail="2019-2024]"` → flip) → the garbled reorder. Confirmed by running the real function on
+  the real string.
+- **Scope:** ~95 rows, all matching the `[X-YY, YYYY-YYYY]` pattern (full id/name list was
+  dumped 2026-07-24; regenerate with the scope query in the resume notes below). Every one
+  renders mangled wherever it surfaces.
+- **Fix (proposed):** broaden the trailing-bracket strip to tolerate arbitrary bracket contents
+  at end-of-string (e.g. `/\s*\[[^\]]*\]\s*$/`) so `[D-MD6, 2019-2024]` is removed **wholesale
+  before** the comma-flip logic runs (it already runs first — it just fails to match).
+- **⚠️ CRITICAL — shared function:** `cleanCandidateName` is also used by `resolveCandidateId`
+  (donor + alignment + chat resolution). The tight regex was deliberate (the Norcross `[d-nj1]`
+  incident). Broadening it **must** be proven safe: re-run Part 2's
+  `scripts/ingest/_resolution-miss-report.ts` before/after (miss + suspect-mismatch counts must
+  not regress), and add `cleanCandidateName` unit tests for the comma-year form while confirming
+  the existing cases still pass (sortname `Collins, Susan`; suffix `Jones, Jr.`; Norcross).
+
+**Product question (needs a Muxin decision, not just a fix).** The 95 mangled rows are **former
+members** (flagged `is_incumbent=true`) that appear in the collaborator graph legitimately — via
+their 118th-Congress (2023–24) cosponsorships alongside sitting members. Even with names fixed:
+should "Closest collaborators" surface departed members at all? Options: (a) include them
+(historically accurate, but a former member reads oddly as a current "collaborator"); (b) show
+them labeled "former"; (c) restrict the graph to the current congress or to current members.
+Decide before the FE is un-deferred. (Separately: 95 former members carrying `is_incumbent=true`
+is a broader data-hygiene smell — delegation resolution only dodges it because their
+`state`/`district` are NULL, so they never match a live seat. Out of Part 4 scope, but worth a
+look.)
+
+**Resume recipe (read-only, run from repo root with `--env-file=.env.local`):**
+
+- Reproduce both defects on the real rows:
+  ```
+  select id, full_name, party, jurisdiction, state, district, is_incumbent
+    from candidates where full_name ilike '%kiley%' or full_name ilike '%trone%' order by id;
+  ```
+  then call `cleanCandidateName(full_name)` + `partyLetter(full_name, party)` on each.
+- Re-list the Defect-B population:
+  ```
+  select id, full_name from candidates
+   where jurisdiction in ('federal-house','federal-senate') and is_incumbent
+     and full_name ~ '\[[^\]]*(,|[0-9]{4})[^\]]*\]' order by id;
+  ```
+- Party audit: `select party, count(*) from candidates where jurisdiction in
+('federal-house','federal-senate') and is_incumbent group by party;`
+
+**Done-when:** Kiley resolves to `R` and drops out of a Republican member's cross-party bucket;
+Trone (and the other ~95) render clean names; `_resolution-miss-report.ts` shows no regression;
+new unit tests cover both classes; collaborators spot-check on Tenney re-run clean.
 
 ## Part 5 — Promise ledger + kept/broken scoring
 
