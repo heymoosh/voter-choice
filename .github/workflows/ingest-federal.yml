@@ -121,6 +121,20 @@ jobs:
         if: ${{ !cancelled() }}
         run: npx tsx scripts/ingest/bill-cosponsors.ts
 
+      - name: Run member party + incumbency ingest
+        # Authoritative party, caucus and sitting/former status from
+        # unitedstates/congress-legislators (CC0, no API key) — Part 4
+        # follow-up, DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md. Needs to run on
+        # the schedule, not once: membership changes between runs. Lindsey
+        # Graham left the Senate on 2026-07-11 and our `candidates` row still
+        # said is_incumbent=true until this ingest existed.
+        #
+        # Ordered AFTER the votes ingest, which is what creates/refreshes the
+        # federal-<BIOGUIDE> rows this corrects. Runs unless the job was
+        # cancelled, so an unrelated earlier failure doesn't skip it.
+        if: ${{ !cancelled() }}
+        run: npx tsx scripts/ingest/member-party.ts
+
       - name: Run FEC 2026 candidate roster ingest
         # Decoupled from the votes step: the candidate roster (which seats the
         # voter's challenger cards) must refresh even if the GovTrack vote

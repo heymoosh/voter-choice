@@ -435,6 +435,69 @@ describe("resolveCandidateId", () => {
     expect(result).toBe("fed-norcross");
   });
 
+  // --- Class: former-member records (Part 4 follow-up) ---
+  //
+  // Once cleanCandidateName stopped mangling "[D-MD6, 2019-2024]" names, ~95
+  // departed-member rows became visible to the matcher and started catching
+  // unrelated ballot surnames. Their `candidates.state` is NULL, so the column
+  // rule can't reach them — but a completed term means the decoration state is
+  // final rather than stale, which is the one case it may reject on.
+
+  it("does NOT resolve a surname onto a FORMER member from another state", async () => {
+    const { select } = makeSelectMock([
+      {
+        id: "fed-brandon-williams",
+        fullName: "Rep. Brandon Williams [R-NY22, 2023-2024]",
+      },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // The live prod case: an Alaska ballot name matched this New York former
+    // member on surname alone.
+    const result = await resolveCandidateId(
+      "JOHN B. WILLIAMS",
+      "federal-house",
+      "AK",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("still resolves a former member in their OWN state — they may run again", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-jerry-carl", fullName: "Rep. Jerry Carl [R-AL1, 2021-2024]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Jerry Carl",
+      "federal-house",
+      "AL",
+    );
+    expect(result).toBe("fed-jerry-carl");
+  });
+
+  it("prefers the sitting member over their predecessor on a shared surname", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-raul", fullName: "Rep. Raul Grijalva [D-AZ7, 2003-2025]" },
+      { id: "fed-adelita", fullName: "Rep. Adelita Grijalva [D-AZ7]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Two DIFFERENT people, same surname and state — normally the ambiguity
+    // guard refuses. A bare surname on a 2026 ballot means the person holding
+    // the seat now.
+    const result = await resolveCandidateId("Grijalva", "federal-house", "AZ");
+    expect(result).toBe("fed-adelita");
+  });
+
+  it("does not let the sitting preference override a genuine ambiguity", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-a", fullName: "Rep. Alice Rivers [D-AZ7]" },
+      { id: "fed-b", fullName: "Rep. Bob Rivers [D-AZ3]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    // Both sitting: preferSitting drops nobody, so the guard still refuses.
+    const result = await resolveCandidateId("Rivers", "federal-house", "AZ");
+    expect(result).toBeNull();
+  });
+
   // --- Class: diacritics ---
 
   it("matches across diacritics (PEÑA ↔ Pena)", async () => {
@@ -623,6 +686,47 @@ describe("candidate-name helpers", () => {
 
   it("cleanCandidateName leaves an already-clean name unchanged", () => {
     expect(cleanCandidateName("John Cornyn")).toBe("John Cornyn");
+  });
+
+  // Defect B (Part 4 follow-up): ~95 FORMER members carry a service span
+  // inside the party-state bracket. The old tight regex needed the bracket to
+  // close right after the district digit, so the tag survived — and its comma
+  // then tripped the sortname flip, rendering "2019-2024] David Trone [D-MD6".
+  it("cleanCandidateName strips a former member's service-span tag", () => {
+    expect(cleanCandidateName("Rep. David Trone [D-MD6, 2019-2024]")).toBe(
+      "David Trone",
+    );
+    expect(cleanCandidateName("Sen. Sherrod Brown [D-OH, 2007-2024]")).toBe(
+      "Sherrod Brown",
+    );
+    expect(cleanCandidateName("Rep. Colin Allred [D-TX32, 2019-2024]")).toBe(
+      "Colin Allred",
+    );
+    expect(cleanCandidateName("Rep. Earl Blumenauer [D-OR3, 1996-2024]")).toBe(
+      "Earl Blumenauer",
+    );
+  });
+
+  // The strip widened to "any trailing bracket", which is a matcher shared by
+  // donors, alignment and the chat tools — so the precision cases that
+  // motivated the tight version must still hold.
+  it("cleanCandidateName keeps the pre-existing decorations working", () => {
+    // The Norcross incident: lowercase tag with a district digit.
+    expect(cleanCandidateName("Rep. Donald Norcross [d-nj1]")).toBe(
+      "Donald Norcross",
+    );
+    // A comma introducing only a suffix is still NOT a sortname flip.
+    expect(cleanCandidateName("Clyde W. Jones, Jr.")).toBe("Clyde W. Jones");
+    // A real sortname still flips once its tag is gone.
+    expect(cleanCandidateName("Collins, Susan [R-ME]")).toBe("Susan Collins");
+    // Two-digit districts.
+    expect(cleanCandidateName("Rep. Alma Adams [D-NC12]")).toBe("Alma Adams");
+  });
+
+  it("cleanCandidateName never strips a name down to nothing", () => {
+    // A row stored as only a decoration keeps its text: reducing it to "" would
+    // make it match everything downstream.
+    expect(cleanCandidateName("[R-TX]")).toBe("[R-TX]");
   });
 
   it("stateFromCandidateName extracts the 2-letter state", () => {

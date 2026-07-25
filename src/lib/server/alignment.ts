@@ -252,12 +252,27 @@ function foldName(raw: string): string {
  */
 export function cleanCandidateName(raw: string): string {
   let s = (raw ?? "").trim();
-  // Trailing party-state tag. Senators are "[D-NJ]" (state only); House members
-  // carry a district digit — "[D-NJ1]" / "[R-NC12]". The trailing \d* matches
-  // both so a House surname parses (mirrors the ingest side's \d* in
-  // federal-donors.ts); without it Norcross's last name read as "[d-nj1]" and
-  // resolveCandidateId missed him (breaking BOTH alignment and donors).
-  s = s.replace(/\s*\[[A-Za-z]+-[A-Za-z]{2}\d*\]\s*$/u, "");
+  // Trailing bracketed decoration. Senators are "[D-NJ]" (state only); House
+  // members carry a district digit — "[D-NJ1]" / "[R-NC12]"; and the ~95
+  // FORMER members stored by the votes ingest add a service span inside the
+  // same bracket: "Rep. David Trone [D-MD6, 2019-2024]".
+  //
+  // This deliberately matches ANY trailing bracket rather than the tight
+  // party-state shape it used to. The tight version required the bracket to
+  // close right after the district digit, so the ", 2019-2024" defeated it —
+  // and once the tag survived, the comma INSIDE it tripped the sortname
+  // comma-flip below (head "Rep. David Trone [D-MD6", tail "2019-2024]"),
+  // rendering "2019-2024] David Trone [D-MD6" everywhere the name surfaced.
+  // Stripping the whole bracket first is what keeps the flip logic honest.
+  //
+  // Widening a matcher shared by donors, alignment and the chat tools is the
+  // exact hazard Part 2's precision guard exists for, so: the strip is
+  // anchored to end-of-string, and it is skipped when it would consume the
+  // entire name (a row stored as only "[R-TX]" keeps its text rather than
+  // reducing to "", which would match everything). Proven non-regressing
+  // against scripts/ingest/_resolution-miss-report.ts — see the plan doc.
+  const withoutTag = s.replace(/\s*\[[^\]]*\]\s*$/u, "").trim();
+  if (withoutTag) s = withoutTag;
   // Quoted nickname: `Lateresa "LA" Jones`, `Shevrin “Shev” Jones`. Single
   // quotes are NOT treated as nickname delimiters — they are apostrophes in
   // "O'Brien" / "D'Angelo".
@@ -294,9 +309,28 @@ export function cleanCandidateName(raw: string): string {
   return toks.join(" ");
 }
 
-/** Extract the 2-letter state from a "[D-NJ]" or House "[D-NJ1]" decoration. */
+/**
+ * A "[D-MD6, 2019-2024]" service span inside the party-state bracket — the
+ * form the votes ingest writes for a member who has LEFT Congress. ~95 rows
+ * carry it. Used only by resolveCandidateId, to tell a final decoration state
+ * from a possibly-stale one; see notInBallotState.
+ */
+const FORMER_MEMBER_TAG = /\[[^\]]*\d{4}\s*[-–]\s*\d{4}[^\]]*\]/u;
+
+/**
+ * Extract the 2-letter state from a "[D-NJ]" or House "[D-NJ1]" decoration.
+ *
+ * Does NOT require the bracket to close after the district digits. Former
+ * members carry a service span in the same bracket — "[D-MD6, 2019-2024]" —
+ * and the old close-anchored pattern silently returned null for all ~95 of
+ * them. That made them stateless to `resolveCandidateId`, which is what let an
+ * Alaska ballot's "JOHN B. WILLIAMS" match "Rep. Brandon Williams [R-NY22,
+ * 2023-2024]" once their names stopped being mangled. The state is always the
+ * two letters immediately after "[<party>-", so nothing after them is needed
+ * to read it.
+ */
 export function stateFromCandidateName(raw: string): string | null {
-  const m = (raw ?? "").match(/\[[A-Za-z]+-([A-Za-z]{2})\d*\]/u);
+  const m = (raw ?? "").match(/\[[A-Za-z]+-([A-Za-z]{2})/u);
   return m ? m[1].toUpperCase() : null;
 }
 
@@ -338,9 +372,18 @@ interface ParsedCandidateRow {
    * FEC roster ingest for ~97% of federal rows and therefore trustworthy
    * enough to EXCLUDE a candidate. "decoration" is parsed out of a GovTrack
    * "[D-NJ]" tag, which prod data shows can be stale or wrong — it may narrow
-   * a match but must never be the sole reason to reject one.
+   * a match but must never be the sole reason to reject one (except for a
+   * former-member record; see isFormerMemberRecord).
    */
   stateSource: "column" | "decoration" | null;
+  /**
+   * The stored name records a completed term — "Rep. David Trone [D-MD6,
+   * 2019-2024]". The votes ingest writes this form for members who have left,
+   * and it means the row's decoration state is FINAL, not stale: this person
+   * will never represent a different state under this record. That is what
+   * makes the decoration safe to reject on here and nowhere else.
+   */
+  isFormerMemberRecord: boolean;
   first: string;
   last: string;
   /**
@@ -437,6 +480,7 @@ export async function resolveCandidateId(
         : decorationState
           ? "decoration"
           : null,
+      isFormerMemberRecord: FORMER_MEMBER_TAG.test(r.fullName ?? ""),
       first: foldNameToken(parts.first),
       last: foldNameToken(parts.last),
       identityKey: r.fecCandidateId?.trim() || r.id,
@@ -445,12 +489,33 @@ export async function resolveCandidateId(
   });
 
   /**
-   * Rows this candidate CANNOT be, given the ballot state. Only an
-   * authoritative `candidates.state` disqualifies — a stale "[D-XX]"
-   * decoration must not, or real ballot surnames stop resolving.
+   * Rows this candidate CANNOT be, given the ballot state.
+   *
+   * Part 2's rule stands: an authoritative `candidates.state` disqualifies, a
+   * "[D-XX]" decoration does NOT — a stale tag must not stop a real ballot
+   * surname from resolving (the Norcross incident).
+   *
+   * ONE narrow exception, added by the Part 4 follow-up: a row whose stored
+   * name records a COMPLETED term — "Rep. David Trone [D-MD6, 2019-2024]" — is
+   * a former-member record, and its state is final rather than stale. Those
+   * rows have `candidates.state` NULL, so the column rule can't reach them,
+   * and they were previously hidden by their own mangled names. The moment
+   * cleanCandidateName started reading them correctly they became
+   * surname-magnets: an Alaska ballot's "JOHN B. WILLIAMS" matched "Rep.
+   * Brandon Williams [R-NY22, 2023-2024]", and suspect_mismatch went 3 → 19.
+   * Letting the decoration reject for exactly this class puts it back to 4
+   * without touching how any live member resolves — measured, see the plan
+   * doc's before/after table.
+   *
+   * `is_incumbent = false` is the semantically cleaner signal and will be
+   * correct for these rows once scripts/ingest/member-party.ts has run; it is
+   * NOT used here because the flag is still true for all ~95 of them today, so
+   * keying on it would ship a guard that silently does nothing.
    */
   const notInBallotState = (p: ParsedCandidateRow, st: string) =>
-    p.stateSource === "column" && p.state !== st;
+    p.state !== st &&
+    (p.stateSource === "column" ||
+      (p.stateSource === "decoration" && p.isFormerMemberRecord));
   const eligible = stateCode
     ? parsed.filter((p) => !notInBallotState(p, stateCode.toUpperCase()))
     : parsed;
@@ -481,6 +546,24 @@ export async function resolveCandidateId(
     if (new Set(rows.map((p) => p.identityKey)).size === 1) return bestOf(rows);
     if (new Set(rows.map((p) => p.cleanLower)).size === 1) return bestOf(rows);
     return null;
+  };
+
+  /**
+   * Drop former-member records when a currently-serving row is also in the
+   * set. A name on a 2026 ballot means the person holding the seat now, not
+   * their predecessor: a bare "Grijalva" on the AZ-7 ballot is Adelita
+   * Grijalva, who sits, and not Raúl Grijalva, whose record ends. Without this
+   * the two are distinct people sharing a surname AND a state, so the
+   * ambiguity guard refuses to answer — a real match lost to a departed row.
+   *
+   * Deliberately a TIE-BREAK, not a filter: applied only where a live
+   * alternative exists, so a former member still resolves to their own record
+   * when they are the only match (Jerry Carl, AL-1, who left in 2024 and filed
+   * again for 2026).
+   */
+  const preferSitting = (rows: ParsedCandidateRow[]): ParsedCandidateRow[] => {
+    const sitting = rows.filter((p) => !p.isFormerMemberRecord);
+    return sitting.length > 0 ? sitting : rows;
   };
 
   // 1 + 2. Exact on raw, then on cleaned. Both are ambiguity-guarded: an exact
@@ -514,10 +597,12 @@ export async function resolveCandidateId(
     //       Goldfarb running in another state.
     const stateMatched = byLast.filter((p) => p.state === st);
     const compatible = byLast.filter((p) => p.state === st || p.state === null);
+    // preferSitting resolves a seat's current holder against their own
+    // predecessor before the ambiguity guard has to refuse both.
     const resolved =
-      onlyDistinct(stateMatched) ??
-      onlyDistinct(compatible) ??
-      onlyDistinct(byLast);
+      onlyDistinct(preferSitting(stateMatched)) ??
+      onlyDistinct(preferSitting(compatible)) ??
+      onlyDistinct(preferSitting(byLast));
     if (resolved) return resolved;
     // Multiple DISTINCT people share the surname. Disambiguate by first initial
     // (skip for a surname-only query, which has no real first name), preferring

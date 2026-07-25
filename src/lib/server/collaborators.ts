@@ -39,6 +39,19 @@ export interface Collaborator {
   party: PartyLetter | null;
   /** Bills this collaborator and the member both cosponsored. */
   sharedBills: number;
+  /**
+   * True when this collaborator has left Congress. ~95 former members appear
+   * in the graph legitimately, via 118th-Congress (2023-24) bills they shared
+   * with sitting members. The UI labels them rather than dropping them
+   * (Muxin, 2026-07-24): omitting them would silently shrink a member's real
+   * network, but an unlabelled departed member reads as a current colleague.
+   *
+   * Sourced from `candidates.is_incumbent`, which scripts/ingest/member-party.ts
+   * corrects — before that backfill runs, all 95 are stored is_incumbent=true
+   * and render unlabelled (the pre-existing behaviour, never wrong the other
+   * way).
+   */
+  departed: boolean;
 }
 
 export interface CollaboratorNetwork {
@@ -56,24 +69,80 @@ const DEFAULT_MIN_SHARED_BILLS = 3;
 const DEFAULT_TOP_N = 5;
 
 /**
- * Party letter for classification. Prefers the "[D-NJ5]" name decoration (the
- * same source delegation.ts uses for the seat member's own party), falling
- * back to the FEC party code on `candidates.party`. Returns null when neither
- * yields D/R/I — such a collaborator can't be bucketed and is dropped.
+ * `candidates.party` → D/R/I, or null for a code we won't map.
+ *
+ * The list is closed on purpose. Mapping an unrecognized code by guessing
+ * would put a member in the wrong same-/cross-party bucket, and a wrong bucket
+ * is worse than an omission — the same precision-over-recall rule Part 2's
+ * resolver follows. So "OTH" and "UNK" (both real values in the table) return
+ * null and fall through to the decoration rather than being read as
+ * Independent.
+ *
+ * "DFL" is Minnesota's Democratic-Farmer-Labor and "DNPL" North Dakota's
+ * Democratic-NPL — state affiliates whose members are elected and caucus as
+ * Democrats, so they are D, not unclassifiable.
+ */
+function partyFromCode(raw: string | null): PartyLetter | null {
+  const code = (raw ?? "").trim().toUpperCase();
+  if (!code) return null;
+  if (code === "DFL" || code === "DNPL") return "D";
+  if (code.startsWith("DEM") || code === "D") return "D";
+  if (code.startsWith("REP") || code === "R") return "R";
+  if (code.startsWith("IND") || code === "I") return "I";
+  return null;
+}
+
+/**
+ * DISPLAY party letter — the one the card prints next to a name.
+ *
+ * Reads `candidates.party` first and the "[D-NJ5]" name decoration only as a
+ * fallback. That order matters because the decoration is stale on rows the
+ * party backfill has since corrected (Risch was "UNK", the two Minnesota
+ * members "DFL"); the column is maintained by
+ * scripts/ingest/member-party.ts from unitedstates/congress-legislators, so it
+ * is the authoritative field, while the decoration still covers rows that
+ * ingest can't reach (no bioguide match).
+ *
+ * Returns null when neither yields D/R/I — such a collaborator can't be
+ * bucketed and is dropped rather than guessed at.
  */
 export function partyLetter(
   fullName: string,
   fecParty: string | null,
 ): PartyLetter | null {
+  const fromColumn = partyFromCode(fecParty);
+  if (fromColumn) return fromColumn;
+
   const decoration = /\[([A-Za-z])[A-Za-z]*-/u.exec(fullName ?? "");
   const fromName = decoration?.[1]?.toUpperCase();
   if (fromName === "D" || fromName === "R" || fromName === "I") return fromName;
-
-  const code = (fecParty ?? "").trim().toUpperCase();
-  if (code.startsWith("DEM") || code === "D") return "D";
-  if (code.startsWith("REP") || code === "R") return "R";
-  if (code.startsWith("IND") || code === "I") return "I";
   return null;
+}
+
+/**
+ * BUCKETING party letter — who this member functionally works with, used only
+ * to split same- from cross-party. Deliberately separate from the display
+ * letter above.
+ *
+ * Three sitting members are elected as Independents but caucus with a major
+ * party: Sanders and King (Democrat) and Kiley (Republican). Bucketing them by
+ * their elected party made every Republican who frequently co-sponsors with
+ * Kiley read as "reaching across the aisle" — the bipartisanship overstatement
+ * the Part 4 follow-up set out to fix. Note the original diagnosis was wrong:
+ * Kiley's stored "I" is CORRECT, and so was the code reading it; the missing
+ * datum was the caucus, not the party.
+ *
+ * Keeping the two functions apart is what lets the card stay honest on both
+ * axes — Kiley still prints as "(I)" while counting toward a Republican's
+ * same-party list (Muxin, 2026-07-24). `caucus` is NULL for everyone whose
+ * caucus matches their party, so this falls straight through for ~all rows.
+ */
+export function caucusLetter(
+  fullName: string,
+  fecParty: string | null,
+  caucus: string | null,
+): PartyLetter | null {
+  return partyFromCode(caucus) ?? partyLetter(fullName, fecParty);
 }
 
 /**
@@ -110,6 +179,8 @@ export async function lookupCollaborators(
         collaboratorId: b.candidateId,
         collaboratorName: schema.candidates.fullName,
         collaboratorParty: schema.candidates.party,
+        collaboratorCaucus: schema.candidates.caucus,
+        collaboratorIsIncumbent: schema.candidates.isIncumbent,
         sharedBills: sql<number>`count(distinct ${a.billId})`.mapWith(Number),
       })
       .from(a)
@@ -124,6 +195,8 @@ export async function lookupCollaborators(
         b.candidateId,
         schema.candidates.fullName,
         schema.candidates.party,
+        schema.candidates.caucus,
+        schema.candidates.isIncumbent,
       )
       .having(sql`count(distinct ${a.billId}) >= ${minShared}`);
   } catch (err) {
@@ -133,7 +206,10 @@ export async function lookupCollaborators(
 
   // Bucket each member's collaborators into same/cross party, drop any whose
   // own party can't be determined, then take the top N of each by shared count.
-  const byMember = new Map<string, Collaborator[]>();
+  // Two letters per collaborator: `party` is what the card PRINTS, `bucket` is
+  // who they caucus with. They differ for exactly three sitting members —
+  // see caucusLetter.
+  const byMember = new Map<string, BucketedCollaborator[]>();
   for (const row of rows) {
     const party = partyLetter(row.collaboratorName, row.collaboratorParty);
     if (party === null) continue; // unclassifiable — can't bucket
@@ -143,27 +219,79 @@ export async function lookupCollaborators(
       name: cleanCandidateName(row.collaboratorName),
       party,
       sharedBills: row.sharedBills,
+      departed: !row.collaboratorIsIncumbent,
+      bucket:
+        caucusLetter(
+          row.collaboratorName,
+          row.collaboratorParty,
+          row.collaboratorCaucus,
+        ) ?? party,
     });
     byMember.set(row.memberId, list);
   }
 
+  // The seat member's own bucketing letter has to follow the same caucus rule,
+  // or Kiley's OWN card would file every Republican as cross-party — the same
+  // overstatement, mirrored. The caller passes the displayed party; this
+  // upgrades it to the caucus where the member has one.
+  const memberBucket = await memberBucketLetters(db, memberIds);
+
   for (const [memberId, collaborators] of byMember) {
-    const memberParty = partyByMember.get(memberId) ?? null;
+    const memberParty =
+      memberBucket.get(memberId) ?? partyByMember.get(memberId) ?? null;
     if (memberParty === null) continue; // can't split without the seat's party
 
     const sorted = [...collaborators].sort((x, y) => {
       if (y.sharedBills !== x.sharedBills) return y.sharedBills - x.sharedBills;
       return x.name.localeCompare(y.name);
     });
+    const strip = ({ bucket: _bucket, ...c }: BucketedCollaborator) => c;
     const sameParty = sorted
-      .filter((c) => c.party === memberParty)
-      .slice(0, topN);
+      .filter((c) => c.bucket === memberParty)
+      .slice(0, topN)
+      .map(strip);
     const crossParty = sorted
-      .filter((c) => c.party !== memberParty)
-      .slice(0, topN);
+      .filter((c) => c.bucket !== memberParty)
+      .slice(0, topN)
+      .map(strip);
     if (sameParty.length === 0 && crossParty.length === 0) continue;
     result.set(memberId, { sameParty, crossParty });
   }
 
   return result;
+}
+
+/** Collaborator plus the internal bucketing letter, stripped before return. */
+interface BucketedCollaborator extends Collaborator {
+  bucket: PartyLetter;
+}
+
+/**
+ * Caucus-aware bucketing letter for the seat members themselves. Soft-degrades
+ * to an empty map on any failure — the caller then falls back to the party it
+ * passed in, which is the pre-caucus behaviour and never worse than it.
+ */
+async function memberBucketLetters(
+  db: Exclude<ReturnType<typeof getDb>, typeof DB_NOT_CONFIGURED>,
+  memberIds: string[],
+): Promise<Map<string, PartyLetter>> {
+  const out = new Map<string, PartyLetter>();
+  try {
+    const rows = await db
+      .select({
+        id: schema.candidates.id,
+        fullName: schema.candidates.fullName,
+        party: schema.candidates.party,
+        caucus: schema.candidates.caucus,
+      })
+      .from(schema.candidates)
+      .where(inArray(schema.candidates.id, memberIds));
+    for (const r of rows) {
+      const letter = caucusLetter(r.fullName, r.party, r.caucus);
+      if (letter) out.set(r.id, letter);
+    }
+  } catch (err) {
+    console.error("[collaborators] member caucus lookup failed:", err);
+  }
+  return out;
 }

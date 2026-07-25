@@ -162,6 +162,30 @@ interface ChallengerRow {
 }
 
 /**
+ * True for a `federal-<BIOGUIDE>` row — a MEMBER record written by the votes
+ * ingest, not an FEC filing. Challengers are filings, so these never belong in
+ * the challenger list.
+ *
+ * This used to be implicit: member rows were all `is_incumbent = true`, so the
+ * query's `is_incumbent = false` filter excluded them for free. That stopped
+ * being true once scripts/ingest/member-party.ts began flipping departed
+ * members to false. Lindsey Graham is the live case — his row carries
+ * state=SC, office=senate, election_year=2026 and he left the Senate on
+ * 2026-07-11, so without this he would be listed as a 2026 South Carolina
+ * Senate challenger. Most former members are invisible here anyway (their
+ * state/district are NULL), which is exactly why the one row that has them
+ * needs an explicit guard rather than luck.
+ *
+ * The id prefix is the repo's standing identity convention — member-stats.ts,
+ * committee-assignments.ts and bill-cosponsors.ts all key on it.
+ *
+ * Exported for tests.
+ */
+export function isMemberRecord(r: { id: string }): boolean {
+  return r.id.startsWith("federal-");
+}
+
+/**
  * Keep filers that raised ≥ $10k OR are top-2 by receipts within their
  * party; rank by receipts desc; cap at MAX_PER_SEAT.
  */
@@ -319,10 +343,11 @@ export async function lookupChallengers(
       r.office === "house" &&
       districtKey !== null &&
       r.district === districtKey &&
-      !isIncumbentFiler(r),
+      !isIncumbentFiler(r) &&
+      !isMemberRecord(r),
   );
   const senateRows = rows.filter(
-    (r) => r.office === "senate" && !isIncumbentFiler(r),
+    (r) => r.office === "senate" && !isIncumbentFiler(r) && !isMemberRecord(r),
   );
 
   return {
