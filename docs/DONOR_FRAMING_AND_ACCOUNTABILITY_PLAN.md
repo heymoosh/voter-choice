@@ -2,7 +2,9 @@
 
 > Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
 > judgment calls recorded in Open risks (see Review log at the end).
-> **Parts 1, 2, 3 and 4 are built** (see the "Part N — executed" notes); Parts 5-6 are still plan only.
+> **Parts 1, 2, 3 and 4 are built and shipped to prod** (see the "Part N — executed" notes),
+> including Part 4's candidate-data follow-up (backfilled + verified 2026-07-25).
+> **Parts 5-6 are still plan only — Part 5 is the next thing to pick up.**
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -433,7 +435,7 @@ Deliberately deferred (not this card): challenger collaborators (challengers nev
 — same precedent as challenger donor/committee data); a **weighted** collaboration metric (the
 count is unweighted by design — Lugar is cited as the rigorous benchmark instead).
 
-### Part 4 — follow-up: candidate-data fixes
+### Part 4 — follow-up: candidate-data fixes (DONE — shipped + backfilled 2026-07-25)
 
 > **Executed 2026-07-24 — see "Part 4 follow-up — executed" below.** One of the two
 > diagnoses below turned out to be **wrong on its root cause** (Defect A: Kiley's stored
@@ -574,7 +576,7 @@ and it is skipped when it would consume the whole name.
 
 **That fix alone regressed the guard rail — `suspect_mismatch` 3 → 19.** The handoff
 anticipated the risk and the before/after run caught it. Cause: the ~95 former-member rows were
-effectively *hidden* by their own mangled names. Cleaning the names made them matchable, and
+effectively _hidden_ by their own mangled names. Cleaning the names made them matchable, and
 because their `candidates.state` is NULL they matched unrelated ballot surnames — an Alaska
 ballot's "JOHN B. WILLIAMS" resolving onto "Rep. Brandon Williams [R-NY22, 2023-2024]". Three
 further changes were needed to land Defect B safely:
@@ -586,7 +588,7 @@ further changes were needed to land Defect B safely:
    Part 2's authoritative-state work never reached these rows because of this.
 2. **The decoration may now reject — for former-member records only.** Part 2's rule (a stale
    `[D-XX]` tag must never veto a match; the Norcross incident) is otherwise untouched, and its
-   three tests still pass unmodified. A row whose stored name records a *completed* term has a
+   three tests still pass unmodified. A row whose stored name records a _completed_ term has a
    **final** state, not a stale one, which is what makes it the one safe exception.
 3. **`preferSitting` tie-break.** Fixing (1) and (2) still cost a real match: a bare "Grijalva"
    on the AZ-7 ballot became ambiguous between Adelita Grijalva (sitting) and Raúl Grijalva
@@ -607,13 +609,13 @@ one-shot.
 
 Live plan, verified against prod before applying (106 rows):
 
-| change                                            | rows   |
-| ------------------------------------------------- | ------ |
-| sitting members' party normalized                 | 6      |
-| ↳ Sanders/King/Kiley `I`→`IND`, Risch `UNK`→`REP`, Omar + Kelly Morrison `DFL`→`DEM` |  |
-| caucus set (Sanders, King, Kiley)                 | 3      |
-| matching `fec-` rows' party normalized            | 4      |
-| former members flipped `is_incumbent` true→false  | 96     |
+| change                                                                               | rows |
+| ------------------------------------------------------------------------------------ | ---- |
+| sitting members' party normalized                                                    | 6    |
+| ↳ Sanders/King/Kiley `I`→`IND`, Risch `UNK`→`REP`, Omar + Kelly Morrison `DFL`→`DEM` |      |
+| caucus set (Sanders, King, Kiley)                                                    | 3    |
+| matching `fec-` rows' party normalized                                               | 4    |
+| former members flipped `is_incumbent` true→false                                     | 96   |
 
 **Third finding, not in the handoff: Lindsey Graham is no longer a sitting senator.** The
 source has him in `legislators-historical.yaml` with his term ending **2026-07-11**; our row
@@ -660,16 +662,32 @@ calls them hits because its plausibility test is surname-level.
 member in their own state still resolves; sitting preferred over predecessor; two sitting
 members still refuse to disambiguate).
 
+Shipped to prod (2026-07-25, PR #458 merged):
+
+- **Migration `0020` applied** — `candidates.caucus` live.
+- **Backfill run and verified.** All 106 planned rows written; a re-run now plans
+  `party_updated=0 caucus_updated=0 incumbency_updated=0`, i.e. idempotent and complete.
+
+Post-backfill verification against prod (read-only, all five Done-when criteria):
+
+| check                                     | result                                                                                                                        |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| Kiley out of a Republican's cross-party   | ✅ now in Tenney's **same**-party at 19 shared bills; her cross-party cutoff is 13, so he had been displacing a real Democrat |
+| …while still displaying honestly          | ✅ renders `Kevin Kiley (I)`; Sanders/King likewise display `I`, bucket `D`                                                   |
+| former members render clean               | ✅ `David Trone`, `Sherrod Brown`, `Lindsey Graham`; **0** mangled rows remain                                                |
+| `is_incumbent` corrected                  | ✅ 0 former members still flagged sitting                                                                                     |
+| collaborators spot-check (Tenney, R-NY24) | ✅ clean, and `David Trone (D · former)` renders labelled as decided                                                          |
+
+Party distribution on sitting members is now **REP 271 · DEM 259 · IND 3** — the old
+`null 95 / DFL 2 / UNK 1` values are gone.
+
 **Still open / deferred:**
 
-- The 96 `is_incumbent` flips and the party/caucus backfill **have not been written to prod
-  yet** — the ingest run is a prod mutation and was blocked by the auto-mode classifier.
-  Migration 0020 IS applied. Run `npx tsx --env-file=.env.local scripts/ingest/member-party.ts`
-  (dry-run first), or let the Sunday `ingest-federal.yml` schedule do it.
-- Until that runs, `departed` reads false for all 95 and they render unlabelled — the
-  pre-existing behaviour, never wrong the other way.
-- SC delegation showing a single senator after Graham's flip is correct but unreviewed.
+- **SC's delegation card now shows a single senator**, since Graham is correctly flagged
+  departed (term ended 2026-07-11). Correct, but unreviewed — worth a look.
 - 123 of 629 federal incumbents still have a null `fec_candidate_id` (carried over from Part 2).
+- RepCard §5 remains **design-deferred** (see the ⚠️ note in Part 4 — executed). The "former"
+  label is a label on a provisional band, not a design decision.
 
 ## Part 5 — Promise ledger + kept/broken scoring
 
