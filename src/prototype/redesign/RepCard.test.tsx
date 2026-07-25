@@ -1079,6 +1079,36 @@ describe("RepCard §5 — collaborators [Part 4]", () => {
     );
   });
 
+  // Muxin's call, 2026-07-24: departed members stay in the graph and are
+  // labelled, so a member's real 118th-Congress network isn't silently shrunk.
+  it("labels a departed collaborator as former, alongside their party", () => {
+    const { container } = renderCard(
+      mkSeat({
+        collaborators: {
+          sameParty: [
+            {
+              candidateId: "former-d1",
+              name: "David Trone",
+              party: "D" as const,
+              sharedBills: 11,
+              departed: true,
+            },
+            { ...network.sameParty[0] },
+          ],
+          crossParty: [],
+        },
+      }),
+    );
+    const names = [...container.querySelectorAll(".collab-row .cmt-name")].map(
+      (n) => n.textContent,
+    );
+    expect(names[0]).toContain("David Trone");
+    expect(names[0]).toContain("D · former");
+    // A sitting collaborator keeps the plain party parenthetical.
+    expect(names[1]).toContain("(D)");
+    expect(names[1]).not.toContain("former");
+  });
+
   it("renders the honest federal empty state when there is no network", () => {
     const { container } = renderCard(
       mkSeat({ level: "federal", collaborators: null }),

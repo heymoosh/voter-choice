@@ -153,6 +153,38 @@ describe("lookupChallengers", () => {
     expect(out.senate.map((c) => c.id)).toEqual(["s1"]);
   });
 
+  // Part 4 follow-up: departed members are now is_incumbent=false, so the
+  // query's incumbency filter no longer keeps their MEMBER records (as opposed
+  // to FEC filings) out of the challenger list. Lindsey Graham is the live row
+  // — state=SC, office=senate, election_year=2026, left office 2026-07-11.
+  it("excludes federal-<BIOGUIDE> member records — they are not FEC filings", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        row(
+          "federal-G000359",
+          "Sen. Lindsey Graham [R-SC, 2003-2026]",
+          "REP",
+          "senate",
+          null,
+          null,
+        ),
+        row("s1", "Rich Roe", "DEM", "senate", null, "1200000.00"),
+        row(
+          "federal-X000001",
+          "Rep. Departed Member [R-SC1, 2015-2026]",
+          "REP",
+          "house",
+          "07",
+          null,
+        ),
+        row("h1", "Jane Doe", "DEM", "house", "07", "50000.00"),
+      ]),
+    );
+    const out = await lookupChallengers("SC", 7);
+    expect(out.senate.map((c) => c.id)).toEqual(["s1"]);
+    expect(out.house.map((c) => c.id)).toEqual(["h1"]);
+  });
+
   it("collapses same-name filers in a seat, keeping the higher-receipts row", async () => {
     mockedGetDb.mockReturnValue(
       makeDbMock([

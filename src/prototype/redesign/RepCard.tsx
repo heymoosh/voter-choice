@@ -239,17 +239,32 @@ function CollaboratorGroup({ label, people }) {
     <div className="collab-group">
       <div className="collab-group-label">{label}</div>
       <ul className="cmt-list collab-list">
-        {people.map((p) => (
-          <li key={p.candidateId} className="cmt-row collab-row">
-            <span className="cmt-name">
-              {p.name}
-              {p.party && <span className="collab-party"> ({p.party})</span>}
-            </span>
-            <span className="collab-count-chip">
-              {t("repCard.collaboratorsSharedBills", { n: p.sharedBills })}
-            </span>
-          </li>
-        ))}
+        {people.map((p) => {
+          // Party letter and, for a member who has left Congress, a "former"
+          // marker. Departed members appear via 118th-Congress bills they
+          // shared with this member — labelled, never dropped, so the real
+          // network isn't silently shrunk. See ApiCollaborator.departed.
+          const qualifiers = [
+            p.party,
+            p.departed && t("repCard.collaboratorsFormer"),
+          ].filter(Boolean);
+          return (
+            <li key={p.candidateId} className="cmt-row collab-row">
+              <span className="cmt-name">
+                {p.name}
+                {qualifiers.length > 0 && (
+                  <span className="collab-party">
+                    {" "}
+                    ({qualifiers.join(" · ")})
+                  </span>
+                )}
+              </span>
+              <span className="collab-count-chip">
+                {t("repCard.collaboratorsSharedBills", { n: p.sharedBills })}
+              </span>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );

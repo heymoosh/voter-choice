@@ -1,0 +1,36 @@
+-- ---------------------------------------------------------------------------
+-- candidates.caucus — which party a member functionally works with, as
+-- distinct from the party they were elected under (`party`).
+--
+-- WHY. Exactly three sitting members are elected as Independents but caucus
+-- with a major party: Bernie Sanders and Angus King (caucus Democrat) and
+-- Kevin Kiley (caucus Republican, from his 2025-27 term). With only `party`
+-- available, src/lib/server/collaborators.ts had to treat all three as
+-- cross-party to everyone — so a Republican who frequently co-sponsors with
+-- Kiley read as "reaching across the aisle", overstating their bipartisanship.
+-- That was the real cause of the Part 4 follow-up's Defect A; the stored party
+-- ("I") was correct all along, and so was the code reading it. The missing
+-- field was this one.
+--
+-- Kept SEPARATE from `party` rather than overwriting it, so the card can stay
+-- honest on both axes: Kiley still displays as "(I)" while being counted in a
+-- Republican's same-party bucket (Muxin, 2026-07-24).
+--
+-- Populated by scripts/ingest/member-party.ts from the `caucus` field on the
+-- member's most recent term in unitedstates/congress-legislators (CC0) — the
+-- same source scripts/ingest/committee-assignments.ts already uses. NULL for
+-- everyone else, which is the overwhelming majority: a member with no caucus
+-- recorded caucuses with their own party, so readers of this column fall back
+-- to `party`.
+--
+-- Additive only: one new nullable column, no existing data rewritten by this
+-- file, no index needed (never queried on its own — always read alongside the
+-- candidate row). NOT applied to any database by this migration file — ships
+-- in the PR, applied separately per repo convention (see PR body).
+--
+-- Next free migration number as of this branch (based on origin/main): 0019
+-- exists, so this is 0020. Verify with `git log --oneline main --
+-- db/migrations/` before applying on prod — do not renumber if another
+-- migration lands first.
+-- ---------------------------------------------------------------------------
+ALTER TABLE "candidates" ADD COLUMN IF NOT EXISTS "caucus" text;

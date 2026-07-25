@@ -89,6 +89,12 @@ export interface ApiCollaborator {
   name: string;
   party: "D" | "R" | "I" | null;
   sharedBills: number;
+  /**
+   * Collaborator has left Congress — labelled "former" rather than dropped,
+   * so a member's real 118th-Congress network isn't silently shrunk. Optional
+   * so an older cached payload just reads as not-departed.
+   */
+  departed?: boolean;
 }
 
 /** Cosponsorship collaborator network — see DelegationSeat.collaborators. */

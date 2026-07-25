@@ -433,9 +433,15 @@ Deliberately deferred (not this card): challenger collaborators (challengers nev
 — same precedent as challenger donor/committee data); a **weighted** collaboration metric (the
 count is unweighted by design — Lugar is cited as the rigorous benchmark instead).
 
-### Part 4 — follow-up: candidate-data fixes (CONTINUE HERE next session)
+### Part 4 — follow-up: candidate-data fixes
 
-> Prompt to resume: **"continue from Part 4."** The live backfill spot-check (2026-07-24)
+> **Executed 2026-07-24 — see "Part 4 follow-up — executed" below.** One of the two
+> diagnoses below turned out to be **wrong on its root cause** (Defect A: Kiley's stored
+> party was correct all along; the missing field was his _caucus_). The original text is kept
+> verbatim as written, with the correction recorded in the executed section — the wrong
+> diagnosis is the useful part of the record.
+
+> The live backfill spot-check (2026-07-24)
 > surfaced **two defects and one product question**. All three are **data-layer**, NOT the
 > FE-design deferral noted above — the `bill_cosponsors` data itself is correct (12,073 rows
 > verified); these are quality problems in the `candidates` table that this feature renders
@@ -525,6 +531,145 @@ look.)
 **Done-when:** Kiley resolves to `R` and drops out of a Republican member's cross-party bucket;
 Trone (and the other ~95) render clean names; `_resolution-miss-report.ts` shows no regression;
 new unit tests cover both classes; collaborators spot-check on Tenney re-run clean.
+
+### Part 4 follow-up — executed 2026-07-24
+
+`npx tsc --noEmit` clean; `npm run lint` 0 errors; full `npm test` — 3,721 passed (the only 3
+failures, in `capture-shared.test.ts`, are the same pre-existing Playwright/sandbox artifact
+noted for Parts 3-4; re-run outside the sandbox they pass).
+
+**Defect A — the diagnosis above was wrong, and the correction is the finding.** Kiley's stored
+party is **not** an error. `unitedstates/congress-legislators` records his 2025-27 term as
+`party: Independent, caucus: Republican` — and our own two rows agree with it independently
+(GovTrack `[I-CA3]` / `party="I"`, FEC `party="OTH"`). Three sources, one answer: he really is
+an Independent. So "no row we hold has his correct party" was false; every row had it.
+
+The **symptom** was real, though, and so was the harm: a Republican who frequently co-sponsors
+with Kiley read as "reaching across the aisle". The actual missing datum is **who he works
+with**, not who he is. Exactly three sitting members are affected — Sanders and King
+(Independent, caucus Democrat) and Kiley (Independent, caucus Republican).
+
+Fix, per Muxin's call (2026-07-24) to keep the card honest on both axes:
+
+- **Migration `0020_add_candidate_caucus.sql`** — one nullable `candidates.caucus` column.
+  Additive, no index, no existing data rewritten. **Applied to prod.** NULL for everyone whose
+  caucus matches their party, which is all but three rows.
+- **`collaborators.ts` splits the two letters.** `partyLetter()` is what the card PRINTS;
+  the new `caucusLetter()` is what the same-/cross-party split uses. Kiley still renders
+  "(I)" while counting toward a Republican's _same_-party list. The rule is applied to the
+  seat member too (via a small caucus lookup on the member ids), so Kiley's own card doesn't
+  file every Republican as cross-party — the same overstatement, mirrored.
+- **`partyLetter` hardened regardless**, as the original plan asked: it now reads the party
+  column FIRST and the `[D-NJ5]` decoration only as a fallback (the decoration goes stale),
+  maps `DFL`/`DNPL` → `D`, and keeps the precision guard — `OTH`/`UNK` return null and fall
+  through rather than being read as Independent, because a wrong bucket is worse than an
+  omission (Part 2's rule).
+
+**Defect B — fixed, but the one-line fix the handoff specced was not sufficient.**
+`cleanCandidateName`'s trailing-tag strip now matches any trailing bracket
+(`/\s*\[[^\]]*\]\s*$/`) instead of the tight party-state shape, so `[D-MD6, 2019-2024]` is
+removed wholesale **before** the comma-flip runs. "David Trone" renders correctly. Two guards
+on widening a matcher shared by donors/alignment/chat: the strip is anchored to end-of-string,
+and it is skipped when it would consume the whole name.
+
+**That fix alone regressed the guard rail — `suspect_mismatch` 3 → 19.** The handoff
+anticipated the risk and the before/after run caught it. Cause: the ~95 former-member rows were
+effectively *hidden* by their own mangled names. Cleaning the names made them matchable, and
+because their `candidates.state` is NULL they matched unrelated ballot surnames — an Alaska
+ballot's "JOHN B. WILLIAMS" resolving onto "Rep. Brandon Williams [R-NY22, 2023-2024]". Three
+further changes were needed to land Defect B safely:
+
+1. **`stateFromCandidateName` had the identical tight-bracket bug** — `/\[[A-Za-z]+-([A-Za-z]{2})\d*\]/`
+   requires the bracket to close after the district digits, so it returned NULL for all ~95
+   service-span names. Those rows were stateless to the resolver, which is what let them match
+   anything. The anchor is dropped (the state is always the two letters after `[<party>-`).
+   Part 2's authoritative-state work never reached these rows because of this.
+2. **The decoration may now reject — for former-member records only.** Part 2's rule (a stale
+   `[D-XX]` tag must never veto a match; the Norcross incident) is otherwise untouched, and its
+   three tests still pass unmodified. A row whose stored name records a *completed* term has a
+   **final** state, not a stale one, which is what makes it the one safe exception.
+3. **`preferSitting` tie-break.** Fixing (1) and (2) still cost a real match: a bare "Grijalva"
+   on the AZ-7 ballot became ambiguous between Adelita Grijalva (sitting) and Raúl Grijalva
+   (departed) — two different people, same surname and state, so the ambiguity guard refused
+   both. A name on a 2026 ballot means the person holding the seat now. Applied as a tie-break
+   only where a live alternative exists, so a former member still resolves to their own record
+   when they are the only match.
+
+**New ingest `scripts/ingest/member-party.ts`** — authoritative `party`, `caucus` and
+sitting/former status from `unitedstates/congress-legislators` (CC0, no API key), the same repo
+Part 3 pulls committees from, fetched the same way. Joins on identity keys only, never a name:
+bioguide → `federal-<BIOGUIDE>` and every FEC id the source lists → `fec-<FECID>`. Party is
+normalized to the FEC code vocabulary the column is documented to hold (`REP`/`DEM`/`IND`), not
+the source's prose, because `races.ts` groups on the raw value. Never touches `full_name`,
+`state` or `district`. `--dry-run` reports the real per-row diff; 24 unit tests. **Added to
+`ingest-federal.yml`** — membership changes between runs, so this has to be scheduled, not
+one-shot.
+
+Live plan, verified against prod before applying (106 rows):
+
+| change                                            | rows   |
+| ------------------------------------------------- | ------ |
+| sitting members' party normalized                 | 6      |
+| ↳ Sanders/King/Kiley `I`→`IND`, Risch `UNK`→`REP`, Omar + Kelly Morrison `DFL`→`DEM` |  |
+| caucus set (Sanders, King, Kiley)                 | 3      |
+| matching `fec-` rows' party normalized            | 4      |
+| former members flipped `is_incumbent` true→false  | 96     |
+
+**Third finding, not in the handoff: Lindsey Graham is no longer a sitting senator.** The
+source has him in `legislators-historical.yaml` with his term ending **2026-07-11**; our row
+still said `is_incumbent = true`. That is a real staleness bug the ingest fixes — and it
+carried a regression the other 95 former members didn't, because **his row has `state=SC`,
+`office=senate`, `election_year=2026` populated** while theirs are NULL. Flipping him to
+`is_incumbent=false` would have dropped him straight into `races.ts`'s challenger query and
+listed him as a **2026 South Carolina Senate challenger**. Guarded with `isMemberRecord()` in
+`races.ts` (a `federal-<BIOGUIDE>` row is a member record, never an FEC filing, so it can
+never be a challenger), mirroring the existing `isIncumbentFiler` exclusion, with a test.
+⚠️ Worth a separate look: SC's delegation card will now show one senator.
+
+**Product question — decided (Muxin, 2026-07-24): show former members, labelled "former".**
+Option (b). Dropping them would silently shrink a member's real 118th-Congress network;
+leaving them unlabelled reads as a current colleague. `Collaborator.departed` is threaded
+from `candidates.is_incumbent` through `delegation.ts` → `ApiCollaborator` → `RepCard`, which
+renders "David Trone (D · former)". New i18n `repCard.collaboratorsFormer` (en + es). The FE
+remains **design-deferred** per the ⚠️ note above — this is a label on a provisional band, not
+a design decision.
+
+**Verification.** `_resolution-miss-report.ts` over all 1,884 roster names. Four runs, because
+the first fix regressed and the report is what showed it:
+
+|                      | before | B alone | +state/reject | +preferSitting (shipped) |
+| -------------------- | ------ | ------- | ------------- | ------------------------ |
+| hit                  | 1,270  | 1,270   | 1,267         | **1,270**                |
+| miss                 | 12     | 12      | 15            | **12**                   |
+| **suspect_mismatch** | **3**  | **19**  | 4             | **4**                    |
+
+Shipped state: **recall exactly preserved** (hit and miss both unchanged), and the single
+`suspect_mismatch` delta is a **correct** resolution the report cannot recognize — AL-1's
+"Jerry Carl" now resolves to `Rep. Jerry Carl [R-AL1, 2021-2024]`, which is the same person
+(he left in 2024 and filed again for 2026). The report derives its expectation from
+`candidates.state`, which is NULL on former-member rows, so it sees "no plausible counterpart"
+and flags a true match as suspect. Same class of artifact as Part 2's three surviving
+"mismatches" (the Ashley Hinson spellings). Effective false-positive rate is still zero.
+
+Two matches were also **dropped and not counted as losses above** because the report scored
+them as hits: "Eric Garcia" (CA-21) was resolving onto Rep. Robert Julio Garcia and "Calvin
+Lee" (CA-34) onto Erica Lee. Both were wrong people; they are now honest nulls. The report
+calls them hits because its plausibility test is surname-level.
+
+4 new resolver tests cover the classes above (former member in another state rejected; former
+member in their own state still resolves; sitting preferred over predecessor; two sitting
+members still refuse to disambiguate).
+
+**Still open / deferred:**
+
+- The 96 `is_incumbent` flips and the party/caucus backfill **have not been written to prod
+  yet** — the ingest run is a prod mutation and was blocked by the auto-mode classifier.
+  Migration 0020 IS applied. Run `npx tsx --env-file=.env.local scripts/ingest/member-party.ts`
+  (dry-run first), or let the Sunday `ingest-federal.yml` schedule do it.
+- Until that runs, `departed` reads false for all 95 and they render unlabelled — the
+  pre-existing behaviour, never wrong the other way.
+- SC delegation showing a single senator after Graham's flip is correct but unreviewed.
+- 123 of 629 federal incumbents still have a null `fec_candidate_id` (carried over from Part 2).
 
 ## Part 5 — Promise ledger + kept/broken scoring
 

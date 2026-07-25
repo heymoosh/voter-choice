@@ -487,6 +487,10 @@ const TRANSLATIONS = {
         "Cosponsorship isn't tracked at the state level yet.",
       collaboratorsCrossParty: 'Reaches across the aisle to',
       collaboratorsSameParty: 'Most often works with',
+      // Shown beside the party letter for a collaborator who has since left
+      // Congress — they appear via 118th-Congress bills shared with this
+      // member, and are labelled rather than dropped.
+      collaboratorsFormer: 'former',
       collaboratorsSharedBills: '{n} bills',
       collaboratorsCite:
         'By bills cosponsored together. For a rigorous bipartisanship score, see the Lugar Center–Georgetown Bipartisan Index.',
@@ -1345,6 +1349,7 @@ const TRANSLATIONS = {
         'El copatrocinio aún no se rastrea a nivel estatal.',
       collaboratorsCrossParty: 'Cruza el pasillo con',
       collaboratorsSameParty: 'Trabaja más seguido con',
+      collaboratorsFormer: 'ex',
       collaboratorsSharedBills: '{n} proyectos',
       collaboratorsCite:
         'Según proyectos copatrocinados juntos. Para una puntuación rigurosa de bipartidismo, consulta el Índice Bipartidista Lugar Center–Georgetown.',

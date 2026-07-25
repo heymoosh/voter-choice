@@ -105,6 +105,12 @@ export const candidates = pgTable(
     // FEC 2026 roster ingest + incumbent backfill; a "race" is the group key
     // (state, district, office, electionYear)).
     party: text("party"), // verbatim FEC party code: "REP" | "DEM" | "LIB" | …
+    // Party this member functionally works with, when it differs from the one
+    // they were elected under — Sanders/King caucus DEM, Kiley caucuses REP.
+    // NULL means "same as party", which is true for everyone else. Written by
+    // scripts/ingest/member-party.ts; read by collaborators.ts to bucket
+    // same- vs cross-party without misprinting a genuine Independent as D/R.
+    caucus: text("caucus"),
     state: text("state"), // USPS code, "TX"
     district: text("district"), // zero-padded House district, "07"; null for senate
     office: text("office"), // "house" | "senate"
