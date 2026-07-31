@@ -88,11 +88,89 @@ CLARIFICATION (Muxin, 2026-07-12): I rely on your judgement on how to make codeb
   `scripts/ops/tagging-reminder.sh` since the cadence is automated again.
 - DECISION (2026-07-01): write target = DIRECT to prod `issue_tags`, gated by the `_retag-gold-check.ts` gold gate before persisting each batch. Scope INCLUDES writing a net-new general untagged-bill tagging workflow (subagent path, modeled on `_pole-retag.workflow.js`) — the existing workflows are specific re-tags, and the only general tagger today is the metered `tag-bills.ts`, which we are NOT using.
 - RESTORED (2026-07-17): roster epic closed — un-parked back to To Do per the epic-closeout convention
+- FULL PLAN (2026-07-31): `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 3). The DECISION and mechanism above survive review; four design choices in the first draft of that plan did not — corrections below.
+- ADVERSARIAL REVIEW (2026-07-31) — four corrections before building:
+  - SELECTOR must be version-AWARE with an allowlist, not version-agnostic. An agnostic selector permanently orphans the 38,677 bills that already have tags (34,072 of them have exactly ONE tag, so one bad tag hides a bill forever) and deletes the TAGGER_VERSION bump mechanism, so no rubric change could ever be re-applied. Use `NOT EXISTS (... AND it.tagger_version = ANY($2))` with `['claude-haiku-4-5-20251001-v1','pole-anchored-v1','claude-sonnet-4-6-agent-v1']`. The infinite-loop risk from reusing `fetchUntaggedBills` is real but converges (upsert sets tagger_version) and already exists on main for 642 bills — it costs subagent time, not money.
+  - THE GOLD GATE AS FIRST DESIGNED WOULD BLOCK ~98% OF HEALTHY RUNS, THEN LIVELOCK. ">60% empty" is the rubric's designed abstain behavior (measured 49–85% on the pole runs). "Mean confidence 0.15 below baseline" — the known-good subagent run averages 0.682 vs a 0.797 baseline, already 0.115 below, and those confidences are three constants from a low/med/high mapping, not model output. "95/5 stance split at n≥30" fires on `water_infrastructure` (97.31% in_favor), `healthcare_affordability` (95.00), `housing_affordability` (94.99) — P(no issue trips) ≈ 0.02. And because the selector is fully deterministic, any block re-selects the identical bills and fails identically forever. REPLACE with: hard-block only on unambiguous degeneration (zero tags, <95% unique coverage, >95% of tags on one issue); per-issue comparison against THAT issue's own corpus share, quarantining the offending issue and inserting the rest; report-don't-gate on abstain rate and confidence. Record an attempt row even on a block so the next selection differs.
+  - `skip_reason` IS THE WRONG DATA MODEL: 0 rows in prod across 68,334 bills — never exercised. `inferSkipReason` falls back to `non_issue` UNCONDITIONALLY, and 65% of the newest 2,000 bills are NULL-summary, so a first run would permanently stamp ~1,300 bills `non_issue` purely for lacking a summary. Ledger F4 says summary recovery is the top coverage lever; those must stay re-taggable. Replace with an additive `bill_tag_attempts (bill_id, tagger_version, attempt_no, outcome, attempted_at)` table; selector excludes at `attempt_no >= 2`. Fixes the permanent-stall, the gate livelock, and the irreversibility together.
+  - TAG BILLS WITH SUMMARIES FIRST: 1,308 of the newest 2,000 are title-only; 14,641 of 29,443 untagged are NULL-summary. Add `summary IS NOT NULL` to the drain selector — cuts the pool to 14,802, halves the work, and removes the abstain-rate problem at source instead of gating on it.
+- COVERAGE GATE: `results.length === count` is satisfied by 100 duplicated bill_ids — WEAKER than `_pole-assemble.ts:60-84`, which is already correct. Use a Set of ids plus an in-batch membership check. Wrap each file's JSON.parse in try/catch and treat a parse failure as MISSING, not fatal (a bare parse means one truncated file exits 1 and the "re-run only these batches" recovery never fires). Prep must `rmSync` the batch dir first (per `_pole-prep-batches.ts:42`) or stale `_results` files poison every retry. Add the batch dir to `.gitignore`.
+- DROP the `_retag-gold-check.ts` spot-check: it is scoped to reproductive_rights|immigration and further narrowed by state+keyword filters, so expected yield is ~16 and ~11 tags per 2,000-bill run before intersection — the before/after diff is 0-vs-0 on most runs. Say plainly the DECISION's literal wording can't be honored rather than half-honoring it.
+- PROBE THE ROUTINE BEFORE TRUSTING IT: the ~46,000-tag precedent ran from INTERACTIVE sessions, not a routine. "It worked on the subscription" is not "it works in a cloud routine with a 20-way fan-out and an undocumented daily run cap." Ladder TAG_BILLS_PER_RUN 100 → 500 → 2,000.
+- DEPENDS ON: Disarm the uncapped metered bill-tagging path
 - STATUS: To Do
 - DECISION: defer (unattended) — ATTENDED build (cloud routine + Neon role/network setup needs your Claude/Neon dashboards); do not auto-run.
 <!-- card-id: c86714c6-d3d7-4019-a03d-4d4c6816f7e4 -->
 
 ### General
+
+**[P0] Disarm the uncapped metered bill-tagging path**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 0A).
+- `.github/workflows/ingest-tag-bills.yml` is live on `main` with `workflow_dispatch` enabled and pulls `ANTHROPIC_VOTER_API` from Bitwarden. It runs `scripts/ingest/tag-bills-batch.ts`, which sets `FETCH_LIMIT = 65_000` (line 46) and calls `fetchUntaggedBills(db, FETCH_LIMIT)` with no `--limit`, no `TAGGER_BILL_LIMIT`, and no cap of any kind.
+- One manual trigger submits all 29,657 untagged bills to the Anthropic Batch API — the exact 6/21 and 6/28 budget-drain event. Batch bills on COMPLETION, so cancelling the 360-minute `--collect` step does not stop the spend.
+- TASK: delete the `ANTHROPIC_VOTER_API` block from the workflow; replace both `tag-bills-batch.ts` steps with a hard failure pointing at the new routine doc; add `if (!explicitLimit) throw` to `tag-bills-batch.ts` so no future caller can run it uncapped.
+- ALSO (closes the first bullet of the tagging-cron card, never done): six non-app scripts read the key — `tag-bills.ts`, `tag-bills-batch.ts`, `classify-bills.ts`, `_classify-batch.ts`, `generate-rationales.ts`, `summarize-bills.ts`. Only one is scheduled but all are one `npx tsx` away.
+- NEEDS A RULING FROM MUXIN: `src/lib/server/extract-vision.ts` and `src/app/api/research-candidate/route.ts` are metered app paths that are arguably not "front-end user chat" in the narrow sense. In or out of the directive?
+- STATUS: To Do
+- GOAL_CONDITION: `gh workflow run ingest-tag-bills.yml` fails closed; no uncapped path to the metered API exists in the repo; the six scripts are inventoried with a ruling on the two app paths.
+
+**[P0] Fix state-votes ingest — retry OpenStates 5xx and socket errors**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 1).
+- ~30 of the last 45 scheduled runs of `ingest-states.yml` failed (6/17 → 7/31). An earlier diagnosis of "Neon connection drops" was WRONG: 22/22 sampled failures are OpenStates 502 / 504 / bare `terminated`, zero DB errors. `response_ms≈60000` on the 504s is their gateway timeout; `terminated` is the same event with the socket dying first.
+- ROOT CAUSE: `fetchOpenStatesJson` (`scripts/ingest/state-votes.ts:485-536`) retries ONLY HTTP 429. 502/503/504 fall through to `throw`, and there is no try/catch around `await fetcher(...)` at all. `scripts/ingest/federal-votes.ts:1226` already has `RETRYABLE = new Set([502,503,504])` + a network catch — state-votes is the one file that never got it.
+- TASK: new `scripts/ingest/_retry.ts` (`withRetry`, `isTransientNetworkError` walking `error.cause`, `flattenErrorChain`, canonical `sleep`); add a 5xx branch alongside the existing 429 handler; wrap fetch AND `response.json()`; `AbortSignal.timeout(60_000)` constructed INSIDE the loop; fix `safeErrorMessage` to print the cause chain; per-session fault isolation.
+- FREE WIN, same file: `fetchOpenStatesBills` (`state-votes.ts:436-462`) checks the budget before incrementing, so page 2 is fetched and entirely discarded after page 1 fills the quota — 20 of 50 daily requests wasted. Hoist the check into the `while` condition (50 → 30 requests/day).
+- HONEST EXPECTATION: this does NOT make bad days clean. The 7/26 outage ran continuously ≥8 min; a 4-attempt/60s window is ~4 min. All-ten-states becomes roughly four-to-six. Do not bill it as immunity.
+- TIMEOUT TRAP: do NOT set `timeout-minutes: 25` — the untouched 429 branch (`MAX_RETRIES=8`, 5-min cap) has a 28.7-min worst case for ONE request, and a step timeout is a hard kill before `writeStatePlan` ever runs. Use 40, add a 12-min per-state wall-clock budget to `withRetry`, drop 429 retries 8 → 5.
+- OUT OF SCOPE (deliberately): migrating `federal-votes.ts` / `state-votes-from-dump.ts` onto `withRetry`, and adding retry to `writeStatePlan`. The DB was never the failure; bundling them triples the blast radius.
+- STATUS: To Do
+- GOAL_CONDITION: two consecutive scheduled runs land with materially fewer failed states; `_retry.test.ts` includes a regression guard that the old `/fetch failed|ECONNRESET|ETIMEDOUT/i` regex does NOT match `terminated` while the new predicate does.
+
+**[P1] Ingest + tagging failure visibility — job-health check and alerts that actually send**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 0B).
+- Six weeks of daily-ingest failures went unnoticed. `ingest-states.yml`'s alert step runs `bws secret get <INGEST_FAILURE_WEBHOOK_BWS_SECRET_ID>` — bash parses the literal `<` as input redirection, `set +e` swallows it, and the step prints "skipping alert" and exits 0. Every failed job ends that way.
+- TASK: new `scripts/ops/check-ingest-freshness.ts` modeled on `scripts/ops/check-stock-watcher-liveness.ts` (pure/impure split, `computeExitCode`, `isInvokedDirectly()` guard, sibling test) + `.github/workflows/check-ingest-freshness.yml` at `0 12 * * *`.
+- PRIMARY SIGNAL MUST BE JOB HEALTH, NOT DATA FRESHNESS: `bills.inserted_at` only moves when NEW rows arrive, so a broken job and a quiet August are indistinguishable. Real inter-arrival gaps hit 47.6–49.6h six times in July on healthy days — a 36h threshold pages on all of them. Poll the last N scheduled `conclusion`s via the Actions API; keep freshness as a loose secondary at ≥60h. Read `issue_tags.tagged_at` (there is no `inserted_at` on that table).
+- ALERT DELIVERY: deduped GitHub issue via `GITHUB_TOKEN`, NOT the webhook. Requires `permissions: { contents: read, issues: write }` (the template workflow declares none; every other workflow declares `contents: read`, so copying as-is 403s). A bot-authored issue does NOT subscribe Muxin — day 1 fires via repo-watch, day 2 onward is silent. Set `assignees: [heymoosh]` on create AND `@heymoosh` in every comment. No `set +e`, no `continue-on-error`.
+- Retrofit into `ingest-states.yml` as a single `needs: ingest` + `if: failure()` SUMMARY job, not inside the 50-way matrix.
+- STATUS: To Do
+- GOAL_CONDITION: the check reports `stalled-pipeline` against prod today (61 bills in 7d, last tag 1,134h ago); a forced failure in a scratch branch produces an assigned issue that emails on the SECOND occurrence too.
+
+**[P1] Refresh the local OpenStates dump to current (scripted)**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 2A).
+- The local `openstates` Postgres DB is a frozen May-2026 snapshot (13 GB, 9 tables). APPROVED by Muxin 2026-07-31: refresh to current and replace it, without holding two large copies at once, handled by a script rather than a manual runbook.
+- MEASURED: 44 GB free on `/System/Volumes/Data`; DB 13 GB; cluster 14 GB at `/usr/local/var/postgresql@17`; pg 17.9 client at `/usr/local/opt/postgresql@17/bin` (the work packet's `/opt/homebrew` paths are wrong for this Intel-prefix machine).
+- Side-by-side fits with ~17 GB to spare (the floor is during restore), so build the new DB BEFORE dropping the old one. Drop-then-restore would raise the floor to ~30 GB and destroy the old data before the new data is proven — no reason to take it.
+- TASK: `scripts/ops/refresh-openstates-dump.sh` with `--date YYYY-MM-DD` (default today), `--keep-dump`, `--dry-run`, `--pgbin`. Order: `df` gate ≥30 GB → guard against destroying user-created objects (stop and ask if any non-`opencivicdata_`/`django_` table, view, or matview exists) → capture old row counts → download schema + data dumps with `-C -` resume → restore into `openstates_new` → verify every table non-empty and `personvote` ≥ 0.95× old → drop + rename → delete dump.
+- KEY FACTS: the big archive is DATA-ONLY; the schema lives separately at `https://data.openstates.org/postgres/schema/YYYY-MM-schema.pgdump` (712 KB, regenerated daily) — this is the mystery `2026-05-schema.pgdump` in the work packet. Restore is `--section=pre-data` → `--data-only --disable-triggers --exit-on-error` → `--section=post-data -j 4`. Without `--exit-on-error` a partial restore is silent. Verify downloads by byte count only — the ETag is multipart, not an MD5.
+- STATUS: To Do
+- GOAL_CONDITION: local `openstates` holds current-month data, row counts exceed the May snapshot, the dump file is deleted, and the script is re-runnable.
+
+**[P2] Quarterly OpenStates bulk-dump backfill in CI**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 2).
+- The daily API job caps at 20 bills/state/cycle, so bills are silently missed during a busy session. A periodic full-dump pass sweeps them up. `scripts/ingest/state-votes-from-dump.ts` already does dump→Neon for all 50 states and is currently unused.
+- DECISION (Muxin, 2026-07-31): run BOTH — fixed daily API job for freshness, plus a dump-based backfill for completeness.
+- NO PROBE NEEDED (an earlier draft gated this on one): the archive is data-only and the schema dump IS publicly addressable. Daily dumps also exist at `postgres/daily/YYYY-MM-DD-public.pgdump` on a ~30-day window — source from `daily/` on the day you run and drop the "up to 45 days stale" framing.
+- TWO REAL BUGS TO FIX FIRST, both currently live: (a) `candidate_offices` ids do NOT collide between the two scripts. Both build `deterministicUuid(candidateId:jurisdiction:termStart:session.id)`, but the API path resolves `session.id` to the IDENTIFIER (v3 sessions carry no id — logs show `2026`, `104th`, `57th-2nd-regular`) while the dump path uses the DB PRIMARY KEY. The sweep DUPLICATES office rows rather than upserting. Fix `state-votes-from-dump.ts:277` to key off `session?.identifier`, add a one-time de-dupe, and add a both-paths-produce-equal-ids test. (b) Row-level `onConflictDoNothing` CANNOT fill a gap — a bill inserted by the API path with `summary IS NULL` never gets the dump's abstract, and `bills.summary` is exactly what the tagger reads. `fill-gaps` must be COLUMN-level: `summary: COALESCE(bills.summary, excluded.summary)`, same for title/introduced_date/raw_metadata, leaving `updated_at` alone. Also change the votes guard from `>=` to `>`.
+- WORKFLOW: `.github/workflows/ingest-states-dump-monthly.yml`, cron `0 2 15 1,4,7,10 *`, `timeout-minutes: 330` (6h job cap confirmed empirically). Do NOT use a `services:` block — it starts before your first step so you cannot prepare `/mnt/pgdata` or read a failed init. Use a prep step (`mkdir -p`, `df -h /mnt` fail-fast) then `docker run -d ... postgres:17` + `docker exec`. Peak `/mnt` ≈ 27 GB; GitHub only DOCUMENTS 14 GB of SSD and the ~65 GB at `/mnt` is undocumented Azure temp-disk, so fail fast rather than assume. `ubuntu-24.04` ships the pg 16 client, which refuses the v1.16 archive.
+- Make `ingestFromDump` exit non-zero (it currently swallows per-state errors and exits 0); add `DUMP_STATE_LIMIT`/`DUMP_SKIP_STATES` + `dump-progress.json`.
+- DEPENDS ON: Refresh the local OpenStates dump to current (scripted)
+- STATUS: Backlog
+- GOAL_CONDITION: one dispatch run scoped to a single state inserts missed bills, creates no duplicate `candidate_offices`, fills NULL summaries, and leaves `bills.updated_at` unchanged.
+
+**[P2] `selectOpenStatesSessions` picks junk sessions**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Separate cards).
+- Live logs: MO selects `2018,2026`; VA `2018specialII,2027`; FL `2027,2026`. AK, AL, AR then report `bills_seen=40 bill_rows=0 vote_events=0` on a CLEAN run — the whole 20-bill budget spent on sessions with no vote data.
+- `state-votes.ts:200-235` should prefer sessions by `active` + `start_date <= today` rather than raw recency.
+- This worsens the same "bills silently missed" problem the bulk-dump card exists to solve, and the dump would MASK it rather than fix it.
+- STATUS: Backlog
+
+**[P3] Migrate duplicated sleep/retry copies onto `_retry.ts`**
+- FULL PLAN: `docs/operations/ingest-and-tagging-plan-2026-07-31.md` (Phase 1F).
+- 8+ private `sleep()` copies (`tag-bills.ts:695`, `federal-candidates.ts:180`, `federal-donors.ts:900`, `ks-cfr-donors.ts:78`, `state-donors.ts:575`, `fix-federal-fec-ids.ts:21`, `summarize-bills.ts:396`, `tag-bills-batch.ts:64`, `_summary-pilot.ts:32`) and 4 private fetch-retry loops (`bill-cosponsors.ts:301`, `crs-summaries.ts:189`, `federal-votes.ts:~1226`, `src/lib/server/extract-textract.ts:107`).
+- Deliberately excluded from the P0 ingest fix to keep that diff reviewable. Includes adding retry to `writeStatePlan` and the 500→250 vote-batch tweak.
+- DEPENDS ON: Fix state-votes ingest — retry OpenStates 5xx and socket errors
+- STATUS: Backlog
 
 **[P1] API usage hits limits but no details why**
 - 2x in June I’ve received unexpected Anthropic emails that the monthly credits were used up. It’s uncertain whether these are real users (just more traffic), a bot, or something else.
