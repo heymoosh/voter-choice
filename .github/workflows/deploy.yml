@@ -4,6 +4,25 @@ on:
   push:
     branches:
       - main
+    # Documentation-only pushes don't change the built app, so they shouldn't
+    # burn a production deploy. GitHub skips the workflow only when EVERY file
+    # in the push matches one of these — a push touching both docs/ and src/
+    # still deploys. Verified 2026-07-31: nothing under src/ imports or reads a
+    # .md file (the markdown mentions there are all comments citing docs), and
+    # public/ contains no markdown, so none of these paths reach the bundle.
+    # Root *.md is listed literally (AGENTS.md, IDEA-VALIDATION-PLAYBOOK.md,
+    # README.md) rather than as **/*.md, so a markdown file added under src/ or
+    # public/ later can never silently suppress a deploy.
+    paths-ignore:
+      - "docs/**"
+      - "design-handoff/**"
+      - ".ai/**"
+      - ".claude/**"
+      - "*.md"
+  # Manual escape hatch: re-run the full deploy (which also re-pushes env vars
+  # from Bitwarden) without needing a code change. Prefer this over the Vercel
+  # dashboard's Redeploy button, which reuses the previous env snapshot.
+  workflow_dispatch:
 
 permissions:
   contents: read
