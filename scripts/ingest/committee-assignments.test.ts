@@ -14,6 +14,7 @@ import {
   buildMembershipRows,
   currentCongress,
   runCommitteeAssignmentsIngest,
+  computePruneScope,
   MIN_MEMBERSHIPS_FOR_PRUNE,
 } from "./committee-assignments";
 
@@ -305,6 +306,26 @@ describe("runCommitteeAssignmentsIngest — reconciliation", () => {
     expect(counts.prunedSkipped).toBe(true);
   });
 
+  it("does not delete when the source is healthy but nothing joined", async () => {
+    // The floor is measured against the RAW source count, so a big fetch clears
+    // it — but if the candidate join resolved nothing, there is no member whose
+    // record we refreshed and therefore nothing we are entitled to delete.
+    // Gating on the post-filter count instead would let this run prune.
+    const n = MIN_MEMBERSHIPS_FOR_PRUNE + 100;
+    const { db, deletes } = makeDbStub([]); // no matching candidates rows
+
+    const counts = await runCommitteeAssignmentsIngest(
+      db as never,
+      stubFetcher(n),
+      { congress: 119 },
+    );
+
+    expect(deletes).toHaveLength(0);
+    expect(counts.membershipsDeleted).toBe(0);
+    expect(counts.prunedSkipped).toBe(true);
+    expect(counts.skippedNoCandidate).toBe(n);
+  });
+
   it("never deletes on a dry run", async () => {
     const n = MIN_MEMBERSHIPS_FOR_PRUNE + 10;
     const { db, deletes } = makeDbStub(memberIds(n));
@@ -317,5 +338,72 @@ describe("runCommitteeAssignmentsIngest — reconciliation", () => {
 
     expect(deletes).toHaveLength(0);
     expect(counts.prunedSkipped).toBe(true);
+  });
+});
+
+describe("computePruneScope — what the prune may delete", () => {
+  // These bounds are the whole safety story. Each assertion below corresponds
+  // to a way a naive "delete anything untouched" prune destroys real data.
+  const KNOWN_COMMITTEES = new Set(["HSAG", "HSAG15", "SLIA"]);
+
+  it("only lists members this run actually refreshed", () => {
+    const scope = computePruneScope(
+      [
+        { candidateId: "federal-A000001", committeeId: "HSAG" },
+        { candidateId: "federal-A000001", committeeId: "SLIA" },
+        { candidateId: "federal-B000002", committeeId: "HSAG" },
+      ],
+      KNOWN_COMMITTEES,
+    );
+    expect(scope.refreshedMemberIds.sort()).toEqual([
+      "federal-A000001",
+      "federal-B000002",
+    ]);
+  });
+
+  it("excludes a member whose row was skipped, so their seats survive", () => {
+    // federal-C000003 was in the source but has no `candidates` row, so the
+    // caller filtered them out before this point. They must NOT be pruneable —
+    // otherwise a missing candidate row silently deletes real committee seats.
+    const scope = computePruneScope(
+      [{ candidateId: "federal-A000001", committeeId: "HSAG" }],
+      KNOWN_COMMITTEES,
+    );
+    expect(scope.refreshedMemberIds).not.toContain("federal-C000003");
+  });
+
+  it("bounds deletion to committees this run fetched", () => {
+    // A membership on a committee absent from committees-current.yaml is
+    // untouchable — we can't tell "dissolved" from "not fetched this run".
+    const scope = computePruneScope(
+      [{ candidateId: "federal-A000001", committeeId: "HSAG" }],
+      KNOWN_COMMITTEES,
+    );
+    expect(scope.fetchedCommitteeIds.sort()).toEqual([
+      "HSAG",
+      "HSAG15",
+      "SLIA",
+    ]);
+    expect(scope.fetchedCommitteeIds).not.toContain("ZZZZ");
+  });
+
+  it("keys every written membership so only genuine departures are deleted", () => {
+    const scope = computePruneScope(
+      [
+        { candidateId: "federal-A000001", committeeId: "HSAG" },
+        { candidateId: "federal-B000002", committeeId: "HSAG15" },
+      ],
+      KNOWN_COMMITTEES,
+    );
+    expect(scope.keptKeys.sort()).toEqual([
+      "federal-A000001|HSAG",
+      "federal-B000002|HSAG15",
+    ]);
+  });
+
+  it("returns no refreshed members when nothing resolved (prune must no-op)", () => {
+    expect(computePruneScope([], KNOWN_COMMITTEES).refreshedMemberIds).toEqual(
+      [],
+    );
   });
 });

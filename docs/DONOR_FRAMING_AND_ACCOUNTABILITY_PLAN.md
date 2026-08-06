@@ -708,11 +708,26 @@ findings were at the edges. Three were real and are now fixed, three are not def
    member-party (which refreshes the `federal-<BIOGUIDE>` rows the membership join needs).
 2. **Committee memberships could only ever grow.** The ingest upserts, so a member who left a
    committee kept rendering on their card forever. It now reconciles: after a successful run it
-   deletes the ingested congress's memberships the source no longer lists (`fetched_at` older than
-   the run start). Guarded three ways — scoped to the one congress, never on `--dry-run`, and
-   skipped with a loud warning when the run resolved fewer than `MIN_MEMBERSHIPS_FOR_PRUNE` (100)
-   rows, so a truncated YAML fetch leaves data stale rather than emptying the table. Stale is a
-   smaller lie than "this member has no committees". `membershipsDeleted` is in the run counts.
+   deletes the ingested congress's memberships the source no longer lists.
+
+   The reconciliation deletes by **explicit key, never by timestamp** (`computePruneScope`). The
+   first cut of this fix pruned "anything not touched this run" via `fetched_at`, and a re-audit
+   caught three ways that destroys real data: a membership the run SKIPPED (no `candidates` row,
+   or a committee missing from the YAML) is indistinguishable from one the source dropped; the
+   upserts stamp `now()` on the DATABASE clock while a run marker is the APPLICATION clock, so a
+   database even slightly behind the runner makes just-written rows look deletable; and a
+   part-failed upsert loop leaves the remainder looking untouched. The prune is therefore bounded
+   to `refreshedMemberIds × fetchedCommitteeIds` minus the keys actually written — it can only
+   remove a committee seat from a member this run successfully refreshed, on a committee this run
+   saw. Everything uncertain stays.
+
+   Three further guards: scoped to the one ingested congress, never on `--dry-run`, and skipped
+   with a loud warning when the SOURCE returned fewer than `MIN_MEMBERSHIPS_FOR_PRUNE` (100) rows.
+   That floor is measured against the raw fetched count, not the count surviving the join —
+   a broken join is exactly the case where the filtered number shrinks, so gating on it would let
+   a half-resolved run authorise its own deletions. Stale is a smaller lie than "this member has
+   no committees". `membershipsDeleted` is in the run counts.
+
 3. **The card ignored the very party column this follow-up backfilled.** `resolveDelegation` derived
    the seat member's own party from the `[D-NJ6]` name decoration and `rawMetadata`, never
    `candidates.party` — the field made authoritative here precisely because the decoration is stale
@@ -740,9 +755,15 @@ findings were at the edges. Three were real and are now fixed, three are not def
    them; re-running `scripts/ingest/_resolution-miss-report.ts` against prod is the only way to
    re-confirm.
 
-Tests added: three for the prune (prunes / skips on a thin fetch / never on dry-run) and three for
-party sourcing (column beats a stale decoration; DFL resolves where the decoration can't; falls back
-to the decoration when the column is empty or `UNK`).
+Tests added (12): four on the prune's behaviour (prunes / skips on a thin source / skips when the
+source is healthy but nothing joined / never on dry-run), five on `computePruneScope` — one per
+bound the re-audit showed was load-bearing — and three on party sourcing (column beats a stale
+decoration; DFL resolves where the decoration can't; falls back to the decoration when the column
+is empty or `UNK`).
+
+A second, targeted re-audit verified each of the six original findings against the fix branch. It
+returned RESOLVED on the scheduling and party-sourcing fixes, confirmed all three not-a-defect
+calls, and rejected the first prune implementation — which is why the keyed version above exists.
 
 ## Part 5 — Promise ledger + kept/broken scoring
 
