@@ -400,6 +400,9 @@ pre-existing Playwright/sandbox artifact noted for Part 3, unrelated to this cha
   against the real `redesign2.css`.
 
   > ⚠️ **FE design NOT reviewed — treat RepCard §5 as provisional (Muxin, 2026-07-24).**
+  > Written up for Design as `docs/design/2026-redesign/COLLABORATORS_BAND_DESIGN_HANDOFF.md`
+  > (2026-07-25) — literal current markup/CSS/i18n, real prod networks to design against, and
+  > the open questions below plus the departed-collaborator finding. Awaiting a design round.
   > The section was built to prove the data path end-to-end and self-vetted only for
   > code/render correctness; it has **not** had a design review and the layout/copy may be
   > reworked or dropped. Known open questions if/when it's revisited: (1) is a second
@@ -692,7 +695,13 @@ Party distribution on sitting members is now **REP 271 · DEM 259 · IND 3** —
   departed (term ended 2026-07-11). Correct, but unreviewed — worth a look.
 - 123 of 629 federal incumbents still have a null `fec_candidate_id` (carried over from Part 2).
 - RepCard §5 remains **design-deferred** (see the ⚠️ note in Part 4 — executed). The "former"
-  label is a label on a provisional band, not a design decision.
+  label is a label on a provisional band, not a design decision. The design ask is written up
+  in `docs/design/2026-redesign/COLLABORATORS_BAND_DESIGN_HANDOFF.md`, which adds a finding the
+  ⚠️ note predates: departed members are ~8.5× more likely to land in the cross-party "reaches
+  across the aisle" list than the same-party one (191/1,793 rows vs 25/2,000), 159 of 400
+  members show at least one, and for 15 members the **entire** aisle-reaching list has left
+  Congress. That makes the section's headline claim a truthfulness question, not just a
+  styling one. Nothing has come back from Design yet.
 
 ### Audit follow-up — executed 2026-08-06 (independent Codex vet of Parts 1–4)
 
