@@ -26,12 +26,19 @@
  * (candidate_id, committee_id, congress). Members/committees with no
  * matching `candidates` row (or, for memberships, no matching committee
  * fetched this run) are skipped and counted, never thrown.
+ *
+ * Reconciliation: upsert alone can only ever ADD, so a member who leaves a
+ * committee would render on their card forever. After a successful run this
+ * deletes the memberships for the ingested congress that the source no longer
+ * lists (`fetched_at` older than the run) — scoped to that one congress, and
+ * skipped entirely when the run resolved implausibly few rows, so a truncated
+ * fetch leaves data stale rather than emptying the table.
  */
 
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import yaml from "js-yaml";
-import { sql, inArray } from "drizzle-orm";
+import { sql, and, eq, lt, inArray } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidates, committees, committeeMemberships } from "../../db/schema";
 
@@ -97,7 +104,27 @@ export interface CommitteeAssignmentsCounts {
   membershipsUpserted: number;
   skippedNoCandidate: number;
   skippedNoCommittee: number;
+  /**
+   * Memberships removed because the source no longer lists them for this
+   * congress — a member who left a committee. Upsert alone can only ever add,
+   * so without this a stale assignment renders forever. See `prunedSkipped`.
+   */
+  membershipsDeleted: number;
+  /**
+   * True when the prune was SKIPPED because this run fetched implausibly few
+   * memberships (a truncated or failed YAML fetch). Deleting on that input
+   * would empty the table; leaving the rows stale is the safer failure.
+   */
+  prunedSkipped: boolean;
 }
+
+/**
+ * Below this many membership rows in a single run, we assume the fetch is
+ * broken rather than that Congress dissolved its committees. Real runs return
+ * ~3,000 rows (House + Senate, committees + subcommittees); the floor is set
+ * two orders of magnitude below that so it only ever catches a broken fetch.
+ */
+export const MIN_MEMBERSHIPS_FOR_PRUNE = 100;
 
 // ---------------------------------------------------------------------------
 // Parsing helpers (pure — unit tested)
@@ -312,6 +339,11 @@ export async function runCommitteeAssignmentsIngest(
   );
   const skippedNoCandidate = membershipRowsAll.length - membershipRows.length;
 
+  // Taken BEFORE the upsert loop: every row this run touches gets
+  // fetched_at = now(), so anything still older than this afterwards is a row
+  // the current source no longer lists. That is the prune set.
+  const runStart = new Date();
+
   if (!opts.dryRun) {
     // Parent committees insert before their subcommittees (self-FK on
     // parent_committee_id) — flattenCommittees already orders each parent
@@ -355,6 +387,40 @@ export async function runCommitteeAssignmentsIngest(
     }
   }
 
+  // Reconcile: drop this congress's memberships the source no longer lists.
+  // Scoped to `congress` so a run for the current congress never touches a
+  // historical one, and gated on a plausible fetch so a truncated YAML can't
+  // empty the table.
+  let membershipsDeleted = 0;
+  let prunedSkipped = false;
+  if (opts.dryRun) {
+    prunedSkipped = true;
+  } else if (membershipRows.length < MIN_MEMBERSHIPS_FOR_PRUNE) {
+    prunedSkipped = true;
+    console.warn(
+      `[committee-assignments] PRUNE SKIPPED — only ${membershipRows.length} memberships ` +
+        `resolved this run (floor ${MIN_MEMBERSHIPS_FOR_PRUNE}). Stale assignments for ` +
+        `congress ${congress} were left in place; the fetch is the thing to fix.`,
+    );
+  } else {
+    const deleted = await db
+      .delete(committeeMemberships)
+      .where(
+        and(
+          eq(committeeMemberships.congress, congress),
+          lt(committeeMemberships.fetchedAt, runStart),
+        ),
+      )
+      .returning({ id: committeeMemberships.id });
+    membershipsDeleted = deleted.length;
+    if (membershipsDeleted > 0) {
+      console.log(
+        `[committee-assignments] pruned ${membershipsDeleted} membership row(s) ` +
+          `no longer listed for congress ${congress}`,
+      );
+    }
+  }
+
   return {
     committeesFetched: flatCommittees.length,
     committeesUpserted: committeeRows.length,
@@ -362,6 +428,8 @@ export async function runCommitteeAssignmentsIngest(
     membershipsUpserted: membershipRows.length,
     skippedNoCandidate,
     skippedNoCommittee,
+    membershipsDeleted,
+    prunedSkipped,
   };
 }
 
@@ -385,6 +453,7 @@ async function main(): Promise<void> {
     `[committee-assignments]${dryRun ? " [dry-run]" : ""} done ` +
       `committees=${counts.committeesUpserted}/${counts.committeesFetched} ` +
       `memberships=${counts.membershipsUpserted}/${counts.membershipsFetched} ` +
+      `pruned=${counts.membershipsDeleted}${counts.prunedSkipped ? " (prune skipped)" : ""} ` +
       `skipped_no_candidate=${counts.skippedNoCandidate} skipped_no_committee=${counts.skippedNoCommittee}`,
   );
 }

@@ -20,9 +20,18 @@ vi.mock("./committees", () => ({
   lookupCommittees: vi.fn().mockResolvedValue(new Map()),
 }));
 
-vi.mock("./collaborators", () => ({
-  lookupCollaborators: vi.fn().mockResolvedValue(new Map()),
-}));
+// Only the lookup is mocked. `partyLetter` stays REAL — it is the shared
+// party-code mapping (DFL/DNPL → D, OTH/UNK → null) that delegation now reuses
+// so the card and the collaborators band can't disagree about a member's
+// party. Stubbing it would make the party-sourcing tests below vacuous.
+vi.mock("./collaborators", async () => {
+  const actual =
+    await vi.importActual<typeof import("./collaborators")>("./collaborators");
+  return {
+    ...actual,
+    lookupCollaborators: vi.fn().mockResolvedValue(new Map()),
+  };
+});
 
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { lookupMemberStats } from "./member-stats";
@@ -64,8 +73,9 @@ function candidateRow(
   fullName: string,
   jurisdiction: string,
   rawMetadata: unknown = null,
+  party: string | null = null,
 ) {
-  return { id, fullName, jurisdiction, rawMetadata };
+  return { id, fullName, jurisdiction, rawMetadata, party };
 }
 
 beforeEach(() => {
@@ -505,6 +515,94 @@ describe("resolveDelegation — committees wiring", () => {
 
     expect(out.seats[0].candidate).toBeNull();
     expect(out.seats[0].committees).toEqual([]);
+  });
+});
+
+describe("resolveDelegation — party comes from candidates.party", () => {
+  // The Part 4 follow-up backfilled `candidates.party` precisely because the
+  // "[D-NJ6]" name decoration is stale on rows it corrected. The card must
+  // read the column, or it contradicts its own collaborators band — which has
+  // preferred the column since it shipped.
+  it("prefers the authoritative column over a stale name decoration", async () => {
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        [
+          // Decoration says Republican; the column (authoritative) says
+          // Democrat. The column wins.
+          candidateRow(
+            "p1",
+            "Rep. Stale Decoration [R-NJ6]",
+            "federal-house",
+            null,
+            "DEM",
+          ),
+        ],
+        [],
+      ]),
+    );
+
+    const out = await resolveDelegation("NJ", "New Jersey", 6);
+    if (out.status !== "ok") return;
+    expect(out.seats[0].candidate?.party).toBe("Democrat");
+  });
+
+  it("resolves DFL, which the single-letter decoration cannot", async () => {
+    // "[DFL-MN5]" matches no PARTY_BY_LETTER key, so decoration-only parsing
+    // dropped Minnesota's DFL members' party entirely. The column knows they
+    // are Democrats.
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        [
+          candidateRow(
+            "p1",
+            "Rep. Ilhan Omar [DFL-MN5]",
+            "federal-house",
+            null,
+            "DFL",
+          ),
+        ],
+        [],
+      ]),
+    );
+
+    const out = await resolveDelegation("MN", "Minnesota", 5);
+    if (out.status !== "ok") return;
+    expect(out.seats[0].candidate?.party).toBe("Democrat");
+  });
+
+  it("falls back to the decoration when the column is empty or unmappable", async () => {
+    // UNK/OTH are real stored values. They map to nothing rather than being
+    // guessed at, so the decoration still carries the display letter.
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        [
+          candidateRow(
+            "p1",
+            "Rep. Frank Pallone [D-NJ6]",
+            "federal-house",
+            null,
+            "UNK",
+          ),
+          candidateRow("p2", "Rep. No Column [R-NJ2]", "federal-house"),
+        ],
+        [],
+      ]),
+    );
+
+    const nj6 = await resolveDelegation("NJ", "New Jersey", 6);
+    if (nj6.status !== "ok") return;
+    expect(nj6.seats[0].candidate?.party).toBe("Democrat");
+
+    // A fresh mock — makeDbMock's row sets are consumed once per resolve.
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        [candidateRow("p2", "Rep. No Column [R-NJ2]", "federal-house")],
+        [],
+      ]),
+    );
+    const nj2 = await resolveDelegation("NJ", "New Jersey", 2);
+    if (nj2.status !== "ok") return;
+    expect(nj2.seats[0].candidate?.party).toBe("Republican");
   });
 });
 

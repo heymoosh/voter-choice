@@ -3,7 +3,10 @@
 > Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
 > judgment calls recorded in Open risks (see Review log at the end).
 > **Parts 1, 2, 3 and 4 are built and shipped to prod** (see the "Part N — executed" notes),
-> including Part 4's candidate-data follow-up (backfilled + verified 2026-07-25).
+> including Part 4's candidate-data follow-up (backfilled + verified 2026-07-25) and the
+> 2026-08-06 audit follow-up that closed three gaps an independent vet of Parts 1–4 found
+> (see "Audit follow-up — executed"; it also records which findings are deliberate deferrals,
+> so they don't get re-raised).
 > **Part 5 step 0 is built (2026-07-25): the sourcing spike + rubric draft — see "Part 5 —
 > step 0 built". The spike still needs a networked run before the schema is committed.
 > Part 6 is still plan only.**
@@ -690,6 +693,56 @@ Party distribution on sitting members is now **REP 271 · DEM 259 · IND 3** —
 - 123 of 629 federal incumbents still have a null `fec_candidate_id` (carried over from Part 2).
 - RepCard §5 remains **design-deferred** (see the ⚠️ note in Part 4 — executed). The "former"
   label is a label on a provisional band, not a design decision.
+
+### Audit follow-up — executed 2026-08-06 (independent Codex vet of Parts 1–4)
+
+An independent audit (Codex, run against `origin/main`, scoped to Parts 1–4 + the Part 4
+follow-up) returned PARTIAL on every part. The user-facing paths all traced end to end; the
+findings were at the edges. Three were real and are now fixed, three are not defects.
+
+**Fixed:**
+
+1. **Committee assignments were never refreshed on a schedule.** `.github/workflows/ingest-federal.yml`
+   ran the votes, cosponsor, member-party and FEC-roster jobs but not `committee-assignments.ts`,
+   which was manual-only (`npm run db:committee-assignments`). Now a scheduled step, ordered after
+   member-party (which refreshes the `federal-<BIOGUIDE>` rows the membership join needs).
+2. **Committee memberships could only ever grow.** The ingest upserts, so a member who left a
+   committee kept rendering on their card forever. It now reconciles: after a successful run it
+   deletes the ingested congress's memberships the source no longer lists (`fetched_at` older than
+   the run start). Guarded three ways — scoped to the one congress, never on `--dry-run`, and
+   skipped with a loud warning when the run resolved fewer than `MIN_MEMBERSHIPS_FOR_PRUNE` (100)
+   rows, so a truncated YAML fetch leaves data stale rather than emptying the table. Stale is a
+   smaller lie than "this member has no committees". `membershipsDeleted` is in the run counts.
+3. **The card ignored the very party column this follow-up backfilled.** `resolveDelegation` derived
+   the seat member's own party from the `[D-NJ6]` name decoration and `rawMetadata`, never
+   `candidates.party` — the field made authoritative here precisely because the decoration is stale
+   on rows the backfill corrected. The card therefore contradicted its own collaborators band, which
+   has read the column since it shipped. Worse, `[DFL-MN5]` matches no single-letter code, so
+   Minnesota's DFL members displayed **no party at all**. Party precedence is now
+   `candidates.party` > decoration > rawMetadata, reusing `partyLetter` from `collaborators.ts` so
+   both surfaces share one closed list of party codes.
+
+**Not defects — do not re-raise:**
+
+4. **Challenger committees and challenger collaborators are deliberate deferrals**, recorded above
+   ("Non-incumbent honest-empty copy… not yet wired to any UI surface" and "Deliberately deferred
+   (not this card): challenger collaborators"). Challengers have never held the seat, so they have
+   no committee seat and no cosponsorship record; the structural guarantee that neither is ever
+   looked up for a challenger id is in place. Building those surfaces is a product-direction change,
+   not a gap fix.
+5. **`$200` sub-labels surviving in `design-handoff/design-session/screens-results.jsx` and
+   `docs/design/.../prototype-components.jsx`** are frozen design-handoff snapshots. They are `.jsx`,
+   outside the tsconfig `include` (`**/*.ts`, `**/*.tsx`), and imported by nothing under `src/` — so
+   they never reach a user. Editing them would corrupt the design source of truth we diff against.
+   The only `$200` in the running app is on `/methodology`, which is what Part 1 decided.
+6. **Prod row counts, backfill totals and resolution rates are unverifiable from code**, by
+   construction — they need a live DB. The verification tables above record the runs that produced
+   them; re-running `scripts/ingest/_resolution-miss-report.ts` against prod is the only way to
+   re-confirm.
+
+Tests added: three for the prune (prunes / skips on a thin fetch / never on dry-run) and three for
+party sourcing (column beats a stale decoration; DFL resolves where the decoration can't; falls back
+to the decoration when the column is empty or `UNK`).
 
 ## Part 5 — Promise ledger + kept/broken scoring
 

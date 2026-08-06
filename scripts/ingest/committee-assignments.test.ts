@@ -5,7 +5,7 @@
  * functions. No network or DB.
  */
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import {
   candidateIdFromBioguide,
   flattenCommittees,
@@ -13,6 +13,8 @@ import {
   buildCommitteeRows,
   buildMembershipRows,
   currentCongress,
+  runCommitteeAssignmentsIngest,
+  MIN_MEMBERSHIPS_FOR_PRUNE,
 } from "./committee-assignments";
 
 const COMMITTEES_YAML_PARSED = [
@@ -192,5 +194,128 @@ describe("currentCongress", () => {
     expect(currentCongress(new Date("2025-06-01T00:00:00Z"))).toBe(119);
     expect(currentCongress(new Date("2026-06-01T00:00:00Z"))).toBe(119);
     expect(currentCongress(new Date("2027-02-01T00:00:00Z"))).toBe(120);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Reconciliation (the prune)
+// ---------------------------------------------------------------------------
+
+/**
+ * A DB stub good enough for runCommitteeAssignmentsIngest: it records the
+ * delete calls (that's what these tests are about) and no-ops the rest.
+ * `select` returns the candidate roster the membership join filters against.
+ */
+function makeDbStub(candidateIds: string[]) {
+  const deletes: { returned: unknown[] }[] = [];
+  const selectChain = {
+    from: vi.fn(),
+    where: vi.fn().mockResolvedValue(candidateIds.map((id) => ({ id }))),
+  };
+  selectChain.from.mockReturnValue(selectChain);
+
+  const insertChain = {
+    values: vi.fn(),
+    onConflictDoUpdate: vi.fn().mockResolvedValue(undefined),
+  };
+  insertChain.values.mockReturnValue(insertChain);
+
+  const db = {
+    select: vi.fn().mockReturnValue(selectChain),
+    insert: vi.fn().mockReturnValue(insertChain),
+    delete: vi.fn().mockImplementation(() => {
+      const rec = { returned: [{ id: "stale-1" }, { id: "stale-2" }] };
+      deletes.push(rec);
+      const chain = {
+        where: vi.fn(),
+        returning: vi.fn().mockResolvedValue(rec.returned),
+      };
+      chain.where.mockReturnValue(chain);
+      return chain;
+    }),
+  };
+  return { db, deletes };
+}
+
+/** A fetcher returning `n` members spread over one committee. */
+function stubFetcher(memberCount: number) {
+  const committeesYaml = [
+    {
+      type: "house",
+      name: "House Committee on Agriculture",
+      thomas_id: "HSAG",
+    },
+  ];
+  const membershipYaml = {
+    HSAG: Array.from({ length: memberCount }, (_, i) => ({
+      name: `Member ${i}`,
+      party: "majority",
+      rank: i + 1,
+      bioguide: `X${String(i).padStart(6, "0")}`,
+    })),
+  };
+  const bodyFor = (url: string) =>
+    url.includes("committee-membership-current")
+      ? JSON.stringify(membershipYaml)
+      : JSON.stringify(committeesYaml);
+  return vi.fn(async (url: unknown) => ({
+    ok: true,
+    status: 200,
+    text: async () => bodyFor(String(url)),
+  })) as unknown as typeof fetch;
+}
+
+describe("runCommitteeAssignmentsIngest — reconciliation", () => {
+  const memberIds = (n: number) =>
+    Array.from(
+      { length: n },
+      (_, i) => `federal-X${String(i).padStart(6, "0")}`,
+    );
+
+  it("prunes memberships the source no longer lists", async () => {
+    const n = MIN_MEMBERSHIPS_FOR_PRUNE + 10;
+    const { db, deletes } = makeDbStub(memberIds(n));
+
+    const counts = await runCommitteeAssignmentsIngest(
+      db as never,
+      stubFetcher(n),
+      { congress: 119 },
+    );
+
+    expect(deletes).toHaveLength(1);
+    expect(counts.membershipsDeleted).toBe(2);
+    expect(counts.prunedSkipped).toBe(false);
+  });
+
+  it("SKIPS the prune when the fetch resolved implausibly few rows", async () => {
+    // A truncated or failed YAML fetch must leave data stale rather than
+    // empty the table — missing committees read as "has none", which is a
+    // worse lie than a stale one.
+    const n = MIN_MEMBERSHIPS_FOR_PRUNE - 1;
+    const { db, deletes } = makeDbStub(memberIds(n));
+
+    const counts = await runCommitteeAssignmentsIngest(
+      db as never,
+      stubFetcher(n),
+      { congress: 119 },
+    );
+
+    expect(deletes).toHaveLength(0);
+    expect(counts.membershipsDeleted).toBe(0);
+    expect(counts.prunedSkipped).toBe(true);
+  });
+
+  it("never deletes on a dry run", async () => {
+    const n = MIN_MEMBERSHIPS_FOR_PRUNE + 10;
+    const { db, deletes } = makeDbStub(memberIds(n));
+
+    const counts = await runCommitteeAssignmentsIngest(
+      db as never,
+      stubFetcher(n),
+      { congress: 119, dryRun: true },
+    );
+
+    expect(deletes).toHaveLength(0);
+    expect(counts.prunedSkipped).toBe(true);
   });
 });
