@@ -30,9 +30,21 @@
  * Reconciliation: upsert alone can only ever ADD, so a member who leaves a
  * committee would render on their card forever. After a successful run this
  * deletes the memberships for the ingested congress that the source no longer
- * lists (`fetched_at` older than the run) — scoped to that one congress, and
- * skipped entirely when the run resolved implausibly few rows, so a truncated
+ * lists — bounded by explicit key (see computePruneScope), scoped to that one
+ * congress, and skipped entirely when the run looks incomplete, so a truncated
  * fetch leaves data stale rather than emptying the table.
+ *
+ * KNOWN LIMITATION, accepted deliberately: two classes of row are never pruned.
+ * A committee DISSOLVED (dropped from committees-current.yaml) falls outside
+ * `fetchedCommitteeIds`, and a member who left Congress entirely is never
+ * refreshed, so neither can be deleted. Both are the price of not being able to
+ * tell "gone from the source" from "not fetched this run" — the distinction the
+ * whole prune is built around. A dissolved committee can therefore still render
+ * on a sitting member's card until someone clears it by hand; a departed
+ * member's rows are normally invisible because delegation only resolves
+ * `is_incumbent = true`. Fixing the first properly needs committee-lifecycle
+ * reconciliation (tombstoning committees, not just memberships), which is a
+ * larger change than this ingest.
  */
 
 import { resolve } from "node:path";
@@ -177,6 +189,24 @@ export function computePruneScope(
  * authorise its own deletions.
  */
 export const MIN_MEMBERSHIPS_FOR_PRUNE = 100;
+
+/**
+ * Second floor, on DISTINCT MEMBERS whose assignments resolved this run.
+ *
+ * The raw-row floor above catches a fetch that failed outright. It cannot catch
+ * a fetch that succeeded but returned a truncated or malformed payload: 1 real
+ * membership plus 99 duplicate or orphan rows clears a 100-ROW floor, and the
+ * one member in it would then have their other committees pruned as departures.
+ * Requiring ~100 distinct refreshed members closes that — a real run refreshes
+ * ~530, and no plausible truncation yields both a full row count and almost no
+ * members.
+ *
+ * Neither floor can detect a payload truncated WITHIN a member (some of their
+ * committees present, the rest dropped). Nothing count-based can. That residual
+ * is accepted: it needs a source file that is well-formed, full-length, covers
+ * hundreds of members, and is still wrong per-member.
+ */
+export const MIN_MEMBERS_FOR_PRUNE = 100;
 
 // ---------------------------------------------------------------------------
 // Parsing helpers (pure — unit tested)
@@ -453,8 +483,14 @@ export async function runCommitteeAssignmentsIngest(
         `Stale assignments for congress ${congress} were left in place; the fetch is ` +
         `the thing to fix.`,
     );
-  } else if (scope.refreshedMemberIds.length === 0) {
+  } else if (scope.refreshedMemberIds.length < MIN_MEMBERS_FOR_PRUNE) {
     prunedSkipped = true;
+    console.warn(
+      `[committee-assignments] PRUNE SKIPPED — only ` +
+        `${scope.refreshedMemberIds.length} distinct members resolved this run ` +
+        `(floor ${MIN_MEMBERS_FOR_PRUNE}). A full-length but truncated payload ` +
+        `looks like mass departures; leaving congress ${congress} stale instead.`,
+    );
   } else {
     const deleted = await db
       .delete(committeeMemberships)

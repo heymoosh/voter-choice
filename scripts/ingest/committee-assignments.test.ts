@@ -6,6 +6,13 @@
  */
 
 import { describe, it, expect, vi } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
+
+/** Compile a captured drizzle predicate to real SQL + params, so tests can
+ *  assert what the DELETE would actually do rather than trusting a stub. */
+function compile(where: unknown) {
+  return new PgDialect().sqlToQuery(where as never);
+}
 import {
   candidateIdFromBioguide,
   flattenCommittees,
@@ -208,7 +215,7 @@ describe("currentCongress", () => {
  * `select` returns the candidate roster the membership join filters against.
  */
 function makeDbStub(candidateIds: string[]) {
-  const deletes: { returned: unknown[] }[] = [];
+  const deletes: { returned: unknown[]; where: unknown }[] = [];
   const selectChain = {
     from: vi.fn(),
     where: vi.fn().mockResolvedValue(candidateIds.map((id) => ({ id }))),
@@ -225,13 +232,20 @@ function makeDbStub(candidateIds: string[]) {
     select: vi.fn().mockReturnValue(selectChain),
     insert: vi.fn().mockReturnValue(insertChain),
     delete: vi.fn().mockImplementation(() => {
-      const rec = { returned: [{ id: "stale-1" }, { id: "stale-2" }] };
+      const rec: { returned: unknown[]; where: unknown } = {
+        returned: [{ id: "stale-1" }, { id: "stale-2" }],
+        where: undefined,
+      };
       deletes.push(rec);
       const chain = {
-        where: vi.fn(),
+        // Record the predicate so tests can compile and assert it — a stub
+        // that ignores .where() would pass no matter what we deleted.
+        where: vi.fn().mockImplementation((w: unknown) => {
+          rec.where = w;
+          return chain;
+        }),
         returning: vi.fn().mockResolvedValue(rec.returned),
       };
-      chain.where.mockReturnValue(chain);
       return chain;
     }),
   };
@@ -286,6 +300,23 @@ describe("runCommitteeAssignmentsIngest — reconciliation", () => {
     expect(deletes).toHaveLength(1);
     expect(counts.membershipsDeleted).toBe(2);
     expect(counts.prunedSkipped).toBe(false);
+
+    // The predicate itself — the part that decides what actually dies.
+    const { sql: text, params } = compile(deletes[0].where);
+    // Scoped to the ingested congress, never a historical one.
+    expect(text).toContain('"congress" = ');
+    expect(params).toContain(119);
+    // Bounded to members refreshed AND committees fetched this run, minus the
+    // keys we wrote — i.e. two IN lists and one NOT IN.
+    expect(text).toContain('"candidate_id" in ');
+    expect(text).toContain('"committee_id" in ');
+    expect(text).toContain("not in ");
+    // Every member we refreshed is in the delete scope, and their kept key is
+    // excluded from it — so a seat they still hold cannot be deleted.
+    expect(params).toContain("federal-X000000");
+    expect(params).toContain("federal-X000000|HSAG");
+    // No timestamp anywhere: the clock-skew hazard is structurally gone.
+    expect(text).not.toContain("fetched_at");
   });
 
   it("SKIPS the prune when the fetch resolved implausibly few rows", async () => {
@@ -324,6 +355,60 @@ describe("runCommitteeAssignmentsIngest — reconciliation", () => {
     expect(counts.membershipsDeleted).toBe(0);
     expect(counts.prunedSkipped).toBe(true);
     expect(counts.skippedNoCandidate).toBe(n);
+  });
+
+  it("does not delete on a full-length payload carrying almost no members", async () => {
+    // The exact hole a row-count-only floor leaves: a payload long enough to
+    // clear MIN_MEMBERSHIPS_FOR_PRUNE but carrying one real member. Without the
+    // distinct-member floor, that member's OTHER committees read as departures
+    // and get deleted.
+    const committeesYaml = [
+      {
+        type: "house",
+        name: "House Committee on Agriculture",
+        thomas_id: "HSAG",
+      },
+    ];
+    const membershipYaml = {
+      HSAG: [
+        {
+          name: "Real Member",
+          party: "majority",
+          rank: 1,
+          bioguide: "X000000",
+        },
+        // 120 well-formed rows for members we hold no `candidates` row for, so
+        // they survive parsing and inflate the row count but resolve to nobody.
+        ...Array.from({ length: 120 }, (_, i) => ({
+          name: `Orphan ${i}`,
+          party: "majority",
+          rank: i + 2,
+          bioguide: `O${String(i).padStart(6, "0")}`,
+        })),
+      ],
+    };
+    const fetcher = vi.fn(async (url: unknown) => ({
+      ok: true,
+      status: 200,
+      text: async () =>
+        String(url).includes("committee-membership-current")
+          ? JSON.stringify(membershipYaml)
+          : JSON.stringify(committeesYaml),
+    })) as unknown as typeof fetch;
+
+    const { db, deletes } = makeDbStub(["federal-X000000"]);
+    const counts = await runCommitteeAssignmentsIngest(db as never, fetcher, {
+      congress: 119,
+    });
+
+    // Clears the raw-row floor...
+    expect(counts.membershipsFetched).toBeGreaterThanOrEqual(
+      MIN_MEMBERSHIPS_FOR_PRUNE,
+    );
+    // ...but only one member resolved, so nothing is deleted.
+    expect(deletes).toHaveLength(0);
+    expect(counts.membershipsDeleted).toBe(0);
+    expect(counts.prunedSkipped).toBe(true);
   });
 
   it("never deletes on a dry run", async () => {

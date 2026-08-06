@@ -721,12 +721,25 @@ findings were at the edges. Three were real and are now fixed, three are not def
    remove a committee seat from a member this run successfully refreshed, on a committee this run
    saw. Everything uncertain stays.
 
-   Three further guards: scoped to the one ingested congress, never on `--dry-run`, and skipped
-   with a loud warning when the SOURCE returned fewer than `MIN_MEMBERSHIPS_FOR_PRUNE` (100) rows.
-   That floor is measured against the raw fetched count, not the count surviving the join —
-   a broken join is exactly the case where the filtered number shrinks, so gating on it would let
-   a half-resolved run authorise its own deletions. Stale is a smaller lie than "this member has
-   no committees". `membershipsDeleted` is in the run counts.
+   Four further guards: scoped to the one ingested congress, never on `--dry-run`, and two
+   floors. `MIN_MEMBERSHIPS_FOR_PRUNE` (100) is measured against the fetched row count, not the
+   count surviving the join — a broken join is exactly the case where the filtered number shrinks,
+   so gating on it would let a half-resolved run authorise its own deletions. `MIN_MEMBERS_FOR_PRUNE`
+   (100) is measured on DISTINCT members refreshed, and exists because the row floor alone has a
+   hole a third audit pass found: one real membership plus 99 rows for members we hold no
+   `candidates` row for clears a 100-**row** floor, and that one member's other committees then
+   read as departures. Stale is a smaller lie than "this member has no committees".
+   `membershipsDeleted` is in the run counts.
+
+   **Known limitation, accepted.** Two classes of row are never pruned: a committee DISSOLVED
+   (dropped from `committees-current.yaml`) falls outside `fetchedCommitteeIds`, and a member who
+   left Congress entirely is never refreshed. Both follow from the same thing the prune is built
+   around — we cannot tell "gone from the source" from "not fetched this run". Consequence: a
+   dissolved committee can keep rendering on a sitting member's card until someone clears it by
+   hand. A departed member's rows are normally invisible, since delegation only resolves
+   `is_incumbent = true`. Fixing the first properly means committee-lifecycle reconciliation
+   (tombstoning committees, not just memberships) — a larger change than this ingest, and worth a
+   card if a dissolved committee is ever actually observed on a card.
 
 3. **The card ignored the very party column this follow-up backfilled.** `resolveDelegation` derived
    the seat member's own party from the `[D-NJ6]` name decoration and `rawMetadata`, never
@@ -761,9 +774,12 @@ bound the re-audit showed was load-bearing — and three on party sourcing (colu
 decoration; DFL resolves where the decoration can't; falls back to the decoration when the column
 is empty or `UNK`).
 
-A second, targeted re-audit verified each of the six original findings against the fix branch. It
-returned RESOLVED on the scheduling and party-sourcing fixes, confirmed all three not-a-defect
-calls, and rejected the first prune implementation — which is why the keyed version above exists.
+Two further targeted audit passes ran against the fix branch. The second verified each of the six
+original findings: RESOLVED on the scheduling and party-sourcing fixes, all three not-a-defect calls
+confirmed, and the first prune implementation rejected — which is why the keyed version above
+exists. The third audited only the rewritten prune: it confirmed the clock-skew hazard was
+structurally gone and found no SQL defect, and produced the row-floor hole and the
+permanent-staleness limitation now recorded above.
 
 ## Part 5 — Promise ledger + kept/broken scoring
 
