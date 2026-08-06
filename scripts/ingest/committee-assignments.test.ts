@@ -216,11 +216,22 @@ describe("currentCongress", () => {
  */
 function makeDbStub(candidateIds: string[]) {
   const deletes: { returned: unknown[]; where: unknown }[] = [];
-  const selectChain = {
-    from: vi.fn(),
-    where: vi.fn().mockResolvedValue(candidateIds.map((id) => ({ id }))),
+  // select() is called twice in a preview run: once for the candidate roster,
+  // then once for the would-be-pruned rows. Serve them in order.
+  const previewRows = [
+    { candidateId: "federal-X000000", committeeId: "SLIA", title: "Chairman" },
+  ];
+  let selectCall = 0;
+  const makeSelectChain = () => {
+    const rows =
+      selectCall++ === 0 ? candidateIds.map((id) => ({ id })) : previewRows;
+    const chain = {
+      from: vi.fn(),
+      where: vi.fn().mockResolvedValue(rows),
+    };
+    chain.from.mockReturnValue(chain);
+    return chain;
   };
-  selectChain.from.mockReturnValue(selectChain);
 
   const insertChain = {
     values: vi.fn(),
@@ -229,7 +240,7 @@ function makeDbStub(candidateIds: string[]) {
   insertChain.values.mockReturnValue(insertChain);
 
   const db = {
-    select: vi.fn().mockReturnValue(selectChain),
+    select: vi.fn().mockImplementation(() => makeSelectChain()),
     insert: vi.fn().mockReturnValue(insertChain),
     delete: vi.fn().mockImplementation(() => {
       const rec: { returned: unknown[]; where: unknown } = {
@@ -249,7 +260,7 @@ function makeDbStub(candidateIds: string[]) {
       return chain;
     }),
   };
-  return { db, deletes };
+  return { db, deletes, previewRows };
 }
 
 /** A fetcher returning `n` members spread over one committee. */
@@ -409,6 +420,32 @@ describe("runCommitteeAssignmentsIngest — reconciliation", () => {
     expect(deletes).toHaveLength(0);
     expect(counts.membershipsDeleted).toBe(0);
     expect(counts.prunedSkipped).toBe(true);
+  });
+
+  it("--preview-prune reports what would die and deletes nothing", async () => {
+    const n = MIN_MEMBERSHIPS_FOR_PRUNE + 10;
+    const { db, deletes } = makeDbStub(memberIds(n));
+    const logged: string[] = [];
+    const spy = vi
+      .spyOn(console, "log")
+      .mockImplementation((...a: unknown[]) => void logged.push(a.join(" ")));
+
+    const counts = await runCommitteeAssignmentsIngest(
+      db as never,
+      stubFetcher(n),
+      { congress: 119, previewPrune: true },
+    );
+    spy.mockRestore();
+
+    // Nothing deleted, and the caller can tell the prune didn't run.
+    expect(deletes).toHaveLength(0);
+    expect(counts.membershipsDeleted).toBe(0);
+    expect(counts.prunedSkipped).toBe(true);
+    // ...but the operator is told exactly what it would have removed.
+    expect(logged.join("\n")).toContain("PREVIEW");
+    expect(logged.join("\n")).toContain(
+      "would delete: federal-X000000 from SLIA",
+    );
   });
 
   it("never deletes on a dry run", async () => {

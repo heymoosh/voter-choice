@@ -37,7 +37,19 @@ export interface Collaborator {
   /** Display name — title + "[D-NJ5]" decoration stripped. */
   name: string;
   party: PartyLetter | null;
-  /** Bills this collaborator and the member both cosponsored. */
+  /**
+   * Bills this collaborator and the member both cosponsored.
+   *
+   * A RAW COUNT, deliberately — there is no denominator here, and if a design
+   * ever asks for one ("48 of 87 bills", "55% of their bills") read this first.
+   * A per-member total IS computable from `bill_cosponsors`
+   * (`count(distinct bill_id) group by candidate_id`; the busiest member sat at
+   * 87 as of 2026-08-06). But it would be a share of OUR corpus — the 626
+   * federal bills we hold, spanning 2023-01-09 to 2026-03-24 — not of
+   * everything the member actually cosponsored. Printing it as a percentage
+   * would claim knowledge of their full record that we do not have. If a share
+   * ships, the copy has to scope it to what we hold.
+   */
   sharedBills: number;
   /**
    * True when this collaborator has left Congress. ~95 former members appear
@@ -50,6 +62,19 @@ export interface Collaborator {
    * corrects — before that backfill runs, all 95 are stored is_incumbent=true
    * and render unlabelled (the pre-existing behaviour, never wrong the other
    * way).
+   *
+   * What we hold about these 95, measured against prod 2026-08-06 (see
+   * scripts/ingest/_collab-data-audit.ts), for whoever wires the redesign:
+   *  • A DEPARTURE YEAR is available for all 95 — every one has a
+   *    `candidate_offices.term_end`. So "(D · through 2024)" is buildable with
+   *    no new ingest, if the design wants it over the bare "former".
+   *  • STATE and DISTRICT are NOT. Exactly 1 of 95 has a state and none has a
+   *    district, against full coverage for all 531 sitting members. A design
+   *    printing "Josh Gottheimer (D-NJ5)" on every row would therefore work for
+   *    current members and silently degrade on precisely the departed ones. The
+   *    stored names look like "Rep. David Trone [D-MD6, 2019-2024]", so it is
+   *    probably recoverable by parsing the decoration rather than re-ingesting
+   *    — CONFIRM that before shipping anything that depends on it.
    */
   departed: boolean;
 }

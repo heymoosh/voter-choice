@@ -731,6 +731,15 @@ findings were at the edges. Three were real and are now fixed, three are not def
    read as departures. Stale is a smaller lie than "this member has no committees".
    `membershipsDeleted` is in the run counts.
 
+   **Before the scheduled prune is trusted, preview it.**
+   `npx tsx --env-file=.env.local scripts/ingest/committee-assignments.ts --preview-prune`
+   upserts as normal and PRINTS the rows the reconciliation would delete, deleting nothing.
+   `--dry-run` cannot serve this purpose — it skips the upserts too, so there is no prune set to
+   report. Run the preview once against prod and eyeball the count: a handful of genuine committee
+   changes is expected; a large number means something is wrong and you have caught it before it
+   destroyed data rather than after. The preview and the real delete share one predicate builder
+   (`pruneFilter`) so they can never disagree.
+
    **Known limitation, accepted.** Two classes of row are never pruned: a committee DISSOLVED
    (dropped from `committees-current.yaml`) falls outside `fetchedCommitteeIds`, and a member who
    left Congress entirely is never refreshed. Both follow from the same thing the prune is built

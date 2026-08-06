@@ -21,6 +21,12 @@
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts --congress 119
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts --dry-run
+ *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts --preview-prune
+ *
+ * `--preview-prune` upserts as normal but PRINTS the rows the reconciliation
+ * would delete instead of deleting them. Run this once against prod before the
+ * scheduled job is trusted to prune unattended — `--dry-run` will not tell you,
+ * because it skips the upserts too and so has no prune set to report.
  *
  * Idempotency: committees upsert on thomas_id (PK); memberships upsert on
  * (candidate_id, committee_id, congress). Members/committees with no
@@ -381,10 +387,27 @@ export async function fetchMembership(
 // Main
 // ---------------------------------------------------------------------------
 
+/**
+ * The prune's WHERE clause, built once and shared by the preview and the real
+ * delete. They must never diverge — a preview that shows a different row set
+ * than the delete removes is worse than no preview at all.
+ */
+function pruneFilter(congress: number, scope: PruneScope) {
+  return and(
+    eq(committeeMemberships.congress, congress),
+    inArray(committeeMemberships.candidateId, scope.refreshedMemberIds),
+    inArray(committeeMemberships.committeeId, scope.fetchedCommitteeIds),
+    notInArray(
+      sql`${committeeMemberships.candidateId} || '|' || ${committeeMemberships.committeeId}`,
+      scope.keptKeys,
+    ),
+  );
+}
+
 export async function runCommitteeAssignmentsIngest(
   db: DbClient,
   fetcher: Fetcher,
-  opts: { congress?: number; dryRun?: boolean } = {},
+  opts: { congress?: number; dryRun?: boolean; previewPrune?: boolean } = {},
 ): Promise<CommitteeAssignmentsCounts> {
   const [flatCommittees, flatMembership] = await Promise.all([
     fetchCommittees(fetcher),
@@ -473,7 +496,31 @@ export async function runCommitteeAssignmentsIngest(
   const scope = computePruneScope(membershipRows, knownCommitteeIds);
   let membershipsDeleted = 0;
   let prunedSkipped = false;
-  if (opts.dryRun) {
+  if (opts.previewPrune && !opts.dryRun) {
+    // Show what the prune WOULD remove, and remove nothing. The first real run
+    // of this delete happens unattended on a Sunday cron, so there has to be a
+    // way to look at it first. `--dry-run` can't serve: it skips the upserts
+    // too, so nothing is refreshed and the prune set is meaningless.
+    const doomed = await db
+      .select({
+        candidateId: committeeMemberships.candidateId,
+        committeeId: committeeMemberships.committeeId,
+        title: committeeMemberships.title,
+      })
+      .from(committeeMemberships)
+      .where(pruneFilter(congress, scope));
+    prunedSkipped = true;
+    console.log(
+      `[committee-assignments] PREVIEW — would prune ${doomed.length} membership ` +
+        `row(s) for congress ${congress}. Nothing was deleted.`,
+    );
+    for (const row of doomed) {
+      console.log(
+        `  would delete: ${row.candidateId} from ${row.committeeId}` +
+          `${row.title ? ` (${row.title})` : ""}`,
+      );
+    }
+  } else if (opts.dryRun) {
     prunedSkipped = true;
   } else if (flatMembership.length < MIN_MEMBERSHIPS_FOR_PRUNE) {
     prunedSkipped = true;
@@ -494,17 +541,7 @@ export async function runCommitteeAssignmentsIngest(
   } else {
     const deleted = await db
       .delete(committeeMemberships)
-      .where(
-        and(
-          eq(committeeMemberships.congress, congress),
-          inArray(committeeMemberships.candidateId, scope.refreshedMemberIds),
-          inArray(committeeMemberships.committeeId, scope.fetchedCommitteeIds),
-          notInArray(
-            sql`${committeeMemberships.candidateId} || '|' || ${committeeMemberships.committeeId}`,
-            scope.keptKeys,
-          ),
-        ),
-      )
+      .where(pruneFilter(congress, scope))
       .returning({ id: committeeMemberships.id });
     membershipsDeleted = deleted.length;
     if (membershipsDeleted > 0) {
@@ -527,21 +564,27 @@ export async function runCommitteeAssignmentsIngest(
   };
 }
 
-function parseArgs(argv: string[]): { congress?: number; dryRun: boolean } {
+function parseArgs(argv: string[]): {
+  congress?: number;
+  dryRun: boolean;
+  previewPrune: boolean;
+} {
   const idx = argv.indexOf("--congress");
   const n = idx !== -1 ? Number(argv[idx + 1]) : NaN;
   return {
     congress: Number.isInteger(n) ? n : undefined,
     dryRun: argv.includes("--dry-run"),
+    previewPrune: argv.includes("--preview-prune"),
   };
 }
 
 async function main(): Promise<void> {
   const db = requireDb();
-  const { congress, dryRun } = parseArgs(process.argv.slice(2));
+  const { congress, dryRun, previewPrune } = parseArgs(process.argv.slice(2));
   const counts = await runCommitteeAssignmentsIngest(db, fetch, {
     congress,
     dryRun,
+    previewPrune,
   });
   console.log(
     `[committee-assignments]${dryRun ? " [dry-run]" : ""} done ` +
