@@ -5,9 +5,12 @@
  * state + congressional district) and two US Senators (by state) — from the
  * `candidates` table (GovTrack-ingested incumbents).
  *
- * District/state/party are parsed from the GovTrack name decoration
+ * District/state are parsed from the GovTrack name decoration
  * ("Rep. Frank Pallone [D-NJ6]" / "Sen. Andrew Kim [D-NJ]"), with the raw
  * GovTrack person record in `rawMetadata.govtrack` as a secondary source.
+ * PARTY comes from the `candidates.party` column first — the authoritative
+ * field the member-party ingest maintains — falling back to the decoration
+ * only where the column is empty (see memberFacts).
  * Prod data has MIXED decorated/undecorated rows (see resolveCandidateId in
  * alignment.ts), so an unresolvable seat is a first-class honest state
  * (`candidate: null`) — never a guess.
@@ -23,6 +26,7 @@ import { lookupMemberStats, type MemberAttendance } from "./member-stats";
 import { lookupCommittees, type CommitteeAssignment } from "./committees";
 import {
   lookupCollaborators,
+  partyLetter,
   type CollaboratorNetwork,
   type PartyLetter,
 } from "./collaborators";
@@ -173,21 +177,48 @@ function factsFromMetadata(rawMetadata: unknown): MemberFacts {
   return { state, district, party };
 }
 
+/** Map the D/R/I letter collaborators uses back to the display party name. */
+function partyNameOf(
+  letter: PartyLetter | null,
+): "Democrat" | "Republican" | "Independent" | null {
+  if (letter === "D") return "Democrat";
+  if (letter === "R") return "Republican";
+  if (letter === "I") return "Independent";
+  return null;
+}
+
 /**
  * Merge member facts by precedence: member_stats (authoritative GovTrack
- * role-API geography, when ingested) > name decoration > rawMetadata.
+ * role-API geography, when ingested) > name decoration > rawMetadata for
+ * geography; `candidates.party` > name decoration > rawMetadata for party.
+ *
+ * Party reads the COLUMN first, deliberately. It is maintained by
+ * scripts/ingest/member-party.ts from unitedstates/congress-legislators and is
+ * the field the Part 4 follow-up backfilled precisely because the "[D-NJ5]"
+ * name decoration is stale on rows that backfill corrected. Reading the
+ * decoration first left this card contradicting its own collaborators band,
+ * which has preferred the column since it shipped — and it silently dropped
+ * the party letter entirely for Minnesota's DFL members, whose decoration
+ * ("[DFL-MN5]") matches no single-letter code.
+ *
+ * `partyLetter` (from collaborators.ts) is reused rather than reimplemented so
+ * both surfaces share one closed list of party codes — including the decision
+ * that DFL/DNPL are Democrats and that OTH/UNK map to nothing rather than
+ * being guessed at.
  */
 function memberFacts(
   fullName: string,
   rawMetadata: unknown,
   stats: { state: string | null; district: number | null } | undefined,
+  columnParty: string | null,
 ): MemberFacts {
   const fromName = parseNameDecoration(fullName);
   const fromMeta = factsFromMetadata(rawMetadata);
+  const fromColumn = partyNameOf(partyLetter(fullName, columnParty));
   return {
     state: stats?.state ?? fromName.state ?? fromMeta.state,
     district: stats?.district ?? fromName.district ?? fromMeta.district,
-    party: fromName.party ?? fromMeta.party,
+    party: fromColumn ?? fromName.party ?? fromMeta.party,
   };
 }
 
@@ -270,6 +301,8 @@ export async function resolveDelegation(
       fullName: schema.candidates.fullName,
       jurisdiction: schema.candidates.jurisdiction,
       rawMetadata: schema.candidates.rawMetadata,
+      // Authoritative party (scripts/ingest/member-party.ts) — see memberFacts.
+      party: schema.candidates.party,
     })
     .from(schema.candidates)
     .where(
@@ -290,7 +323,7 @@ export async function resolveDelegation(
     id: r.id,
     fullName: r.fullName,
     jurisdiction: r.jurisdiction,
-    facts: memberFacts(r.fullName, r.rawMetadata, stats.get(r.id)),
+    facts: memberFacts(r.fullName, r.rawMetadata, stats.get(r.id), r.party),
   }));
 
   const senators = incumbents.filter(

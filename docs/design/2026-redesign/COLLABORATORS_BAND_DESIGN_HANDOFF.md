@@ -232,6 +232,21 @@ the section's headline claim, not just a styling question about a suffix.
 3. Is "former" the right word? (es: "ex".) Alternatives: "left Congress", "no longer serving",
    a year — "(D · through 2024)".
 
+### What the data can and can't support (measured against prod, 2026-08-06)
+
+Answers to the field questions the options above raise, so the design isn't drawn against
+guesses. Query: `scripts/ingest/_collab-data-audit.ts`.
+
+| a design asking for…                     | can we?                | detail                                                                                                                                                                                                         |
+| ---------------------------------------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| a departure year — "(D · through 2024)"  | **yes**                | all 95 departed people have a `candidate_offices.term_end`. No new ingest.                                                                                                                                     |
+| state/district beside a name — "(D-NJ5)" | **no**                 | 1 of 95 departed rows has a state, 0 have a district — against 531/531 for sitting members. Likely parseable from the stored name decoration ("Rep. David Trone [D-MD6, 2019-2024]"), but that is unconfirmed. |
+| a share instead of a count — "48 of 87"  | **yes, with a caveat** | a per-member total is computable (busiest member: 87). But it is a share of OUR 626-bill corpus, not their real record — a bare "55% of their bills" would overclaim. Copy must scope it to what we hold.      |
+| "since 2023" in the citation             | **yes**                | bills run 2023-01-09 → 2026-03-24, no missing dates. Note that spans two Congresses.                                                                                                                           |
+
+The asymmetry in row two is the one to design around: it degrades on exactly the departed rows
+this section is trying to make honest.
+
 ## 5. Pre-existing open questions (unchanged, still open)
 
 4. **Information architecture.** Collaborators currently occupy their own numbered step, §5,

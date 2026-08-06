@@ -3,7 +3,10 @@
 > Status: **plan, adversarially reviewed 2026-07-23** — mechanical fixes applied, open
 > judgment calls recorded in Open risks (see Review log at the end).
 > **Parts 1, 2, 3 and 4 are built and shipped to prod** (see the "Part N — executed" notes),
-> including Part 4's candidate-data follow-up (backfilled + verified 2026-07-25).
+> including Part 4's candidate-data follow-up (backfilled + verified 2026-07-25) and the
+> 2026-08-06 audit follow-up that closed three gaps an independent vet of Parts 1–4 found
+> (see "Audit follow-up — executed"; it also records which findings are deliberate deferrals,
+> so they don't get re-raised).
 > **Part 5 step 0 is built (2026-07-25): the sourcing spike + rubric draft — see "Part 5 —
 > step 0 built". The spike still needs a networked run before the schema is committed.
 > Part 6 is still plan only.**
@@ -699,6 +702,102 @@ Party distribution on sitting members is now **REP 271 · DEM 259 · IND 3** —
   members show at least one, and for 15 members the **entire** aisle-reaching list has left
   Congress. That makes the section's headline claim a truthfulness question, not just a
   styling one. Nothing has come back from Design yet.
+
+### Audit follow-up — executed 2026-08-06 (independent Codex vet of Parts 1–4)
+
+An independent audit (Codex, run against `origin/main`, scoped to Parts 1–4 + the Part 4
+follow-up) returned PARTIAL on every part. The user-facing paths all traced end to end; the
+findings were at the edges. Three were real and are now fixed, three are not defects.
+
+**Fixed:**
+
+1. **Committee assignments were never refreshed on a schedule.** `.github/workflows/ingest-federal.yml`
+   ran the votes, cosponsor, member-party and FEC-roster jobs but not `committee-assignments.ts`,
+   which was manual-only (`npm run db:committee-assignments`). Now a scheduled step, ordered after
+   member-party (which refreshes the `federal-<BIOGUIDE>` rows the membership join needs).
+2. **Committee memberships could only ever grow.** The ingest upserts, so a member who left a
+   committee kept rendering on their card forever. It now reconciles: after a successful run it
+   deletes the ingested congress's memberships the source no longer lists.
+
+   The reconciliation deletes by **explicit key, never by timestamp** (`computePruneScope`). The
+   first cut of this fix pruned "anything not touched this run" via `fetched_at`, and a re-audit
+   caught three ways that destroys real data: a membership the run SKIPPED (no `candidates` row,
+   or a committee missing from the YAML) is indistinguishable from one the source dropped; the
+   upserts stamp `now()` on the DATABASE clock while a run marker is the APPLICATION clock, so a
+   database even slightly behind the runner makes just-written rows look deletable; and a
+   part-failed upsert loop leaves the remainder looking untouched. The prune is therefore bounded
+   to `refreshedMemberIds × fetchedCommitteeIds` minus the keys actually written — it can only
+   remove a committee seat from a member this run successfully refreshed, on a committee this run
+   saw. Everything uncertain stays.
+
+   Four further guards: scoped to the one ingested congress, never on `--dry-run`, and two
+   floors. `MIN_MEMBERSHIPS_FOR_PRUNE` (100) is measured against the fetched row count, not the
+   count surviving the join — a broken join is exactly the case where the filtered number shrinks,
+   so gating on it would let a half-resolved run authorise its own deletions. `MIN_MEMBERS_FOR_PRUNE`
+   (100) is measured on DISTINCT members refreshed, and exists because the row floor alone has a
+   hole a third audit pass found: one real membership plus 99 rows for members we hold no
+   `candidates` row for clears a 100-**row** floor, and that one member's other committees then
+   read as departures. Stale is a smaller lie than "this member has no committees".
+   `membershipsDeleted` is in the run counts.
+
+   **Before the scheduled prune is trusted, preview it.**
+   `npx tsx --env-file=.env.local scripts/ingest/committee-assignments.ts --preview-prune`
+   upserts as normal and PRINTS the rows the reconciliation would delete, deleting nothing.
+   `--dry-run` cannot serve this purpose — it skips the upserts too, so there is no prune set to
+   report. Run the preview once against prod and eyeball the count: a handful of genuine committee
+   changes is expected; a large number means something is wrong and you have caught it before it
+   destroyed data rather than after. The preview and the real delete share one predicate builder
+   (`pruneFilter`) so they can never disagree.
+
+   **Known limitation, accepted.** Two classes of row are never pruned: a committee DISSOLVED
+   (dropped from `committees-current.yaml`) falls outside `fetchedCommitteeIds`, and a member who
+   left Congress entirely is never refreshed. Both follow from the same thing the prune is built
+   around — we cannot tell "gone from the source" from "not fetched this run". Consequence: a
+   dissolved committee can keep rendering on a sitting member's card until someone clears it by
+   hand. A departed member's rows are normally invisible, since delegation only resolves
+   `is_incumbent = true`. Fixing the first properly means committee-lifecycle reconciliation
+   (tombstoning committees, not just memberships) — a larger change than this ingest, and worth a
+   card if a dissolved committee is ever actually observed on a card.
+
+3. **The card ignored the very party column this follow-up backfilled.** `resolveDelegation` derived
+   the seat member's own party from the `[D-NJ6]` name decoration and `rawMetadata`, never
+   `candidates.party` — the field made authoritative here precisely because the decoration is stale
+   on rows the backfill corrected. The card therefore contradicted its own collaborators band, which
+   has read the column since it shipped. Worse, `[DFL-MN5]` matches no single-letter code, so
+   Minnesota's DFL members displayed **no party at all**. Party precedence is now
+   `candidates.party` > decoration > rawMetadata, reusing `partyLetter` from `collaborators.ts` so
+   both surfaces share one closed list of party codes.
+
+**Not defects — do not re-raise:**
+
+4. **Challenger committees and challenger collaborators are deliberate deferrals**, recorded above
+   ("Non-incumbent honest-empty copy… not yet wired to any UI surface" and "Deliberately deferred
+   (not this card): challenger collaborators"). Challengers have never held the seat, so they have
+   no committee seat and no cosponsorship record; the structural guarantee that neither is ever
+   looked up for a challenger id is in place. Building those surfaces is a product-direction change,
+   not a gap fix.
+5. **`$200` sub-labels surviving in `design-handoff/design-session/screens-results.jsx` and
+   `docs/design/.../prototype-components.jsx`** are frozen design-handoff snapshots. They are `.jsx`,
+   outside the tsconfig `include` (`**/*.ts`, `**/*.tsx`), and imported by nothing under `src/` — so
+   they never reach a user. Editing them would corrupt the design source of truth we diff against.
+   The only `$200` in the running app is on `/methodology`, which is what Part 1 decided.
+6. **Prod row counts, backfill totals and resolution rates are unverifiable from code**, by
+   construction — they need a live DB. The verification tables above record the runs that produced
+   them; re-running `scripts/ingest/_resolution-miss-report.ts` against prod is the only way to
+   re-confirm.
+
+Tests added (12): four on the prune's behaviour (prunes / skips on a thin source / skips when the
+source is healthy but nothing joined / never on dry-run), five on `computePruneScope` — one per
+bound the re-audit showed was load-bearing — and three on party sourcing (column beats a stale
+decoration; DFL resolves where the decoration can't; falls back to the decoration when the column
+is empty or `UNK`).
+
+Two further targeted audit passes ran against the fix branch. The second verified each of the six
+original findings: RESOLVED on the scheduling and party-sourcing fixes, all three not-a-defect calls
+confirmed, and the first prune implementation rejected — which is why the keyed version above
+exists. The third audited only the rewritten prune: it confirmed the clock-skew hazard was
+structurally gone and found no SQL defect, and produced the row-floor hole and the
+permanent-staleness limitation now recorded above.
 
 ## Part 5 — Promise ledger + kept/broken scoring
 

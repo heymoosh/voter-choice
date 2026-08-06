@@ -135,6 +135,25 @@ jobs:
         if: ${{ !cancelled() }}
         run: npx tsx scripts/ingest/member-party.ts
 
+      - name: Run committee assignments ingest
+        # Standing committee assignments (Part 3,
+        # DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md). Same
+        # unitedstates/congress-legislators source as the member-party step
+        # above — CC0, no API key, only DATABASE_URL.
+        #
+        # This has to run on the schedule for the same reason member-party
+        # does: committee seats change between runs (and at every new
+        # Congress), and the ingest reconciles departures by pruning
+        # memberships the source no longer lists. Until this step existed the
+        # job was manual-only (`npm run db:committee-assignments`), so a card's
+        # committee list could only ever grow.
+        #
+        # Ordered AFTER member-party, which refreshes the federal-<BIOGUIDE>
+        # `candidates` rows the membership join needs. Runs unless the job was
+        # cancelled, so an unrelated earlier failure doesn't skip it.
+        if: ${{ !cancelled() }}
+        run: npx tsx scripts/ingest/committee-assignments.ts
+
       - name: Run FEC 2026 candidate roster ingest
         # Decoupled from the votes step: the candidate roster (which seats the
         # voter's challenger cards) must refresh even if the GovTrack vote

@@ -21,17 +21,42 @@
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts --congress 119
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts --dry-run
+ *   DATABASE_URL=<neon> npx tsx scripts/ingest/committee-assignments.ts --preview-prune
+ *
+ * `--preview-prune` upserts as normal but PRINTS the rows the reconciliation
+ * would delete instead of deleting them. Run this once against prod before the
+ * scheduled job is trusted to prune unattended — `--dry-run` will not tell you,
+ * because it skips the upserts too and so has no prune set to report.
  *
  * Idempotency: committees upsert on thomas_id (PK); memberships upsert on
  * (candidate_id, committee_id, congress). Members/committees with no
  * matching `candidates` row (or, for memberships, no matching committee
  * fetched this run) are skipped and counted, never thrown.
+ *
+ * Reconciliation: upsert alone can only ever ADD, so a member who leaves a
+ * committee would render on their card forever. After a successful run this
+ * deletes the memberships for the ingested congress that the source no longer
+ * lists — bounded by explicit key (see computePruneScope), scoped to that one
+ * congress, and skipped entirely when the run looks incomplete, so a truncated
+ * fetch leaves data stale rather than emptying the table.
+ *
+ * KNOWN LIMITATION, accepted deliberately: two classes of row are never pruned.
+ * A committee DISSOLVED (dropped from committees-current.yaml) falls outside
+ * `fetchedCommitteeIds`, and a member who left Congress entirely is never
+ * refreshed, so neither can be deleted. Both are the price of not being able to
+ * tell "gone from the source" from "not fetched this run" — the distinction the
+ * whole prune is built around. A dissolved committee can therefore still render
+ * on a sitting member's card until someone clears it by hand; a departed
+ * member's rows are normally invisible because delegation only resolves
+ * `is_incumbent = true`. Fixing the first properly needs committee-lifecycle
+ * reconciliation (tombstoning committees, not just memberships), which is a
+ * larger change than this ingest.
  */
 
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import yaml from "js-yaml";
-import { sql, inArray } from "drizzle-orm";
+import { sql, and, eq, inArray, notInArray } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidates, committees, committeeMemberships } from "../../db/schema";
 
@@ -97,7 +122,97 @@ export interface CommitteeAssignmentsCounts {
   membershipsUpserted: number;
   skippedNoCandidate: number;
   skippedNoCommittee: number;
+  /**
+   * Memberships removed because the source no longer lists them for this
+   * congress — a member who left a committee. Upsert alone can only ever add,
+   * so without this a stale assignment renders forever. See `prunedSkipped`.
+   */
+  membershipsDeleted: number;
+  /**
+   * True when the prune was SKIPPED because this run fetched implausibly few
+   * memberships (a truncated or failed YAML fetch). Deleting on that input
+   * would empty the table; leaving the rows stale is the safer failure.
+   */
+  prunedSkipped: boolean;
 }
+
+/** The three explicit bounds the prune deletes within. See computePruneScope. */
+export interface PruneScope {
+  /** Members whose assignments this run actually refreshed. */
+  refreshedMemberIds: string[];
+  /** Committees this run actually fetched. */
+  fetchedCommitteeIds: string[];
+  /** "<candidateId>|<committeeId>" for every membership this run wrote. */
+  keptKeys: string[];
+}
+
+/**
+ * Work out exactly what the prune is allowed to delete.
+ *
+ * Deleting "anything this run didn't touch" is the obvious implementation and
+ * it is wrong three ways, each of which silently destroys real data:
+ *
+ *  1. A membership the run SKIPPED (no matching `candidates` row, or a
+ *     committee absent from committees-current.yaml) was never upserted — it
+ *     looks identical to a membership the source dropped. Scoping the delete to
+ *     `refreshedMemberIds` × `fetchedCommitteeIds` means a skip leaves the row
+ *     alone instead of deleting a seat the member still holds.
+ *  2. Timestamps can't carry this. The upserts stamp `fetched_at = now()` —
+ *     the DATABASE clock — while any run-start marker we capture here is the
+ *     APPLICATION clock. A database even slightly behind the runner makes rows
+ *     we just wrote look older than the run and therefore deletable. Keys don't
+ *     have that failure mode, so this compares keys.
+ *  3. A partially-failed upsert loop leaves some rows written and some not. The
+ *     kept-key set is built from the rows we INTENDED to write, so a throw
+ *     mid-loop aborts before the delete rather than pruning the remainder.
+ *
+ * Net effect: the prune only ever removes a committee seat from a member whose
+ * record this run successfully refreshed, on a committee this run saw. Anything
+ * uncertain stays — stale data is a smaller lie than a member's committee list
+ * silently emptying.
+ */
+export function computePruneScope(
+  membershipRows: { candidateId: string; committeeId: string }[],
+  knownCommitteeIds: Set<string>,
+): PruneScope {
+  return {
+    refreshedMemberIds: [...new Set(membershipRows.map((m) => m.candidateId))],
+    fetchedCommitteeIds: [...knownCommitteeIds],
+    keptKeys: membershipRows.map((m) => `${m.candidateId}|${m.committeeId}`),
+  };
+}
+
+/**
+ * Below this many membership rows FROM THE SOURCE, we assume the fetch is
+ * broken rather than that Congress dissolved its committees, and skip the prune
+ * entirely. Real runs return ~3,000 rows (House + Senate, committees +
+ * subcommittees); the floor sits two orders of magnitude below that so it only
+ * ever catches a broken fetch.
+ *
+ * Deliberately measured against the RAW fetched count, not the count surviving
+ * the candidate/committee join — a broken join is precisely the case where the
+ * filtered number shrinks, so gating on it would let a half-resolved run
+ * authorise its own deletions.
+ */
+export const MIN_MEMBERSHIPS_FOR_PRUNE = 100;
+
+/**
+ * Second floor, on DISTINCT MEMBERS whose assignments resolved this run.
+ *
+ * The raw-row floor above catches a fetch that failed outright. It cannot catch
+ * a fetch that succeeded but returned a truncated or malformed payload: 1 real
+ * membership plus 99 duplicate or orphan rows clears a 100-ROW floor, and the
+ * one member in it would then have their other committees pruned as departures.
+ * Requiring ~100 distinct refreshed members closes that — a real run refreshes
+ * ~530, and no plausible truncation yields both a full row count and almost no
+ * members.
+ *
+ * Neither floor can detect a payload truncated WITHIN a member (some of their
+ * committees present, the rest dropped). Nothing count-based can. That residual
+ * is accepted: it needs a source file that is well-formed, full-length, covers
+ * hundreds of members, and is still wrong per-member.
+ */
+export const MIN_MEMBERS_FOR_PRUNE = 100;
 
 // ---------------------------------------------------------------------------
 // Parsing helpers (pure — unit tested)
@@ -272,10 +387,27 @@ export async function fetchMembership(
 // Main
 // ---------------------------------------------------------------------------
 
+/**
+ * The prune's WHERE clause, built once and shared by the preview and the real
+ * delete. They must never diverge — a preview that shows a different row set
+ * than the delete removes is worse than no preview at all.
+ */
+function pruneFilter(congress: number, scope: PruneScope) {
+  return and(
+    eq(committeeMemberships.congress, congress),
+    inArray(committeeMemberships.candidateId, scope.refreshedMemberIds),
+    inArray(committeeMemberships.committeeId, scope.fetchedCommitteeIds),
+    notInArray(
+      sql`${committeeMemberships.candidateId} || '|' || ${committeeMemberships.committeeId}`,
+      scope.keptKeys,
+    ),
+  );
+}
+
 export async function runCommitteeAssignmentsIngest(
   db: DbClient,
   fetcher: Fetcher,
-  opts: { congress?: number; dryRun?: boolean } = {},
+  opts: { congress?: number; dryRun?: boolean; previewPrune?: boolean } = {},
 ): Promise<CommitteeAssignmentsCounts> {
   const [flatCommittees, flatMembership] = await Promise.all([
     fetchCommittees(fetcher),
@@ -355,6 +487,71 @@ export async function runCommitteeAssignmentsIngest(
     }
   }
 
+  // Reconcile: drop this congress's memberships the source no longer lists.
+  // Deletes by EXPLICIT KEY, never by timestamp — see computePruneScope for why
+  // each bound exists. The floor is checked against the RAW source row count,
+  // not the post-filter one: filtering is exactly what a half-broken join does,
+  // so gating on the filtered number would let an incomplete run authorise its
+  // own deletions.
+  const scope = computePruneScope(membershipRows, knownCommitteeIds);
+  let membershipsDeleted = 0;
+  let prunedSkipped = false;
+  if (opts.previewPrune && !opts.dryRun) {
+    // Show what the prune WOULD remove, and remove nothing. The first real run
+    // of this delete happens unattended on a Sunday cron, so there has to be a
+    // way to look at it first. `--dry-run` can't serve: it skips the upserts
+    // too, so nothing is refreshed and the prune set is meaningless.
+    const doomed = await db
+      .select({
+        candidateId: committeeMemberships.candidateId,
+        committeeId: committeeMemberships.committeeId,
+        title: committeeMemberships.title,
+      })
+      .from(committeeMemberships)
+      .where(pruneFilter(congress, scope));
+    prunedSkipped = true;
+    console.log(
+      `[committee-assignments] PREVIEW — would prune ${doomed.length} membership ` +
+        `row(s) for congress ${congress}. Nothing was deleted.`,
+    );
+    for (const row of doomed) {
+      console.log(
+        `  would delete: ${row.candidateId} from ${row.committeeId}` +
+          `${row.title ? ` (${row.title})` : ""}`,
+      );
+    }
+  } else if (opts.dryRun) {
+    prunedSkipped = true;
+  } else if (flatMembership.length < MIN_MEMBERSHIPS_FOR_PRUNE) {
+    prunedSkipped = true;
+    console.warn(
+      `[committee-assignments] PRUNE SKIPPED — the source returned only ` +
+        `${flatMembership.length} membership rows (floor ${MIN_MEMBERSHIPS_FOR_PRUNE}). ` +
+        `Stale assignments for congress ${congress} were left in place; the fetch is ` +
+        `the thing to fix.`,
+    );
+  } else if (scope.refreshedMemberIds.length < MIN_MEMBERS_FOR_PRUNE) {
+    prunedSkipped = true;
+    console.warn(
+      `[committee-assignments] PRUNE SKIPPED — only ` +
+        `${scope.refreshedMemberIds.length} distinct members resolved this run ` +
+        `(floor ${MIN_MEMBERS_FOR_PRUNE}). A full-length but truncated payload ` +
+        `looks like mass departures; leaving congress ${congress} stale instead.`,
+    );
+  } else {
+    const deleted = await db
+      .delete(committeeMemberships)
+      .where(pruneFilter(congress, scope))
+      .returning({ id: committeeMemberships.id });
+    membershipsDeleted = deleted.length;
+    if (membershipsDeleted > 0) {
+      console.log(
+        `[committee-assignments] pruned ${membershipsDeleted} membership row(s) ` +
+          `no longer listed for congress ${congress}`,
+      );
+    }
+  }
+
   return {
     committeesFetched: flatCommittees.length,
     committeesUpserted: committeeRows.length,
@@ -362,29 +559,38 @@ export async function runCommitteeAssignmentsIngest(
     membershipsUpserted: membershipRows.length,
     skippedNoCandidate,
     skippedNoCommittee,
+    membershipsDeleted,
+    prunedSkipped,
   };
 }
 
-function parseArgs(argv: string[]): { congress?: number; dryRun: boolean } {
+function parseArgs(argv: string[]): {
+  congress?: number;
+  dryRun: boolean;
+  previewPrune: boolean;
+} {
   const idx = argv.indexOf("--congress");
   const n = idx !== -1 ? Number(argv[idx + 1]) : NaN;
   return {
     congress: Number.isInteger(n) ? n : undefined,
     dryRun: argv.includes("--dry-run"),
+    previewPrune: argv.includes("--preview-prune"),
   };
 }
 
 async function main(): Promise<void> {
   const db = requireDb();
-  const { congress, dryRun } = parseArgs(process.argv.slice(2));
+  const { congress, dryRun, previewPrune } = parseArgs(process.argv.slice(2));
   const counts = await runCommitteeAssignmentsIngest(db, fetch, {
     congress,
     dryRun,
+    previewPrune,
   });
   console.log(
     `[committee-assignments]${dryRun ? " [dry-run]" : ""} done ` +
       `committees=${counts.committeesUpserted}/${counts.committeesFetched} ` +
       `memberships=${counts.membershipsUpserted}/${counts.membershipsFetched} ` +
+      `pruned=${counts.membershipsDeleted}${counts.prunedSkipped ? " (prune skipped)" : ""} ` +
       `skipped_no_candidate=${counts.skippedNoCandidate} skipped_no_committee=${counts.skippedNoCommittee}`,
   );
 }
