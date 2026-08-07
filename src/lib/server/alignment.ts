@@ -345,6 +345,57 @@ export function candidateNameParts(clean: string): {
 }
 
 /**
+ * Same-initial diminutives too short for the shared-3-prefix rule in
+ * firstNamesCompatible. Only pairs whose initials MATCH belong here — the
+ * initial tie-break never sees a pair whose initials differ (Bob/Robert,
+ * Ted/Edward), so listing them would be dead code. Folded lowercase.
+ */
+const SAME_INITIAL_DIMINUTIVES: [string, string][] = [
+  ["jack", "john"],
+  ["jim", "james"],
+  ["jimmy", "james"],
+  ["mike", "michael"],
+  ["hank", "henry"],
+  ["rick", "richard"],
+  ["ricky", "richard"],
+  ["larry", "lawrence"],
+  ["chuck", "charles"],
+  ["cindy", "cynthia"],
+];
+
+/**
+ * Whether a query first name and a stored row's first name can plausibly be
+ * the same person's, for the tier-3 first-INITIAL tie-break.
+ *
+ * Initial equality alone is NOT enough when both sides carry full first
+ * names: the 2026-08-07 promise-corpus spike caught TX-18's ballot name
+ * "VALENCIA LANA WILLIAMS" resolving to the TX-23 candidate "VERONICA
+ * WILLIAMS" purely because both start with V and no other TX Williams did —
+ * a different person, and exactly the misattribution class Part 5's promise
+ * ledger cannot tolerate. Two full names that actively DISAGREE
+ * ("valencia" vs "veronica") must refuse, while the forms the tie-break
+ * exists for keep resolving:
+ *   - a true initial on either side ("V." → "v");
+ *   - one name a prefix of the other ("Chris" ↔ "Christopher");
+ *   - diminutives sharing a ≥3-char prefix ("Andy" ↔ "Andrew", "Dave" ↔
+ *     "David");
+ *   - curated same-initial diminutives the prefix rules miss ("Mike" ↔
+ *     "Michael", "Jim" ↔ "James").
+ */
+export function firstNamesCompatible(a: string, b: string): boolean {
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (a[0] !== b[0]) return false;
+  if (a.length === 1 || b.length === 1) return true;
+  if (a.startsWith(b) || b.startsWith(a)) return true;
+  if (a.length >= 3 && b.length >= 3 && a.slice(0, 3) === b.slice(0, 3))
+    return true;
+  return SAME_INITIAL_DIMINUTIVES.some(
+    ([x, y]) => (a === x && b === y) || (a === y && b === x),
+  );
+}
+
+/**
  * True when two surnames are the same name written differently across a
  * hyphen — "Kacker" ↔ "Devgan-Kacker", "Arreguin" ↔ "Acevedo-Arreguin".
  * Official rosters and FEC filings routinely disagree about which half of a
@@ -604,13 +655,18 @@ export async function resolveCandidateId(
       onlyDistinct(preferSitting(compatible)) ??
       onlyDistinct(preferSitting(byLast));
     if (resolved) return resolved;
-    // Multiple DISTINCT people share the surname. Disambiguate by first initial
-    // (skip for a surname-only query, which has no real first name), preferring
-    // rows whose state matches the ballot.
+    // Multiple DISTINCT people share the surname. Disambiguate by first name
+    // (skip for a surname-only query, which has no real first name),
+    // preferring rows whose state matches the ballot. Bare initial equality is
+    // NOT sufficient when both sides carry full first names — see
+    // firstNamesCompatible for the Valencia/Veronica Williams false match
+    // this guards against.
     if (!queryIsSurnameOnly) {
-      const qInitial = foldNameToken(queryParts.first)[0];
+      const qFirst = foldNameToken(queryParts.first);
       const pool = stateMatched.length > 0 ? stateMatched : byLast;
-      const byInitial = pool.filter((p) => p.first[0] === qInitial);
+      const byInitial = pool.filter((p) =>
+        firstNamesCompatible(qFirst, p.first),
+      );
       const initResolved = onlyDistinct(byInitial);
       if (initResolved) return initResolved;
     }
