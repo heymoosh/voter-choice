@@ -952,6 +952,78 @@ need opening; (3) Muxin reviews the rubric draft and picks the second annotator;
 commit the Part 5 schema (migration 0021) shaped by what the spike found. Pilot-state default is
 TX — Muxin can override with `--state`.
 
+### Part 5 — step 0 spike RUN 2026-08-07 (TX; verdict: Form 1 carries the corpus)
+
+Muxin ran the spike from her dev machine (prod `DATABASE_URL`, real `FEC_API_KEY`). Getting a
+clean pass took three attempts, both operationally instructive: DEMO_KEY's hourly budget dies
+after ~8 candidates (65% `fec_api_error` — a real api.data.gov key is mandatory, not a
+nicety), and Wayback's CDX API throttles hard at the spike's default 4-way concurrency (32%
+`wayback_error`); the clean run used `--concurrency 1` and took on the order of tens of
+minutes. Final table (`--state TX`, 111 roster candidates, 2026 House):
+
+| bucket                | n   | share |
+| --------------------- | --- | ----- |
+| `website_archived`    | 55  | 50%   |
+| `website_no_captures` | 2   | 2%    |
+| `no_website_on_file`  | 14  | 13%   |
+| `unresolved`          | 36  | 32%   |
+| `wayback_error`       | 4   | 4%    |
+
+Campaign URL on file (any kind): 61/111 (55%). Corpus-ready: **55/111 (50%)**.
+
+**Decision (step 2 above): GO — Form 1 + Wayback carries the pilot corpus.** The layered
+read: of the 75 candidates the FEC could see, 73% are corpus-ready; of the 61 with a real URL
+on file, 96% of those whose CDX lookup succeeded have in-window captures — "URL exists but
+archive is empty" is nearly nonexistent (2 cases). 35 of 38 TX districts have at least one
+corpus-ready candidate (19, 30, 32 pending the 4 `wayback_error` retries), and every
+major incumbent came back with deep capture history (Cuellar 47 captures, Escobar 46,
+Sessions 45, Casar 43, Castro 41, Allred 37…). The Wikidata P856 fallback stays closed; no
+Ballotpedia dependency (it was never queried).
+
+Findings to carry into the pilot build:
+
+- **`social_media_only` = 0 and `no_fec_id` = 0** — the Facebook-page-as-website problem did
+  not materialize in TX, and the 123-null-`fec_candidate_id` backfill gap did not bite (its
+  members aren't on the 2026 ballot as challengers resolve differently).
+- **`unresolved` (36, 32%) is the second-biggest bucket and it is ours to explain**, per the
+  zero-promises-is-legitimate rule: names are almost all minor-party/independent filers,
+  consistent with sub-$5k candidacies that never file with the FEC (no row can exist), but
+  the split vs. genuine Part 2 name-match misses must be measured
+  (`scripts/ingest/_resolution-miss-report.ts`) before the pilot ships.
+- **One probable Part 2 false match surfaced:** TX-18 "VALENCIA LANA WILLIAMS" and TX-23
+  "VERONICA WILLIAMS" both resolved to the same committee website
+  (`veronicagwilliams.com`, identical capture set) — exactly the misattribution class the
+  promise ledger cannot tolerate (promises extracted from one candidate's site credited to
+  another). Verify and fix the TX-18 resolution before extraction runs.
+- **Save-Page-Now action items:** Keith Self (TX-03, `selfforcongress.com`) and William
+  Taggart (TX-38, `wiliamtaggart.org`) have live sites with zero captures. Worth also
+  proactively SPN-ing all 61 on-file URLs to pin fresh pre-election captures while sites are
+  live — cheap insurance for the canonical-capture policy.
+- **Operational settings for future spike/extraction runs:** real `FEC_API_KEY` (1,000
+  req/hr), Wayback CDX at concurrency 1 with the existing backoff.
+
+A follow-up `--json` run (same day) resolved every remaining ambiguity. Wayback errors are
+fully transient — unioning capture successes across runs, **58 of the 61 URL-holding
+candidates (95%) have verified in-window captures**, and the only 3 without captures all have
+live sites (Self TX-03, Taggart TX-38, plus Ronny Jackson TX-13, whose CDX lookup succeeded
+with a true zero) — i.e. after a Save-Page-Now pass the archive rate for site-having
+candidates is 100%. Union corpus-ready: **58/111 (52%)**; by group: incumbents 21/25 (84%,
+→ 23/25 after SPN; the last two, Menefee TX-18 and Gill TX-26, filed no website on Form 1
+but are sitting members fully covered by the press-release venue), major-party nominees
+~55/76 (72%), minor/independent 3/35 (9%). Districts 19, 30, and 32 are now confirmed
+real gaps, not artifacts: all are races where no nominee filed a Form 1 website (open-seat
+races with no incumbent on the ballot), reachable only via the ads/questionnaire venues.
+The JSON also **confirmed the Williams false match by id**: the TX-18 "VALENCIA LANA
+WILLIAMS" row carries `candidateId fec-H6TX23299` — the TX-23 Veronica Williams candidate.
+(Other cross-district `fec_candidate_id`s in the output — Castro `H2TX35011`, Allred
+`H8TX32098`, Cuellar `H2TX23082`, Sessions `H2TX03126`, Babin `H6TX02079`, etc. — are NOT
+errors: FEC candidate ids permanently encode the first district a candidate ever filed for.)
+
+This unblocks step 3: the rubric draft (`docs/PROMISE_ADJUDICATION_RUBRIC.md`, 0.1.0-draft)
+now goes to Muxin for threshold sign-off (κ ≥ 0.70, ≥ 90% gold agreement, zero kept↔broken
+polarity flips — proposed, not settled) and the second-annotator pick. Migration 0021 (step 4)
+remains gated behind that review, shaped by the findings above.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
