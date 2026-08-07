@@ -1000,8 +1000,24 @@ Findings to carry into the pilot build:
   proactively SPN-ing all 61 on-file URLs to pin fresh pre-election captures while sites are
   live — cheap insurance for the canonical-capture policy.
 - **Operational settings for future spike/extraction runs:** real `FEC_API_KEY` (1,000
-  req/hr), Wayback CDX at concurrency 1 with the existing backoff; re-run the 4
-  `wayback_error` rows (or `--json` to name them) to close out districts 19/30/32.
+  req/hr), Wayback CDX at concurrency 1 with the existing backoff.
+
+A follow-up `--json` run (same day) resolved every remaining ambiguity. Wayback errors are
+fully transient — unioning capture successes across runs, **58 of the 61 URL-holding
+candidates (95%) have verified in-window captures**, and the only 3 without captures all have
+live sites (Self TX-03, Taggart TX-38, plus Ronny Jackson TX-13, whose CDX lookup succeeded
+with a true zero) — i.e. after a Save-Page-Now pass the archive rate for site-having
+candidates is 100%. Union corpus-ready: **58/111 (52%)**; by group: incumbents 21/25 (84%,
+→ 23/25 after SPN; the last two, Menefee TX-18 and Gill TX-26, filed no website on Form 1
+but are sitting members fully covered by the press-release venue), major-party nominees
+~55/76 (72%), minor/independent 3/35 (9%). Districts 19, 30, and 32 are now confirmed
+real gaps, not artifacts: all are races where no nominee filed a Form 1 website (open-seat
+races with no incumbent on the ballot), reachable only via the ads/questionnaire venues.
+The JSON also **confirmed the Williams false match by id**: the TX-18 "VALENCIA LANA
+WILLIAMS" row carries `candidateId fec-H6TX23299` — the TX-23 Veronica Williams candidate.
+(Other cross-district `fec_candidate_id`s in the output — Castro `H2TX35011`, Allred
+`H8TX32098`, Cuellar `H2TX23082`, Sessions `H2TX03126`, Babin `H6TX02079`, etc. — are NOT
+errors: FEC candidate ids permanently encode the first district a candidate ever filed for.)
 
 This unblocks step 3: the rubric draft (`docs/PROMISE_ADJUDICATION_RUBRIC.md`, 0.1.0-draft)
 now goes to Muxin for threshold sign-off (κ ≥ 0.70, ≥ 90% gold agreement, zero kept↔broken
