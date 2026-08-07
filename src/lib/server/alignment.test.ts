@@ -248,6 +248,64 @@ describe("resolveCandidateId", () => {
     expect(result).toBe("fed-mike-kelly");
   });
 
+  // Regression: the 2026-08-07 promise-corpus spike caught TX-18's roster
+  // name "VALENCIA LANA WILLIAMS" resolving to the TX-23 FEC candidate
+  // "VERONICA WILLIAMS" — the initial tie-break accepted bare first-INITIAL
+  // equality ("V") even though the full first names contradict each other.
+  // A contradicting full first name must refuse; unresolved is the honest
+  // answer when the person has no row of their own.
+  it("does NOT resolve on initial alone when full first names contradict (Valencia ≠ Veronica)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-veronica", fullName: "VERONICA WILLIAMS", state: "TX" },
+      { id: "fec-roger", fullName: "ROGER WILLIAMS", state: "TX" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "VALENCIA LANA WILLIAMS",
+      "federal-house",
+      "TX",
+    );
+    expect(result).toBeNull();
+  });
+
+  it("still breaks same-surname ambiguity for a ≥3-shared-prefix diminutive (Andy ↔ Andrew)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-andrew-kim", fullName: "Sen. Andrew Kim [D-NJ]" },
+      { id: "fed-jane-kim", fullName: "Sen. Jane Kim [D-NJ]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("Andy Kim", "federal-senate", "NJ");
+    expect(result).toBe("fed-andrew-kim");
+  });
+
+  it("still breaks same-surname ambiguity for a curated diminutive (Mike ↔ Michael)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fed-michael-kelly", fullName: "Rep. Michael Kelly [R-PA]" },
+      { id: "fed-john-kelly", fullName: "Rep. John Kelly [R-PA]" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "Mike Kelly",
+      "federal-house",
+      "PA",
+    );
+    expect(result).toBe("fed-michael-kelly");
+  });
+
+  it("still breaks same-surname ambiguity on a true bare initial (V. Williams)", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-veronica", fullName: "VERONICA WILLIAMS", state: "TX" },
+      { id: "fec-roger", fullName: "ROGER WILLIAMS", state: "TX" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId(
+      "V. WILLIAMS",
+      "federal-house",
+      "TX",
+    );
+    expect(result).toBe("fec-veronica");
+  });
+
   it("nickname without a stateCode does not resolve (state is required for tier 3)", async () => {
     const { select } = makeSelectMock([
       { id: "fed-kim", fullName: "Sen. Andrew Kim [D-NJ]" },
