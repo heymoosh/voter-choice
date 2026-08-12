@@ -1077,6 +1077,25 @@ challengers (no official record → `not_yet_testable` territory). Run after ext
 `npx tsx --env-file=.env.local scripts/ingest/promise-link.ts --dry-run`, then without the
 flag. Remaining stage: the adjudicator (rubric §4-§6, external calibration + gold set).
 
+**Adjudicator built 2026-08-12, same session** (`scripts/ingest/promise-adjudicate.ts` —
+stage 3, completing extract → link → adjudicate; first corpus rows landed in
+candidate_promises the same evening: 14 promises across 6 TX candidates). Two paths, one
+rule order: **(1) deterministic §4.1** — the default window is the term being sought
+(2027-01-03 → 2029-01-03), and before it opens no promise can be kept or broken, so every
+2026 verdict is `not_yet_testable` computed in code, with current-term linked actions
+recorded as context, not judged; **(2) LLM adjudication** (dormant until the window opens)
+— Sonnet executes the rubric's §4 rule order against the pre-declared test and the linked
+actions, with three mechanical rails: cited evidence ids must be a subset of the promise's
+own promise_actions rows (fabricated evidence downgrades to `not_yet_rated` with the
+violation recorded), unknown verdicts/thin rationales downgrade the same way, and any
+kept/broken-class verdict citing zero evidence is refused. `adjudicator_version` =
+`rubric-1.0.0+adj-v1+<model>`, pinning the rubric version per its own versioning rule;
+re-adjudication under a new version inserts new rows (history preserved). Verdict rows are
+internal until the §6.4 ship gate (gold pass + `PROMISE_TRACKER_ENABLED`). What remains for
+Part 5 is process, not pipeline: the §6 gold-set machinery (external calibration sampling,
+annotator export for Muxin + husband, κ/agreement scoring mirroring
+`_subissue-gold-score.ts`) and the UI surface behind the flag.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
