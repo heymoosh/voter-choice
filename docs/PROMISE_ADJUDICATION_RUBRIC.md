@@ -13,8 +13,7 @@
 > `rubric-0.1.0+modelrev`). Any change to a verdict definition, the evidence
 > ladder, or the extraction gate is a MINOR bump and invalidates prior
 > verdicts (they revert to `not_yet_rated` until re-adjudicated); wording
-> clarifications that cannot change a verdict are PATCH bumps. Signing off
-> this draft makes it `1.0.0`.
+> clarifications that cannot change a verdict are PATCH bumps.
 
 ## Who applies this rubric
 
@@ -22,7 +21,7 @@ The **adjudicator** is an LLM. It is **not the judge — it is an evidence
 assembler applying this published rubric**. The rubric is the editorial
 judgment we own; the model executes it, shows its work, and **flags ambiguous
 cases for human review instead of forcing a verdict**. The **annotators** are
-the humans (Muxin plus a second annotator, ideally of differing politics) who
+the humans (Muxin plus her husband — see §6.2 for the composition note) who
 hand-label the gold set the adjudicator is graded against (§6).
 
 ---
