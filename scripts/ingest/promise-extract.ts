@@ -81,7 +81,7 @@ import {
  * candidate_promises.extraction_model_version; the model id rides after "+"
  * (same convention as the rubric's `rubric-0.1.0+modelrev`).
  */
-export const EXTRACTOR_VERSION = "promise-extract-v1";
+export const EXTRACTOR_VERSION = "promise-extract-v2";
 
 const EXTRACTION_MODEL = "claude-sonnet-5";
 
@@ -400,12 +400,20 @@ export function buildExtractionSystemPrompt(): string {
   return `You extract campaign PROMISES from archived campaign-site pages, applying a published adjudication rubric (version ${SUB_ISSUE_VOCABULARY_VERSION} vocabulary; extractor ${EXTRACTOR_VERSION}). You are an evidence assembler, not a judge: extract only what the page actually says.
 
 A statement is a promise ONLY if ALL FOUR gates hold:
-1. COMMITTED ACTOR — the candidate commits THEMSELF ("I will vote against…", "I'll introduce…"), not their party, not "Washington", not "we as a nation".
-2. FALSIFIABLE ACTION — a concrete act a member of Congress can take. "Fight for", "stand with", "prioritize", "believe in" are rhetoric unless attached to a specific act.
+1. COMMITTED ACTOR — the candidate commits THEMSELF ("I will vote against…", "I'll introduce…", or third-person campaign copy like "Jane will introduce…"), not their party, not "Washington", not "we as a nation".
+2. FALSIFIABLE ACTION — a concrete act a MEMBER OF CONGRESS takes IN OFFICE: voting, introducing or cosponsoring legislation, oversight, appropriations. Two exclusions this gate enforces strictly:
+   a. POSITION STATEMENTS ARE NOT ACTS. "Supports X", "believes in X", "stands with X", "is committed to X", "will fight for X", "will prioritize X" commit to nothing checkable against the congressional record. Only extract when an action verb carries a concrete act ("will vote against", "will introduce", "will file", "will subpoena", "will vote to fund").
+   b. CAMPAIGN-CONDUCT PLEDGES ARE NOT CONGRESSIONAL ACTS. Refusing donations, self-imposed term limits, salary pledges, debate pledges — these may be sincere and even checkable elsewhere, but they are not acts of a member of Congress and CANNOT be tested against votes, bills, or appropriations. Do not extract them.
 3. DETERMINABLE SCOPE — what the action applies to is identifiable: a named bill, program, tax, appointment, or a class of votes definable by the issue vocabulary below.
 4. TESTABLE WINDOW — an explicit deadline or condition, or the implied default (the term of office being sought).
 
 Statements failing ANY gate are unverifiable rhetoric: DO NOT return them. Return an empty array over a doubtful extraction — a wrong promise is a false attribution to a named person; a missed one costs nothing.
+
+Calibration examples (from real pages):
+- "I'm going to push for a nationwide ban against partisan, out-of-cycle gerrymandering" → EXTRACT (promise_type "outcome": a legislative result the record can test).
+- "Jane will push to consolidate K-12 federal programs into flexible block grants" → EXTRACT (promise_type "introduce_bill": tested by introduction/cosponsorship of such a bill).
+- "Jane supports Texas's parental-rights framework on curriculum transparency" → DO NOT EXTRACT (gate 2a: a position, no act).
+- "I won't accept donations from AIPAC or any other organization" → DO NOT EXTRACT (gate 2b: campaign conduct, not a congressional act).
 
 CANONICAL ISSUES (canonical_issue must be one of these ids, exact match):
 ${vocab}
@@ -420,7 +428,7 @@ For each genuine promise return an object with EXACTLY these fields:
       "vote" — promises to cast a specific vote or class of votes
       "introduce_bill" — promises to introduce or cosponsor legislation
       "oversight" — promises of investigation, hearings, or oversight action
-      "funding" — promises to secure, protect, or cut specific funding
+      "funding" — promises to secure, protect, or cut specific FEDERAL funding (appropriations — never campaign money)
       "outcome" — promises a RESULT (repeal X, pass Y, get Z built) rather than the candidate's own act
   - "conditions_deadline": explicit conditions or deadlines stated with the promise (e.g. "if the bill reaches the floor", "in my first 100 days"), else null — null means the default window, the term of office being sought.
 
