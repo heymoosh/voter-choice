@@ -87,8 +87,13 @@ const EXTRACTION_MODEL = "claude-sonnet-5";
 
 export const EXTRACTION_MODEL_VERSION = `${EXTRACTOR_VERSION}+${EXTRACTION_MODEL}`;
 
-/** Promise extraction can legitimately return many promises per page. */
-const MAX_TOKENS = 4096;
+/**
+ * Promise extraction can legitimately return many promises per page. 8192
+ * (up from 4096) after the first write run truncated a dense issue page
+ * mid-array — truncation shows up as malformed JSON, and no retry can fix a
+ * budget that is simply too small.
+ */
+const MAX_TOKENS = 8192;
 
 /** Truncate page text so prompts stay bounded (campaign pages are short). */
 export const MAX_PAGE_CHARS = 30_000;
@@ -667,31 +672,63 @@ interface RunStats {
   outputTokens: number;
 }
 
+/**
+ * A response is retryable when it is not a parseable JSON array at all —
+ * model-side format nondeterminism (truncation, stray prose), not a content
+ * judgment. Distinct from per-entry validation drops, which never retry.
+ * (2026-08-12 first write run: two of Hale's issue pages returned
+ * malformed_json/response_not_array and his promises silently became zero,
+ * while the dry-run minutes earlier had extracted both.)
+ */
+export function isParseableArray(rawJson: string): boolean {
+  const fenceMatch = rawJson.match(/```(?:json)?\s*([\s\S]*?)```/u);
+  const cleaned = fenceMatch ? fenceMatch[1].trim() : rawJson.trim();
+  try {
+    return Array.isArray(JSON.parse(cleaned));
+  } catch {
+    return false;
+  }
+}
+
+/** One format-retry per page, on top of the SDK's own transport retries. */
+const MAX_FORMAT_RETRIES = 1;
+
 async function extractPromisesForPage(
   anthropic: Anthropic,
   systemPrompt: string,
   ctx: PageContext,
   stats: RunStats,
 ): Promise<ValidatedPromise[]> {
-  const response = await anthropic.messages.create({
-    model: EXTRACTION_MODEL,
-    max_tokens: MAX_TOKENS,
-    system: [
-      {
-        type: "text" as const,
-        text: systemPrompt,
-        cache_control: { type: "ephemeral" as const },
-      },
-    ],
-    messages: [{ role: "user", content: buildPagePrompt(ctx) }],
-  });
+  let rawText = "[]";
+  for (let attempt = 0; attempt <= MAX_FORMAT_RETRIES; attempt++) {
+    const response = await anthropic.messages.create({
+      model: EXTRACTION_MODEL,
+      max_tokens: MAX_TOKENS,
+      system: [
+        {
+          type: "text" as const,
+          text: systemPrompt,
+          cache_control: { type: "ephemeral" as const },
+        },
+      ],
+      messages: [{ role: "user", content: buildPagePrompt(ctx) }],
+    });
 
-  stats.inputTokens += response.usage?.input_tokens ?? 0;
-  stats.cachedTokens += response.usage?.cache_read_input_tokens ?? 0;
-  stats.outputTokens += response.usage?.output_tokens ?? 0;
+    stats.inputTokens += response.usage?.input_tokens ?? 0;
+    stats.cachedTokens += response.usage?.cache_read_input_tokens ?? 0;
+    stats.outputTokens += response.usage?.output_tokens ?? 0;
 
-  const textBlock = response.content.find((b) => b.type === "text");
-  const rawText = textBlock?.type === "text" ? textBlock.text.trim() : "[]";
+    const textBlock = response.content.find((b) => b.type === "text");
+    rawText = textBlock?.type === "text" ? textBlock.text.trim() : "[]";
+
+    if (isParseableArray(rawText)) break;
+    if (attempt < MAX_FORMAT_RETRIES) {
+      process.stderr.write(
+        `[promise-extract] format_retry page=${ctx.pageUrl} ` +
+          `stop_reason=${response.stop_reason ?? "?"} attempt=${attempt + 1}/${MAX_FORMAT_RETRIES + 1}\n`,
+      );
+    }
+  }
 
   // Validate against the SAME truncated text the model saw, so the verbatim
   // gate can never reject a quote for appearing beyond the truncation point.
