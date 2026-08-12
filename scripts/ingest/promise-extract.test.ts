@@ -22,6 +22,7 @@ import {
   computePromiseId,
   quoteAppearsInSource,
   parseAndValidatePromises,
+  isParseableArray,
   dedupeByNormalizedText,
   buildExtractionSystemPrompt,
   EXTRACTION_MODEL_VERSION,
@@ -449,6 +450,21 @@ describe("parseAndValidatePromises", () => {
       parseAndValidatePromises('{"promises": []}', PAGE_TEXT, "test"),
     ).toEqual([]);
     expect(parseAndValidatePromises("not json", PAGE_TEXT, "test")).toEqual([]);
+  });
+});
+
+describe("isParseableArray", () => {
+  it("accepts a bare JSON array and a fenced one", () => {
+    expect(isParseableArray("[]")).toBe(true);
+    expect(isParseableArray('[{"a":1}]')).toBe(true);
+    expect(isParseableArray('```json\n[{"a":1}]\n```')).toBe(true);
+  });
+
+  it("rejects truncated JSON, objects, and prose — the retry triggers", () => {
+    expect(isParseableArray('[{"promise_text": "I will')).toBe(false);
+    expect(isParseableArray('{"promises": []}')).toBe(false);
+    expect(isParseableArray("The page contains no promises.")).toBe(false);
+    expect(isParseableArray("")).toBe(false);
   });
 });
 
