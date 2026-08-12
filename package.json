@@ -48,7 +48,7 @@
     "verify:i11-congressional-source-inventory": "npx tsx scripts/verify-i11-congressional-source-inventory.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "0.39.0",
+    "@anthropic-ai/sdk": "0.116.0",
     "@aws-sdk/client-textract": "3.1093.0",
     "@googlemaps/js-api-loader": "2.1.1",
     "@napi-rs/canvas": "1.0.2",
