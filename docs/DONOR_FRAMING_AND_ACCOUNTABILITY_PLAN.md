@@ -1059,6 +1059,24 @@ Muxin to run it. After the corpus is in: linking (`issue_tags` join → `promise
 the adjudicator with external calibration + the gold-set process (rubric §6). Everything
 stays invisible to users until `PROMISE_TRACKER_ENABLED` plus the ship gate.
 
+**Linking pipeline built 2026-08-12, same session** (`scripts/ingest/promise-link.ts` —
+stage 2 of extract → link → adjudicate). The issue-tag join is deterministic as planned
+(candidate's votes and (co)sponsorships on bills carrying the promise's `canonical_issue`;
+YEA takes the bill's `stance_lens` side, NAY flips it, a name on a bill takes the bill's
+side; present/absent/not_voting are never directional evidence). One input the plan's
+"deterministic join" phrasing glossed over: `direction` (toward/against) needs the
+**promise's own side** of the pole axis, which lives in its text — resolved with a bounded
+Haiku classification per promise against the SAME `renderTaggerPoleBlock()` vocabulary the
+bill tagger consumes (the two cannot drift), with **"unclear" → zero links + logged for
+human review** (rubric §5's no-guessing rule applied at the linking layer). Full provenance
+in `link_method` (`issue_tag_join+promise-pole-v1+<model>`). Evidence level is deliberately
+conservative: every linker row is `activity`, the lowest rung — advancement/outcome upgrades
+require per-action bill-status proof and belong to a future enrichment pass; under-labeling
+only makes verdicts more cautious. Zero linked actions is the expected, honest state for
+challengers (no official record → `not_yet_testable` territory). Run after extraction:
+`npx tsx --env-file=.env.local scripts/ingest/promise-link.ts --dry-run`, then without the
+flag. Remaining stage: the adjudicator (rubric §4-§6, external calibration + gold set).
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
