@@ -1024,6 +1024,21 @@ now goes to Muxin for threshold sign-off (κ ≥ 0.70, ≥ 90% gold agreement, z
 polarity flips — proposed, not settled) and the second-annotator pick. Migration 0021 (step 4)
 remains gated behind that review, shaped by the findings above.
 
+**Steps 3–4 executed 2026-08-12.** Rubric signed off at 1.0.0 (thresholds ship as initial
+defaults, revisable pre-gold-pass; second annotator: Muxin's husband, differing-politics
+criterion deferred with a third-spot-check mitigation recorded — see the rubric change log).
+Migration 0021 (`candidate_promises` / `promise_actions` / `promise_verdicts`) written per
+this Part's spec with idempotency built in (deterministic extractor-computed promise PK;
+`NULLS NOT DISTINCT` link unique). Two decisions recorded from Muxin, same date: **(1) no
+paid licensing for any promise-venue source** — free/public-record routes only; **(2) the
+small-candidate coverage gap (the 32% `unresolved` bucket, mostly no-FEC independents) stays
+on the roadmap as post-pilot venue expansion, not a pilot blocker**: free-terms inquiries to
+Project Vote Smart and Ballotpedia, state voter-guide candidate statements where they exist
+(official, license-free — though not TX), and state-filing website fields, in that order,
+with a one-day coverage check of the unresolved names against whichever source answers
+first. Next engineering after 0021 merges: the extraction pipeline (step 0 of the plan's
+extract → link → adjudicate sequence) over the 58 corpus-ready TX captures.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
