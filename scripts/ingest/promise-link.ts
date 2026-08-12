@@ -286,13 +286,15 @@ async function fetchPromises(
   promiseIds: string[],
   limit: number,
 ): Promise<PromiseRow[]> {
+  // IN ${array}, not ANY(${array}): drizzle's sql template expands a JS
+  // array to a parenthesized tuple, which only parses after IN.
   const rows =
     promiseIds.length > 0
       ? await db.execute(sql`
           SELECT id, candidate_id, canonical_issue, promise_text,
                  promise_type, conditions_deadline
           FROM candidate_promises
-          WHERE id = ANY(${promiseIds})
+          WHERE id IN ${promiseIds}
         `)
       : await db.execute(sql`
           SELECT id, candidate_id, canonical_issue, promise_text,
