@@ -292,6 +292,20 @@ describe("resolveCandidateId", () => {
     expect(result).toBe("fed-michael-kelly");
   });
 
+  // From the 2026-08-12 resolver miss report: CA-45 "Tom Vo" refused between
+  // "Thomas Ky-Phong Vo" and "Chuong Vo" because tom/thomas shares neither a
+  // prefix nor a 3-char stem — the curated same-initial list exists for
+  // exactly this. Chuong is excluded by initial; Thomas must win the tie.
+  it("still breaks same-surname ambiguity for the curated tom ↔ thomas pair", async () => {
+    const { select } = makeSelectMock([
+      { id: "fec-thomas-vo", fullName: "Thomas Ky-Phong Vo", state: "CA" },
+      { id: "fec-chuong-vo", fullName: "Chuong Vo", state: "CA" },
+    ]);
+    mockedGetDb.mockReturnValue({ select } as never);
+    const result = await resolveCandidateId("Tom Vo", "federal-house", "CA");
+    expect(result).toBe("fec-thomas-vo");
+  });
+
   it("still breaks same-surname ambiguity on a true bare initial (V. Williams)", async () => {
     const { select } = makeSelectMock([
       { id: "fec-veronica", fullName: "VERONICA WILLIAMS", state: "TX" },

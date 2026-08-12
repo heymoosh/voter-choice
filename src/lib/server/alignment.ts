@@ -354,6 +354,8 @@ const SAME_INITIAL_DIMINUTIVES: [string, string][] = [
   ["jack", "john"],
   ["jim", "james"],
   ["jimmy", "james"],
+  ["tom", "thomas"],
+  ["tommy", "thomas"],
   ["mike", "michael"],
   ["hank", "henry"],
   ["rick", "richard"],
