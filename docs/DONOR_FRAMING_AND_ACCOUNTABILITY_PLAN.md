@@ -1039,6 +1039,26 @@ with a one-day coverage check of the unresolved names against whichever source a
 first. Next engineering after 0021 merges: the extraction pipeline (step 0 of the plan's
 extract → link → adjudicate sequence) over the 58 corpus-ready TX captures.
 
+**Extraction pipeline built 2026-08-12** (`scripts/ingest/promise-extract.ts`; 0021 applied
+to prod the same day). Consumes the spike's `--json` output as its corpus manifest, fetches
+each candidate's exact canonical capture plus a bounded set of same-site issue pages replayed
+at the same timestamp (`archive_url` records the exact capture Wayback actually served, after
+its own redirects), and extracts with Claude (claude-sonnet-5 — accuracy over cost on a
+58-candidate corpus, since a mistake here is a false attribution) against the rubric's §1
+four-gate test with the declared-test fields (`promise_type`, `conditions_deadline`) required
+per promise. Two hard rails beyond the prompt: **a post-hoc verbatim gate drops any extraction
+whose quote does not literally appear in the fetched page text** (the anti-hallucination /
+no-false-attribution rule made mechanical), and the deterministic PK contract from the 0021
+comment is implemented as specced (sha-256 over candidate_id + archive_url + normalized text),
+so re-runs upsert instead of duplicating. Operational posture inherited from the spike:
+fail-soft fetch, `--concurrency 1` default, resumable (already-extracted candidates skipped
+per `extraction_model_version`; targeted-only `--force`). Run order from a dev machine:
+spike `--json > spike-tx.json` → `promise-extract.ts --corpus spike-tx.json --dry-run` (read
+the would-upsert lines) → same command without `--dry-run`. NOT yet run — writes wait for
+Muxin to run it. After the corpus is in: linking (`issue_tags` join → `promise_actions`) and
+the adjudicator with external calibration + the gold-set process (rubric §6). Everything
+stays invisible to users until `PROMISE_TRACKER_ENABLED` plus the ship gate.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
