@@ -815,11 +815,14 @@ async function fetchAlreadyExtracted(
   candidateIds: string[],
 ): Promise<Set<string>> {
   if (candidateIds.length === 0) return new Set();
+  // Drizzle's sql template expands a JS array to a parenthesized parameter
+  // tuple "($1, $2, …)" — valid after IN, invalid inside ANY() (2026-08-12
+  // first-run lesson: ANY(${arr}) rendered ANY(($2,…)) and failed).
   const rows = await db.execute(sql`
     SELECT DISTINCT candidate_id
     FROM candidate_promises
     WHERE extraction_model_version = ${EXTRACTION_MODEL_VERSION}
-      AND candidate_id = ANY(${candidateIds})
+      AND candidate_id IN ${candidateIds}
   `);
   return new Set(
     (rows.rows as { candidate_id: string }[]).map((r) => r.candidate_id),
@@ -950,9 +953,27 @@ async function main(): Promise<void> {
     process.exit(1);
   }
 
-  let corpus = loadCorpusRows(
-    JSON.parse(readFileSync(corpusPath, "utf8")) as unknown,
-  );
+  const rawCorpus = readFileSync(corpusPath, "utf8");
+  if (rawCorpus.trim().length === 0) {
+    // The spike writes its --json payload in one shot at the END of its run;
+    // a zero-byte file means the spike is still running or was interrupted.
+    process.stderr.write(
+      `[promise-extract] ${corpusPath} is empty — the spike writes its JSON only when it finishes. ` +
+        "Let the spike run to completion (the bucket table prints last), then re-run.\n",
+    );
+    process.exit(1);
+  }
+  let corpusPayload: unknown;
+  try {
+    corpusPayload = JSON.parse(rawCorpus) as unknown;
+  } catch {
+    process.stderr.write(
+      `[promise-extract] ${corpusPath} is not valid JSON — was the spike interrupted mid-write, ` +
+        "or was --json omitted from the spike command?\n",
+    );
+    process.exit(1);
+  }
+  let corpus = loadCorpusRows(corpusPayload);
   if (candidateFilter.size > 0) {
     corpus = corpus.filter((r) => candidateFilter.has(r.candidateId));
   }

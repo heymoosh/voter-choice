@@ -42,7 +42,7 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import Anthropic from "@anthropic-ai/sdk";
-import { sql, notInArray, eq } from "drizzle-orm";
+import { sql, eq } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, issueTags } from "../../db/schema";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
@@ -435,7 +435,7 @@ export async function fetchBillsByIds(
   const rows = await db.execute(sql`
     SELECT b.id, b.title, b.summary, b.jurisdiction
     FROM bills b
-    WHERE b.id = ANY(${ids})
+    WHERE b.id IN ${ids}
   `);
   return rows.rows as BillRow[];
 }
