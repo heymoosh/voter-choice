@@ -1,20 +1,19 @@
 # Promise adjudication rubric
 
-> **Version: 0.1.0-draft** — NOT signed off. This draft exists so Muxin and the
-> second annotator have a concrete text to argue with, not a blank page. No
-> verdict may ship to production under a `-draft` version.
+> **Version: 1.0.0** — signed off by Muxin 2026-08-12 ("get everything else
+> out"): the proposed ship-gate numbers ship as the initial defaults, revisable
+> before the first gold pass (revising them is a MINOR bump per the rule
+> below, cheap while no verdict has shipped).
 >
 > Parent plan: `docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md` Part 5. The
-> verdict enum below was signed off 2026-07-23; everything else in this file is
-> proposed.
+> verdict enum was signed off 2026-07-23.
 >
 > **Versioning rule:** semver, recorded verbatim in
 > `promise_verdicts.adjudicator_version` beside the model identifier (e.g.
 > `rubric-0.1.0+modelrev`). Any change to a verdict definition, the evidence
 > ladder, or the extraction gate is a MINOR bump and invalidates prior
 > verdicts (they revert to `not_yet_rated` until re-adjudicated); wording
-> clarifications that cannot change a verdict are PATCH bumps. Signing off
-> this draft makes it `1.0.0`.
+> clarifications that cannot change a verdict are PATCH bumps.
 
 ## Who applies this rubric
 
@@ -22,7 +21,7 @@ The **adjudicator** is an LLM. It is **not the judge — it is an evidence
 assembler applying this published rubric**. The rubric is the editorial
 judgment we own; the model executes it, shows its work, and **flags ambiguous
 cases for human review instead of forcing a verdict**. The **annotators** are
-the humans (Muxin plus a second annotator, ideally of differing politics) who
+the humans (Muxin plus her husband — see §6.2 for the composition note) who
 hand-label the gold set the adjudicator is graded against (§6).
 
 ---
@@ -32,7 +31,7 @@ hand-label the gold set the adjudicator is graded against (§6).
 A statement enters `candidate_promises` only if **all four** hold at
 extraction time:
 
-1. **Committed actor.** The candidate commits *themself* ("I will vote
+1. **Committed actor.** The candidate commits _themself_ ("I will vote
    against…", "I'll introduce…"), not their party, not "Washington", not "we
    as a nation".
 2. **Falsifiable action.** A concrete act a member of Congress can take, not
@@ -79,7 +78,7 @@ by chamber and office:
 The mirror-image rule, both directions enforced:
 
 - **Never credit an outcome they didn't drive.** Introducing a bill similar
-  to a law that later passed is *Activity*, not authorship of the outcome
+  to a law that later passed is _Activity_, not authorship of the outcome
   (agenda-setting is attributed separately from outcome).
 - **Never blame an outcome they couldn't control.** Other institutions
   stopping a genuinely attempted action is `attempted_blocked`, not `broken`.
@@ -89,11 +88,11 @@ The mirror-image rule, both directions enforced:
 Every `promise_actions` row is labeled with the **highest** rung the official
 record actually supports, and a verdict may only cite that rung:
 
-| Label           | What the record shows                                                                  | Our sources                                    |
-| --------------- | -------------------------------------------------------------------------------------- | ---------------------------------------------- |
-| **Activity**    | Introduced / cosponsored / offered an amendment / cast a vote                           | `bills`, `bill_cosponsors`, `votes`            |
-| **Advancement** | Committee action, markup, amendment adopted, floor consideration                        | `committee_memberships` + Congress.gov actions |
-| **Outcome**     | Provision in enacted law, or the promised vote actually cast on final passage           | enacted-law status on `bills`, `votes`         |
+| Label           | What the record shows                                                         | Our sources                                    |
+| --------------- | ----------------------------------------------------------------------------- | ---------------------------------------------- |
+| **Activity**    | Introduced / cosponsored / offered an amendment / cast a vote                 | `bills`, `bill_cosponsors`, `votes`            |
+| **Advancement** | Committee action, markup, amendment adopted, floor consideration              | `committee_memberships` + Congress.gov actions |
+| **Outcome**     | Provision in enacted law, or the promised vote actually cast on final passage | enacted-law status on `bills`, `votes`         |
 
 Admissible evidence is the **official record** (votes, bill status,
 cosponsorship, committee actions, enacted law) plus the member's own archived
@@ -116,7 +115,7 @@ Apply the first rule that matches, in this order:
 2. **`kept`** — the pre-declared controllable action occurred, in the
    promised direction, inside the window, at the evidence rung the promise
    type requires (`vote`/`introduce_bill`: Activity is sufficient because the
-   act *is* the promise; `outcome`: requires Outcome).
+   act _is_ the promise; `outcome`: requires Outcome).
 3. **`attempted_blocked`** — the member took the promised controllable action
    (Activity, and Advancement where available), but other institutions
    stopped the outcome: the bill died in the other chamber, was vetoed,
@@ -170,21 +169,28 @@ tag:
    adjudicator against a sample of professionally hand-labeled promise
    verdicts — PolitiFact's presidential meters and the academic
    Polimeter/Poltext corpora — mapping their scales onto our enum. This
-   calibrates the *method* (they cover presidents/governments, not members of
+   calibrates the _method_ (they cover presidents/governments, not members of
    Congress) and shrinks the gold set we must label; it does not replace it.
    PolitiFact labels are Poynter's copyrighted editorial content: internal
    scoring with citation only, never republished.
-2. **Two annotators.** Muxin plus one person whose politics differ, labeling
-   independently against this rubric.
+2. **Two annotators.** Muxin plus her husband (chosen 2026-08-12), labeling
+   independently against this rubric. The original "ideally of differing
+   politics" criterion is consciously deferred, not dropped (Muxin:
+   "yes agree but let's get this out first, finesse it later") — the known
+   mitigation is a third spot-check annotator on a gold-set sample before
+   the ledger faces outside scrutiny, and same-household annotators make
+   the independent-labeling rule below load-bearing: no discussing a case
+   until both labels are recorded.
 3. **Agreement reported.** Inter-annotator agreement (Cohen's κ) published
    beside the oracle score. **Where the two humans disagree, the promise is a
    genuinely contested case and goes to `not_yet_rated` — it does not enter
    the gold set.**
-4. **Ship gate (proposed numbers — confirm at sign-off):** no verdict ships
-   until, on the pilot state's gold set, κ ≥ 0.70 on the human pair AND the
-   adjudicator matches the agreed human label on ≥ 90% of gold cases with
-   zero `kept`↔`broken` polarity flips. Behind `PROMISE_TRACKER_ENABLED`
-   until Muxin signs off regardless of scores.
+4. **Ship gate (initial defaults, confirmed 2026-08-12; revisable before the
+   first gold pass):** no verdict ships until, on the pilot state's gold set,
+   κ ≥ 0.70 on the human pair AND the adjudicator matches the agreed human
+   label on ≥ 90% of gold cases with zero `kept`↔`broken` polarity flips.
+   Behind `PROMISE_TRACKER_ENABLED` until Muxin signs off regardless of
+   scores.
 
 ## 7 · Display rules (summarized here; UI owns the copy)
 
@@ -197,6 +203,13 @@ tag:
 
 ## Change log
 
+- **1.0.0** (2026-08-12) — signed off by Muxin ("get everything else out"):
+  ship-gate numbers confirmed as initial defaults (revisable pre-gold-pass);
+  second annotator named (her husband; differing-politics criterion deferred
+  with the third-spot-check mitigation recorded). Constraint recorded from
+  the same exchange: **no paid licensing** for any promise-venue source —
+  free/public-record routes only (state voter guides, state filings, and
+  Ballotpedia/Vote Smart only under free terms).
 - **0.1.0-draft** (2026-07-25) — initial draft for Muxin + second annotator
   review. Encodes the Part 5 plan requirements: signed-off verdict enum,
   controllable-action unit, declare-test-at-extraction,

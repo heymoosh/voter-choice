@@ -1168,3 +1168,146 @@ export const rosterFeedback = pgTable(
     index("roster_feedback_state_idx").on(t.state),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Part 5 promise ledger — what candidates promised, and whether they kept it.
+// Three tables: candidate_promises (extracted, test declared up front),
+// promise_actions (deterministic links to the official record), and
+// promise_verdicts (rubric-governed adjudication). Column-by-column spec in
+// docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md Part 5; judging criteria in
+// docs/PROMISE_ADJUDICATION_RUBRIC.md, whose version string is what
+// promise_verdicts.adjudicator_version pairs with.
+// See db/migrations/0021_add_candidate_promises.sql.
+// ---------------------------------------------------------------------------
+export const candidatePromises = pgTable(
+  "candidate_promises",
+  {
+    // DETERMINISTIC id computed by the extractor (hash over candidate_id +
+    // archive_url + normalized promise text) — re-running extraction upserts
+    // on the PK instead of duplicating rows (the 0015/0016 roster lesson).
+    id: text("id").primaryKey(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    // Joins to canonical issue ids in src/lib/canonicalIssues.ts — the same
+    // vocabulary issue_tags carries, which is what makes promise→action
+    // linking a deterministic join rather than a fuzzy match.
+    canonicalIssue: text("canonical_issue").notNull(),
+    // Optional topic facet beneath canonical_issue, same facet vocabulary as
+    // issue_tags.sub_issue.
+    subIssue: text("sub_issue"),
+    // Verbatim promise text as extracted from the capture. Never paraphrased
+    // at storage time — paraphrase is presentation-layer.
+    promiseText: text("promise_text").notNull(),
+    // When the promise was made — the capture date for campaign-site
+    // promises; null when the source carries no usable date.
+    madeAt: date("made_at"),
+    // "campaign_site" | "ad" | "press_release" | "questionnaire" | "debate"
+    venue: text("venue").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    // The EXACT Wayback capture the promise was extracted from (canonical-
+    // capture policy: last capture at or before election day). Required for
+    // campaign_site promises — without it verdicts are unreproducible.
+    // Nullable because press_release/questionnaire venues may cite stable
+    // primary sources instead.
+    archiveUrl: text("archive_url"),
+    extractionModelVersion: text("extraction_model_version").notNull(),
+    // THE DECLARED TEST, written at extraction before any outcome is known
+    // (the core anti-bias rule): "vote" | "introduce_bill" | "oversight" |
+    // "funding" | "outcome".
+    promiseType: text("promise_type").notNull(),
+    // Free-text conditions and deadline of the declared test (e.g. "votes NO
+    // on any bill expanding X during the 120th Congress"). Null only when
+    // the promise type carries an unambiguous default window.
+    conditionsDeadline: text("conditions_deadline"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("candidate_promises_candidate_idx").on(t.candidateId),
+    index("candidate_promises_issue_idx").on(t.canonicalIssue, t.subIssue),
+  ],
+);
+
+export const promiseActions = pgTable(
+  "promise_actions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    promiseId: text("promise_id")
+      .notNull()
+      .references(() => candidatePromises.id),
+    // "vote" | "sponsorship" | "cosponsorship" | "amendment" |
+    // "committee_action"
+    actionType: text("action_type").notNull(),
+    // Exactly one of the three refs below is set, per action_type: vote →
+    // vote_id; sponsorship/cosponsorship → cosponsor_id (bill_id also set
+    // for convenience); amendment/committee_action → bill_id.
+    voteId: uuid("vote_id").references(() => votes.id),
+    billId: text("bill_id").references(() => bills.id),
+    cosponsorId: uuid("cosponsor_id").references(() => billCosponsors.id),
+    // "toward" | "against" — whether this action moves toward keeping the
+    // promise or against it, resolved through issue_tags.stance_lens.
+    direction: text("direction").notNull(),
+    // Three-label evidence standard, lowest to highest: "activity"
+    // (introduced/cosponsored/offered) | "advancement" (committee action,
+    // markup, adopted amendment, floor consideration) | "outcome" (provision
+    // in enacted law). A verdict may only cite the highest label the
+    // official record actually supports — never credit agenda-setting as
+    // outcome.
+    evidenceLevel: text("evidence_level").notNull(),
+    // How the link was made. "issue_tag_join" (deterministic, the default)
+    // now; other methods must name themselves so provenance stays auditable.
+    linkMethod: text("link_method").notNull().default("issue_tag_join"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // NULLS NOT DISTINCT so re-running the linker is idempotent even though
+    // two of the three ref columns are null on every row (the 0016 lesson —
+    // a nulls-distinct unique never fires for partially-null keys).
+    unique("promise_actions_link_uidx")
+      .on(t.promiseId, t.actionType, t.voteId, t.billId, t.cosponsorId)
+      .nullsNotDistinct(),
+    index("promise_actions_promise_idx").on(t.promiseId),
+  ],
+);
+
+export const promiseVerdicts = pgTable(
+  "promise_verdicts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    promiseId: text("promise_id")
+      .notNull()
+      .references(() => candidatePromises.id),
+    // Signed off by Muxin 2026-07-23: "kept" | "attempted_blocked" |
+    // "compromise" | "broken" | "not_yet_testable" | "not_yet_rated".
+    // attempted_blocked = took the promised controllable action, other
+    // institutions stopped the outcome. not_yet_testable = a real
+    // adjudication (no relevant vote/deadline has occurred). not_yet_rated =
+    // not yet adjudicated, or contested (human annotators disagreed). The
+    // unit of evaluation is the action the member plausibly controlled —
+    // never credit an outcome they didn't drive, never blame an outcome they
+    // couldn't control.
+    verdict: text("verdict").notNull(),
+    rationale: text("rationale").notNull(),
+    // Array of promise_actions ids (and optional free-form citations) the
+    // verdict cites — every verdict must show its evidence inline.
+    evidenceRefs: jsonb("evidence_refs"),
+    // Pairs with the version string of docs/PROMISE_ADJUDICATION_RUBRIC.md
+    // the adjudicator executed. Re-adjudication under a NEW rubric version
+    // inserts a new row (history preserved); same version upserts.
+    adjudicatorVersion: text("adjudicator_version").notNull(),
+    adjudicatedAt: timestamp("adjudicated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("promise_verdicts_promise_version_uidx").on(
+      t.promiseId,
+      t.adjudicatorVersion,
+    ),
+    index("promise_verdicts_promise_idx").on(t.promiseId),
+  ],
+);
