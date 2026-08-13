@@ -63,6 +63,13 @@ Entries for deleted files fail the gate too; remove them in the same PR.
   both the seat card and the duel money columns; honest-null (renders
   nothing without scorable PAC data), so it couldn't live inside
   FundingSources (which gates on the full funding breakdown instead).
+- `OutsideSpending.tsx` — the "Outside spending about this race" block
+  (Part 6b): independent expenditures for/against as two never-summed
+  figures in a separately-bordered container with its own legal explainer.
+  Deliberately NOT inside FundingSources or the money expander — the
+  campaign-finance-law display rule requires this money never mingle with
+  candidate receipts, so a variant of an existing money component would be
+  the exact misstatement the isolation test forbids.
 - `PolisClose.tsx` — the "where you stand" standing report (party-free
   consensus/divided panels).
 - `PolisEntry.tsx` — polis invite/preview interstitial between workspace
@@ -80,3 +87,9 @@ Entries for deleted files fail the gate too; remove them in the same PR.
 - `ScorecardPrintView.tsx` — the print/export sheet of all seats + verdicts.
 - `SeatChat.tsx` — per-seat "ask anything about this seat" support chat under
   the RepCard.
+- `TopPacSponsors.tsx` — the "Top PACs and sponsors" breakdown (Part 6a):
+  names the committees inside the funding mix's "PACs" slice with filed
+  sponsor, sector, and evidence link. Lives beside FundingSources rather
+  than inside it because it is per-committee curated data (auto/verified/
+  rejected) with its own empty state, not a slice of the mix percentages
+  FundingSources renders.
