@@ -1488,6 +1488,34 @@ since the ingest reuses the siblings' `loadFederalCandidateMapWithFundingMix`, s
 aimed at a candidate with no funding-mix row is currently reported as an unresolved miss
 rather than stored.
 
+**6b — first `--dry-run` (Muxin's machine, 2026-08-13, cycle 2026): SUCCEEDED.** Both
+build-time assumptions resolved: the URL needed the `<cycle>/` directory (404'd loudly,
+fixed same day), and the header check passed — all seven columns resolved by name from the
+live file. Numbers: 13,398 Schedule E rows scanned, 12,054 parsed, 794 superseded
+amendments dropped, 9 unmapped `SUP_OPP`; 9,245 rows matched → 1,330 aggregate rows across
+452 spenders (0 missing from the committee master): **support $441.3M / 961 rows, oppose
+$242.7M / 369 rows** — reported apart, per the rule. Real 2026 shapes visible: the top
+oppose spender is a Cornyn-affiliated super PAC ($25.0M against fec-S6TX00388), UDP and
+Fairshake both present. Findings out of the run, and what changed because of them:
+
+1. **A $17.0B row** aimed at fec_id H6FL11274 — a filing error (the whole file's matched
+   total is ~$684M). Filings are evidence, not infallible evidence: the ingest now
+   QUARANTINES any single row over $50M (`SUSPECT_AMOUNT_CEILING`) — counted, logged with
+   its file number for fec.gov verification, excluded from every aggregate including the
+   unresolved-miss tallies; supersession still wins over quarantine.
+2. **2,015 unresolved-candidate rows.** Expected classes visible in the top misses:
+   presidential committees (`P*` fec ids — out of scope for a congressional ledger) and
+   congressional candidates with no funding-mix row (e.g. fec_id S6MI00418 at $23.2M —
+   likely a primary-phase or since-departed candidacy). The scoping decision above is now
+   live with real dollar amounts attached.
+3. **Sector is (unclassified) for essentially every top spender** — correct, not a bug:
+   super PACs are non-connected committees, so `CONNECTED_ORG` is usually empty. Where a
+   sponsor IS filed it is often another political committee ("CORNYN VICTORY COMMITTEE",
+   "CASSIDY LEADERSHIP FUND"), which the sector vocabulary rightly never maps to an
+   industry. Consequence for the UI block: outside spending is presented by SPENDER NAME
+   and filed sponsor, with sector shown only when it exists; the hand-curation workflow
+   (`status=verified`) is the path to naming who is behind the big ones.
+
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
 - _Who funds the super PAC_ (its own Schedule A receipts, incl. corporate donors) is a third,

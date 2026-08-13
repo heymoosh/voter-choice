@@ -13,6 +13,7 @@ import {
   IE_COLUMN_ALIASES,
   REQUIRED_IE_COLUMNS,
   SUPPORT_OPPOSE_VALUES,
+  SUSPECT_AMOUNT_CEILING,
   aggregateIeRows,
   buildIeRows,
   buildSpenderCommitteeRows,
@@ -344,6 +345,51 @@ describe("aggregateIeRows", () => {
         ]),
       ].sort(),
     ).toEqual(["111", "222"]);
+  });
+
+  it("quarantines absurd amounts out of every aggregate — the $17B filing-error case", () => {
+    const result = aggregateIeRows(
+      [
+        // The real shape from Muxin's first 2026 dry-run: a bogus multi-billion
+        // row aimed at a candidate we don't resolve.
+        ieRow({
+          amount: 17_001_000_000,
+          candidateFecId: "H9ZZ99999",
+          fileNumber: "333",
+        }),
+        // A bogus row on a RESOLVED candidate must be kept out of the stored
+        // totals too.
+        ieRow({ amount: SUSPECT_AMOUNT_CEILING + 1, fileNumber: "444" }),
+        // At the ceiling exactly is still trusted.
+        ieRow({ amount: SUSPECT_AMOUNT_CEILING }),
+      ],
+      candidateByFecId,
+    );
+    expect(result.suspectRows.map((r) => r.fileNumber)).toEqual(["333", "444"]);
+    // Neither the pairs nor the unresolved-miss tallies see the bogus rows.
+    expect(result.matchedRows).toBe(1);
+    expect(result.unresolvedCandidateRows).toBe(0);
+    expect(result.unresolvedAmountByFecId.size).toBe(0);
+    expect(
+      result.pairs.get(ieKey("C00100001", "fec-H0TX01000", "support"))
+        ?.amountTotal,
+    ).toBe(SUSPECT_AMOUNT_CEILING);
+  });
+
+  it("supersession beats quarantine — an amended bogus filing counts as superseded", () => {
+    const result = aggregateIeRows(
+      [
+        ieRow({ amount: 17_001_000_000, fileNumber: "111" }),
+        ieRow({ amount: 2000, fileNumber: "222", previousFileNumber: "111" }),
+      ],
+      candidateByFecId,
+    );
+    expect(result.supersededRowsDropped).toBe(1);
+    expect(result.suspectRows).toEqual([]);
+    expect(
+      result.pairs.get(ieKey("C00100001", "fec-H0TX01000", "support"))
+        ?.amountTotal,
+    ).toBe(2000);
   });
 });
 

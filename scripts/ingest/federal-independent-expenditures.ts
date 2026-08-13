@@ -365,6 +365,18 @@ export function ieKey(
   return `${committeeId}|${candidateId}|${supportOppose}`;
 }
 
+/**
+ * Single-row amount ceiling. The largest genuine itemized Schedule E filings
+ * run single-digit millions; Muxin's first 2026 dry-run surfaced a row
+ * carrying $17,001,000,000 aimed at one House candidate — in a file whose
+ * entire matched total was ~$684M — i.e. an FEC filing error. Filings are
+ * evidence, but not infallible evidence: rows above this ceiling are
+ * quarantined — counted, logged with their file number so they can be checked
+ * on fec.gov, and excluded from every aggregate (including the
+ * unresolved-candidate miss tallies) — never silently trusted into a total.
+ */
+export const SUSPECT_AMOUNT_CEILING = 50_000_000;
+
 /** File numbers superseded by an amendment (some row's PREV_FILE_NUM). */
 export function supersededFileNumbers(
   rows: readonly IeExpenditureRow[],
@@ -383,6 +395,8 @@ export interface IeAggregationResult {
   unresolvedCandidateRows: number;
   /** FEC candidate id → IE dollars we could not attribute to any candidate. */
   unresolvedAmountByFecId: Map<string, number>;
+  /** Rows over SUSPECT_AMOUNT_CEILING — quarantined for human verification. */
+  suspectRows: IeExpenditureRow[];
 }
 
 /**
@@ -401,10 +415,17 @@ export function aggregateIeRows(
   let supersededRowsDropped = 0;
   let unresolvedCandidateRows = 0;
   const unresolvedAmountByFecId = new Map<string, number>();
+  const suspectRows: IeExpenditureRow[] = [];
 
   for (const row of rows) {
     if (row.fileNumber && superseded.has(row.fileNumber)) {
       supersededRowsDropped += 1;
+      continue;
+    }
+    // Quarantine before resolution so a bogus amount cannot pollute either
+    // the stored totals or the unresolved-miss report.
+    if (row.amount > SUSPECT_AMOUNT_CEILING) {
+      suspectRows.push(row);
       continue;
     }
     const candidateId = candidateByFecId.get(row.candidateFecId);
@@ -436,6 +457,7 @@ export function aggregateIeRows(
     supersededRowsDropped,
     unresolvedCandidateRows,
     unresolvedAmountByFecId,
+    suspectRows,
   };
 }
 
@@ -624,6 +646,7 @@ export interface FederalIeCounts {
   ieRowsParsed: number;
   unmappedSupportOpposeRows: number;
   supersededRowsDropped: number;
+  suspectAmountRows: number;
   matchedRows: number;
   unresolvedCandidateRows: number;
   spendersWithExpenditures: number;
@@ -752,6 +775,16 @@ export async function ingestFederalIndependentExpenditures({
   }
 
   const aggregation = aggregateIeRows(parsedRows, candidateByFecId);
+  // Always logged, dry-run or not: each quarantined row is a filing to
+  // eyeball on fec.gov, and there should be at most a handful per cycle.
+  for (const row of aggregation.suspectRows) {
+    console.log(
+      `${LOG_PREFIX} SUSPECT amount quarantined (excluded from all totals): ` +
+        `spender=${row.spenderCommitteeId} candidate_fec_id=${row.candidateFecId} ` +
+        `amount=$${row.amount.toLocaleString()} file_num=${row.fileNumber || "(none)"} ` +
+        `— verify the filing on fec.gov`,
+    );
+  }
   const ieRows = buildIeRows(aggregation.pairs, config.cycle, config.ieCsvUrl);
 
   const spenderIds = new Set(ieRows.map((r) => r.committeeId));
@@ -813,6 +846,7 @@ export async function ingestFederalIndependentExpenditures({
     ieRowsParsed: parsedRows.length,
     unmappedSupportOpposeRows,
     supersededRowsDropped: aggregation.supersededRowsDropped,
+    suspectAmountRows: aggregation.suspectRows.length,
     matchedRows: aggregation.matchedRows,
     unresolvedCandidateRows: aggregation.unresolvedCandidateRows,
     spendersWithExpenditures: spenderIds.size,
@@ -835,6 +869,7 @@ export async function ingestFederalIndependentExpenditures({
       `parsed_rows=${counts.ieRowsParsed}`,
       `unmapped_sup_opp=${counts.unmappedSupportOpposeRows}`,
       `superseded_dropped=${counts.supersededRowsDropped}`,
+      `suspect_amount_rows=${counts.suspectAmountRows}`,
       `matched_rows=${counts.matchedRows}`,
       `unresolved_candidate_rows=${counts.unresolvedCandidateRows}`,
       `spenders=${counts.spendersWithExpenditures}`,
