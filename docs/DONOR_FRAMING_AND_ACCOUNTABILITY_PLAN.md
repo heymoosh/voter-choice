@@ -1175,6 +1175,73 @@ quantifying). Prompt-gate calibration (#488, extractor v2) came from the first d
 position statements ("supports X") and campaign-conduct pledges (donation refusals) are
 gate-2 exclusions, confirmed by re-run.
 
+**External calibration harness — built 2026-08-13** (step 1 of the retrospective decision
+above). `scripts/ingest/_promise-calibration.ts` feeds professionally-labeled historical
+cases through the REAL adjudicator path — same `buildAdjudicationSystemPrompt`, same
+`parseAndValidateVerdict` rails (synthetic action ids exercise the no-fabricated-evidence
+check exactly as production does) — and scores the results against the professional labels:
+agreement, Cohen's κ (reusing `_promise-gold-score.ts` machinery), kept↔broken polarity
+flips, and the model's flag rate, broken down per expected label so systematic misses are
+visible. To unlock per-case historical windows, the adjudicator's window functions
+(`windowNotYetOpen` / `deterministicNotYetTestable` / `buildAdjudicationPrompt`) now take an
+optional `TermWindow` parameter defaulting to the 2026 `TERM_WINDOW` — no behavior change
+for the production pipeline, and the same parameter serves the planned `--cycle 2022` run.
+
+Input is a hand-assembled CSV (columns documented in the script; synthetic example at
+`scripts/ingest/fixtures/promise-calibration-sample.csv`): promise text + declared test,
+the case's own promised window, `actions_json` (the official-record actions the linker
+would have produced, translated from the tracker's cited evidence), the professional label
+verbatim (`source_label`) plus its mapping onto our enum (`expected_verdict`), and a
+REQUIRED `source_url` citation. **Copyright discipline:** PolitiFact labels are Poynter's —
+internal scoring with citation only, never republished — so the real cases CSV and reports
+live in `scripts/ingest/_promise-calibration/` which is now `.gitignore`d (as is
+`_promise-gold/`, matching its stated intent). Reports are stamped with
+`ADJUDICATOR_VERSION`; the calibration loop is: assemble cases → run → read disagreements →
+revise rubric/prompt → bump `adj-vN` → re-run → compare stamped reports. Known-by-design
+miss to quantify: broken-by-inaction always flags under adj-v1 (the zero-evidence rail
+refuses positive verdicts with no cited actions) — the fixture's `cal_inaction` case
+documents this. Candidate case sources: PolitiFact's meters (Trump-O-Meter, Obameter,
+Biden Promise Tracker, and the congressional GOP Pledge-O-Meter — closest to our domain)
+and the academic Polimeter/Comparative Agendas datasets. Dry-run verified on the fixture:
+per-case windows render correctly and historical windows take the LLM path.
+
+**118th-Congress backfill — SCOPED 2026-08-13** (dependency (a) of the retrospective
+decision). Findings from the code, ordered by what actually blocks:
+
+1. **`federal-votes.ts` is already congress-parameterized** — `CONGRESS=118 npx tsx
+--env-file=.env.local scripts/ingest/federal-votes.ts` targets the 118th with no code
+   change… except:
+2. **The GovTrack offset cap IS the blocker.** `fetchGovTrackVotePage` stops at
+   `GOVTRACK_MAX_OFFSET = 1000` (GovTrack 400s beyond it), and the 118th had roughly
+   1,500+ House and ~700 Senate roll calls — a single `congress=118` query truncates more
+   than half the record, with only a console warning. Required change (small, next PR):
+   partition the fetch by `chamber` × `session` (GovTrack's `/vote` endpoint supports both
+   filters; each of the four partitions — house/senate × 2023/2024 — stays under the cap).
+   Verify partition counts on the dev machine first (this container's network policy
+   blocks govtrack.us):
+   `curl -s "https://www.govtrack.us/api/v2/vote?congress=118&chamber=house&session=2023&limit=1" | jq .meta.total_count`
+3. **Candidate identity is safe.** Vote rows key candidates by bioguide id (same
+   `federal-<BIOGUIDE>` convention as committee-assignments), so 118th votes by current
+   incumbents land on their existing candidate rows — exactly what the retrospective
+   linker needs. Members who left after the 118th create new candidate rows (harmless).
+4. **`bill-cosponsors.ts` takes `--congress 118`** and backfills over bills already held,
+   so it runs AFTER the votes ingest lands the 118th bills. Congress.gov key already in
+   `.env.local` (used for 119th enrichment); rate limit ~5,000 req/hr is the pacing item.
+5. **`tag-bills.ts` needs no change** — it tags whatever bills lack an `issue_tags` row
+   for `TAGGER_VERSION`, so the new 118th bills queue automatically. Cost: Haiku with a
+   cached vocabulary prompt; the 118th adds roughly 600–900 roll-called bills → one or two
+   default-limit runs, low single-digit dollars.
+6. **Coverage check before any of this** (read-only, Muxin's machine) — confirms what the
+   DB already holds:
+   `SELECT LEFT(vote_date::text, 4) AS yr, COUNT(*) FROM votes WHERE id LIKE 'govtrack%' OR source_url LIKE '%govtrack%' GROUP BY 1 ORDER BY 1;`
+   `SELECT REVERSE(SPLIT_PART(REVERSE(id), '-', 1)) AS congress, COUNT(*) FROM bills WHERE id LIKE 'govtrack-%' GROUP BY 1 ORDER BY 1;`
+   (bill ids pack congress as the last dash-segment: `govtrack-hr1234-118`.)
+
+Remaining retrospective dependencies after this: cycle-parameterize the corpus spike
+(2022 election-day cutoff + FEC Form 1 lookup by cycle) and pass the 2023–2025 window
+through extract/adjudicate (the adjudicator side is DONE via `TermWindow` above); then the
+2022 TX mini-spike to measure Wayback coverage before committing.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate

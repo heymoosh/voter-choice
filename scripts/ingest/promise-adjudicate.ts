@@ -75,14 +75,27 @@ const ADJUDICATOR_MODEL = "claude-sonnet-5";
 
 export const ADJUDICATOR_VERSION = `${RUBRIC_VERSION}+${ADJUDICATOR_REVISION}+${ADJUDICATOR_MODEL}`;
 
+/** A promised term's testable window (rubric §1 gate 4), ISO date bounds. */
+export interface TermWindow {
+  start: string;
+  end: string;
+}
+
 /**
  * The default testable window (rubric §1 gate 4) for the 2026 cycle: the
  * term being sought. House terms for the 120th Congress run 2027-01-03 →
  * 2029-01-03. A promise with an explicit earlier deadline still cannot be
  * KEPT by in-office action before the term starts, so the window floor
  * applies to every campaign_site promise from this cycle.
+ *
+ * Window-taking functions below default to this constant; callers with a
+ * different promised term (the external-calibration harness, the planned
+ * --cycle 2022 retrospective) pass their own window instead.
  */
-export const TERM_WINDOW = { start: "2027-01-03", end: "2029-01-03" };
+export const TERM_WINDOW: TermWindow = {
+  start: "2027-01-03",
+  end: "2029-01-03",
+};
 
 const MAX_TOKENS = 2048;
 
@@ -140,13 +153,17 @@ export interface VerdictRow {
  * for every promise, regardless of linked actions (current-term actions are
  * evidence context, not in-window conduct).
  */
-export function windowNotYetOpen(nowIso: string): boolean {
-  return nowIso < TERM_WINDOW.start;
+export function windowNotYetOpen(
+  nowIso: string,
+  window: TermWindow = TERM_WINDOW,
+): boolean {
+  return nowIso < window.start;
 }
 
 export function deterministicNotYetTestable(
   promise: Pick<PromiseWithActions, "id" | "conditionsDeadline" | "actions">,
   nowIso: string,
+  window: TermWindow = TERM_WINDOW,
 ): VerdictRow {
   const deadlineNote = promise.conditionsDeadline
     ? ` Declared conditions/deadline: "${promise.conditionsDeadline}".`
@@ -160,7 +177,7 @@ export function deterministicNotYetTestable(
     verdict: "not_yet_testable",
     rationale:
       `Rubric §4.1 (${RUBRIC_VERSION}), applied deterministically: the promised window is the term being ` +
-      `sought (${TERM_WINDOW.start} to ${TERM_WINDOW.end}) and has not opened as of ${nowIso}. ` +
+      `sought (${window.start} to ${window.end}) and has not opened as of ${nowIso}. ` +
       `No in-window vote, bill, or deadline can have occurred.${deadlineNote}${actionNote}`,
     evidenceRefs:
       promise.actions.length > 0
@@ -221,6 +238,7 @@ export function renderActionForPrompt(a: LinkedAction): string {
 export function buildAdjudicationPrompt(
   promise: PromiseWithActions,
   nowIso: string,
+  window: TermWindow = TERM_WINDOW,
 ): string {
   const actions =
     promise.actions.length > 0
@@ -229,7 +247,7 @@ export function buildAdjudicationPrompt(
   return `Promise (verbatim): ${promise.promiseText}
 Canonical issue: ${promise.canonicalIssue}
 PRE-DECLARED test: promise_type=${promise.promiseType}; conditions_deadline=${promise.conditionsDeadline ?? "(default window: the term of office)"}
-Window: ${TERM_WINDOW.start} to ${TERM_WINDOW.end}; today is ${nowIso}.
+Window: ${window.start} to ${window.end}; today is ${nowIso}.
 
 Linked official-record actions:
 ${actions}`;
