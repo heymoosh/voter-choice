@@ -1311,3 +1311,95 @@ export const promiseVerdicts = pgTable(
     index("promise_verdicts_promise_idx").on(t.promiseId),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// Part 6a — PAC money attributed to sponsor + industry. pac_committees is the
+// first-class committee table the plan mandates (committee_id → PAC name →
+// parent/sponsor → sector → evidence_url → status) instead of growing the
+// raw_metadata.committees[] JSON; pac_candidate_contributions carries the
+// per-committee × candidate × cycle totals. Spec:
+// docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md Part 6a.
+// See db/migrations/0022_add_pac_committees.sql.
+//
+// DISPLAY-LAYER ONLY: this money is a named breakdown of the existing "PACs"
+// donor_aggregates bucket. Read paths must never add these amounts to
+// totalRaised or any funding-mix total — that would double-count.
+// ---------------------------------------------------------------------------
+export const pacCommittees = pgTable(
+  "pac_committees",
+  {
+    // FEC committee id (e.g. "C00123456") — the natural key from the filing.
+    committeeId: text("committee_id").primaryKey(),
+    name: text("name").notNull(),
+    designation: text("designation"),
+    committeeType: text("committee_type"),
+    // FEC ORG_TP: C=Corporation, L=Labor organization, M=Membership,
+    // T=Trade association, V=Cooperative, W=Corporation w/o capital stock.
+    orgType: text("org_type"),
+    // CONNECTED_ORG verbatim from the FEC committee master — the committee's
+    // own declared sponsor. A filing, i.e. evidence, not an inference.
+    connectedOrg: text("connected_org"),
+    // OUR inference: donor-bucket sector (scripts/ingest/_bucket-mapping.ts
+    // vocabulary — one vocabulary for individual-employer sectors and PAC-
+    // sponsor sectors, per the plan). NULL = honestly unclassified.
+    sector: text("sector"),
+    // Provenance of the sector inference, e.g. "connected-org-keyword-v1".
+    classificationMethod: text("classification_method"),
+    // 'auto' (re-runs may reclassify) | 'verified' | 'rejected' (human
+    // decisions — re-runs must never clobber these; read paths must exclude
+    // 'rejected' sponsor relationships).
+    status: text("status").notNull().default("auto"),
+    // The fec.gov committee page where the CONNECTED_ORG filing is visible —
+    // every sponsor relationship carries its evidence link (plan rule).
+    evidenceUrl: text("evidence_url").notNull(),
+    lastSeenCycle: text("last_seen_cycle").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("pac_committees_sector_idx").on(t.sector),
+    index("pac_committees_connected_org_idx").on(t.connectedOrg),
+  ],
+);
+
+export const pacCandidateContributions = pgTable(
+  "pac_candidate_contributions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    committeeId: text("committee_id")
+      .notNull()
+      .references(() => pacCommittees.committeeId),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    electionCycle: text("election_cycle").notNull(),
+    // Direct contributions only (PAS2 transaction types 24K/24P/24Z) — the
+    // same money already inside the "PACs" funding-mix bucket, now named.
+    amountTotal: numeric("amount_total", { precision: 14, scale: 2 }).notNull(),
+    transactionCount: integer("transaction_count").notNull(),
+    source: text("source").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Re-runs replace recomputed totals instead of duplicating rows.
+    unique("pac_candidate_contributions_uidx").on(
+      t.committeeId,
+      t.candidateId,
+      t.electionCycle,
+    ),
+    index("pac_candidate_contributions_candidate_idx").on(
+      t.candidateId,
+      t.electionCycle,
+    ),
+  ],
+);
