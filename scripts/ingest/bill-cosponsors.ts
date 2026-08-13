@@ -535,6 +535,18 @@ function parseArgs(argv: string[]): {
 }
 
 async function main(): Promise<void> {
+  // Fail fast on a missing key: api.data.gov answers 403 API_KEY_MISSING to
+  // every keyless request, which otherwise shows up as a wall of per-bill
+  // "HTTP 403 — skipping" lines with nothing actually ingested.
+  if (!process.env.CONGRESS_GOV_API_KEY) {
+    console.error(
+      "[bill-cosponsors] CONGRESS_GOV_API_KEY is not set (.env.local). " +
+        "Congress.gov rejects keyless requests with HTTP 403. Free key: " +
+        "https://api.congress.gov/sign-up/ — if you DO have the key set and " +
+        "still see uniform 403s, the key itself is invalid or disabled.",
+    );
+    process.exit(1);
+  }
   const db = requireDb();
   const { congress, limit, dryRun } = parseArgs(process.argv.slice(2));
   const counts = await runBillCosponsorsIngest(db, fetch, {
