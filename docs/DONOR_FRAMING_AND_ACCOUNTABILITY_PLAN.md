@@ -1132,6 +1132,38 @@ independent-labeling rule (§6.2 — same-household annotators) is printed on th
 themselves. Run order: `_promise-gold-sample.ts` → each annotator fills their own CSV without
 conferring → `_promise-gold-score.ts --round extraction --a <fileA> --b <fileB>`.
 
+**Decision (Muxin, 2026-08-13): calibrate on labeled history, then ship a RETROSPECTIVE
+ledger — don't wait for 2027.** Two-step path, replacing "verdict gold waits for the 120th
+Congress" as the near-term plan:
+
+1. **External calibration first** (rubric §6.1, already specced): score the adjudicator's
+   LLM path against PolitiFact presidential-meter / academic Polimeter cases — real
+   promises with completed, professionally-labeled outcomes. "Training" here means
+   iterating the rubric + adjudication prompt (versioned `adj-vN` bumps), NOT fine-tuning
+   a model — every revision stays auditable. PolitiFact labels are Poynter's copyright:
+   internal scoring with citation only, never republished. Build: a calibration harness
+   that takes a CSV of external cases (promise text, evidence summary, professional label
+   mapped onto our enum) and reports agreement/κ/polarity-flips per adjudicator revision.
+2. **Retrospective run once confident**: the 2022 cycle — today's incumbents were 2022
+   candidates, their pre-election-2022 captures are in Wayback, and their promised term
+   (118th Congress, 2023-01-03 → 2025-01-03) is COMPLETE, so every verdict is genuinely
+   adjudicable now. Run the existing pipeline backward (spike → extract → link →
+   adjudicate with `--cycle 2022` parameterization), Muxin + husband label a retrospective
+   gold sample (real kept/broken cases — the §6 gold round becomes meaningful in 2026),
+   compute the §6.4 ship gate on it, and if it passes, ship "what they said vs. what they
+   did — last term" live behind `PROMISE_TRACKER_ENABLED`. Voters get said-vs-did history
+   without waiting for 2027; the 2026 promises keep accruing under the same machinery.
+
+Known dependencies and honesty notes for step 2, recorded up front: (a) **118th-Congress
+record backfill is the gating cost** — linking needs 2023-2024 votes, bills, and
+issue_tags in the DB; scope this first (GovTrack/Congress.gov have the data; tagging two
+more years of bills has real API cost); (b) cycle parameterization of the spike's
+election-day cutoff, the FEC committee lookup, and the adjudicator's TERM_WINDOW;
+(c) **winner bias**: a retrospective ledger only covers people who won in 2022 — any
+surface that renders it must say it covers incumbents' prior-term promises, not all
+candidates; (d) 2022 Form 1 website coverage and Wayback capture rates need their own
+mini-spike before committing (same step-0 posture as the 2026 corpus).
+
 Operational findings the run bought, all fixed same-day (#487, #489): drizzle `sql`
 templates render JS arrays as IN-tuples, never `ANY()`; extraction responses need a
 format-retry + 8k output budget (silent truncation zeroed two candidates before the fix —
