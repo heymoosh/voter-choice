@@ -98,6 +98,16 @@ export const LAUNCH_FLAG_REGISTRY: readonly LaunchFlagEntry[] = [
     note: "Confirmed dark: leave UNSET until can2026.org attribution terms are confirmed with the maintainer.",
   },
   {
+    envVar: "PAC_TRANSPARENCY_ENABLED",
+    isLaunchConvention: false,
+    surface: "server",
+    status: "pre_launch_dark",
+    gates:
+      'Both Part 6 money-transparency blocks on the seat card: "Top PACs and their sponsors" (6a) and "Outside spending about this race" (6b)',
+    readAt: "src/lib/server/pac-transparency-flag.ts",
+    note: "Confirmed dark: sponsor attributions are auto-classified from FEC CONNECTED_ORG until a human curation pass has run (pac_committees.status = verified), and 6b's ingest has not been run against live 2026 data on prod. Flip only after Muxin's live 6b run + a curation pass.",
+  },
+  {
     envVar: "VOTER_ISSUE_EVENTS_ENABLED",
     isLaunchConvention: false,
     surface: "server",
