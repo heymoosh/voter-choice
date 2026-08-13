@@ -5,6 +5,8 @@ import {
   createEmptyPlan,
   deriveBillStatus,
   extractRollCallTally,
+  fetchGovTrackVotePage,
+  govTrackVotePartitions,
   mergeFederalPlans,
   normalizeVoteCast,
   planGovTrackVote,
@@ -315,5 +317,91 @@ describe("deriveBillStatus", () => {
     expect(deriveBillStatus("Signed into law", "2022-08-16")).toBe(
       "Signed into law (2022-08-16)",
     );
+  });
+});
+
+describe("govTrackVotePartitions", () => {
+  it("derives chamber × session-year slices for a congress, tail year included", () => {
+    const partitions = govTrackVotePartitions(118);
+    // 118th Congress: 2023-01-03 → 2025-01-03; sessions 2023, 2024, and the
+    // 2025 tail (a closing session can spill a few days past New Year).
+    expect(partitions).toHaveLength(6);
+    expect(partitions.filter((p) => p.chamber === "house")).toHaveLength(3);
+    expect(new Set(partitions.map((p) => p.session))).toEqual(
+      new Set(["2023", "2024", "2025"]),
+    );
+    expect(govTrackVotePartitions(119).map((p) => p.session)).toContain("2025");
+  });
+});
+
+describe("fetchGovTrackVotePage (partitioned)", () => {
+  /**
+   * Fake GovTrack: 1,600 votes for one congress — over the API's 1000-offset
+   * cap that used to silently truncate a congress-wide query — spread over
+   * house/senate × 2023/2024 (400 each), served in pages that honor the
+   * requested chamber/session/limit/offset params.
+   */
+  function fakeGovTrack(): {
+    fetcher: typeof fetch;
+    requestedUrls: string[];
+    totalVotes: number;
+  } {
+    const perPartition = 400;
+    const byPartition = new Map<string, { link: string }[]>();
+    for (const chamber of ["house", "senate"]) {
+      for (const session of ["2023", "2024", "2025"]) {
+        const n = session === "2025" ? 0 : perPartition;
+        byPartition.set(
+          `${chamber}|${session}`,
+          Array.from({ length: n }, (_, i) => ({
+            link: `https://www.govtrack.us/congress/votes/118-${session}/${chamber[0]}${i + 1}`,
+          })),
+        );
+      }
+    }
+    const requestedUrls: string[] = [];
+    const fetcher = (async (input: string | URL | Request) => {
+      const url = new URL(String(input));
+      requestedUrls.push(url.href);
+      const chamber = url.searchParams.get("chamber") ?? "";
+      const session = url.searchParams.get("session") ?? "";
+      const limit = Number(url.searchParams.get("limit") ?? "600");
+      const offset = Number(url.searchParams.get("offset") ?? "0");
+      const all = byPartition.get(`${chamber}|${session}`) ?? [];
+      const body = {
+        meta: { total_count: all.length },
+        objects: all.slice(offset, offset + limit),
+      };
+      return new Response(JSON.stringify(body), { status: 200 });
+    }) as typeof fetch;
+    return { fetcher, requestedUrls, totalVotes: perPartition * 4 };
+  }
+
+  it("fetches a >1000-vote congress completely, one slice at a time", async () => {
+    const { fetcher, requestedUrls, totalVotes } = fakeGovTrack();
+    const config = resolveRuntimeConfig({ GOVTRACK_PAGE_SIZE: "300" });
+    const votes = await fetchGovTrackVotePage(118, config, fetcher);
+
+    expect(votes).toHaveLength(totalVotes); // 1,600 — nothing truncated
+    // Every request carried the partition filters and stayed under the cap.
+    for (const href of requestedUrls) {
+      const url = new URL(href);
+      expect(url.searchParams.get("congress")).toBe("118");
+      expect(["house", "senate"]).toContain(url.searchParams.get("chamber"));
+      expect(Number(url.searchParams.get("offset"))).toBeLessThan(1000);
+    }
+  });
+
+  it("dedupes by GovTrack link across slices", async () => {
+    const dupe = { link: "https://www.govtrack.us/congress/votes/118-2023/h1" };
+    const fetcher = (async () =>
+      new Response(
+        JSON.stringify({ meta: { total_count: 1 }, objects: [dupe] }),
+        { status: 200 },
+      )) as typeof fetch;
+    const config = resolveRuntimeConfig({});
+    // Every one of the 6 slices returns the same single vote.
+    const votes = await fetchGovTrackVotePage(118, config, fetcher);
+    expect(votes).toHaveLength(1);
   });
 });
