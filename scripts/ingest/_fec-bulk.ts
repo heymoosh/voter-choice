@@ -15,7 +15,7 @@
 
 import * as readline from "node:readline";
 import { spawn } from "node:child_process";
-import { createWriteStream, existsSync } from "node:fs";
+import { createReadStream, createWriteStream, existsSync } from "node:fs";
 import { mkdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { Readable } from "node:stream";
@@ -163,6 +163,41 @@ export async function streamZipLines(
   return new Promise((resolvePromise, reject) => {
     rl.on("line", (line) => {
       if (stopped || !line.trim()) return;
+      const shouldContinue = onLine(line);
+      if (shouldContinue === false) {
+        stopped = true;
+        rl.close();
+        stream.destroy();
+      }
+    });
+    rl.on("close", () => resolvePromise());
+    rl.on("error", reject);
+    stream.on("error", reject);
+  });
+}
+
+/**
+ * Stream the lines of a plain (uncompressed) bulk file. Mirrors
+ * `streamZipLines` for the FEC bulk files that ship as a bare CSV rather than
+ * a pipe-delimited zip — the independent-expenditure (Schedule E) file is the
+ * one such file we consume (see federal-independent-expenditures.ts). Return
+ * `false` from `onLine` to stop early (e.g. --limit).
+ */
+export async function streamTextFileLines(
+  filePath: string,
+  onLine: (line: string) => boolean | void,
+  logPrefix: string,
+): Promise<void> {
+  if (!existsSync(filePath)) {
+    throw new Error(`${logPrefix} missing input file: ${filePath}`);
+  }
+  const stream = createReadStream(filePath, { encoding: "utf8" });
+  const rl = readline.createInterface({ input: stream, crlfDelay: Infinity });
+  let stopped = false;
+
+  return new Promise((resolvePromise, reject) => {
+    rl.on("line", (line) => {
+      if (stopped) return;
       const shouldContinue = onLine(line);
       if (shouldContinue === false) {
         stopped = true;

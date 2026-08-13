@@ -233,6 +233,43 @@ export interface ContributionRowToUpsert {
   sourceUrl: string;
 }
 
+/**
+ * Build the pac_committees row for a committee-master entry: normalize the
+ * declared sponsor, run the one inference, attach the evidence link. Shared
+ * with the Part 6b independent-expenditure ingest, which attributes its
+ * spenders through the same table (never a second committee identity store).
+ */
+export function buildCommitteeRow(
+  info: {
+    committeeId: string;
+    name: string;
+    designation: string | null;
+    type: string | null;
+    organizationType: string | null;
+    connectedOrganization: string | null;
+  },
+  cycle: string,
+): CommitteeRowToUpsert {
+  const connectedOrg = normalizeConnectedOrg(info.connectedOrganization);
+  const classification = classifySponsorSector({
+    name: info.name,
+    organizationType: info.organizationType,
+    connectedOrganization: connectedOrg,
+  });
+  return {
+    committeeId: info.committeeId,
+    name: info.name,
+    designation: info.designation,
+    committeeType: info.type,
+    orgType: info.organizationType,
+    connectedOrg,
+    sector: classification.sector,
+    classificationMethod: classification.method,
+    evidenceUrl: evidenceUrlForCommittee(info.committeeId),
+    lastSeenCycle: cycle,
+  };
+}
+
 export interface PairAggregate {
   committeeId: string;
   candidateId: string;
@@ -314,7 +351,12 @@ export function resolveConfig(
 // DB upserts
 // ---------------------------------------------------------------------------
 
-async function upsertCommittees(
+/**
+ * Upsert pac_committees rows. Exported so the Part 6b independent-expenditure
+ * ingest can register its spender committees through the same path (one
+ * committee identity store, one status guard) instead of copying it.
+ */
+export async function upsertCommittees(
   db: DbClient,
   rows: CommitteeRowToUpsert[],
   dryRun: boolean,
@@ -522,25 +564,9 @@ export async function ingestFederalPacSponsors({
     // passed isAttributablePacCommittee, which requires a master entry.
     const info = committees.get(committeeId);
     if (!info) continue;
-    const connectedOrg = normalizeConnectedOrg(info.connectedOrganization);
-    const classification = classifySponsorSector({
-      name: info.name,
-      organizationType: info.organizationType,
-      connectedOrganization: connectedOrg,
-    });
-    if (classification.sector) committeesClassified += 1;
-    committeeRows.push({
-      committeeId,
-      name: info.name,
-      designation: info.designation,
-      committeeType: info.type,
-      orgType: info.organizationType,
-      connectedOrg,
-      sector: classification.sector,
-      classificationMethod: classification.method,
-      evidenceUrl: evidenceUrlForCommittee(committeeId),
-      lastSeenCycle: config.cycle,
-    });
+    const row = buildCommitteeRow(info, config.cycle);
+    if (row.sector) committeesClassified += 1;
+    committeeRows.push(row);
   }
 
   const sourceUrl = `${FEC_BULK_BASE_URL}/${config.cycle}/pas2${config.cycle.slice(2)}.zip`;

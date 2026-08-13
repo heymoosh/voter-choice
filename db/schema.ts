@@ -1403,3 +1403,73 @@ export const pacCandidateContributions = pgTable(
     ),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// independent_expenditures — Part 6b (migration 0023). FEC Schedule E money
+// spent FOR or AGAINST a candidate by a committee that is not the candidate's.
+//
+// NOT THE CANDIDATE'S MONEY. Independent expenditures are absent from
+// candidate receipts by law and cannot be coordinated with the campaign. These
+// amounts must NEVER be added to donor_aggregates, totalRaised, or any
+// funding-mix total; they render as their own "Outside spending about this
+// race" block. Keeping them in a separate table (not another
+// donor_aggregates.bucket_label) is what makes that structurally impossible.
+//
+// SUPPORT ≠ OPPOSE, NEVER NETTED. supportOppose is part of the unique key, so
+// for/against are always two rows and two figures.
+//
+// Spender identity is not duplicated: committeeId joins to pac_committees for
+// name → CONNECTED_ORG sponsor → sector → evidence_url → status.
+// ---------------------------------------------------------------------------
+export const independentExpenditures = pgTable(
+  "independent_expenditures",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // The spending committee (FEC SPE_ID) — joins to pac_committees for
+    // sponsor/industry attribution. Party committees and non-connected
+    // super PACs are included here (unlike pac_candidate_contributions):
+    // there is no double-representation risk, because none of this money is
+    // in the funding mix at all.
+    committeeId: text("committee_id")
+      .notNull()
+      .references(() => pacCommittees.committeeId),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    electionCycle: text("election_cycle").notNull(),
+    /** 'support' | 'oppose' — FEC Schedule E SUP_OPP (S/O). Never summed. */
+    supportOppose: text("support_oppose").notNull(),
+    // Sum of the per-filing expenditure amount (EXP_AMO), never the filer's
+    // running aggregate (AGG_AMO), which would multiply-count.
+    amountTotal: numeric("amount_total", { precision: 14, scale: 2 }).notNull(),
+    /** Number of itemized Schedule E rows behind the total. */
+    expenditureCount: integer("expenditure_count").notNull(),
+    source: text("source").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Re-runs replace recomputed totals instead of duplicating rows; the
+    // support/oppose column in the key is what keeps the two figures apart.
+    unique("independent_expenditures_uidx").on(
+      t.committeeId,
+      t.candidateId,
+      t.electionCycle,
+      t.supportOppose,
+    ),
+    index("independent_expenditures_candidate_idx").on(
+      t.candidateId,
+      t.electionCycle,
+      t.supportOppose,
+    ),
+    index("independent_expenditures_committee_idx").on(
+      t.committeeId,
+      t.electionCycle,
+    ),
+  ],
+);

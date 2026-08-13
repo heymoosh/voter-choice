@@ -1446,6 +1446,46 @@ cannot be coordinated with the campaign. It must render as its own "Outside spen
 race" block — spent _for_ and _against_, never summed into the funding mix — or we misstate
 campaign finance law on the surface whose whole point is precision.
 
+**6b — built 2026-08-13** (`scripts/ingest/federal-independent-expenditures.ts` + migration
+`0023_add_independent_expenditures.sql`). One table, `independent_expenditures`: spender
+committee × candidate × cycle × `support_oppose` → `amount_total` + `expenditure_count`.
+Spender identity is **not** duplicated — `committee_id` FKs to 6a's `pac_committees`, and
+spenders are registered through 6a's own `buildCommitteeRow`/`upsertCommittees` (imported,
+not copied), so sponsor (`CONNECTED_ORG`), sector, evidence URL and the
+auto/verified/rejected status guard stay in one place. Unlike 6a's
+`pac_candidate_contributions`, no attributability filter is applied: party committees and
+non-connected super PACs make real IEs, and there is no double-representation risk because
+none of this money is in the funding mix. Spenders absent from the committee master are
+kept with the IE file's own name and a NULL sector — honestly unclassified.
+**The display rule, restated and now enforced by test:** outside spending is not the
+candidate's money; it renders only as its own "Outside spending about this race" block,
+spent _for_ and spent _against_ shown as two figures, never summed into the funding mix,
+never summed into `totalRaised`, and never netted against each other.
+`scripts/ingest/independent-expenditure-isolation.test.ts` asserts structurally that (a) the
+ingest never touches `donor_aggregates`, (b) no funding-mix producer or read path
+(`federal-donors.ts`, `federal-sectors-bulk.ts`, `federal-issue-pacs.ts`,
+`federal-pac-sponsors.ts`, `_fec-bulk.ts`, `src/lib/server/donors.ts`, `race-data.ts`) — nor
+any other file in `src/**`, `scripts/**`, `db/**` — references the IE table, and (c)
+support/oppose are separate rows kept apart by the table's unique key. Source file: the
+per-cycle FTP-style bulk zips carry no Schedule E (`oppexp` is OPERATING expenditures, the
+wrong file); IEs ship as a standalone header-bearing CSV,
+`https://www.fec.gov/files/bulk-downloads/independent_expenditure_<cycle>.csv` — keyless, no
+OpenFEC key needed. **Unverified assumption for the first dry-run:** fec.gov was blocked by
+the build container's egress proxy, so that URL and the column names come from the FEC's
+published file description, not a live fetch. Mitigations: `--ie-url` / `--ie-csv` override
+the location, and columns resolve **by name** from the file's own header (with the documented
+aliases) — a missing load-bearing column aborts the run and echoes the header it saw, rather
+than guessing positionally. Amount is `EXP_AMO` (per filing), never `AGG_AMO` (running
+aggregate); filings superseded by an amendment (`FILE_NUM` appearing as another row's
+`PREV_FILE_NUM`) are dropped; unrecognised `SUP_OPP` values and unresolved FEC candidate ids
+are counted and logged, never guessed or silently dropped. Run:
+`npx tsx --env-file=.env.local scripts/ingest/federal-independent-expenditures.ts --cycle 2026 --dry-run`
+then without the flag. Remaining for 6b after ingest: the "Outside spending about this race"
+UI block (display-layer, deliberately not built here) — and a decision on candidate scoping,
+since the ingest reuses the siblings' `loadFederalCandidateMapWithFundingMix`, so IE money
+aimed at a candidate with no funding-mix row is currently reported as an unresolved miss
+rather than stored.
+
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
 - _Who funds the super PAC_ (its own Schedule A receipts, incl. corporate donors) is a third,
