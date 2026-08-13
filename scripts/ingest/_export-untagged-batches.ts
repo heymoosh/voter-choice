@@ -17,9 +17,10 @@ interface BillRow {
 async function main() {
   const db = requireDb();
 
-  const TAGGER_VERSION = "claude-haiku-4-5-20251001-v1";
-
-  // Fetch untagged bills
+  // Untagged = NO issue_tags row under ANY tagger version. The old filter
+  // (`AND it.tagger_version = <haiku version>`) re-exported bills forever
+  // once they were tagged under the agent-run version string — the export's
+  // job is gap-filling, not version-scoped re-tagging.
   const result = await db.execute(
     sql`
     SELECT b.id, b.title, b.summary, b.jurisdiction
@@ -27,7 +28,6 @@ async function main() {
     WHERE NOT EXISTS (
       SELECT 1 FROM issue_tags it
       WHERE it.bill_id = b.id
-        AND it.tagger_version = ${TAGGER_VERSION}
     )
     ORDER BY b.id
     LIMIT 500
