@@ -1279,6 +1279,49 @@ hazard the scoping missed). Three pieces:
    1,000 vote records) may already exist — the re-run upserts over it idempotently, and
    the coverage SQL above will show the before/after.
 
+**External calibration — FIRST RUN executed 2026-08-13** (`rubric-1.0.0+adj-v1`, run via
+Claude Code subscription subagents per policy — Sonnet, the production `ADJUDICATOR_MODEL`,
+verbatim production prompts, verdicts validated through `parseAndValidateVerdict`'s rails).
+Case set: 18 GOP Pledge-O-Meter promises (the congressional meter; 5 kept / 5 compromise /
+8 broken by PolitiFact's ruling), assembled from Wayback-archived PolitiFact pages fetched
+on Muxin's machine; `expected_verdict` decided per-case under OUR rubric with the evidence
+in hand (source label kept verbatim alongside — 4 house-passed-senate-died "Broken" cases
+map to our `attempted_blocked`, and "take action to repeal" maps to a vote-type `kept`).
+Artifacts (cases.csv, gen-cases.ts, agent-verdicts.json, report) live untracked on Muxin's
+machine in `scripts/ingest/_promise-calibration/`.
+
+**Results (n=18): agreement 66.7%, κ=0.565, polarity flips 0, flag rate 16.7%, agreement
+excluding flags 80.0%.** The two §6.4-critical properties held: ZERO kept↔broken flips,
+and on the hardest mapping case (`gop655_repeal_aca`, PolitiFact "Broken") the adjudicator
+followed the pre-declared vote-type test to `kept` — it applies our rule order rather than
+pattern-matching pundit labels. All three clean rule-3 mapping cases (644/656/691) came
+back `attempted_blocked` as designed.
+
+The six disagreements, and what they teach (the adj-v2 worklist):
+
+1. **broken-by-inaction flags instead of ruling** (gop657: own bill died in own
+   subcommittee → flagged; gop664: conduct promise violated at the dispositive moment →
+   flagged). Both flags gave reasoned ambiguity exposing real rubric gaps: rule 3's
+   examples don't cover died-in-own-chamber-committee, and nothing says how to weigh an
+   adopted rule against later violations of it. adj-v2: add to rule 5 — "a member's own
+   measure that their own chamber controlled and never advanced, absent any external
+   blocker, is inaction"; add a conduct-promise clause — "violation at the dispositive
+   moment outweighs the enabling rule's adoption."
+2. **compound promises** (gop667 "no delay AND no pork" → flagged; but gop692, the same
+   shape, was correctly ruled compromise). adj-v2: state that a promise with two testable
+   halves where one succeeded is rule-4 compromise, not a flag.
+3. **adjacent-category softness, low harm** (gop649 kept→compromise: enacted caps
+   discounted as "a negotiated deal rather than the strict caps sought"; gop671
+   compromise→kept: sustained funding read as full delivery; gop686, the deliberately
+   contested case, attempted_blocked→compromise — a defensible reading its own notes
+   anticipated). These are one-rung misses among the non-polar labels; worth prompt
+   tightening, not rule changes.
+
+Next round: apply the adj-v2 revisions, re-run the same 18 (reports are version-stamped
+and comparable), and extend the case set with Biden-tracker legislative cases for
+source diversity. Broken-class recall (currently 1/3, the rest flagged) is the number to
+move; flags are safe-by-design but each one is a case the app can't display.
+
 Run order for the retrospective mini-spike (after this merges):
 `CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` (both dev-machine,
 free data APIs, no LLM) → issue tagging via the SUBSCRIPTION pattern above (export →
