@@ -34,7 +34,7 @@
  * wrong file. Itemized independent expenditures ship as a separate,
  * header-bearing CSV on the FEC bulk-download page:
  *
- *     https://www.fec.gov/files/bulk-downloads/independent_expenditure_<cycle>.csv
+ *     https://www.fec.gov/files/bulk-downloads/<cycle>/independent_expenditure_<cycle>.csv
  *
  * That is this script's default URL, and it is the keyless bulk path (no API
  * key, unlike OpenFEC `/schedules/schedule_e/`). ASSUMPTION FLAG: the exact
@@ -538,9 +538,14 @@ export interface FederalIeConfig {
   skipDownload: boolean;
 }
 
-/** Default bulk location of the Schedule E file — see the module header. */
+/**
+ * Default bulk location of the Schedule E file — see the module header.
+ * The file lives under the cycle-year subdirectory, matching the layout of
+ * every other FEC bulk file (verified on Muxin's first 2026 dry-run: the
+ * bare `/bulk-downloads/independent_expenditure_2026.csv` path 404s).
+ */
 export function independentExpenditureCsvUrl(cycle: string): string {
-  return `${FEC_BULK_BASE_URL}/independent_expenditure_${cycle}.csv`;
+  return `${FEC_BULK_BASE_URL}/${cycle}/independent_expenditure_${cycle}.csv`;
 }
 
 export function resolveConfig(

@@ -1469,9 +1469,11 @@ any other file in `src/**`, `scripts/**`, `db/**` — references the IE table, a
 support/oppose are separate rows kept apart by the table's unique key. Source file: the
 per-cycle FTP-style bulk zips carry no Schedule E (`oppexp` is OPERATING expenditures, the
 wrong file); IEs ship as a standalone header-bearing CSV,
-`https://www.fec.gov/files/bulk-downloads/independent_expenditure_<cycle>.csv` — keyless, no
-OpenFEC key needed. **Unverified assumption for the first dry-run:** fec.gov was blocked by
-the build container's egress proxy, so that URL and the column names come from the FEC's
+`https://www.fec.gov/files/bulk-downloads/<cycle>/independent_expenditure_<cycle>.csv` —
+keyless, no OpenFEC key needed. (The as-built default omitted the `<cycle>/` directory and
+404'd on Muxin's first 2026 dry-run — exactly the loud failure the mitigations were built
+for; fixed same day.) **Unverified assumption remaining for the dry-run:** fec.gov was
+blocked by the build container's egress proxy, so the column names come from the FEC's
 published file description, not a live fetch. Mitigations: `--ie-url` / `--ie-csv` override
 the location, and columns resolve **by name** from the file's own header (with the documented
 aliases) — a missing load-bearing column aborts the run and echoes the header it saw, rather
