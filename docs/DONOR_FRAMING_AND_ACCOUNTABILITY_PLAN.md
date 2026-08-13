@@ -1096,6 +1096,38 @@ Part 5 is process, not pipeline: the §6 gold-set machinery (external calibratio
 annotator export for Muxin + husband, κ/agreement scoring mirroring
 `_subissue-gold-score.ts`) and the UI surface behind the flag.
 
+### Part 5 — pipeline RUN to completion 2026-08-12/13 (TX; ledger populated on prod)
+
+Muxin ran all three stages from her machine the same night the code merged. Final state on
+prod, all behind `PROMISE_TRACKER_ENABLED`:
+
+- **Corpus: 29 promises across 9 TX candidates** (Hunt 1, Mealer 1, Goldman 1, Nehls 2,
+  Herrera 8, Hart 1, Hockett 5, Hale 7, Early 3), each a verbatim quote pinned to its exact
+  Wayback capture, test declared at extraction. Every candidate with promises is a
+  **challenger** — all 2026 incumbents' campaign homepages came up empty of gate-passing
+  commitments (donate/bio shells; their record is their pitch). Total extraction spend
+  across all runs ≈ $1.60. Spike corpus was 48 archived of 111 (a Wayback-throttled day —
+  20 `wayback_error` convert on later re-runs; the extract's per-candidate resume makes
+  top-up passes free of rework).
+- **Links: 0 rows, honestly.** 24/29 promises belong to candidates with no congressional
+  record; **5/29 flagged `unclear_side`** and refused links (term limits, gerrymandering
+  ban, cartel FTO designation, two AI-governance promises — all genuinely orthogonal to
+  their issues' pole axes; the no-guessing rule §5 applied at the linking layer).
+- **Verdicts: 29 × `not_yet_testable`**, all via the deterministic §4.1 path (window
+  2027-01-03 → 2029-01-03 not open; zero model calls). The LLM path stays dormant until
+  the 120th Congress convenes.
+
+Operational findings the run bought, all fixed same-day (#487, #489): drizzle `sql`
+templates render JS arrays as IN-tuples, never `ANY()`; extraction responses need a
+format-retry + 8k output budget (silent truncation zeroed two candidates before the fix —
+Hockett's "0" was a truncation artifact all along, she's actually the #3 corpus); the
+verbatim gate dropped 3 near-paraphrases in production, exactly as designed. One item for
+the gold set: Hale's cartel promise classified `border_security` on one run and
+`crime_public_safety` on the next (same id; adjacent-issue nondeterminism worth
+quantifying). Prompt-gate calibration (#488, extractor v2) came from the first dry-run:
+position statements ("supports X") and campaign-conduct pledges (donation refusals) are
+gate-2 exclusions, confirmed by re-run.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
