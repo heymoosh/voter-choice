@@ -905,8 +905,7 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
     axisType: "valence_dominant",
     in_favor: {
       name: "Impose term limits",
-      definition:
-        "limit the number of terms members of Congress may serve.",
+      definition: "limit the number of terms members of Congress may serve.",
       billSignals: [
         "term-limits constitutional amendments",
         "statutory congressional term limits",
@@ -920,7 +919,10 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
       billSignals: ["voting against term-limits amendments or resolutions"],
     },
     exampleConcerns: [
-      { text: "career politicians need to go / term limits now", pole: "in_favor" },
+      {
+        text: "career politicians need to go / term limits now",
+        pole: "in_favor",
+      },
     ],
     notes:
       "The home for congressional_accountability's term-limits carve-out (its halo-label guard excludes term limits from consensus ethics). Public consensus on Pole A is overwhelming, so valence; the measure persistently FAILS in Congress — that is incumbent resistance, not voter-side ambiguity. Scope: only actual term-limits measures. A candidate's self-imposed term-limit pledge is campaign conduct (extraction gate 2b), not a congressional act.",
@@ -941,8 +943,7 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
     },
     opposed: {
       name: "Restructure / reduce benefits",
-      definition:
-        "restrain Social Security spending or restructure benefits.",
+      definition: "restrain Social Security spending or restructure benefits.",
       billSignals: [
         "raising the retirement age",
         "means-testing or benefit-formula cuts",
