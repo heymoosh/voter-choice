@@ -32,7 +32,14 @@ const LIMIT = 1500;
 // theme that matches no canonicalIssue (PR #114 regression that broke vote
 // evaluation). The rule is correctness-critical — raise the ceiling per the
 // same convention rather than dropping it.
-const THEME_EXTRACTION_LIMIT = 7300;
+// Bumped 7300 -> 9200 (2026-08-13, pole-vocab-v2): the vocabulary-gap review
+// expanded the canonical vocabulary 16 -> 22 issues (+2 sub-issues); the
+// hand-written "what it covers" list plus the rendered pole-direction and
+// sub-issue blocks grew the body ~1.7k chars (≈420 tokens per intake call).
+// The new ids are load-bearing for alignment routing (e.g. Social Security
+// no longer misfiles under healthcare) — raise the ceiling per the
+// convention above.
+const THEME_EXTRACTION_LIMIT = 9200;
 // P0 #2 (live audit): the race-deep-dive prompt now carries an explicit
 // candidate-resolution rule so the model resolves surnames against
 // <candidates> instead of bouncing the disambiguation back to the voter.
@@ -42,7 +49,7 @@ const THEME_EXTRACTION_LIMIT = 7300;
 const RACE_DEEP_DIVE_LIMIT = 1800;
 
 describe("task-prompt length budget", () => {
-  it("theme-extraction body stays under the 7200-char limit", () => {
+  it("theme-extraction body stays under its documented limit", () => {
     const rendered = buildThemeExtractionPrompt({
       userInput: "I care about healthcare.",
     });

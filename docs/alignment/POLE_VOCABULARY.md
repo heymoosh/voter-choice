@@ -480,13 +480,157 @@ nominal subject," state it loudly, and apply it to both tagger and resolver.
 
 ---
 
-**All 16 canonical issues authored.** After the critic pass, **12 are contested**
+# v2 additions — 2026-08-13 vocabulary expansion (pole-vocab-v2)
+
+**Provenance:** the automated vocabulary-gap review over the full promise corpus
+(`scripts/ingest/_vocab-gap.workflow.js` gap report) plus Muxin's manual pass on
+the 30-promise TX extraction worksheet; every entry carries at least one real
+promise behind it. Approved proposal-by-proposal on 2026-08-13.
+
+**Why these are canonical issues and not sub-issues:** four of the six were
+proposed as sub-issues, but their direction is ORTHOGONAL to the would-be
+parent's axis, and a sub-issue inherits the parent's poles verbatim (see
+`SUB_ISSUE_VOCABULARY.md`) — in this architecture, a facet with its own poles IS
+a canonical issue. Overlapping issues are already supported per-(bill, issue).
+The two direction-ALIGNED proposals from the same review
+(`interior_ice_enforcement`, `wages_worker_power`) became sub-issues instead.
+
+**Rejected / watch-list from the same review:** `cartel_narco_terrorism`
+(one promise, executive-facing — revisit as more states land);
+a standalone `artificial_intelligence` id (the only AI promise observed is
+election-scoped and lands in election_security_disinformation — revisit when
+non-election AI promises appear).
+
+**v2 routing updates to existing entries** (mirrored in the module notes):
+economy_jobs → tariffs route to trade_tariffs; education_funding →
+curriculum-content routes to curriculum_culture; healthcare_affordability →
+Social Security routes to retirement_income_security; election_integrity →
+redistricting routes to redistricting_reform and disinformation/infrastructure
+routes to election_security_disinformation (its fall-through list shrinks
+accordingly); congressional_accountability → term limits route to
+congressional_term_limits.
+
+### trade_tariffs — Trade & Tariffs
+- axis_type: **contested**
+- Pole A ≡ in_favor — name: Trade protection / tariffs
+    means: use tariffs and trade barriers to protect domestic industry and jobs.
+    bill_signals: imposing or raising tariffs; Buy American / domestic-content
+    requirements; withdrawing from or renegotiating trade agreements;
+    anti-dumping / trade-remedy enforcement.
+- Pole B ≡ opposed — name: Free trade / lower tariffs
+    means: reduce tariffs and trade barriers; expand trade.
+    bill_signals: repealing or blocking tariffs; new or expanded trade
+    agreements; tariff-exclusion / relief processes; limiting unilateral
+    presidential tariff authority.
+- Orientation: Pole A = expand the nominal subject (trade protection). The split
+  cuts ACROSS both parties — party is no proxy; the disambiguation gate is
+  required. Boundary with economy_jobs: orthogonal axes — a tariff provision is
+  neither a labor protection nor a domestic tax cut; route trade mechanisms
+  here, general jobs/wages concerns stay economy_jobs.
+
+### curriculum_culture — School Curriculum & Culture
+- axis_type: **contested**
+- Pole A ≡ in_favor — name: Curriculum restrictions & parental oversight
+    means: restrict DEI / gender-identity content in public-school curriculum
+    and student life; mandate curriculum transparency and parental review.
+    bill_signals: banning or defunding DEI programs; restricting gender-identity
+    or sexual-orientation curriculum; sex-based school-sports eligibility;
+    curriculum-transparency / parental-review mandates; book-removal authority.
+- Pole B ≡ opposed — name: Inclusive curriculum & educator discretion
+    means: preserve inclusive curriculum and programming; leave content
+    decisions with schools and educators.
+    bill_signals: protecting or funding DEI / inclusive programming;
+    trans-inclusive school sports or facilities policy; blocking
+    curriculum-content bans or book bans.
+- Orientation (documented choice): the nominal subject is curriculum
+  RESTRICTION — Pole A expands it. Boundary with education_funding: orthogonal
+  axes — content/culture provisions route here; funding/choice mechanisms
+  (vouchers, ESAs, funding, teacher pay) stay education_funding. Omnibus
+  education bills carrying both → dominant provision, else no-score + CAN.
+
+### redistricting_reform — Redistricting & Gerrymandering
+- axis_type: **valence_dominant**
+- Pole A ≡ in_favor — name: Independent / anti-gerrymandering map-drawing
+    means: move district map-drawing to independent processes and ban partisan
+    gerrymandering.
+    bill_signals: independent redistricting commissions;
+    partisan-gerrymandering bans; map-drawing criteria / transparency
+    requirements; banning mid-decade (out-of-cycle) redistricting.
+- Pole B ≡ opposed — name: Legislature-controlled map-drawing
+    means: keep district maps drawn by state legislatures / the party in power.
+    bill_signals: blocking commission requirements; preserving legislative
+    map-drawing authority.
+- The home for election_integrity's former redistricting fall-through. Voiced
+  concern is near-uniformly Pole A (valence); legislative votes still split
+  party-line by state context — the tagger tags both directions. Ballot-access
+  provisions never cross-tag here.
+
+### election_security_disinformation — Election Security & Disinformation
+- axis_type: **valence_dominant**
+- Pole A ≡ in_favor — name: Protect elections from manipulation & disinformation
+    means: regulate deceptive AI / deepfakes in elections and fund election
+    security.
+    bill_signals: AI-deepfake disclosure or bans in election communications;
+    election-disinformation countermeasures; election-infrastructure /
+    cybersecurity funding; foreign-interference protections.
+- Pole B ≡ opposed — name: Minimal regulation of election speech & technology
+    means: oppose new regulation of election-related speech and technology.
+    bill_signals: blocking deepfake / disinformation rules (speech grounds);
+    cutting election-security funding.
+- ⚠ ORIENTATION GUARD (halo-label risk, mirrors election_integrity's lock):
+  this issue is TECHNOLOGICAL security of the process. A "security"-framed bill
+  whose operative provisions restrict voter ACCESS (voter ID, roll purges, mail
+  limits) is election_integrity Pole B, never this issue's Pole A.
+
+### congressional_term_limits — Congressional Term Limits
+- axis_type: **valence_dominant**
+- Pole A ≡ in_favor — name: Impose term limits
+    means: limit the number of terms members of Congress may serve.
+    bill_signals: term-limits constitutional amendments; statutory congressional
+    term limits; cosponsoring term-limits resolutions.
+- Pole B ≡ opposed — name: Preserve unlimited terms
+    means: oppose imposing new term limits; keep the current system.
+    bill_signals: voting against term-limits amendments or resolutions.
+- The home for congressional_accountability's term-limits carve-out (its
+  halo-label guard excludes term limits from consensus ethics). Public consensus
+  on Pole A is overwhelming (valence); the measure persistently fails in
+  Congress — incumbent resistance, not voter-side ambiguity. A candidate's
+  SELF-imposed term-limit pledge is campaign conduct (extraction gate 2b), not a
+  congressional act — do not extract or tag it.
+
+### retirement_income_security — Social Security & Retirement
+- axis_type: **valence_dominant**
+- Pole A ≡ in_favor — name: Protect / expand retirement benefits
+    means: protect or expand Social Security and earned retirement-income
+    benefits.
+    bill_signals: blocking Social Security benefit cuts; benefit expansions /
+    COLA increases; raising or eliminating the payroll-tax cap (revenue-side
+    solvency); protecting the current retirement age.
+- Pole B ≡ opposed — name: Restructure / reduce benefits
+    means: restrain Social Security spending or restructure benefits.
+    bill_signals: raising the retirement age; means-testing or benefit-formula
+    cuts; partial privatization / private accounts; commissions fast-tracking
+    entitlement cuts.
+- Solvency means-trap: "save / fix Social Security" is voiced by BOTH poles —
+  the MECHANISM decides. Revenue-side fixes = in_favor; benefit-side cuts =
+  opposed, however marketed. Boundary: Medicare and senior CARE stay
+  healthcare_affordability (senior_care facet); this issue is retirement
+  INCOME. A bundled "protect Social Security and Medicare" promise carries both
+  issues.
+
+---
+
+**All 22 canonical issues authored** (16 original + 6 added in the 2026-08-13
+vocabulary expansion, see the v2 section below). **14 are contested**
 (need the disambiguation gate): gun_rights_safety, immigration, border_security,
 public_safety, crime_public_safety, energy_grid, reproductive_rights,
 environment_climate, election_integrity, **economy_jobs**, **education_funding**,
-**property_taxes** (last three reclassified from valence by the critic pass).
-**4 are valence-dominant:** healthcare_affordability, housing_affordability,
-water_infrastructure, congressional_accountability.
+**property_taxes** (last three reclassified from valence by the critic pass),
+plus v2's **trade_tariffs** and **curriculum_culture**.
+**8 are valence-dominant:** healthcare_affordability, housing_affordability,
+water_infrastructure, congressional_accountability, plus v2's
+redistricting_reform, election_security_disinformation,
+congressional_term_limits, retirement_income_security.
 
 > ⚠ This shifts the product picture: **three-quarters of issues now require the
 > disambiguation gate.** That makes the gate (already shipped as

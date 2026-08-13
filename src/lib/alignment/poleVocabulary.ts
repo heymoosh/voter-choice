@@ -72,7 +72,13 @@ export interface PoleVocabularyEntry {
  * Version stamp (SHARED_ANCHOR_SPEC §6). Rendered into both consumers' prompts so
  * a tagger/resolver mismatch is detectable. Bump on ANY pole/axis change.
  */
-export const POLE_VOCABULARY_VERSION = "pole-vocab-v1";
+// v2 (2026-08-13, vocabulary-gap review): +6 canonical issues
+// (trade_tariffs, curriculum_culture, redistricting_reform,
+// election_security_disinformation, congressional_term_limits,
+// retirement_income_security) + cross-issue routing notes updated on
+// economy_jobs, education_funding, healthcare_affordability,
+// election_integrity, congressional_accountability.
+export const POLE_VOCABULARY_VERSION = "pole-vocab-v2";
 
 /**
  * Cross-cutting tagger rules — global, not per-issue. Exported as one constant so
@@ -85,7 +91,7 @@ export const CROSS_CUTTING_TAGGER_RULES = [
 ] as const;
 
 /**
- * The 16 canonical issues with pinned poles. Mirrors docs/alignment/POLE_VOCABULARY.md.
+ * The 22 canonical issues with pinned poles. Mirrors docs/alignment/POLE_VOCABULARY.md.
  * Keys MUST match src/lib/canonicalIssues.ts exactly (enforced by the drift test).
  */
 export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
@@ -170,7 +176,7 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
       },
     ],
     notes:
-      "Means-trap — a Nay on a specific mechanism must surface as 'voted against this particular mechanism' with the rationale visible, never a bare 'against.' Valence-dominant ⇒ no forced question, but an explicitly anti-government concern resolves to Pole B. Tiebreak: tag by primary operative mechanism — a bill whose core act is a tax cut/repeal that reduces the government's fiscal role (medical-device-tax repeal, mandate-penalty repeal, HSA expansion) is opposed even when marketed as cost relief. This does NOT capture refundable subsidies like ACA premium credits, which expand the government role → in_favor.",
+      "Means-trap — a Nay on a specific mechanism must surface as 'voted against this particular mechanism' with the rationale visible, never a bare 'against.' Valence-dominant ⇒ no forced question, but an explicitly anti-government concern resolves to Pole B. Tiebreak: tag by primary operative mechanism — a bill whose core act is a tax cut/repeal that reduces the government's fiscal role (medical-device-tax repeal, mandate-penalty repeal, HSA expansion) is opposed even when marketed as cost relief. This does NOT capture refundable subsidies like ACA premium credits, which expand the government role → in_favor. Routing: Social Security / retirement-income provisions → retirement_income_security; Medicare and senior CARE stay here (senior_care facet).",
   },
 
   housing_affordability: {
@@ -336,7 +342,7 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
       ],
     },
     notes:
-      "The means ARE the poles here; the split is ~50/50 and party-correlated, and outcome-only phrasing ('more jobs') does not reveal side — so the disambiguation gate is required.",
+      "The means ARE the poles here; the split is ~50/50 and party-correlated, and outcome-only phrasing ('more jobs') does not reveal side — so the disambiguation gate is required. Routing: tariff / trade-barrier provisions → trade_tariffs (orthogonal axis); wage-floor and union-organizing provisions stay HERE and may carry the wages_worker_power facet (same axis).",
   },
 
   education_funding: {
@@ -382,7 +388,7 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
       ],
     },
     notes:
-      "Charter bills straddle (public funding + choice mechanism) — tag by the dominant mechanism: new choice/voucher authority → opposed; pure public-school funding → in_favor.",
+      "Charter bills straddle (public funding + choice mechanism) — tag by the dominant mechanism: new choice/voucher authority → opposed; pure public-school funding → in_favor. Routing: curriculum-content / student-life culture provisions (DEI, gender-identity curriculum, sports eligibility, transparency mandates) → curriculum_culture, not this funding-vs-choice axis.",
   },
 
   public_safety: {
@@ -701,7 +707,7 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
       ],
     },
     notes:
-      "ORIENTATION LOCK (high inversion risk). Subject = ballot access / the franchise. The word 'integrity' in the id is a partisan frame and does NOT set direction. Any provision that restricts voter access (voter-ID, roll purges, drop-box / mail limits) = opposed, regardless of the bill's title — even a bill literally named 'Election Integrity Act.' Fall-through: a bill that neither expands nor restricts voter access (redistricting, ECRA / certification, campaign-finance disclosure, audits) = no-score, never default to a pole.",
+      "ORIENTATION LOCK (high inversion risk). Subject = ballot access / the franchise. The word 'integrity' in the id is a partisan frame and does NOT set direction. Any provision that restricts voter access (voter-ID, roll purges, drop-box / mail limits) = opposed, regardless of the bill's title — even a bill literally named 'Election Integrity Act.' Fall-through: a bill that neither expands nor restricts voter access (ECRA / certification, campaign-finance disclosure, audits) = no-score, never default to a pole. Routing (v2): redistricting / gerrymandering → redistricting_reform; AI-manipulation / disinformation / infrastructure security → election_security_disinformation; a 'security'-framed bill whose operative provisions restrict voter access stays HERE as opposed.",
   },
 
   congressional_accountability: {
@@ -732,7 +738,230 @@ export const POLE_VOCABULARY: Record<string, PoleVocabularyEntry> = {
       },
     ],
     notes:
-      "Overwhelming consensus on Pole A — the canonical Polis 'bridge statement' theme. Rare opposed constituency; no forced question. Scope (halo-label guard): restrict to consensus ethics/transparency. EXCLUDE (a) term limits — a contested governance mechanism, not consensus accountability; (b) partisan single-target oversight / investigation bills — do NOT cross-tag these into this issue and auto-resolve them to Pole A.",
+      "Overwhelming consensus on Pole A — the canonical Polis 'bridge statement' theme. Rare opposed constituency; no forced question. Scope (halo-label guard): restrict to consensus ethics/transparency. EXCLUDE (a) term limits — route to congressional_term_limits (a distinct governance mechanism, not consensus accountability); (b) partisan single-target oversight / investigation bills — do NOT cross-tag these into this issue and auto-resolve them to Pole A.",
+  },
+
+  // -------------------------------------------------------------------------
+  // pole-vocab-v2 additions (2026-08-13 vocabulary-gap review). Provenance:
+  // the automated gap report over the full promise corpus + Muxin's manual
+  // worksheet pass; each entry carries at least one real promise behind it.
+  // -------------------------------------------------------------------------
+
+  trade_tariffs: {
+    axisType: "contested",
+    in_favor: {
+      name: "Trade protection / tariffs",
+      definition:
+        "use tariffs and trade barriers to protect domestic industry and jobs.",
+      billSignals: [
+        "imposing or raising tariffs",
+        "Buy American / domestic-content requirements",
+        "withdrawing from or renegotiating trade agreements",
+        "anti-dumping / trade-remedy enforcement",
+      ],
+    },
+    opposed: {
+      name: "Free trade / lower tariffs",
+      definition: "reduce tariffs and trade barriers; expand trade.",
+      billSignals: [
+        "repealing or blocking tariffs",
+        "new or expanded trade agreements",
+        "tariff-exclusion / relief processes",
+        "limiting unilateral presidential tariff authority",
+      ],
+    },
+    exampleConcerns: [
+      {
+        text: "bring manufacturing home / protect our industry from China",
+        pole: "in_favor",
+      },
+      { text: "tariffs are driving up prices on everything", pole: "opposed" },
+      { text: "I care about trade", pole: null },
+    ],
+    disambiguation: {
+      question:
+        "On trade, are you more focused on using tariffs to protect American industry, or on lowering tariffs and expanding trade?",
+      options: [
+        { label: "Protect with tariffs", pole: "in_favor" },
+        { label: "Lower tariffs & trade", pole: "opposed" },
+      ],
+    },
+    notes:
+      "Orientation: Pole A = expand the nominal subject (trade protection). Split cuts ACROSS both parties, so party is no proxy — the gate is required. Boundary with economy_jobs (orthogonal axes): a tariff/trade-barrier provision routes HERE, not to economy_jobs' investment-vs-deregulation axis — ending a tariff is neither a labor protection nor a domestic tax cut. General jobs/wages concerns with no trade mechanism stay economy_jobs.",
+  },
+
+  curriculum_culture: {
+    axisType: "contested",
+    in_favor: {
+      name: "Curriculum restrictions & parental oversight",
+      definition:
+        "restrict DEI / gender-identity content in public-school curriculum and student life; mandate curriculum transparency and parental review.",
+      billSignals: [
+        "banning or defunding DEI programs / mandates",
+        "restricting gender-identity or sexual-orientation curriculum",
+        "sex-based eligibility rules for school sports",
+        "curriculum-transparency / parental-review mandates",
+        "book-removal authority",
+      ],
+    },
+    opposed: {
+      name: "Inclusive curriculum & educator discretion",
+      definition:
+        "preserve inclusive curriculum and programming; leave content decisions with schools and educators.",
+      billSignals: [
+        "protecting or funding DEI / inclusive programming",
+        "trans-inclusive school sports or facilities policy",
+        "blocking curriculum-content bans or book bans",
+      ],
+    },
+    exampleConcerns: [
+      {
+        text: "get gender ideology out of schools / parents should see the curriculum",
+        pole: "in_favor",
+      },
+      {
+        text: "stop the book bans / let teachers teach honest history",
+        pole: "opposed",
+      },
+      { text: "I care about what kids are taught", pole: null },
+    ],
+    disambiguation: {
+      question:
+        "On school curriculum, are you more focused on restricting content like DEI and gender-identity material with more parental oversight, or on keeping curriculum decisions with schools and educators?",
+      options: [
+        { label: "Restrict & add oversight", pole: "in_favor" },
+        { label: "Keep with educators", pole: "opposed" },
+      ],
+    },
+    notes:
+      "Orientation (documented choice): the nominal subject is curriculum RESTRICTION — Pole A expands it. Boundary with education_funding (orthogonal axes): content/culture provisions (DEI, gender-identity curriculum, sports eligibility, transparency mandates) route HERE; funding/choice mechanisms (vouchers, ESAs, school funding, teacher pay) stay education_funding. An omnibus education bill carrying both → dominant provision, else no-score + curated context.",
+  },
+
+  redistricting_reform: {
+    axisType: "valence_dominant",
+    in_favor: {
+      name: "Independent / anti-gerrymandering map-drawing",
+      definition:
+        "move district map-drawing to independent processes and ban partisan gerrymandering.",
+      billSignals: [
+        "independent redistricting commissions",
+        "partisan-gerrymandering bans",
+        "map-drawing criteria / transparency requirements",
+        "banning mid-decade (out-of-cycle) redistricting",
+      ],
+    },
+    opposed: {
+      name: "Legislature-controlled map-drawing",
+      definition:
+        "keep district maps drawn by state legislatures / the party in power.",
+      billSignals: [
+        "blocking commission requirements",
+        "preserving legislative map-drawing authority",
+      ],
+    },
+    exampleConcerns: [
+      {
+        text: "gerrymandering rigs the maps / politicians pick their voters",
+        pole: "in_favor",
+      },
+    ],
+    notes:
+      "The home for election_integrity's former redistricting fall-through (previously an explicit no-score there). Voiced kitchen-table concern is near-uniformly Pole A, so valence; legislative VOTES still split party-line by state context — the tagger tags both directions. Do NOT cross-tag ballot-access provisions here; access ↔ election_integrity.",
+  },
+
+  election_security_disinformation: {
+    axisType: "valence_dominant",
+    in_favor: {
+      name: "Protect elections from manipulation & disinformation",
+      definition:
+        "regulate deceptive AI / deepfakes in elections and fund election security.",
+      billSignals: [
+        "AI-deepfake disclosure or bans in election communications",
+        "election-disinformation countermeasures",
+        "election-infrastructure / cybersecurity funding",
+        "foreign-interference protections",
+      ],
+    },
+    opposed: {
+      name: "Minimal regulation of election speech & technology",
+      definition:
+        "oppose new regulation of election-related speech and technology.",
+      billSignals: [
+        "blocking deepfake / disinformation rules (speech grounds)",
+        "cutting election-security funding",
+      ],
+    },
+    exampleConcerns: [
+      {
+        text: "AI deepfakes are going to wreck elections / stop the disinformation",
+        pole: "in_favor",
+      },
+    ],
+    notes:
+      "ORIENTATION GUARD (halo-label risk, mirrors election_integrity's lock): this issue is TECHNOLOGICAL security of the process — AI manipulation, disinformation, infrastructure. A 'security'-framed bill whose operative provisions restrict voter ACCESS (voter ID, roll purges, mail limits) is NOT this issue: it is election_integrity Pole B. Never launder an access restriction into this valence issue's Pole A.",
+  },
+
+  congressional_term_limits: {
+    axisType: "valence_dominant",
+    in_favor: {
+      name: "Impose term limits",
+      definition:
+        "limit the number of terms members of Congress may serve.",
+      billSignals: [
+        "term-limits constitutional amendments",
+        "statutory congressional term limits",
+        "cosponsoring term-limits resolutions",
+      ],
+    },
+    opposed: {
+      name: "Preserve unlimited terms",
+      definition:
+        "oppose imposing new term limits; keep the current unlimited-terms system.",
+      billSignals: ["voting against term-limits amendments or resolutions"],
+    },
+    exampleConcerns: [
+      { text: "career politicians need to go / term limits now", pole: "in_favor" },
+    ],
+    notes:
+      "The home for congressional_accountability's term-limits carve-out (its halo-label guard excludes term limits from consensus ethics). Public consensus on Pole A is overwhelming, so valence; the measure persistently FAILS in Congress — that is incumbent resistance, not voter-side ambiguity. Scope: only actual term-limits measures. A candidate's self-imposed term-limit pledge is campaign conduct (extraction gate 2b), not a congressional act.",
+  },
+
+  retirement_income_security: {
+    axisType: "valence_dominant",
+    in_favor: {
+      name: "Protect / expand retirement benefits",
+      definition:
+        "protect or expand Social Security and earned retirement-income benefits.",
+      billSignals: [
+        "blocking Social Security benefit cuts",
+        "benefit expansions / COLA increases",
+        "raising or eliminating the payroll-tax cap (revenue-side solvency)",
+        "protecting the current retirement age",
+      ],
+    },
+    opposed: {
+      name: "Restructure / reduce benefits",
+      definition:
+        "restrain Social Security spending or restructure benefits.",
+      billSignals: [
+        "raising the retirement age",
+        "means-testing or benefit-formula cuts",
+        "partial privatization / private accounts",
+        "commissions fast-tracking entitlement cuts",
+      ],
+    },
+    exampleConcerns: [
+      {
+        text: "protect Social Security / I paid into it my whole life",
+        pole: "in_favor",
+      },
+      {
+        text: "entitlements are bankrupting us / raise the retirement age",
+        pole: "opposed",
+      },
+    ],
+    notes:
+      "Solvency means-trap: 'save / fix Social Security' is voiced by BOTH poles — the MECHANISM decides. Revenue-side fixes (payroll-cap raise) = in_favor; benefit-side cuts (retirement age, means-testing, privatization) = opposed, however marketed. Boundary: Medicare and senior CARE stay healthcare_affordability (senior_care facet); this issue is retirement INCOME. A bundled 'protect Social Security and Medicare' promise carries both issues.",
   },
 };
 

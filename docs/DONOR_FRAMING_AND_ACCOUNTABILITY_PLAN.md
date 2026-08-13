@@ -1451,6 +1451,64 @@ subscription subagents (the harness's prompts and validation rails are importabl
 functions, so a subagent-driven runner scores identically), with version strings following
 the `*-agent-v1` convention `insert-issue-tags.ts` established.
 
+### Part 5 — vocabulary-gap review RUN + vocabulary v2 shipped 2026-08-13
+
+The automated gap review ran on Muxin's machine (12 issue groups, Sonnet
+subagents on subscription, reviewers blind to her worksheet findings) and
+produced an 8-proposal gap report. **Validation against the seven-finding
+baseline: 4 independently rediscovered** (tariffs, Social Security, education
+policy-vs-funding, AI — scoped to elections, the only AI promise in the
+corpus), **2 correctly left alone** (public-safety enforcement direction and
+water/flood are already expressed by the existing poles — `public_safety` /
+`crime_public_safety` split expand-vs-reform, and `water_infrastructure`
+names "drought/flood resilience" as a bill signal), **1 missed by deliberate
+conservatism** (wages/worker-power: the parent's in_favor bill signals
+literally name min-wage and the PRO Act, so "fits" was the technically
+correct blind call; the facet is a human-sourced granularity add). Verdict:
+the automation works; no prompt rework needed.
+
+Muxin approved all recommendations (2026-08-13): 8 approve, 1 reject.
+Shipped as **pole-vocab-v2 / sub-issue-v2 / promise-extract-v4**:
+
+1. **Six new canonical issues** (16 → 22): `trade_tariffs`,
+   `curriculum_culture` (both contested, with disambiguation questions),
+   `redistricting_reform`, `election_security_disinformation`,
+   `congressional_term_limits`, `retirement_income_security` (all four
+   valence-dominant). Cross-issue routing notes updated on economy_jobs,
+   education_funding, healthcare_affordability, election_integrity (its
+   redistricting fall-through now routes to a real id), and
+   congressional_accountability (term-limits carve-out now has a home).
+2. **Architecture note — why four "sub-issue" proposals became canonical
+   issues:** the sub-issue layer inherits the parent's pole axis verbatim
+   (`subIssues.ts` invariant — it narrows topic, never direction). Tariffs,
+   curriculum, redistricting, and disinformation were approved precisely
+   because their direction is ORTHOGONAL to the would-be parent's axis; in
+   this architecture a facet with its own poles IS a canonical issue, and
+   per-(bill, issue) tagging already supports overlapping issues. This
+   delivers the "more poles" Muxin asked for without touching the scoring
+   path's stance-per-(bill, issue) semantics.
+3. **Two new sub-issues** (direction-aligned with their parents, so the
+   inheritance contract holds): `interior_ice_enforcement` (border_security)
+   and `wages_worker_power` (economy_jobs, the human-sourced add).
+4. **Rejected / watch-list:** `cartel_narco_terrorism` (one promise,
+   executive-facing — revisit as more states land); standalone
+   `artificial_intelligence` id (revisit when non-election AI promises
+   appear).
+5. **Version stamps:** `POLE_VOCABULARY_VERSION` → pole-vocab-v2,
+   `SUB_ISSUE_VOCABULARY_VERSION` → sub-issue-v2, `SUB_TAGGER_VERSION` →
+   sub-retag-v2, `EXTRACTOR_VERSION` → promise-extract-v4. The intake
+   theme-extraction prompt grew ~1.7k chars (~420 tokens/call, ceiling
+   raised 7300 → 9200 in the length test) — the new ids are load-bearing
+   for routing. Prose docs (POLE_VOCABULARY.md, SUB_ISSUE_VOCABULARY.md)
+   mirrored; drift tests updated (14 contested / 8 valence).
+
+**Run consequences (Muxin's machine, after merge + `git pull`):** the single
+re-extract (`promise-extract.ts --corpus spike.json --force`) now carries BOTH
+the v3 type discipline and the v2 vocabulary — promises re-file under the new
+ids in place (deterministic-id upsert). The 118th-bill tagging workflow reads
+the vocabulary from source, so the 532-bill run automatically tags against
+v2 — run it after pulling this merge so the bills get the new ids too.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
