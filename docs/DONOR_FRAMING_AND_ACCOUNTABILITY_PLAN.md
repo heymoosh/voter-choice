@@ -1388,6 +1388,41 @@ our own extracted corpus — the calibration method is ready; adj-v3 wording (th
 instrument question above, plus run 2's rule-2 note) should be drafted from the gold
 round's disagreements rather than pre-emptively.
 
+**Extraction gold round — RUN 2026-08-13** (30 TX-2026 promises; Muxin + husband
+reviewed jointly in discussion — a deliberate protocol deviation for this round, so no
+inter-annotator κ is claimed; the INDEPENDENT two-worksheet protocol is preserved for
+the VERDICT round, which is the §6.4 ship gate. Claude provided a blind third-opinion
+pass from the raw worksheet, delivered before seeing any human labels). Findings:
+
+1. **All 30 are genuine promises** (gate pass rate 30/30) and 23/30 declared tests were
+   right. The 7 type corrections share ONE systematic cause: the v2 extractor assigned
+   `introduce_bill` to bare policy verbs ("push to consolidate", "regulate", "ensure"),
+   and its own calibration example taught exactly that error. **Fixed as
+   `promise-extract-v3`** (this PR): `introduce_bill` only for
+   introduce/sponsor/cosponsor/file verbs; bare policy verbs are `outcome`; outcomes
+   only the executive branch can deliver (e.g. FTO designations) are `oversight` or not
+   extracted. Stored rows are corrected by re-running extraction — the deterministic id
+   (candidate+capture+text hash) upserts the fixed `promise_type` onto the same rows,
+   the versioned-revision path the rubric requires, never a silent edit.
+2. **Vocabulary gaps, confirmed by both human review and the corpus** (Muxin's seven:
+   trade/tariffs; wages/worker-power vs economy_jobs; Social Security filed under
+   healthcare; education POLICY vs education_funding; AI as its own issue;
+   public_safety needing an enforcement-direction split; water_infrastructure vs
+   climate-resilience framing). Direction decided: canonical ids stay direction-neutral
+   with poles carrying direction (the existing design — election_integrity and
+   reproductive_rights already encode Muxin's exact worry); the expansion path is **new
+   ids where the topic is genuinely missing + a richer sub-issue layer with poles where
+   direction splits within a topic** — never a vector-DB replacement of the auditable
+   category join (embeddings remain a possible future RECALL assist for the linker
+   only).
+3. **Gap discovery is now automated** (this PR): `_export-vocab-gap-input.ts` (read-only
+   export, all promises grouped by issue) + `_vocab-gap.workflow.js` (subscription
+   subagents review each group against the issue DEFINITIONS from source, blind to
+   Muxin's findings, and synthesize a gap-report.md with per-proposal approve/reject
+   checkboxes and example promises). Muxin's seven findings are the validation baseline
+   recorded in the workflow header — if the blind run misses most of them, the prompts
+   need work. Approved proposals land as a versioned vocabulary bump + re-tag.
+
 Run order for the retrospective mini-spike (after this merges):
 `CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` (both dev-machine,
 free data APIs, no LLM) → issue tagging via the SUBSCRIPTION pattern above (export →

@@ -81,7 +81,13 @@ import {
  * candidate_promises.extraction_model_version; the model id rides after "+"
  * (same convention as the rubric's `rubric-0.1.0+modelrev`).
  */
-export const EXTRACTOR_VERSION = "promise-extract-v2";
+// v3 (2026-08-13, from the extraction gold round): promise_type verb
+// discipline — "introduce_bill" only for introduce/sponsor/cosponsor/file
+// verbs; bare policy verbs (pass/enact/regulate/ensure/push for) are
+// "outcome"; outcomes only the executive branch can deliver are "oversight"
+// or not extracted. The v2 calibration example that taught the wrong type
+// for "push to consolidate" is corrected.
+export const EXTRACTOR_VERSION = "promise-extract-v3";
 
 const EXTRACTION_MODEL = "claude-sonnet-5";
 
@@ -416,7 +422,9 @@ Statements failing ANY gate are unverifiable rhetoric: DO NOT return them. Retur
 
 Calibration examples (from real pages):
 - "I'm going to push for a nationwide ban against partisan, out-of-cycle gerrymandering" → EXTRACT (promise_type "outcome": a legislative result the record can test).
-- "Jane will push to consolidate K-12 federal programs into flexible block grants" → EXTRACT (promise_type "introduce_bill": tested by introduction/cosponsorship of such a bill).
+- "Jane will push to consolidate K-12 federal programs into flexible block grants" → EXTRACT (promise_type "outcome": she promises the consolidation, not the act of introducing a bill — "push to <result>" is an outcome).
+- "Jane will sponsor the REINS Act" → EXTRACT (promise_type "introduce_bill": the promised act IS the sponsorship).
+- "Jane will push to designate the cartels as Foreign Terrorist Organizations" → EXTRACT (promise_type "oversight": the designation is an EXECUTIVE act — a member controls only pressure/oversight toward it, so "outcome" would test something Congress does not do).
 - "Jane supports Texas's parental-rights framework on curriculum transparency" → DO NOT EXTRACT (gate 2a: a position, no act).
 - "I won't accept donations from AIPAC or any other organization" → DO NOT EXTRACT (gate 2b: campaign conduct, not a congressional act).
 
@@ -431,10 +439,10 @@ For each genuine promise return an object with EXACTLY these fields:
   - "sub_issue": a sub-issue id from the block above when one clearly fits, else null.
   - "promise_type": the DECLARED TEST, chosen now, before any outcome is known:
       "vote" — promises to cast a specific vote or class of votes
-      "introduce_bill" — promises to introduce or cosponsor legislation
-      "oversight" — promises of investigation, hearings, or oversight action
+      "introduce_bill" — ONLY when the promised act is the introduction itself: the verb is introduce / sponsor / cosponsor / file
+      "oversight" — promises of investigation, hearings, or oversight action — including pressure toward an EXECUTIVE-branch act (designations, agency decisions) that Congress cannot itself deliver
       "funding" — promises to secure, protect, or cut specific FEDERAL funding (appropriations — never campaign money)
-      "outcome" — promises a RESULT (repeal X, pass Y, get Z built) rather than the candidate's own act
+      "outcome" — promises a RESULT (repeal X, pass Y, get Z built) rather than the candidate's own act. Bare policy verbs — pass, enact, end, ban, regulate, ensure, "push for/to <result>" — are ALWAYS "outcome", never "introduce_bill": promising a result is not promising to file a bill
   - "conditions_deadline": explicit conditions or deadlines stated with the promise (e.g. "if the bill reaches the floor", "in my first 100 days"), else null — null means the default window, the term of office being sought.
 
 A statement not related to any canonical issue above fails gate 3: do not return it even if it is otherwise a promise.
