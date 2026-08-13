@@ -13,11 +13,7 @@ import { requireDb, type DbClient } from "../../db/client";
 import { bills, candidateOffices, candidates, votes } from "../../db/schema";
 
 export type NormalizedVoteCast =
-  | "yea"
-  | "nay"
-  | "present"
-  | "absent"
-  | "not_voting";
+  "yea" | "nay" | "present" | "absent" | "not_voting";
 
 type ChamberCode = "h" | "s";
 type FederalJurisdiction = "federal-house" | "federal-senate";
@@ -452,8 +448,66 @@ async function* fetchGovTrackVoteJsons(
   );
 }
 
-async function fetchGovTrackVotePage(
+/** One chamber × session slice of a congress's roll calls. */
+export interface GovTrackVotePartition {
+  chamber: "house" | "senate";
+  session: string;
+}
+
+/**
+ * GovTrack rejects requests with offset > 1000 (returns HTTP 400), and a
+ * full congress has far more roll calls than that (the 118th: ~1,500 House
+ * + ~700 Senate), so a single congress-wide query silently truncates. The
+ * /vote endpoint filters by `chamber` and `session` (the calendar year for
+ * modern congresses); each chamber-year slice stays under the cap — verified
+ * against the live API for the 118th. The closing year (termEnd's year) is
+ * included because a congress's final session can spill a few days into it;
+ * that slice is usually empty and costs one request.
+ */
+export function govTrackVotePartitions(
   congress: number,
+): GovTrackVotePartition[] {
+  const firstYear = 1789 + (congress - 1) * 2;
+  const sessions = [firstYear, firstYear + 1, firstYear + 2].map(String);
+  const partitions: GovTrackVotePartition[] = [];
+  for (const chamber of ["house", "senate"] as const) {
+    for (const session of sessions) {
+      partitions.push({ chamber, session });
+    }
+  }
+  return partitions;
+}
+
+export async function fetchGovTrackVotePage(
+  congress: number,
+  config: RuntimeConfig,
+  fetcher: Fetcher,
+): Promise<UnknownRecord[]> {
+  // Keyed by GovTrack link (fallback: partition-scoped index) — partitions
+  // are disjoint by construction, so this is belt-and-suspenders dedupe.
+  const votes = new Map<string, UnknownRecord>();
+
+  for (const partition of govTrackVotePartitions(congress)) {
+    const partitionVotes = await fetchGovTrackVotePartition(
+      congress,
+      partition,
+      config,
+      fetcher,
+    );
+    for (const [i, vote] of partitionVotes.entries()) {
+      const key =
+        getString(vote, "link") ??
+        `${partition.chamber}-${partition.session}-${i}`;
+      votes.set(key, vote);
+    }
+  }
+
+  return [...votes.values()];
+}
+
+async function fetchGovTrackVotePartition(
+  congress: number,
+  partition: GovTrackVotePartition,
   config: RuntimeConfig,
   fetcher: Fetcher,
 ): Promise<UnknownRecord[]> {
@@ -465,6 +519,8 @@ async function fetchGovTrackVotePage(
   while (true) {
     const url = withGovTrackParams(`${config.govtrackBaseUrl}/vote`, {
       congress: String(congress),
+      chamber: partition.chamber,
+      session: partition.session,
       limit: String(config.pageSize),
       offset: String(offset),
       order_by: "created",
@@ -486,8 +542,10 @@ async function fetchGovTrackVotePage(
       offset >= GOVTRACK_MAX_OFFSET
     ) {
       if (offset >= GOVTRACK_MAX_OFFSET && offset < totalCount) {
+        // Should not happen now that fetches are partitioned; if a single
+        // chamber-year ever exceeds the cap, this surfaces the truncation.
         console.warn(
-          `[federal-votes] govtrack_offset_cap reached: congress=${congress} fetched=${votes.length} total=${totalCount} (offset cap=${GOVTRACK_MAX_OFFSET})`,
+          `[federal-votes] govtrack_offset_cap reached: congress=${congress} chamber=${partition.chamber} session=${partition.session} fetched=${votes.length} total=${totalCount} (offset cap=${GOVTRACK_MAX_OFFSET})`,
         );
       }
       break;

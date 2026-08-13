@@ -1214,12 +1214,13 @@ decision). Findings from the code, ordered by what actually blocks:
 2. **The GovTrack offset cap IS the blocker.** `fetchGovTrackVotePage` stops at
    `GOVTRACK_MAX_OFFSET = 1000` (GovTrack 400s beyond it), and the 118th had roughly
    1,500+ House and ~700 Senate roll calls — a single `congress=118` query truncates more
-   than half the record, with only a console warning. Required change (small, next PR):
-   partition the fetch by `chamber` × `session` (GovTrack's `/vote` endpoint supports both
-   filters; each of the four partitions — house/senate × 2023/2024 — stays under the cap).
-   Verify partition counts on the dev machine first (this container's network policy
-   blocks govtrack.us):
-   `curl -s "https://www.govtrack.us/api/v2/vote?congress=118&chamber=house&session=2023&limit=1" | jq .meta.total_count`
+   than half the record, with only a console warning. **FIXED same day**: the fetch is now
+   partitioned by `chamber` × `session` year (GovTrack's `/vote` endpoint supports both
+   filters), each slice paged independently under the cap, with link-keyed dedupe and the
+   tail year included (a closing session can spill past New Year). Muxin verified the
+   partition counts live against the API — every chamber-year slice of the 118th is under
+   1,000. The cap warning remains, now per-slice, in case a future chamber-year ever
+   exceeds it. With this, `CONGRESS=118` is runnable as-is.
 3. **Candidate identity is safe.** Vote rows key candidates by bioguide id (same
    `federal-<BIOGUIDE>` convention as committee-assignments), so 118th votes by current
    incumbents land on their existing candidate rows — exactly what the retrospective
