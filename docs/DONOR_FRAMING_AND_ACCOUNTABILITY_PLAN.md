@@ -1169,6 +1169,25 @@ from FEC `CONNECTED_ORG` (which is a filing, i.e. evidence, not an inference) an
 while the false-match rate stays acceptable. Start with the largest PACs; every sponsor
 relationship carries its evidence link.
 
+**6a — built 2026-08-13** (`scripts/ingest/federal-pac-sponsors.ts` + migration
+`0022_add_pac_committees.sql`). The schema decision above was taken as specced: committees
+promoted to a first-class `pac_committees` table (committee_id → name → CONNECTED_ORG →
+sector → classification_method → status → evidence_url), with per-committee × candidate ×
+cycle totals in `pac_candidate_contributions` (direct 24K/24P/24Z money only — the same
+dollars already inside the "PACs" funding-mix bucket; read paths must never re-add them to
+totals). Classification is CONNECTED_ORG + ORG_TP only, exactly as specced: sponsor-name
+keywords against the shared `_bucket-mapping.ts` vocabulary (one vocabulary with
+individual-employer sectors); ORG_TP=L committees take union/education buckets (their own
+filing's claim); corporate committee NAMES are deliberately never keyword-matched (an
+ideological PAC with an industry word in its name is not that industry); non-industry
+buckets (Party committees, PACs, Other, Self-funded) are allowlist-excluded so nothing
+double-represents. Unclassified = NULL sector, honest. Human curation is first-class:
+`status` = auto | verified | rejected, and re-runs never reclassify non-auto rows (the
+false-match-rate control the plan requires). Run:
+`npx tsx --env-file=.env.local scripts/ingest/federal-pac-sponsors.ts --cycle 2026 --dry-run`
+then without the flag. Remaining for 6a after ingest: the UI block naming top PACs/sponsors
+per candidate (display-layer; excludes `rejected` rows).
+
 **6b — Super-PAC independent expenditures.** The doc's Context is right that IEs are absent from
 candidate receipts — but they are public: FEC Schedule E, available as the bulk
 independent-expenditure file or OpenFEC `/schedules/schedule_e/`, itemized per spender with a
