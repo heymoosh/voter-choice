@@ -90,6 +90,13 @@ scripts/ingest/_pole-batches/
 scripts/ingest/_subissue-batches/
 scripts/ingest/_subissue-gold/
 
+# Promise-ledger gold worksheets (regenerate with _promise-gold-sample.ts) and
+# external-calibration cases/reports. The calibration cases carry PolitiFact
+# labels — Poynter's copyright, internal scoring with citation only, NEVER
+# committed or republished. Only the synthetic fixture under fixtures/ is tracked.
+scripts/ingest/_promise-gold/
+scripts/ingest/_promise-calibration/
+
 # Cutover gold-sample: ignore bulky reproducible intermediates (batch inputs, juror files,
 # prod backup dumps); KEEP the audit evidence (_manifest / _gold-consensus / _gold-disagreements
 # / _gold-pv), which do not match the batch-id pattern below.
