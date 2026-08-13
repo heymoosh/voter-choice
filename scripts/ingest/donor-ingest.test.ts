@@ -131,6 +131,50 @@ describe("DONOR_BUCKET_LABELS", () => {
 // ---------------------------------------------------------------------------
 
 describe("mapEmployerToBucket", () => {
+  // Regressions from the 2026-08-13 Part 6a PAC-sponsor write review — the
+  // shared table classifies PAC sponsors too, and the biggest sponsors in
+  // the country exposed one false match and several plural/term gaps.
+  it("does NOT map automobile organizations to Oil, gas & energy (the 'mobil' substring bug)", () => {
+    expect(
+      mapEmployerToBucket("NATIONAL AUTOMOBILE DEALERS ASSOCIATION"),
+    ).toBeNull();
+  });
+  it("still maps standalone Mobil and ExxonMobil to Oil, gas & energy", () => {
+    expect(mapEmployerToBucket("Mobil Oil Corporation")).toBe(
+      "Oil, gas & energy",
+    );
+    expect(mapEmployerToBucket("ExxonMobil")).toBe("Oil, gas & energy");
+  });
+  it("maps bankers, credit unions, and accountants to Finance, banking & insurance", () => {
+    expect(mapEmployerToBucket("AMERICAN BANKERS ASSOCIATION (ABA)")).toBe(
+      "Finance, banking & insurance",
+    );
+    expect(mapEmployerToBucket("CREDIT UNION NATIONAL ASSOCIATION, INC.")).toBe(
+      "Finance, banking & insurance",
+    );
+    expect(
+      mapEmployerToBucket("AMERICAN INSTITUTE OF CERTIFIED PUBLIC ACCOUNTANTS"),
+    ).toBe("Finance, banking & insurance");
+  });
+  it("maps the plural REALTORS to Real estate & development", () => {
+    expect(mapEmployerToBucket("NATIONAL ASSOCIATION OF REALTORS")).toBe(
+      "Real estate & development",
+    );
+  });
+  it("maps anesthesia providers to Healthcare industry", () => {
+    expect(mapEmployerToBucket("U.S. ANESTHESIA PARTNERS, INC.")).toBe(
+      "Healthcare industry",
+    );
+  });
+  it("maps sugar producers to Agriculture and Entergy to Telecom & utilities", () => {
+    expect(mapEmployerToBucket("AMERICAN CRYSTAL SUGAR COMPAY")).toBe(
+      "Agriculture",
+    );
+    expect(mapEmployerToBucket("ENTERGY CORPORATION")).toBe(
+      "Telecom & utilities",
+    );
+  });
+
   // Real estate & development
   it("maps 'ABC Real Estate Group' to Real estate & development", () => {
     expect(mapEmployerToBucket("ABC Real Estate Group")).toBe(

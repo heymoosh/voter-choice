@@ -93,29 +93,39 @@ const BUCKET_RULES: BucketRule[] = [
     "Pharmaceutical & medical device",
   ],
 
-  // Healthcare industry.
+  // Healthcare industry. "anesthesia/anesthesiology" added 2026-08-13 from
+  // the Part 6a review (U.S. Anesthesia Partners PAC fell through).
   [
-    /\bhospital\b|\bhealth\s+(system|network|care|services|center|plan|insurance)\b|\bmedical\s+(center|group|clinic|associates)\b|\bclinic\b|\bnursing\b|\bphysician\b|\bdoctor\b|\bdentist\b|\boptom|\bchiropract|\bhmo\b|\bmanaged\s+care\b|\bcare\s+network\b|\bblue\s+(cross|shield)\b|\bhealthcare\b|\bhealth\b.*\b(provider|system|plan)\b/iu,
+    /\banesthesi(a|ology|ologist)\b|\bhospital\b|\bhealth\s+(system|network|care|services|center|plan|insurance)\b|\bmedical\s+(center|group|clinic|associates)\b|\bclinic\b|\bnursing\b|\bphysician\b|\bdoctor\b|\bdentist\b|\boptom|\bchiropract|\bhmo\b|\bmanaged\s+care\b|\bcare\s+network\b|\bblue\s+(cross|shield)\b|\bhealthcare\b|\bhealth\b.*\b(provider|system|plan)\b/iu,
     "Healthcare industry",
   ],
 
   // Oil, gas & energy — check after Pharmaceutical so "AbbVie energy" doesn't match.
   // Note: company names like ConocoPhillips and ExxonMobil are compound words
-  // and do not have internal word boundaries, so we match without \b.
+  // and do not have internal word boundaries, so we match without \b — EXCEPT
+  // "mobil", which needs \b on both sides: the bare substring matched inside
+  // "autoMOBILe" and misfiled the National AUTOMOBILE Dealers Association PAC
+  // as Oil, gas & energy (caught in the 2026-08-13 Part 6a write review).
+  // ExxonMobil still matches via "exxon"; standalone "Mobil"/"Mobil Oil"
+  // matches via \bmobil\b.
   [
-    /\boil\b|\bgas\b|\bpetroleum\b|conocophillips|chevron|exxon|mobil|\bshell\b|\bbp\b\s|conoco\b|\bphillips\s+66\b|\bmarathon\s+(oil|petroleum)\b|\bvalero\b|\bhess\b|\bhalliburton\b|\bschlumberger\b|\bbaker\s+hughes\b|\bnational\s+fuel\b|\bpipeline\b|\bliquefied\s+natural\b|\blng\b|\brefinery\b|\bdrilling\b|\bexploration\b.*\bproduction\b|\benergy\s+(company|corp|inc|llc|resources)\b|\brenewable\s+energy\b|\bsolar\b.*\benergy\b|\bwind\s+energy\b|\bnuclear\b.*\benergy\b|\bcoal\b|\bmining\b/iu,
+    /\boil\b|\bgas\b|\bpetroleum\b|conocophillips|chevron|exxon|\bmobil\b|\bshell\b|\bbp\b\s|conoco\b|\bphillips\s+66\b|\bmarathon\s+(oil|petroleum)\b|\bvalero\b|\bhess\b|\bhalliburton\b|\bschlumberger\b|\bbaker\s+hughes\b|\bnational\s+fuel\b|\bpipeline\b|\bliquefied\s+natural\b|\blng\b|\brefinery\b|\bdrilling\b|\bexploration\b.*\bproduction\b|\benergy\s+(company|corp|inc|llc|resources)\b|\brenewable\s+energy\b|\bsolar\b.*\benergy\b|\bwind\s+energy\b|\bnuclear\b.*\benergy\b|\bcoal\b|\bmining\b/iu,
     "Oil, gas & energy",
   ],
 
   // Telecom & utilities.
   [
-    /\btelecom\b|\btelecommunication|\bverizon\b|\bat&?t\b|\bt[- ]mobile\b|\bcomcast\b|\bcharter\b|\bspectrum\b|\bcenturylink\b|\blumen\b|\bfrontier\s+comm|\bsprint\b|\bxfinity\b|\butility\b|\butilities\b|\belectric\s+(coop|company|utility)\b|\bgas\s+company\b|\bwater\s+utility\b|\bpublic\s+service\s+(company|corp)\b|\bpse&?g\b|\bdominion\b|\bexelon\b|\bsouthern\s+company\b|\bnext\s*era\b|\baes\s+corp\b|\bpge\b|\bpacific\s+gas\b|\bconsolidated\s+edison\b|\bcon\s+ed\b/iu,
+    /\btelecom\b|\btelecommunication|\bverizon\b|\bat&?t\b|\bt[- ]mobile\b|\bcomcast\b|\bcharter\b|\bspectrum\b|\bcenturylink\b|\blumen\b|\bfrontier\s+comm|\bsprint\b|\bxfinity\b|\butility\b|\butilities\b|\belectric\s+(coop|company|utility)\b|\bgas\s+company\b|\bwater\s+utility\b|\bpublic\s+service\s+(company|corp)\b|\bpse&?g\b|\bdominion\b|\bentergy\b|\bexelon\b|\bsouthern\s+company\b|\bnext\s*era\b|\baes\s+corp\b|\bpge\b|\bpacific\s+gas\b|\bconsolidated\s+edison\b|\bcon\s+ed\b/iu,
     "Telecom & utilities",
   ],
 
-  // Finance, banking & insurance.
+  // Finance, banking & insurance. "bankers", "credit union", and
+  // "accountant(s)/accounting" added 2026-08-13 from the Part 6a write
+  // review: the American Bankers Association, Credit Union National
+  // Association, and AICPA PACs — three of the largest PAC sponsors in the
+  // country — all fell through to unclassified.
   [
-    /\bbank\b|\binsurance\b|\bcapital\b.*\b(group|management|partners|one)\b|\binvestment\b|\bwealth\s+management\b|\bfinancial\b|\bjp\s*morgan\b|\bgoldman\s+sachs\b|\bmorgan\s+stanley\b|\bwells\s+fargo\b|\bcitibank\b|\bcitigroup\b|\bbank\s+of\s+america\b|\buses\s+bancorp\b|\bpnc\s+bank\b|\btd\s+bank\b|\bsuntrust\b|\bregions\s+bank\b|\bfidelity\b|\bblackrock\b|\bvanguard\b|\bstate\s+street\b|\bredrock\b.*\bcapital\b|\bhedge\s+fund\b|\bprivate\s+equity\b|\bventure\s+capital\b|\bvc\s+firm\b|\bsecurities\b|\bexchange\b|\btrading\b/iu,
+    /\bbank(er)?s?\b|\bcredit\s+union\b|\baccount(ant|ing)s?\b|\binsurance\b|\bcapital\b.*\b(group|management|partners|one)\b|\binvestment\b|\bwealth\s+management\b|\bfinancial\b|\bjp\s*morgan\b|\bgoldman\s+sachs\b|\bmorgan\s+stanley\b|\bwells\s+fargo\b|\bcitibank\b|\bcitigroup\b|\bbank\s+of\s+america\b|\buses\s+bancorp\b|\bpnc\s+bank\b|\btd\s+bank\b|\bsuntrust\b|\bregions\s+bank\b|\bfidelity\b|\bblackrock\b|\bvanguard\b|\bstate\s+street\b|\bredrock\b.*\bcapital\b|\bhedge\s+fund\b|\bprivate\s+equity\b|\bventure\s+capital\b|\bvc\s+firm\b|\bsecurities\b|\bexchange\b|\btrading\b/iu,
     "Finance, banking & insurance",
   ],
 
@@ -131,15 +141,20 @@ const BUCKET_RULES: BucketRule[] = [
     "Legal industry",
   ],
 
-  // Agriculture.
+  // Agriculture. "sugar" added 2026-08-13 (American Crystal Sugar PAC — a
+  // top-5 PAC sponsor — fell through). Safe ordering note: education-rule
+  // matches ("Sugar Land ISD") win first because Education is checked
+  // earlier in this list.
   [
-    /\bfarm\b|\bfarming\b|\bagriculture\b|\bagricultural\b|\bcrop\b|\bcattle\b|\bbovine\b|\bpoultry\b|\blivestock\b|\bdairy\b|\bsoy\b|\bcorn\s+(grower|farm)\b|\bgrain\b|\borchard\b|\bharvest\b|\birrigation\b|\bagribusiness\b|\bfood\s+processing\b|\bmeat\s+packing\b|\bcargill\b|\barcher\s+daniels\b|\badm\b|\bbunge\b|\btyson\b|\bsimplot\b/iu,
+    /\bsugar\b|\bfarm\b|\bfarming\b|\bagriculture\b|\bagricultural\b|\bcrop\b|\bcattle\b|\bbovine\b|\bpoultry\b|\blivestock\b|\bdairy\b|\bsoy\b|\bcorn\s+(grower|farm)\b|\bgrain\b|\borchard\b|\bharvest\b|\birrigation\b|\bagribusiness\b|\bfood\s+processing\b|\bmeat\s+packing\b|\bcargill\b|\barcher\s+daniels\b|\badm\b|\bbunge\b|\btyson\b|\bsimplot\b/iu,
     "Agriculture",
   ],
 
-  // Real estate & development.
+  // Real estate & development. "realtors" (plural) added 2026-08-13: the
+  // National Association of REALTORS PAC — the second-largest PAC sponsor —
+  // missed because \brealtor\b does not match the plural.
   [
-    /\breal\s+estate\b|\brealtor\b|\bproperty\b|\bdeveloper\b|\bdevelopment\b|\breit\b|\bhousing\b|\bmortgage\b|\bhomebuilder\b|\blennar\b|\bdr\s+horton\b|\bpulte\b|\btoll\s+brothers\b|\bkb\s+homes?\b|\bcbre\b|\bjll\b|\bjones\s+lang\b|\blandlord\b|\bapartment\b|\bcommercial\s+real\s+estate\b|\bleasing\b|\bnewmark\b|\bcushman\b|\bwakefield\b/iu,
+    /\breal\s+estate\b|\brealtors?\b|\bproperty\b|\bdeveloper\b|\bdevelopment\b|\breit\b|\bhousing\b|\bmortgage\b|\bhomebuilder\b|\blennar\b|\bdr\s+horton\b|\bpulte\b|\btoll\s+brothers\b|\bkb\s+homes?\b|\bcbre\b|\bjll\b|\bjones\s+lang\b|\blandlord\b|\bapartment\b|\bcommercial\s+real\s+estate\b|\bleasing\b|\bnewmark\b|\bcushman\b|\bwakefield\b/iu,
     "Real estate & development",
   ],
 
