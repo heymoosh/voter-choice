@@ -64,10 +64,10 @@ import { promiseVerdicts } from "../../db/schema";
 // ---------------------------------------------------------------------------
 
 /** The rubric version this adjudicator executes, verbatim from the doc. */
-export const RUBRIC_VERSION = "rubric-1.0.0";
+export const RUBRIC_VERSION = "rubric-1.1.0";
 
 /** Bump adj-vN whenever the adjudication prompt or rule rendering changes. */
-export const ADJUDICATOR_REVISION = "adj-v1";
+export const ADJUDICATOR_REVISION = "adj-v2";
 
 /**
  * Kept/broken is the contested-judgment stage — the one the gold set grades
@@ -223,11 +223,13 @@ EVIDENCE RUNGS (each action is labeled): activity < advancement < outcome. A ver
 
 APPLY THE FIRST MATCHING RULE, IN ORDER:
 1. not_yet_testable — no relevant in-window action or deadline has occurred; or a declared condition has not triggered.
-2. kept — the pre-declared controllable action occurred, in the promised direction, inside the window, at the required evidence rung.
+2. kept — the pre-declared controllable action occurred, in the promised direction, inside the window, at the required evidence rung. kept means the promise as stated was delivered; if what was delivered is materially narrower than what was promised, that is rule 4, not rule 2 — but do not downgrade a delivered outcome to compromise merely because it arrived through a different legislative vehicle than expected.
 3. attempted_blocked — the member took the promised action but other institutions stopped the outcome (died in other chamber, vetoed, lost floor vote).
-4. compromise — a materially partial version of the promised outcome was achieved with the member's promised participation.
-5. broken — the window closed (or the dispositive vote occurred) and the member took the opposite action or NO controllable action when the opportunity existed. Absence of opportunity is never broken.
-6. not_yet_rated — you cannot cleanly apply a rule above (partial scope overlap, contradictory evidence, judgment call needed). FLAG, DO NOT FORCE: you are never penalized for flagging, only for guessing.
+4. compromise — a materially partial version of the promised outcome was achieved with the member's promised participation. COMPOUND PROMISES (two or more independently testable commitments joined as one — "freeze pay AND hiring"): when at least one component was achieved and at least one clearly was not, that is compromise BY THIS RULE — a compound split is not rule-6 ambiguity.
+5. broken — the window closed (or the dispositive vote occurred) and the member took the opposite action or NO controllable action when the opportunity existed. Absence of opportunity is never broken. Two clarifications:
+   - INACTION WITH OPPORTUNITY: the member's own measure dying in a chamber their own side controlled, with NO external blocker in the record (no lost floor vote, no other-chamber rejection, no veto), is inaction — broken, not attempted_blocked, and not a flag. Mere introduction does not discharge an outcome promise when the chamber that could have advanced it was their own.
+   - CONDUCT PROMISES (a standing practice the member's chamber controls — procedural/transparency pledges): judge conduct at the DISPOSITIVE moments. Adopting an enabling rule and then violating it when it mattered most is broken; the adoption does not offset the violation.
+6. not_yet_rated — you cannot cleanly apply a rule above (partial scope overlap, contradictory evidence, judgment call needed). FLAG, DO NOT FORCE: you are never penalized for flagging, only for guessing. But rules 4 and 5 above name three patterns (compound splits, inaction with opportunity, conduct violations) that ARE cleanly decidable — do not flag those.
 
 THE TEST IS PRE-DECLARED: the promise's type and conditions were written at extraction, before any outcome was known. Apply THAT test. If the declared test seems mis-typed, that is a flag (rule 6), not a re-interpretation.
 

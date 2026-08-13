@@ -1,6 +1,13 @@
 # Promise adjudication rubric
 
-> **Version: 1.0.0** — signed off by Muxin 2026-08-12 ("get everything else
+> **Version: 1.1.0** — three §4 clarifications sourced from external
+> calibration run 1 (2026-08-13, 18 GOP Pledge-O-Meter cases; see the plan
+> doc): inaction-with-opportunity, conduct promises, and compound promises.
+> MINOR bump per the rule below; no shipped verdict is invalidated (every
+> production verdict to date is deterministic `not_yet_testable`, unaffected
+> by these rules, but rows will be re-stamped on the next adjudication run).
+>
+> **Version 1.0.0** — signed off by Muxin 2026-08-12 ("get everything else
 > out"): the proposed ship-gate numbers ship as the initial defaults, revisable
 > before the first gold pass (revising them is a MINOR bump per the rule
 > below, cheap while no verdict has shipped).
@@ -124,12 +131,28 @@ Apply the first rule that matches, in this order:
 4. **`compromise`** — a materially partial version of the promised outcome
    was achieved with the member's promised participation: narrower scope,
    lower funding, sunset clauses. The record must show both the delta from
-   the promise and the member's role.
+   the promise and the member's role. **Compound promises** (two or more
+   independently testable commitments joined as one — "freeze pay AND
+   hiring") where at least one component was achieved and at least one
+   clearly was not are `compromise` by this rule; a compound split is not
+   §5 ambiguity. _(1.1.0, from calibration run 1.)_
 5. **`broken`** — the window closed (or the dispositive vote occurred) and
    the record shows the member either took the opposite action (voted
    against what they promised to vote for), or took **no** controllable
    action toward the promise when the opportunity existed. Absence of
    opportunity is `not_yet_testable` or `attempted_blocked`, never `broken`.
+   Two clarifications _(1.1.0, from calibration run 1)_:
+   - **Inaction with opportunity**: a member's own measure that died in a
+     chamber their own side controlled, with **no external blocker in the
+     record** (no lost floor vote, no other-chamber rejection, no veto), is
+     inaction — `broken`, not `attempted_blocked`, and not a §5 flag. Mere
+     introduction does not discharge an `outcome` promise when the chamber
+     that could have advanced it was their own.
+   - **Conduct promises** (a standing practice the member's chamber
+     controls — procedural and transparency pledges): judge conduct at the
+     **dispositive moments**. Adopting an enabling rule and then violating
+     it when it mattered most is `broken`; the adoption does not offset the
+     violation.
 6. **`not_yet_rated`** — not yet adjudicated, or **contested**: the two human
    annotators disagreed (§6), or the adjudicator flagged the case as
    ambiguous (§5). Visible state, never hidden.
