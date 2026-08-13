@@ -295,7 +295,9 @@ describe("scoreCalibration", () => {
 
   it("stamps the report with the adjudicator version and run metadata", () => {
     const report = scoreCalibration([result("1", "kept", "kept")], meta);
-    expect(report.adjudicatorVersion).toContain("rubric-1.0.0");
+    expect(report.adjudicatorVersion).toMatch(
+      /^rubric-\d+\.\d+\.\d+\+adj-v\d+\+/u,
+    );
     expect(report.nowIso).toBe("2026-08-13");
     expect(report.cases).toBe(4);
     expect(report.scored).toBe(1);

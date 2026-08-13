@@ -1322,6 +1322,29 @@ and comparable), and extend the case set with Biden-tracker legislative cases fo
 source diversity. Broken-class recall (currently 1/3, the rest flagged) is the number to
 move; flags are safe-by-design but each one is a case the app can't display.
 
+**External calibration — SECOND RUN executed 2026-08-13** (`rubric-1.1.0+adj-v2`, same 18
+cases, same subscription-subagent mechanics, prompts regenerated from the revised system
+prompt). The revisions shipped as rubric **1.1.0** (MINOR bump; no shipped verdict
+invalidated — every production verdict to date is deterministic `not_yet_testable`) plus
+`adj-v2` prompt rendering: rule-5 inaction-with-opportunity and conduct-promise clauses,
+the rule-4 compound-promise clause, a rule-2 note (delivered-but-narrower is rule 4; a
+different legislative _vehicle_ alone is not a downgrade), and an explicit "these three
+patterns are cleanly decidable — do not flag them" line on rule 6.
+
+**Results (n=18): agreement 83.3% (was 66.7%), κ=0.770 (was 0.565), polarity flips 0,
+flag rate 0% (was 16.7%).** Broken-class recall 3/3 (was 1/3): gop651 ruled broken
+outright, gop657 via the inaction-with-opportunity clause, gop664 via the conduct clause —
+the run-1 worklist's target number, fully closed. gop649 (run-1 kept→compromise miss)
+now kept. The declared-test property held again on gop655. The three remaining misses,
+all adjacent-category, zero polar: gop667 and gop671 expected `compromise`, ruled `kept`
+(the rule-2 "different vehicle" note likely overcorrects when the delivered thing was
+also materially narrower — candidate wording for adj-v3, not urgent since both are
+one-rung and non-polar); gop686, the deliberately contested case, again
+`attempted_blocked`→`compromise`, the defensible reading its notes anticipated. Numbers
+now sit at the §6.4 gate's neighborhood on an external set the gate wasn't written for
+(the gate is defined over OUR gold set); the method is calibrated enough to proceed to
+the Biden-tracker extension and then the human gold round.
+
 Run order for the retrospective mini-spike (after this merges):
 `CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` (both dev-machine,
 free data APIs, no LLM) → issue tagging via the SUBSCRIPTION pattern above (export →
