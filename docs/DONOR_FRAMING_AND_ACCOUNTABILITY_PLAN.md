@@ -1228,10 +1228,18 @@ decision). Findings from the code, ordered by what actually blocks:
 4. **`bill-cosponsors.ts` takes `--congress 118`** and backfills over bills already held,
    so it runs AFTER the votes ingest lands the 118th bills. Congress.gov key already in
    `.env.local` (used for 119th enrichment); rate limit ~5,000 req/hr is the pacing item.
-5. **`tag-bills.ts` needs no change** — it tags whatever bills lack an `issue_tags` row
-   for `TAGGER_VERSION`, so the new 118th bills queue automatically. Cost: Haiku with a
-   cached vocabulary prompt; the 118th adds roughly 600–900 roll-called bills → one or two
-   default-limit runs, low single-digit dollars.
+5. **Issue tagging runs on SUBSCRIPTION, not the API** _(corrected 2026-08-13 — the
+   original scoping note said "tag-bills.ts, low single-digit dollars on Haiku," which
+   contradicts the standing policy: the Anthropic API key is reserved for user-facing
+   chat; bulk LLM classification runs via Claude Code subscription subagents — the
+   ~46,000-tag precedent, see docs/operations/voter-choice-backlog.md)._ The proven
+   path: `_export-untagged-batches.ts` (dev machine, DB read → batch JSON files) →
+   subscription workflow/subagents classify against the canonical vocabulary →
+   `insert-issue-tags.ts` (dev machine, JSON → `issue_tags` upsert, version-stamped
+   `*-agent-v1`). The 118th's ~600–900 roll-called bills arrive with zero `issue_tags`
+   rows, so any untagged filter picks them up; the export script's `LIMIT 500` means a
+   couple of export/insert rounds. `tag-bills.ts` (API path) stays for reference but is
+   NOT the run instruction.
 6. **Coverage check before any of this** (read-only, Muxin's machine) — confirms what the
    DB already holds:
    `SELECT LEFT(vote_date::text, 4) AS yr, COUNT(*) FROM votes WHERE id LIKE 'govtrack%' OR source_url LIKE '%govtrack%' GROUP BY 1 ORDER BY 1;`
@@ -1271,9 +1279,18 @@ hazard the scoping missed). Three pieces:
    1,000 vote records) may already exist — the re-run upserts over it idempotently, and
    the coverage SQL above will show the before/after.
 
-Run order for the retrospective mini-spike, all dev-machine (after this merges):
-`CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` → `tag-bills.ts`
-(until 0 untagged) → `_promise-corpus-spike.ts --state TX --cycle 2022 --json > spike-tx-2022.json`.
+Run order for the retrospective mini-spike (after this merges):
+`CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` (both dev-machine,
+free data APIs, no LLM) → issue tagging via the SUBSCRIPTION pattern above (export →
+subagent workflow → insert; no API spend) →
+`_promise-corpus-spike.ts --state TX --cycle 2022 --json > spike-tx-2022.json` (free:
+OpenFEC + Wayback only). Standing policy, restated (Muxin, 2026-08-13): **the Anthropic
+API key is for user-facing chat only; every bulk/batch LLM step in these pipelines runs
+on subscription subagents.** This also applies forward: the calibration harness and the
+retrospective extract/link/adjudicate runs should execute their LLM calls via
+subscription subagents (the harness's prompts and validation rails are importable pure
+functions, so a subagent-driven runner scores identically), with version strings following
+the `*-agent-v1` convention `insert-issue-tags.ts` established.
 
 ---
 
