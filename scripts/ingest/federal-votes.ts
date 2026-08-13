@@ -251,7 +251,7 @@ export function createEmptyPlan(): PlannedFederalRows {
 
 export function planGovTrackVote(
   voteJson: unknown,
-  options: { dataUrl: string },
+  options: { dataUrl: string; currentCongress?: number },
 ): PlannedFederalRows {
   const plan = createEmptyPlan();
   plan.counts.rollCallsSeen = 1;
@@ -293,6 +293,12 @@ export function planGovTrackVote(
       candidateId,
       entry.member,
       jurisdiction,
+      // Only a CURRENT-congress roll call is evidence of incumbency. A
+      // backfilled congress (e.g. CONGRESS=118) contains members who have
+      // since retired or lost — inserting them as incumbents would poison
+      // every is_incumbent consumer.
+      billIdentity.congress >=
+        (options.currentCongress ?? getCurrentCongress()),
     );
     const office = buildOfficeRow(
       candidateId,
@@ -323,7 +329,15 @@ export function mergeFederalPlans(
   target: PlannedFederalRows,
   incoming: PlannedFederalRows,
 ): PlannedFederalRows {
-  for (const [id, row] of incoming.candidates) target.candidates.set(id, row);
+  for (const [id, row] of incoming.candidates) {
+    // A member seen in the current congress stays an incumbent even when a
+    // backfilled older congress's row for the same person merges in later.
+    const existing = target.candidates.get(id);
+    target.candidates.set(id, {
+      ...row,
+      isIncumbent: Boolean(row.isIncumbent || existing?.isIncumbent),
+    });
+  }
   for (const [id, row] of incoming.candidateOffices) {
     target.candidateOffices.set(id, row);
   }
@@ -947,7 +961,10 @@ async function writeFederalPlan(
               fullName: sql`excluded.full_name`,
               sourceId: sql`excluded.source_id`,
               jurisdiction: sql`excluded.jurisdiction`,
-              isIncumbent: sql`excluded.is_incumbent`,
+              // Never DEMOTE via this ingest: a backfilled older congress
+              // must not flip a sitting member's flag off. Demotion is the
+              // roster/incumbent-backfill scripts' job.
+              isIncumbent: sql`${candidates.isIncumbent} OR excluded.is_incumbent`,
               rawMetadata: sql`excluded.raw_metadata`,
               updatedAt: now,
             },
@@ -1072,6 +1089,7 @@ function buildCandidateRow(
   id: string,
   member: UnknownRecord,
   jurisdiction: FederalJurisdiction,
+  isIncumbent: boolean,
 ): CandidateRow {
   const sourceId =
     findNestedString(member, [
@@ -1089,7 +1107,7 @@ function buildCandidateRow(
     fullName: getMemberName(member),
     sourceId,
     jurisdiction,
-    isIncumbent: true,
+    isIncumbent,
     rawMetadata: stripUndefined({ govtrack: member }),
   };
 }

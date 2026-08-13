@@ -190,6 +190,45 @@ describe("federal-votes helpers", () => {
     );
   });
 
+  it("marks members incumbent only from current-congress roll calls", () => {
+    // The fixture is 118th-Congress data. Seen from the 119th (a backfill),
+    // its members are NOT incumbents; seen as the current congress, they are.
+    const backfill = planGovTrackVote(billVote, {
+      dataUrl:
+        "https://www.govtrack.us/data/congress/118/votes/2023/h42/data.json",
+      currentCongress: 119,
+    });
+    expect(backfill.candidates.get("federal-A000001")?.isIncumbent).toBe(false);
+    const current = planGovTrackVote(billVote, {
+      dataUrl:
+        "https://www.govtrack.us/data/congress/118/votes/2023/h42/data.json",
+      currentCongress: 118,
+    });
+    expect(current.candidates.get("federal-A000001")?.isIncumbent).toBe(true);
+  });
+
+  it("never lets a backfilled congress demote a sitting member in the merge", () => {
+    const opts = {
+      dataUrl:
+        "https://www.govtrack.us/data/congress/118/votes/2023/h42/data.json",
+    };
+    const current = planGovTrackVote(billVote, {
+      ...opts,
+      currentCongress: 118,
+    }); // incumbent=true
+    const backfill = planGovTrackVote(billVote, {
+      ...opts,
+      currentCongress: 119,
+    }); // incumbent=false
+    // Merge order must not matter: true survives either way.
+    const a = mergeFederalPlans(createEmptyPlan(), current);
+    mergeFederalPlans(a, backfill);
+    expect(a.candidates.get("federal-A000001")?.isIncumbent).toBe(true);
+    const b = mergeFederalPlans(createEmptyPlan(), backfill);
+    mergeFederalPlans(b, current);
+    expect(b.candidates.get("federal-A000001")?.isIncumbent).toBe(true);
+  });
+
   it("defaults to the current Congress plus one previous Congress", () => {
     const config = resolveRuntimeConfig(
       {} as NodeJS.ProcessEnv,

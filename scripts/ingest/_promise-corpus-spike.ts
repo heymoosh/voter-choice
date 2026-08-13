@@ -60,9 +60,19 @@
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts
- *     [--state TX] [--year 2026] [--office house|senate|both] [--limit N]
- *     [--concurrency N] [--election-day 2026-11-03] [--from 2025-01-01]
+ *     [--state TX] [--cycle 2026] [--office house|senate|both] [--limit N]
+ *     [--concurrency N] [--election-day YYYY-MM-DD] [--from YYYY-MM-DD]
  *     [--skip-wayback] [--json]
+ *
+ * RETROSPECTIVE MODE (--cycle 2022, or any cycle whose election day has
+ * passed): the roster switches from official_roster_candidates to that
+ * cycle's WINNERS — members whose term started the following Jan 3, from
+ * candidate_offices (requires the congress's record backfill, e.g.
+ * CONGRESS=118 federal-votes) — identity comes pre-resolved, the capture
+ * window defaults to the cycle (Jan 1 of the odd year → that election day),
+ * and FEC lookups prefer the committee/website AS FILED for that cycle
+ * (/committee/{id}/history/{cycle}). Winner bias is inherent and must be
+ * stated on any surface built from it (plan doc honesty note).
  *
  * API key: OpenFEC uses api.data.gov keys — the SAME key infrastructure as
  * CONGRESS_GOV_API_KEY, so that key is tried when FEC_API_KEY is unset, and
@@ -200,10 +210,16 @@ export interface PrincipalCommittee {
 
 /**
  * From an OpenFEC /candidate/{id}/committees response, pick the principal
- * campaign committee (designation "P"), preferring the one active in the most
- * recent cycle when several exist. Returns null when there is none.
+ * campaign committee (designation "P"). When `cycle` is given, committees
+ * active in THAT cycle are preferred (the retrospective needs the 2022
+ * committee, not a successor); within the preferred pool — or when none
+ * lists the cycle — the most recently active wins. Returns null when there
+ * is no principal committee at all.
  */
-export function pickPrincipalCommittee(payload: unknown): PrincipalCommittee | null {
+export function pickPrincipalCommittee(
+  payload: unknown,
+  cycle?: number,
+): PrincipalCommittee | null {
   const results = (payload as UnknownRecord | null)?.results;
   if (!Array.isArray(results)) return null;
   const principals = results.filter(
@@ -224,8 +240,14 @@ export function pickPrincipalCommittee(payload: unknown): PrincipalCommittee | n
       ? r.last_cycle_has_activity
       : 0;
   };
-  principals.sort((a, b) => lastCycleOf(b) - lastCycleOf(a));
-  const top = principals[0];
+  const activeInCycle = cycle
+    ? principals.filter(
+        (r) => Array.isArray(r.cycles) && r.cycles.includes(cycle),
+      )
+    : [];
+  const pool = activeInCycle.length > 0 ? activeInCycle : principals;
+  pool.sort((a, b) => lastCycleOf(b) - lastCycleOf(a));
+  const top = pool[0];
   const lastCycle = lastCycleOf(top);
   return {
     committeeId: top.committee_id as string,
@@ -301,6 +323,36 @@ export function selectCanonicalCapture(
 
 export function waybackReplayUrl(capture: CdxCapture): string {
   return `https://web.archive.org/web/${capture.timestamp}/${capture.original}`;
+}
+
+// ---------------------------------------------------------------------------
+// Cycle parameterization (pure, unit-tested) — the retrospective ledger runs
+// the same spike backward (--cycle 2022; plan doc "Decision 2026-08-13").
+// ---------------------------------------------------------------------------
+
+/**
+ * The general-election day for a cycle: the first Tuesday after the first
+ * Monday in November. 2022 → 11-08, 2024 → 11-05, 2026 → 11-03.
+ */
+export function generalElectionDay(cycle: number): string {
+  const nov1Dow = new Date(Date.UTC(cycle, 10, 1)).getUTCDay(); // 0 = Sunday
+  const firstMonday = 1 + ((8 - nov1Dow) % 7);
+  const tuesday = firstMonday + 1;
+  return `${cycle}-11-${String(tuesday).padStart(2, "0")}`;
+}
+
+export interface CycleDefaults {
+  /** CDX capture-window end (canonical capture = last at or before this). */
+  electionDay: string;
+  /** CDX capture-window start: Jan 1 of the odd year opening the cycle. */
+  fromDate: string;
+}
+
+export function cycleDefaults(cycle: number): CycleDefaults {
+  return {
+    electionDay: generalElectionDay(cycle),
+    fromDate: `${cycle - 1}-01-01`,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -448,18 +500,30 @@ interface RosterRow {
   office: string;
   district: string | null;
   name: string;
+  /** Pre-resolved identity — set by the retrospective winners roster. */
+  candidateId?: string | null;
+  fecCandidateId?: string | null;
 }
 
 async function main(): Promise<void> {
-  const year = Number(arg("--year") ?? 2026);
+  // --cycle (alias: --year) picks the election cycle. A cycle whose election
+  // day is already past runs RETROSPECTIVE: the roster is that cycle's
+  // WINNERS (members whose term started the following Jan 3 — the only
+  // population whose promised term is complete and adjudicable), identity is
+  // pre-resolved from the candidates table, and the FEC committee/website
+  // lookups prefer what was filed FOR that cycle.
+  const cycle = Number(arg("--cycle") ?? arg("--year") ?? 2026);
   const state = (arg("--state") ?? "TX").toUpperCase();
   const office = arg("--office") ?? "house";
   const limit = Number(arg("--limit") ?? 0);
   const concurrency = Math.max(1, Number(arg("--concurrency") ?? 4));
-  const electionDay = arg("--election-day") ?? "2026-11-03";
-  const fromDate = arg("--from") ?? "2025-01-01";
+  const defaults = cycleDefaults(cycle);
+  const electionDay = arg("--election-day") ?? defaults.electionDay;
+  const fromDate = arg("--from") ?? defaults.fromDate;
   const skipWayback = process.argv.includes("--skip-wayback");
   const asJson = process.argv.includes("--json");
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const retrospective = electionDay < todayIso;
 
   const apiKey =
     process.env.FEC_API_KEY || process.env.CONGRESS_GOV_API_KEY || "DEMO_KEY";
@@ -473,24 +537,88 @@ async function main(): Promise<void> {
   const db = requireDb();
 
   const offices =
-    office === "both" ? ["house", "senate"] : [office === "senate" ? "senate" : "house"];
-  const rosterRes = await db.execute(sql`
-    SELECT DISTINCT state, office, district, name
-    FROM official_roster_candidates
-    WHERE election_year = ${year}
-      AND state = ${state}
-      AND office IN (${sql.join(
-        offices.map((o) => sql`${o}`),
-        sql`, `,
-      )})
-    ORDER BY office, district, name
-  `);
-  let roster = rosterRes.rows as unknown as RosterRow[];
+    office === "both"
+      ? ["house", "senate"]
+      : [office === "senate" ? "senate" : "house"];
+  const jurisdictions = offices.map((o) => `federal-${o}`);
+
+  let roster: RosterRow[];
+  if (retrospective) {
+    // WINNERS roster: members whose term started the Jan 3 after the cycle's
+    // election (candidate_offices rows written by the votes ingest). Honesty
+    // note (plan doc): this population is winner-biased by construction —
+    // the retrospective ledger covers incumbents' prior-term promises only.
+    const termStart = `${cycle + 1}-01-03`;
+    const winnersRes = await db.execute(sql`
+      SELECT DISTINCT c.state,
+             REPLACE(o.jurisdiction, 'federal-', '') AS office,
+             c.district,
+             c.full_name AS name,
+             c.id AS candidate_id,
+             c.fec_candidate_id
+      FROM candidates c
+      JOIN candidate_offices o ON o.candidate_id = c.id
+      WHERE o.term_start = ${termStart}
+        AND o.jurisdiction IN (${sql.join(
+          jurisdictions.map((j) => sql`${j}`),
+          sql`, `,
+        )})
+        AND c.state = ${state}
+      ORDER BY office, district, name
+    `);
+    roster = (winnersRes.rows as unknown as RosterRow[]).map((r) => ({
+      ...r,
+      candidateId: (r as unknown as { candidate_id: string }).candidate_id,
+      fecCandidateId: (r as unknown as { fec_candidate_id: string | null })
+        .fec_candidate_id,
+    }));
+
+    // Members without seat columns (state NULL — rows created by the votes
+    // ingest and never touched by the roster/incumbent backfills) are
+    // invisible to the state filter. Count them so the miss is explicit.
+    const missingRes = await db.execute(sql`
+      SELECT COUNT(*) AS n
+      FROM candidates c
+      JOIN candidate_offices o ON o.candidate_id = c.id
+      WHERE o.term_start = ${termStart}
+        AND o.jurisdiction IN (${sql.join(
+          jurisdictions.map((j) => sql`${j}`),
+          sql`, `,
+        )})
+        AND c.state IS NULL
+    `);
+    const missing = Number(
+      (missingRes.rows[0] as { n?: unknown } | undefined)?.n ?? 0,
+    );
+    if (missing > 0) {
+      process.stderr.write(
+        `[promise-corpus-spike] note: ${missing} ${termStart}-term members have no state ` +
+          "column (never seat-backfilled) and are invisible to the --state filter, ALL states.\n",
+      );
+    }
+  } else {
+    const rosterRes = await db.execute(sql`
+      SELECT DISTINCT state, office, district, name
+      FROM official_roster_candidates
+      WHERE election_year = ${cycle}
+        AND state = ${state}
+        AND office IN (${sql.join(
+          offices.map((o) => sql`${o}`),
+          sql`, `,
+        )})
+      ORDER BY office, district, name
+    `);
+    roster = rosterRes.rows as unknown as RosterRow[];
+  }
   if (limit > 0) roster = roster.slice(0, limit);
   if (roster.length === 0) {
     console.error(
-      `No ${year} roster rows for ${state} (${offices.join("/")}) — ` +
-        "is the state's official roster ingested?",
+      retrospective
+        ? `No ${cycle + 1}-01-03-term members for ${state} (${offices.join("/")}) — ` +
+            `has the ${cycle === 2022 ? "118th" : "matching"}-Congress record backfill run, ` +
+            "and do those candidates have seat columns?"
+        : `No ${cycle} roster rows for ${state} (${offices.join("/")}) — ` +
+            "is the state's official roster ingested?",
     );
     process.exit(1);
   }
@@ -501,14 +629,18 @@ async function main(): Promise<void> {
     WHERE jurisdiction IN ('federal-house', 'federal-senate')
   `);
   const fecIdByCandidate = new Map(
-    (candRes.rows as unknown as { id: string; fec_candidate_id: string | null }[]).map(
-      (c) => [c.id, c.fec_candidate_id],
-    ),
+    (
+      candRes.rows as unknown as {
+        id: string;
+        fec_candidate_id: string | null;
+      }[]
+    ).map((c) => [c.id, c.fec_candidate_id]),
   );
 
   process.stderr.write(
-    `Spiking promise-corpus sourcing for ${roster.length} ${state} ${year} ` +
-      `roster candidates (${offices.join("/")})…\n`,
+    `Spiking promise-corpus sourcing for ${roster.length} ${state} ${cycle} ` +
+      `${retrospective ? "WINNERS (retrospective)" : "roster candidates"} ` +
+      `(${offices.join("/")}; captures ${fromDate}..${electionDay})…\n`,
   );
 
   const cdxCutoff = toCdxCutoff(electionDay);
@@ -534,11 +666,16 @@ async function main(): Promise<void> {
       };
 
       const jurisdiction = `federal-${r.office}`;
-      const candidateId = await resolveCandidateId(r.name, jurisdiction, r.state);
+      // The winners roster arrives pre-resolved; the official roster goes
+      // through Part 2's resolver as before.
+      const candidateId =
+        r.candidateId ??
+        (await resolveCandidateId(r.name, jurisdiction, r.state));
       if (!candidateId) return base;
       base.candidateId = candidateId;
 
-      const fecCandidateId = fecIdByCandidate.get(candidateId) ?? null;
+      const fecCandidateId =
+        r.fecCandidateId ?? fecIdByCandidate.get(candidateId) ?? null;
       if (!fecCandidateId) return { ...base, bucket: "no_fec_id" };
       base.fecCandidateId = fecCandidateId;
 
@@ -548,14 +685,31 @@ async function main(): Promise<void> {
         fetch,
         `openfec committees ${fecCandidateId}`,
       );
-      if (committeesPayload === null) return { ...base, bucket: "fec_api_error" };
+      if (committeesPayload === null)
+        return { ...base, bucket: "fec_api_error" };
 
-      const principal = pickPrincipalCommittee(committeesPayload);
+      const principal = pickPrincipalCommittee(committeesPayload, cycle);
       if (!principal) return { ...base, bucket: "no_principal_committee" };
       base.committeeId = principal.committeeId;
       base.committeeName = principal.name;
 
-      let rawWebsite = principal.website;
+      let rawWebsite: string | null = null;
+      if (retrospective) {
+        // Prefer the website AS FILED for the cycle: /committee/{id}/history/
+        // {cycle} is the Form 1 snapshot of that era. Best-effort — a miss
+        // (endpoint flake, field absent) falls through to the current
+        // filing, whose old captures Wayback may still hold.
+        const historyPayload = await fetchJsonSoft(
+          `${OPENFEC_BASE_URL}/committee/${encodeURIComponent(principal.committeeId)}/history/` +
+            `${cycle}/?api_key=${apiKey}`,
+          fetch,
+          `openfec committee history ${principal.committeeId}/${cycle}`,
+        );
+        if (historyPayload !== null) {
+          rawWebsite = extractCommitteeWebsite(historyPayload);
+        }
+      }
+      if (!normalizeCampaignUrl(rawWebsite)) rawWebsite = principal.website;
       if (!normalizeCampaignUrl(rawWebsite)) {
         const detailPayload = await fetchJsonSoft(
           `${OPENFEC_BASE_URL}/committee/${encodeURIComponent(principal.committeeId)}/` +
@@ -605,9 +759,12 @@ async function main(): Promise<void> {
   const pct = (n: number) => (total > 0 ? Math.round((n * 100) / total) : 0);
 
   console.log(
-    `\nPromise-corpus sourcing spike — ${state} ${year} (${offices.join("/")})\n`,
+    `\nPromise-corpus sourcing spike — ${state} ${cycle}` +
+      `${retrospective ? " RETROSPECTIVE (winners only)" : ""} (${offices.join("/")})\n`,
   );
-  console.log(`corpus: ${total} roster candidates\n`);
+  console.log(
+    `corpus: ${total} ${retrospective ? "cycle winners" : "roster candidates"}\n`,
+  );
   for (const [bucket, note] of Object.entries(BUCKET_NOTES) as [
     SpikeBucket,
     string,
