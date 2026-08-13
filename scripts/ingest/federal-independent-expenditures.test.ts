@@ -482,7 +482,7 @@ describe("resolveConfig", () => {
     expect(config.dryRun).toBe(true);
     expect(config.limit).toBe(500);
     expect(config.ieCsvUrl).toBe(
-      "https://www.fec.gov/files/bulk-downloads/independent_expenditure_2026.csv",
+      "https://www.fec.gov/files/bulk-downloads/2026/independent_expenditure_2026.csv",
     );
     expect(config.ieCsvPath.endsWith("independent_expenditure_2026.csv")).toBe(
       true,
@@ -511,7 +511,7 @@ describe("resolveConfig", () => {
 
   it("builds the documented per-cycle bulk URL", () => {
     expect(independentExpenditureCsvUrl("2024")).toBe(
-      "https://www.fec.gov/files/bulk-downloads/independent_expenditure_2024.csv",
+      "https://www.fec.gov/files/bulk-downloads/2024/independent_expenditure_2024.csv",
     );
   });
 });
