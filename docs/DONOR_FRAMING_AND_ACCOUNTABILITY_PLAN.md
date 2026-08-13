@@ -1345,6 +1345,49 @@ now sit at the §6.4 gate's neighborhood on an external set the gate wasn't writ
 (the gate is defined over OUR gold set); the method is calibrated enough to proceed to
 the Biden-tracker extension and then the human gold round.
 
+**External calibration — THIRD RUN executed 2026-08-13** (`rubric-1.1.0+adj-v2`, held-out
+extension set: 16 Biden-Promise-Tracker legislative cases, window 2021-01-20→2025-01-20,
+assembled from Wayback captures fetched on Muxin's machine the same day; snapshot-cited
+per case, gitignored per the Poynter rule). Different era, different party, different
+promise-maker analog, labels the adjudicator had never seen — and the set deliberately
+carries a NEW mapping-asymmetry class the GOP meter didn't have: PolitiFact Compromise
+rulings that credit EXECUTIVE salvage (an ATF rule, NLRB policy, a strategy document)
+after the legislative path died, which our legislative-only evidence ladder reads as
+rule-3 `attempted_blocked`.
+
+**Results (n=16): agreement 87.5%, κ=0.823, polarity flips 0, flag rate 0%.** By class:
+`attempted_blocked` **6/6** — the entire mapping-divergence class held, including all
+three their-Compromise→our-attempted_blocked cases (1536 background checks, 1585 PRO
+Act, 1615 domestic-terrorism law) and all three their-Broken→our-attempted_blocked cases
+(1575 min wage incl. the parliamentarian blocker, 1606 assault-weapons ban, 1562 Roe
+codification with two lost cloture votes). `broken` **3/3**, every one via the 1.1.0
+inaction-with-opportunity clause on fresh data (1558 public option, 1610 citizenship —
+"mere introduction does not discharge an outcome promise" cited nearly verbatim, 1587 SS
+solvency). The deliberately contested inverse-mapping case (1559 Medicare negotiation,
+their Kept → our compromise) came back `compromise` as we expected. The two misses, both
+adjacent-category, zero polar:
+
+1. **bid1542 VAWA (expected kept → model compromise): a case-authoring flaw, not an
+   adjudicator flaw.** The promise text names the boyfriend AND stalking loopholes; the
+   assembled evidence showed the boyfriend loophole closed (BSCA) but said nothing about
+   the stalking loophole, and the model correctly applied the rule-4 compound clause to
+   the evidence as given. The expected label stands as authored (no post-hoc relabeling —
+   that would contaminate the test), but the disagreement credits the adjudicator. Case
+   authoring lesson for the gold round: compound promises need per-component evidence.
+2. **bid1589 corporate tax 28% (expected compromise → model broken).** The model declined
+   to treat the IRA's 15% corporate minimum tax as a "materially partial version" of
+   raising the rate to 28% — a different instrument toward the same aim. Rule 4's
+   examples (narrower scope, lower funding, sunsets) don't cover
+   different-instrument-same-aim; this is the sharpest adj-v3 candidate to date, and the
+   run-2 misses (667/671) sit on the same boundary from the other side.
+
+Aggregate across both adj-v2 sets: 29/34 (85.3%), zero kept↔broken flips and zero flags
+in 34 consecutive cases. The declared-test and rule-order properties now hold across two
+meters, two parties, and two decades. Next: the Muxin+husband gold round (§6.2-6.4) on
+our own extracted corpus — the calibration method is ready; adj-v3 wording (the rule-4
+instrument question above, plus run 2's rule-2 note) should be drafted from the gold
+round's disagreements rather than pre-emptively.
+
 Run order for the retrospective mini-spike (after this merges):
 `CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` (both dev-machine,
 free data APIs, no LLM) → issue tagging via the SUBSCRIPTION pattern above (export →
