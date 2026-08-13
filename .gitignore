@@ -114,3 +114,4 @@ scripts/ingest/_cutover-backup-*.json
 .claire/
 .claude/scheduled_tasks.lock
 _alignment-review/
+.claude/worktrees/
