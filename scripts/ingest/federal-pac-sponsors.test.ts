@@ -11,6 +11,8 @@ import { describe, it, expect } from "vitest";
 import {
   classifySponsorSector,
   evidenceUrlForCommittee,
+  isAttributablePacCommittee,
+  normalizeConnectedOrg,
   buildContributionRows,
   pairKey,
   resolveConfig,
@@ -107,6 +109,67 @@ describe("classifySponsorSector", () => {
     );
     expect(SPONSOR_SECTOR_ALLOWLIST.has("Self-funded" as never)).toBe(false);
     expect(SPONSOR_SECTOR_ALLOWLIST.has("Technology")).toBe(true);
+  });
+});
+
+describe("isAttributablePacCommittee", () => {
+  // From the 2026-08-13 first dry-run: the top "PAC contributions" were
+  // candidate-to-candidate transfers, Victory Fund JFCs, and the NRSC.
+  it("excludes candidate committees (a campaign transferring to itself is not PAC support)", () => {
+    expect(isAttributablePacCommittee({ type: "H", designation: "P" })).toBe(
+      false,
+    );
+    expect(isAttributablePacCommittee({ type: "S", designation: "A" })).toBe(
+      false,
+    );
+    expect(isAttributablePacCommittee({ type: "P", designation: "P" })).toBe(
+      false,
+    );
+  });
+
+  it("excludes party committees (their own funding-mix bucket already)", () => {
+    expect(isAttributablePacCommittee({ type: "Y", designation: "U" })).toBe(
+      false,
+    );
+    expect(isAttributablePacCommittee({ type: "X", designation: null })).toBe(
+      false,
+    );
+  });
+
+  it("excludes joint-fundraising vehicles regardless of type", () => {
+    expect(isAttributablePacCommittee({ type: "N", designation: "J" })).toBe(
+      false,
+    );
+  });
+
+  it("keeps corporate, membership, and leadership PACs", () => {
+    expect(isAttributablePacCommittee({ type: "Q", designation: "B" })).toBe(
+      true,
+    );
+    expect(isAttributablePacCommittee({ type: "Q", designation: "U" })).toBe(
+      true,
+    );
+    expect(isAttributablePacCommittee({ type: "N", designation: "D" })).toBe(
+      true,
+    );
+  });
+
+  it("refuses committees absent from the master (precision over recall)", () => {
+    expect(isAttributablePacCommittee(null)).toBe(false);
+  });
+});
+
+describe("normalizeConnectedOrg", () => {
+  it("nulls the FEC placeholder strings and empties", () => {
+    expect(normalizeConnectedOrg("NONE")).toBeNull();
+    expect(normalizeConnectedOrg("none")).toBeNull();
+    expect(normalizeConnectedOrg("N/A")).toBeNull();
+    expect(normalizeConnectedOrg("  ")).toBeNull();
+    expect(normalizeConnectedOrg(null)).toBeNull();
+  });
+
+  it("keeps and trims real sponsor names", () => {
+    expect(normalizeConnectedOrg("  PFIZER INC ")).toBe("PFIZER INC");
   });
 });
 

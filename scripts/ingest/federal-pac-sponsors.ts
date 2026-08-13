@@ -150,6 +150,62 @@ export function evidenceUrlForCommittee(committeeId: string): string {
   return `https://www.fec.gov/data/committee/${committeeId}/`;
 }
 
+/** FEC CMTE_TP codes for candidate committees (House/Senate/Presidential). */
+const CANDIDATE_COMMITTEE_TYPES = new Set(["H", "S", "P"]);
+/** FEC CMTE_TP codes for party committees. */
+const PARTY_COMMITTEE_TYPES = new Set(["X", "Y", "Z"]);
+/**
+ * FEC CMTE_DSGN codes excluded from PAC attribution: A (authorized by a
+ * candidate), P (principal campaign committee), J (joint fundraising —
+ * "Victory Fund" transfer vehicles).
+ */
+const NON_PAC_DESIGNATIONS = new Set(["A", "P", "J"]);
+
+/**
+ * Whether a committee is genuinely a PAC for attribution purposes — decided
+ * from the committee's OWN filed type/designation codes, not inference.
+ * Excludes (2026-08-13 first dry-run lesson: the top "PAC contributions"
+ * were candidate-to-candidate transfers and the NRSC):
+ *   - candidate committees (CMTE_TP H/S/P) — a House campaign transferring
+ *     to the same person's Senate campaign is not PAC support;
+ *   - party committees (CMTE_TP X/Y/Z) — party money is already its own
+ *     funding-mix bucket (double-representation);
+ *   - authorized / principal / joint-fundraising designations (A/P/J) —
+ *     the candidate's own or shared fundraising vehicles.
+ *   - committees absent from the committee master — we cannot verify what
+ *     they are, and precision beats recall here (logged, not stored).
+ * What remains — corporate, labor, trade, membership, and leadership PACs —
+ * is the money this table exists to name.
+ */
+export function isAttributablePacCommittee(
+  info: {
+    type: string | null;
+    designation: string | null;
+  } | null,
+): boolean {
+  if (!info) return false;
+  const type = (info.type ?? "").trim().toUpperCase();
+  const designation = (info.designation ?? "").trim().toUpperCase();
+  if (CANDIDATE_COMMITTEE_TYPES.has(type)) return false;
+  if (PARTY_COMMITTEE_TYPES.has(type)) return false;
+  if (NON_PAC_DESIGNATIONS.has(designation)) return false;
+  return true;
+}
+
+/**
+ * FEC files carry literal placeholder strings in CONNECTED_ORG ("NONE",
+ * "N/A"); normalize them to null so the table never displays a sponsor
+ * called "NONE".
+ */
+export function normalizeConnectedOrg(value: string | null): string | null {
+  if (value === null) return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0) return null;
+  const upper = trimmed.toUpperCase();
+  if (upper === "NONE" || upper === "N/A" || upper === "NA") return null;
+  return trimmed;
+}
+
 // ---------------------------------------------------------------------------
 // Aggregation (pure)
 // ---------------------------------------------------------------------------
@@ -343,6 +399,7 @@ export interface FederalPacSponsorsCounts {
   pas2RowsScanned: number;
   directContributionRows: number;
   matchedCandidateRows: number;
+  nonPacRowsSkipped: number;
   committeesWithContributions: number;
   committeesClassified: number;
   contributionRowsBuilt: number;
@@ -408,6 +465,7 @@ export async function ingestFederalPacSponsors({
   let pas2RowsScanned = 0;
   let directContributionRows = 0;
   let matchedCandidateRows = 0;
+  let nonPacRowsSkipped = 0;
   console.log(`${LOG_PREFIX} streaming PAS2 ${config.pas2ZipPath}`);
   await streamZipLines(
     config.pas2ZipPath,
@@ -427,6 +485,16 @@ export async function ingestFederalPacSponsors({
       const candidateId = candidateByFecId.get(row.candidateFecId);
       if (!candidateId) return;
       matchedCandidateRows += 1;
+
+      // The committee's own filed type/designation decides whether this is
+      // PAC money at all (candidate transfers, party committees, and joint
+      // fundraising vehicles are not).
+      if (
+        !isAttributablePacCommittee(committees.get(row.committeeId) ?? null)
+      ) {
+        nonPacRowsSkipped += 1;
+        return;
+      }
 
       const key = pairKey(row.committeeId, candidateId);
       const pair = pairs.get(key) ?? {
@@ -450,21 +518,24 @@ export async function ingestFederalPacSponsors({
   const committeeRows: CommitteeRowToUpsert[] = [];
   let committeesClassified = 0;
   for (const committeeId of [...contributingIds].sort()) {
+    // Present by construction: pairs only accumulate for committees that
+    // passed isAttributablePacCommittee, which requires a master entry.
     const info = committees.get(committeeId);
-    const name = info?.name ?? committeeId;
+    if (!info) continue;
+    const connectedOrg = normalizeConnectedOrg(info.connectedOrganization);
     const classification = classifySponsorSector({
-      name,
-      organizationType: info?.organizationType ?? null,
-      connectedOrganization: info?.connectedOrganization ?? null,
+      name: info.name,
+      organizationType: info.organizationType,
+      connectedOrganization: connectedOrg,
     });
     if (classification.sector) committeesClassified += 1;
     committeeRows.push({
       committeeId,
-      name,
-      designation: info?.designation ?? null,
-      committeeType: info?.type ?? null,
-      orgType: info?.organizationType ?? null,
-      connectedOrg: info?.connectedOrganization ?? null,
+      name: info.name,
+      designation: info.designation,
+      committeeType: info.type,
+      orgType: info.organizationType,
+      connectedOrg,
       sector: classification.sector,
       classificationMethod: classification.method,
       evidenceUrl: evidenceUrlForCommittee(committeeId),
@@ -512,6 +583,7 @@ export async function ingestFederalPacSponsors({
     pas2RowsScanned,
     directContributionRows,
     matchedCandidateRows,
+    nonPacRowsSkipped,
     committeesWithContributions: contributingIds.size,
     committeesClassified,
     contributionRowsBuilt: contributionRows.length,
@@ -528,6 +600,7 @@ export async function ingestFederalPacSponsors({
       `pas2_rows=${counts.pas2RowsScanned}`,
       `direct_rows=${counts.directContributionRows}`,
       `matched_candidate_rows=${counts.matchedCandidateRows}`,
+      `non_pac_rows_skipped=${counts.nonPacRowsSkipped}`,
       `committees_with_contributions=${counts.committeesWithContributions}`,
       `committees_classified=${counts.committeesClassified}`,
       `contribution_rows=${counts.contributionRowsBuilt}`,
