@@ -1299,7 +1299,10 @@ function withCongressGovParams(
 }
 
 async function fetchJson(url: string, fetcher: Fetcher): Promise<unknown> {
-  const RETRYABLE = new Set([502, 503, 504]);
+  // GovTrack's API surfaces overload as 500 as readily as 502/504 — treat
+  // them all as transient (a genuine bad-request would 400, which stays
+  // fatal). 429 backs off the same way.
+  const RETRYABLE = new Set([429, 500, 502, 503, 504]);
   const MAX_RETRIES = 3;
   let lastErr: unknown;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
