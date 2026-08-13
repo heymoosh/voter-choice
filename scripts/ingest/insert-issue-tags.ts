@@ -17,7 +17,9 @@ import { sql } from "drizzle-orm";
 import { requireDb } from "../../db/client";
 import { issueTags } from "../../db/schema";
 
-const TAGGER_VERSION = "claude-sonnet-4-6-agent-v1";
+// Bumped when the agent-run tagging model/prompt changes (subscription path:
+// _export-untagged-batches.ts → _tag-bills.workflow.js → this script).
+const TAGGER_VERSION = "claude-sonnet-5-agent-v1";
 
 interface TagInput {
   billId: string;

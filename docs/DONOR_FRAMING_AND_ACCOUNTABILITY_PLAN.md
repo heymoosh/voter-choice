@@ -1327,7 +1327,22 @@ Run order for the retrospective mini-spike (after this merges):
 free data APIs, no LLM) → issue tagging via the SUBSCRIPTION pattern above (export →
 subagent workflow → insert; no API spend) →
 `_promise-corpus-spike.ts --state TX --cycle 2022 --json > spike-tx-2022.json` (free:
-OpenFEC + Wayback only). Standing policy, restated (Muxin, 2026-08-13): **the Anthropic
+OpenFEC + Wayback only).
+
+**118th backfill RUN 2026-08-13 (Muxin's machine): COMPLETE.** With the partition fix:
+1,932 GovTrack vote records (vs. the 1,000 the old offset cap truncated at), 1,426 bill
+roll calls, 532 bills (all 532 Congress.gov-enriched, 0 failures), 553 candidates / 555
+office terms, **221,583 vote rows** upserted. `bill-cosponsors --congress 118`: 532/532
+bills, 12,221 sponsor+cosponsor rows, 0 failures, 0 skipped-no-candidate (bioguide
+matching held perfectly). Remaining LLM step: tag the 532 new bills — now runnable via
+`scripts/ingest/_tag-bills.workflow.js` (this PR), the ported subscription pattern:
+`_export-untagged-batches.ts` (also fixed here: "untagged" now means no `issue_tags` row
+under ANY version — the old version-scoped filter would have re-exported agent-tagged
+bills forever) → run the workflow in a local Claude Code session (Sonnet subagents read
+the canonical vocabulary from source and write `insert-issue-tags.ts`-shaped result
+files) → `insert-issue-tags.ts` per result file (version now stamped
+`claude-sonnet-5-agent-v1`) → re-export to verify 0 remaining. The 2022 TX mini-spike
+has NO tagging dependency (FEC + Wayback only) and can run any time. Standing policy, restated (Muxin, 2026-08-13): **the Anthropic
 API key is for user-facing chat only; every bulk/batch LLM step in these pipelines runs
 on subscription subagents.** This also applies forward: the calibration harness and the
 retrospective extract/link/adjudicate runs should execute their LLM calls via
