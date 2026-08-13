@@ -894,6 +894,43 @@ const TRANSLATIONS = {
       voteLinkageNoRollcall:
         'No roll-calls exist to check this money against — the influence read starts with their first vote.',
     },
+    /* Part 6a — "Top PACs and their sponsors" (TopPacSponsors.tsx). The
+       subheading carries the plan's non-negotiable framing: this names PAC
+       money already counted in the mix above; it is never extra money. */
+    topPacSponsors: {
+      heading: 'Top PACs and their sponsors',
+      subheading:
+        'The largest PAC contributors to this campaign, each with the sponsor its own FEC filing names. This is a breakdown of the PAC money already counted in the mix above — not additional money.',
+      sponsorFiled: 'Sponsor on its FEC filing: {sponsor}',
+      sponsorNotFiled:
+        'No sponsoring organization on this committee’s filing — we don’t guess one.',
+      contributionCount: '{count} contributions this cycle',
+      evidenceLink: 'FEC committee filing →',
+      hiddenCount:
+        '{count} smaller PACs gave too, and aren’t listed here.',
+      empty:
+        'No PAC contributions to this candidate are matched to a named committee for this cycle. That means our data doesn’t name them — not that none exist.',
+    },
+    /* Part 6b — "Outside spending about this race" (OutsideSpending.tsx).
+       Legally load-bearing copy: this is not the candidate's money, and the
+       two figures are never summed or netted. Do not soften either line. */
+    outsideSpending: {
+      heading: 'Outside spending about this race',
+      explainer:
+        'This is not the campaign’s money. Outside groups can spend unlimited amounts for or against a candidate as long as they do not coordinate with the campaign — by law, none of it appears in the candidate’s receipts, and none of it is counted in the funding above.',
+      supportLabel: 'Spent supporting this candidate',
+      opposeLabel: 'Spent opposing this candidate',
+      supportEmpty: 'No outside spending supporting this candidate on file.',
+      opposeEmpty: 'No outside spending opposing this candidate on file.',
+      sponsorFiled: 'Sponsor on its FEC filing: {sponsor}',
+      sponsorNotFiled:
+        'A non-connected committee — no sponsoring organization on its filing.',
+      filingCount: '{count} filings this cycle',
+      evidenceLink: 'FEC committee filing →',
+      hiddenCount: '{count} more outside spenders aren’t listed here.',
+      neverSummed:
+        'These two figures are reported separately. Money spent against a candidate is not the opposite of money spent for one, so we never add them together or subtract one from the other.',
+    },
     homeHero: {
       eyebrow: "Nov 3, 2026 · America's 250th election",
       headline:
@@ -1728,6 +1765,39 @@ const TRANSLATIONS = {
       voteLinkageUntraced: 'No se puede verificar — agenda sin rastrear',
       voteLinkageNoRollcall:
         'No existen votaciones para verificar este dinero — la lectura de influencia comienza con su primer voto.',
+    },
+    topPacSponsors: {
+      heading: 'Principales PACs y sus patrocinadores',
+      subheading:
+        'Los mayores PACs que contribuyeron a esta campaña, cada uno con el patrocinador que declara en su propio registro ante la FEC. Es un desglose del dinero de PACs ya contado en la mezcla de arriba — no es dinero adicional.',
+      sponsorFiled: 'Patrocinador en su registro ante la FEC: {sponsor}',
+      sponsorNotFiled:
+        'Su registro no declara ninguna organización patrocinadora — no la adivinamos.',
+      contributionCount: '{count} contribuciones en este ciclo',
+      evidenceLink: 'Registro del comité ante la FEC →',
+      hiddenCount:
+        'Otros {count} PACs más pequeños también donaron y no aparecen aquí.',
+      empty:
+        'Ninguna contribución de PACs a este candidato está vinculada a un comité con nombre en este ciclo. Eso significa que nuestros datos no los nombran — no que no existan.',
+    },
+    outsideSpending: {
+      heading: 'Gasto externo sobre esta contienda',
+      explainer:
+        'Este no es dinero de la campaña. Los grupos externos pueden gastar sumas ilimitadas a favor o en contra de un candidato mientras no se coordinen con la campaña — por ley, nada de esto aparece en los ingresos del candidato ni se cuenta en el financiamiento de arriba.',
+      supportLabel: 'Gastado a favor de este candidato',
+      opposeLabel: 'Gastado en contra de este candidato',
+      supportEmpty:
+        'No hay gasto externo registrado a favor de este candidato.',
+      opposeEmpty:
+        'No hay gasto externo registrado en contra de este candidato.',
+      sponsorFiled: 'Patrocinador en su registro ante la FEC: {sponsor}',
+      sponsorNotFiled:
+        'Es un comité no conectado — su registro no declara ninguna organización patrocinadora.',
+      filingCount: '{count} registros en este ciclo',
+      evidenceLink: 'Registro del comité ante la FEC →',
+      hiddenCount: 'Hay {count} gastadores externos más que no aparecen aquí.',
+      neverSummed:
+        'Estas dos cifras se reportan por separado. El dinero gastado en contra de un candidato no es lo opuesto al gastado a favor, así que nunca los sumamos ni restamos uno del otro.',
     },
     homeHero: {
       eyebrow: '3 de noviembre de 2026 · la elección 250 de Estados Unidos',

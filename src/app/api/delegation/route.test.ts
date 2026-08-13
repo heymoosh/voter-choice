@@ -24,16 +24,34 @@ vi.mock("../../../lib/server/can-context", () => ({
   lookupCanSeatContext: vi.fn(),
 }));
 
+vi.mock("../../../lib/server/pac-sponsors", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("../../../lib/server/pac-sponsors")
+  >()),
+  lookupPacSponsors: vi.fn(),
+}));
+
+vi.mock("../../../lib/server/outside-spending", async (importOriginal) => ({
+  ...(await importOriginal<
+    typeof import("../../../lib/server/outside-spending")
+  >()),
+  lookupOutsideSpending: vi.fn(),
+}));
+
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
 import { resolveDelegation } from "../../../lib/server/delegation";
 import { lookupCanSeatContext } from "../../../lib/server/can-context";
+import { lookupPacSponsors } from "../../../lib/server/pac-sponsors";
+import { lookupOutsideSpending } from "../../../lib/server/outside-spending";
 import { POST } from "./route";
 
 const mockedRateLimit = vi.mocked(checkRaceDataRateLimit);
 const mockedGeocode = vi.mocked(geocodeAddressToDistrict);
 const mockedResolve = vi.mocked(resolveDelegation);
 const mockedCanContext = vi.mocked(lookupCanSeatContext);
+const mockedPacSponsors = vi.mocked(lookupPacSponsors);
+const mockedOutsideSpending = vi.mocked(lookupOutsideSpending);
 
 function makeRequest(body: unknown): NextRequest {
   return new Request("http://localhost/api/delegation", {
@@ -279,5 +297,142 @@ describe("POST /api/delegation — CAN2026 display gate", () => {
         url: "https://can2026.org",
       },
     });
+  });
+});
+
+describe("POST /api/delegation — PAC transparency gate (Part 6a/6b)", () => {
+  const PAC_SPONSORS = {
+    electionCycle: "2026",
+    hiddenCount: 0,
+    sponsors: [
+      {
+        committeeId: "C00000001",
+        name: "EXAMPLE CORP PAC",
+        sponsor: "EXAMPLE CORP",
+        sector: "Technology",
+        amount: 10_000,
+        transactionCount: 4,
+        evidenceUrl: "https://www.fec.gov/data/committee/C00000001/",
+        status: "auto",
+      },
+    ],
+  };
+
+  const OUTSIDE_SPENDING = {
+    electionCycle: "2026",
+    support: {
+      total: 4_000_000,
+      hiddenCount: 0,
+      spenders: [
+        {
+          committeeId: "C00900001",
+          name: "AN OUTSIDE GROUP",
+          sponsor: null,
+          sector: null,
+          amount: 4_000_000,
+          expenditureCount: 12,
+          evidenceUrl: "https://www.fec.gov/data/committee/C00900001/",
+        },
+      ],
+    },
+    oppose: { total: 1_000_000, hiddenCount: 0, spenders: [] },
+  };
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it("attaches neither block, and runs no query, when the flag is unset", async () => {
+    vi.stubEnv("PAC_TRANSPARENCY_ENABLED", "");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+
+    const body = await (
+      await POST(makeRequest({ address: "123 Main St Trenton NJ" }))
+    ).json();
+    expect(body.seats[0].topPacs).toBeNull();
+    expect(body.seats[0].outsideSpending).toBeNull();
+    expect(mockedPacSponsors).not.toHaveBeenCalled();
+    expect(mockedOutsideSpending).not.toHaveBeenCalled();
+  });
+
+  it("attaches both blocks when the flag is on", async () => {
+    vi.stubEnv("PAC_TRANSPARENCY_ENABLED", "true");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedPacSponsors.mockResolvedValue(new Map([["p1", PAC_SPONSORS]]));
+    mockedOutsideSpending.mockResolvedValue(
+      new Map([["p1", OUTSIDE_SPENDING]]),
+    );
+
+    const body = await (
+      await POST(makeRequest({ address: "123 Main St Trenton NJ" }))
+    ).json();
+    expect(mockedPacSponsors).toHaveBeenCalledWith(["p1"]);
+    expect(body.seats[0].topPacs.sponsors[0].name).toBe("EXAMPLE CORP PAC");
+    expect(body.seats[0].outsideSpending.support.total).toBe(4_000_000);
+    expect(body.seats[0].outsideSpending.oppose.total).toBe(1_000_000);
+  });
+
+  it("keeps outside spending out of every campaign-money field", async () => {
+    // The legally load-bearing check at the API boundary: independent
+    // expenditures live in their own seat-level field and are never summed
+    // into, netted against, or merged with the candidate's own money.
+    vi.stubEnv("PAC_TRANSPARENCY_ENABLED", "true");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedPacSponsors.mockResolvedValue(new Map());
+    mockedOutsideSpending.mockResolvedValue(
+      new Map([["p1", OUTSIDE_SPENDING]]),
+    );
+
+    const body = await (
+      await POST(makeRequest({ address: "123 Main St Trenton NJ" }))
+    ).json();
+    const seat = body.seats[0];
+    expect(Object.keys(seat.candidate)).not.toContain("outsideSpending");
+    expect(JSON.stringify(seat.candidate)).not.toContain("4000000");
+    // Neither the sum (5M) nor the net (3M) appears anywhere in the payload.
+    const payload = JSON.stringify(body);
+    expect(payload).not.toContain("5000000");
+    expect(payload).not.toContain("3000000");
+  });
+
+  it("sends the honest empty state (not a missing block) when nothing is on file", async () => {
+    vi.stubEnv("PAC_TRANSPARENCY_ENABLED", "true");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedPacSponsors.mockResolvedValue(new Map());
+    mockedOutsideSpending.mockResolvedValue(new Map());
+
+    const body = await (
+      await POST(makeRequest({ address: "123 Main St Trenton NJ" }))
+    ).json();
+    expect(body.seats[0].topPacs).toEqual({
+      electionCycle: "2026",
+      sponsors: [],
+      hiddenCount: 0,
+    });
+    expect(body.seats[0].outsideSpending.support).toEqual({
+      total: 0,
+      spenders: [],
+      hiddenCount: 0,
+    });
+    expect(body.seats[0].outsideSpending.oppose.total).toBe(0);
+  });
+
+  it("degrades to the empty state when a lookup throws", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    vi.stubEnv("PAC_TRANSPARENCY_ENABLED", "true");
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedPacSponsors.mockRejectedValue(new Error("relation does not exist"));
+    mockedOutsideSpending.mockResolvedValue(new Map());
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.seats[0].topPacs.sponsors).toEqual([]);
+    consoleSpy.mockRestore();
   });
 });

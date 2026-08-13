@@ -36,6 +36,17 @@ import {
 } from "../../../lib/server/can-context";
 import { CAN_ATTRIBUTION } from "../../../lib/canAttribution";
 import { isCan2026DisplayEnabled } from "../../../lib/server/can-flag";
+import { isPacTransparencyEnabled } from "../../../lib/server/pac-transparency-flag";
+import {
+  lookupPacSponsors,
+  emptyPacSponsors,
+  type PacSponsorsResult,
+} from "../../../lib/server/pac-sponsors";
+import {
+  lookupOutsideSpending,
+  emptyOutsideSpending,
+  type OutsideSpendingResult,
+} from "../../../lib/server/outside-spending";
 import { isOfficialRosterEnabled } from "../../../lib/server/officialRosterFlag";
 import { isIncumbentSeekingReelection } from "../../../lib/server/officialRoster";
 
@@ -174,6 +185,39 @@ export async function POST(request: NextRequest) {
     );
   }
 
+  // Part 6 PAC transparency — TWO independent display blocks, one flag:
+  //   topPacs        — names the PAC committees inside the funding mix's
+  //                    "PACs" slice. A BREAKDOWN of money already counted;
+  //                    it is never added to totalRaised or the mix.
+  //   outsideSpending — independent expenditures FOR and AGAINST. NOT the
+  //                    candidate's money, legally uncoordinated with the
+  //                    campaign; rendered as its own block, with "for" and
+  //                    "against" as two figures that are never summed,
+  //                    netted, or mingled with the funding mix.
+  // Both are attached here, not inside race-data.ts, so the funding-mix
+  // assembly path never learns about either table (the isolation guarantee
+  // in scripts/ingest/independent-expenditure-isolation.test.ts).
+  // Flag-gated + best-effort: when OFF, no query runs and both fields are
+  // null ("we didn't look" — distinct from the empty object below, which is
+  // the honest "we looked and there is nothing on file" state the UI must
+  // render as an explicit no-data line rather than a blank).
+  const pacTransparencyOn = isPacTransparencyEnabled();
+  const seatCandidateIds = delegation.seats
+    .map((seat) => seat.candidate?.id)
+    .filter((id): id is string => typeof id === "string" && id.length > 0);
+  let pacSponsorsByCandidate = new Map<string, PacSponsorsResult>();
+  let outsideSpendingByCandidate = new Map<string, OutsideSpendingResult>();
+  if (pacTransparencyOn && seatCandidateIds.length > 0) {
+    try {
+      [pacSponsorsByCandidate, outsideSpendingByCandidate] = await Promise.all([
+        lookupPacSponsors(seatCandidateIds),
+        lookupOutsideSpending(seatCandidateIds),
+      ]);
+    } catch (err) {
+      console.error("[delegation] PAC transparency lookup failed:", err);
+    }
+  }
+
   const seats = delegation.seats.map((seat, i) => ({
     ...seat,
     candidate:
@@ -190,6 +234,15 @@ export async function POST(request: NextRequest) {
     canContext: canContexts[i]
       ? { ...canContexts[i], attribution: CAN_ATTRIBUTION }
       : null,
+    topPacs:
+      pacTransparencyOn && seat.candidate
+        ? (pacSponsorsByCandidate.get(seat.candidate.id) ?? emptyPacSponsors())
+        : null,
+    outsideSpending:
+      pacTransparencyOn && seat.candidate
+        ? (outsideSpendingByCandidate.get(seat.candidate.id) ??
+          emptyOutsideSpending())
+        : null,
   }));
 
   return Response.json({

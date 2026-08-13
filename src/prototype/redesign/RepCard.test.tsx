@@ -1152,3 +1152,126 @@ describe("RepCard verdict + sources — .verdict grid", () => {
     expect(onVerdict).toHaveBeenCalledWith("keep");
   });
 });
+
+describe("RepCard §2 — PAC transparency blocks [Part 6a/6b]", () => {
+  const topPacs = {
+    electionCycle: "2026",
+    hiddenCount: 0,
+    sponsors: [
+      {
+        committeeId: "C00000001",
+        name: "EXAMPLE CORP PAC",
+        sponsor: "EXAMPLE CORP",
+        sector: "Technology",
+        amount: 10_000,
+        transactionCount: 4,
+        evidenceUrl: "https://www.fec.gov/data/committee/C00000001/",
+      },
+    ],
+  };
+
+  const outsideSpending = {
+    electionCycle: "2026",
+    support: {
+      total: 4_000_000,
+      hiddenCount: 0,
+      spenders: [
+        {
+          committeeId: "C00900001",
+          name: "AN OUTSIDE GROUP",
+          sponsor: null,
+          sector: null,
+          amount: 4_000_000,
+          expenditureCount: 12,
+          evidenceUrl: "https://www.fec.gov/data/committee/C00900001/",
+        },
+      ],
+    },
+    oppose: { total: 1_000_000, hiddenCount: 0, spenders: [] },
+  };
+
+  it("renders neither block when the flag is off (both fields absent)", () => {
+    const { container } = renderCard(mkSeat());
+    expect(
+      container.querySelector('[data-testid="top-pac-sponsors"]'),
+    ).toBeNull();
+    expect(
+      container.querySelector('[data-testid="outside-spending"]'),
+    ).toBeNull();
+  });
+
+  it("names top PACs inside the money expander, framed as a breakdown", () => {
+    const { container } = renderCard(
+      mkSeat({ topPacs } as Partial<DelegationSeatVM>),
+    );
+    expect(
+      container.querySelector('[data-testid="top-pac-sponsors"]'),
+    ).toBeNull();
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
+
+    const block = screen.getByTestId("top-pac-sponsors");
+    expect(block.textContent).toContain("EXAMPLE CORP PAC");
+    expect(block.textContent).toContain(
+      "Sponsor on its FEC filing: EXAMPLE CORP",
+    );
+    expect(block.textContent).toContain("not additional money");
+  });
+
+  it("renders the outside-spending block OUTSIDE the money section, never behind its expander", () => {
+    const { container } = renderCard(
+      mkSeat({ outsideSpending } as Partial<DelegationSeatVM>),
+    );
+    // Visible without opening the money expander…
+    const block = screen.getByTestId("outside-spending");
+    // …and it is not a descendant of the money section, which is what keeps
+    // it from reading as another slice of the funding mix.
+    expect(container.querySelector(".sec.step-money")?.contains(block)).toBe(
+      false,
+    );
+    expect(block.textContent).toContain("This is not the campaign’s money");
+  });
+
+  it("shows support and oppose as two figures and never their sum or net", () => {
+    renderCard(mkSeat({ outsideSpending } as Partial<DelegationSeatVM>));
+    expect(
+      screen.getByTestId("outside-spending-support-total").textContent,
+    ).toBe("$4M");
+    expect(
+      screen.getByTestId("outside-spending-oppose-total").textContent,
+    ).toBe("$1M");
+    const text = document.body.textContent ?? "";
+    expect(text).not.toContain("$5M"); // sum
+    expect(text).not.toContain("$3M"); // net
+  });
+
+  it("leaves the candidate's own money untouched by outside spending", () => {
+    // totalRaised on the fixture is $4.2M; the $4M of outside support must
+    // not move it, and must not appear inside the funding-mix section.
+    const { container } = renderCard(
+      mkSeat({ outsideSpending } as Partial<DelegationSeatVM>),
+    );
+    const moneySection = container.querySelector(".sec.step-money");
+    expect(moneySection?.textContent).toContain("$4.2M");
+    expect(moneySection?.textContent).not.toContain("Outside spending");
+  });
+
+  it("renders explicit no-data lines, not blanks, when the ingest found nothing", () => {
+    renderCard(
+      mkSeat({
+        topPacs: { electionCycle: "2026", sponsors: [], hiddenCount: 0 },
+        outsideSpending: {
+          electionCycle: "2026",
+          support: { total: 0, spenders: [], hiddenCount: 0 },
+          oppose: { total: 0, spenders: [], hiddenCount: 0 },
+        },
+      } as Partial<DelegationSeatVM>),
+    );
+    expect(
+      screen.getByTestId("outside-spending-support-empty").textContent,
+    ).toContain("No outside spending supporting this candidate on file.");
+    fireEvent.click(screen.getByTestId("money-expander-toggle"));
+    expect(screen.getByTestId("top-pac-sponsors-empty").textContent).toContain(
+      "No PAC contributions to this candidate",
+    );
+  });
+});

@@ -1559,6 +1559,61 @@ Fairshake both present. Findings out of the run, and what changed because of the
    and filed sponsor, with sector shown only when it exists; the hand-curation workflow
    (`status=verified`) is the path to naming who is behind the big ones.
 
+**6a/6b UI blocks — built 2026-08-13.** The two display-layer pieces the
+records above left open. Both ship behind ONE new env flag,
+`PAC_TRANSPARENCY_ENABLED` (strict `"true"`, default OFF,
+`src/lib/server/pac-transparency-flag.ts`, registered in
+`src/lib/launch-flags.ts` + `docs/operations/launch-flip-list.md`) — when it is
+off, no query runs and neither block renders.
+
+- **6a — "Top PACs and their sponsors"** (`src/lib/server/pac-sponsors.ts` →
+  `src/prototype/redesign/TopPacSponsors.tsx`, rendered inside the seat card's
+  money expander, under `PacGapCaveat`). Names each PAC, the sponsor its own
+  filing declares (`CONNECTED_ORG`), the sector where one was classified, the
+  dollars and the transaction count, with the `evidence_url` as a link on every
+  row. `status='rejected'` rows are excluded in SQL and again in memory — the
+  hand-curation contract. **It is a breakdown, never a total:** the read path
+  deliberately returns no aggregate dollar figure at all (a test asserts the
+  result shape has nowhere for one to live), the component prints no subtotal,
+  and its subheading tells the reader this money is already counted in the
+  funding mix above. Unclassified sector = no tag, never a guess.
+- **6b — "Outside spending about this race"** (`src/lib/server/outside-spending.ts`
+  → `src/prototype/redesign/OutsideSpending.tsx`). **The display rule,
+  restated:** this is not the candidate's money and legally cannot be
+  coordinated with the campaign. The block renders OUTSIDE the money section
+  entirely (not merely below it, and never behind its expander), in its own
+  bordered container with a plain-language explainer stating that outside
+  groups may spend without coordinating and that none of it appears in the
+  candidate's receipts. "Spent supporting" and "spent opposing" are two
+  figures in two columns — never summed, never netted, never added to
+  `totalRaised` or the funding mix; the result type has no combined field, each
+  direction is rolled up by a function that cannot see the other, and tests at
+  the read path, the API and the card all assert that neither the sum nor the
+  net appears anywhere. Spenders are presented by NAME + filed sponsor, sector
+  only where one exists (per 6b finding 3). A `rejected` committee keeps its
+  spending but loses its sponsor/sector claim — dropping the row would
+  understate outside spending, which is its own misstatement.
+- **Honest empty everywhere.** `null` means "we didn't look" (flag off, or an
+  unresolved candidate) and renders nothing; an empty result object means "we
+  looked and there is nothing on file" and renders an explicit sentence —
+  including per direction in 6b, so an empty side never collapses the block
+  into a single number. 6a's empty line says our data doesn't name them, not
+  that none exist.
+- **Isolation kept green, and the allowlist widened by exactly two files.**
+  Both blocks are attached in `/api/delegation` (mirroring how `canContext` is
+  attached) rather than in `race-data.ts`, specifically so no funding-mix
+  producer or read path learns about independent expenditures.
+  `scripts/ingest/independent-expenditure-isolation.test.ts` keeps its
+  `FUNDING_MIX_MODULES` assertion unchanged; its `ALLOWED_REFERENCE_FILES` now
+  also admits `src/lib/server/outside-spending.ts` and its test — nothing else.
+  The 6a read path, the components and the route never name the IE table.
+- **What remains:** Muxin's live 6b ingest run (the dry-run succeeded; the
+  table is empty on prod until it runs), the candidate-scoping decision the 6b
+  record raises, and the hand-curation pass (`status='verified'`) that makes
+  the sponsor names on the biggest spenders worth showing. The flag stays OFF
+  until both. Also open, deliberately: challengers and the race/duel surfaces
+  show neither block yet — only the sitting-member seat card does.
+
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
 - _Who funds the super PAC_ (its own Schedule A receipts, incl. corporate donors) is a third,

@@ -60,12 +60,33 @@ const FUNDING_MIX_MODULES = [
  * ingest itself, its tests, and the schema/migration that define the table.
  * Anything else means outside spending has leaked into another surface —
  * which, on a funding surface, is the misstatement the plan forbids.
+ *
+ * WIDENED 2026-08-13 for the 6b display block, by exactly two files. The
+ * "Outside spending about this race" UI needs SOMETHING to read the table,
+ * so the allowlist now admits the read path
+ * (`src/lib/server/outside-spending.ts`) and its own test — and nothing
+ * else. The narrowness is the point:
+ *   • The 6a read path (`src/lib/server/pac-sponsors.ts`) is NOT here: it
+ *     reads only pac_committees / pac_candidate_contributions, so outside
+ *     spending stays out of the block that breaks down campaign receipts.
+ *   • The React components take plain props and never name the table, so
+ *     neither is listed.
+ *   • The API route that serves the block imports the read path by name and
+ *     never touches the table either.
+ *   • Above all, FUNDING_MIX_MODULES below is UNCHANGED — no funding-mix
+ *     producer or read path (donors.ts, race-data.ts, every federal ingest)
+ *     may reference this money, and the display block was deliberately
+ *     wired through /api/delegation rather than through race-data.ts so
+ *     that stays true.
  */
 const ALLOWED_REFERENCE_FILES = new Set([
   "scripts/ingest/federal-independent-expenditures.ts",
   "scripts/ingest/federal-independent-expenditures.test.ts",
   "scripts/ingest/independent-expenditure-isolation.test.ts",
   "db/schema.ts",
+  // Part 6b display read path + its test (2026-08-13).
+  "src/lib/server/outside-spending.ts",
+  "src/lib/server/outside-spending.test.ts",
 ]);
 
 /** Usage of the table/module — identifiers and imports, not prose mentions. */

@@ -103,6 +103,23 @@ export interface ApiCollaboratorNetwork {
   crossParty: ApiCollaborator[];
 }
 
+/**
+ * Part 6a — "Top PACs and their sponsors" (TopPacSponsors.tsx). Names PAC
+ * money that is ALREADY inside the funding mix's "PACs" slice; nothing here
+ * is ever added to `totalRaised` or to `fundingMix`. Note there is no total
+ * field: the block is a breakdown, and the server read path emits no sum.
+ */
+export type ApiTopPacs = import("./TopPacSponsors").TopPacSponsorsData;
+
+/**
+ * Part 6b — "Outside spending about this race" (OutsideSpending.tsx). NOT the
+ * candidate's money: independent expenditures cannot legally be coordinated
+ * with the campaign. `support` and `oppose` are two figures — never summed,
+ * never netted, never folded into the funding mix or `totalRaised`.
+ */
+export type ApiOutsideSpending =
+  import("./OutsideSpending").OutsideSpendingData;
+
 export interface ApiDelegationSeat {
   seatId: string;
   office: "U.S. House" | "U.S. Senate";
@@ -131,6 +148,14 @@ export interface ApiDelegationSeat {
   challengers?: ApiSeatChallenger[];
   /** CAN2026 curated context — display-side only, always attributed. */
   canContext?: ApiCanSeatContext | null;
+  /**
+   * Part 6a block. null ⇒ we didn't look (PAC_TRANSPARENCY_ENABLED off, or no
+   * resolved candidate) ⇒ render nothing. An object with an empty `sponsors`
+   * array ⇒ we looked and found none ⇒ render the explicit no-data line.
+   */
+  topPacs?: ApiTopPacs | null;
+  /** Part 6b block. Same null vs empty-object contract as `topPacs`. */
+  outsideSpending?: ApiOutsideSpending | null;
 }
 
 export type DelegationResult =
@@ -376,6 +401,19 @@ export interface DelegationSeatVM {
   challengers: ApiSeatChallenger[];
   /** CAN2026 curated context (null until the CAN ingest runs). */
   canContext: ApiCanSeatContext | null;
+  /**
+   * Part 6a "Top PACs and their sponsors" — a breakdown of the PAC money
+   * already counted in `candidate.fundingMix`, never money added to it.
+   * null = not looked up (flag off / unresolved) ⇒ the block doesn't render.
+   */
+  topPacs: ApiTopPacs | null;
+  /**
+   * Part 6b "Outside spending about this race" — NOT the candidate's money.
+   * Deliberately a SEAT-level field sitting apart from `candidate`, whose
+   * fields are all campaign receipts: support and oppose are two figures and
+   * are never summed, netted, or added to totalRaised / fundingMix.
+   */
+  outsideSpending: ApiOutsideSpending | null;
 }
 
 /** Donor-source codes from /api/donors → reader-facing names. */
@@ -467,6 +505,8 @@ export function buildSeats(
       alignmentEntry: card?.alignmentEntry ?? null,
       challengers: seat.challengers ?? [],
       canContext: seat.canContext ?? null,
+      topPacs: seat.topPacs ?? null,
+      outsideSpending: seat.outsideSpending ?? null,
     };
   });
 }

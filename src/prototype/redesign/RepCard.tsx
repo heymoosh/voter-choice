@@ -36,6 +36,8 @@ import { MoneyGapScale, MoneyHero } from "./MoneyGap";
 import { FundingSources, hasScoredVoteLinkage } from "./FundingSources";
 import { MoneyVerdict } from "./MoneyVerdict";
 import { RevolvingDoorBand } from "./RevolvingDoorBand";
+import { TopPacSponsors } from "./TopPacSponsors";
+import { OutsideSpending } from "./OutsideSpending";
 import { isSelectableReplacement } from "../../lib/rosterProvenance";
 
 /** Provenance badge — the design's unifier (roll-call vs researched).
@@ -1216,6 +1218,13 @@ export function RepCard({
               fundingMix={cand.fundingMix}
               totalRaised={cand.totalRaised}
             />
+            {/* [Part 6a] Names the committees inside the PAC slice the
+                caveat above is about. A BREAKDOWN of money already counted
+                in the funding mix — never added to totalRaised or the mix
+                (plan doc Part 6a). Renders only when
+                PAC_TRANSPARENCY_ENABLED is on (the route sends null
+                otherwise); an empty list renders its own no-data line. */}
+            <TopPacSponsors data={seat.topPacs} />
             {!cand.donorCoalition &&
               !cand.fundingMix &&
               cand.donorUnavailable && (
@@ -1317,6 +1326,17 @@ export function RepCard({
           </>
         )}
       </div>
+
+      {/* [Part 6b] Outside spending — DELIBERATELY OUTSIDE the money section
+          above, and never behind its expander. Independent expenditures are
+          not this candidate's money and legally cannot be coordinated with
+          the campaign, so the block sits in its own bordered container with
+          its own explainer, spend-for and spend-against shown as two figures
+          that are never summed, netted, or mingled with the funding mix
+          (plan doc Part 6b, display rule). Renders only when
+          PAC_TRANSPARENCY_ENABLED is on; an empty result renders its own
+          per-direction no-data lines. */}
+      <OutsideSpending data={seat.outsideSpending} />
 
       {/* 3 · Attendance */}
       <div className="sec step-attendance">
