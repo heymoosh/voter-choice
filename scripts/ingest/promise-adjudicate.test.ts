@@ -14,6 +14,7 @@ import {
   buildAdjudicationPrompt,
   renderActionForPrompt,
   parseAndValidateVerdict,
+  termWindowForCycle,
   ADJUDICATOR_VERSION,
   RUBRIC_VERSION,
   TERM_WINDOW,
@@ -210,6 +211,17 @@ describe("parseAndValidateVerdict", () => {
       promise(),
     );
     expect(row.verdict).toBe("kept");
+  });
+});
+
+describe("termWindowForCycle", () => {
+  it("matches TERM_WINDOW for the 2026 cycle and closes for 2022", () => {
+    expect(termWindowForCycle(2026)).toEqual(TERM_WINDOW);
+    const retro = termWindowForCycle(2022);
+    expect(retro).toEqual({ start: "2023-01-03", end: "2025-01-03" });
+    // The retrospective window is already OPEN (and closed) today — the LLM
+    // path, not the deterministic §4.1 short-circuit, applies.
+    expect(windowNotYetOpen("2026-08-13", retro)).toBe(false);
   });
 });
 

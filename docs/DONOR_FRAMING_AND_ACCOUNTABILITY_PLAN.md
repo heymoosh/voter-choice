@@ -1243,6 +1243,38 @@ Remaining retrospective dependencies after this: cycle-parameterize the corpus s
 through extract/adjudicate (the adjudicator side is DONE via `TermWindow` above); then the
 2022 TX mini-spike to measure Wayback coverage before committing.
 
+**Cycle parameterization + backfill safety — built 2026-08-13** (dependency (b), plus a
+hazard the scoping missed). Three pieces:
+
+1. **`--cycle` on the corpus spike.** `--cycle 2022` (any cycle whose election day has
+   passed) flips the spike to RETROSPECTIVE mode: the roster switches from
+   `official_roster_candidates` to that cycle's WINNERS — members whose term started the
+   following Jan 3, straight from `candidate_offices` with identity pre-resolved (no
+   resolver pass, no `unresolved` bucket) — the capture window defaults to the cycle
+   (Jan 1 odd-year → that election day, `generalElectionDay()` computed), and FEC lookups
+   prefer the cycle's own filings: `pickPrincipalCommittee` now prefers committees active
+   in the requested cycle, and the website comes from `/committee/{id}/history/{cycle}`
+   (the era's Form 1 snapshot) before falling back to the current filing. Members whose
+   candidates rows lack seat columns (never seat-backfilled) are counted and reported
+   rather than silently dropped. Winner bias remains inherent and stated.
+2. **`--cycle` on the adjudicator.** `termWindowForCycle(2022)` → 2023-01-03..2025-01-03,
+   threaded through both paths; `termWindowForCycle(2026)` ≡ `TERM_WINDOW`, so default
+   behavior is unchanged.
+3. **Backfill incumbency hazard, fixed before the 118th run.** The votes ingest hardcoded
+   `isIncumbent: true` on every member it created and the upsert clobbered the column —
+   a `CONGRESS=118` backfill would have marked every retired/defeated 118th member a
+   sitting incumbent in prod. Now: incumbency is asserted only by CURRENT-congress roll
+   calls, the in-memory plan merge never lets an older congress demote a newer row, and
+   the DB upsert is monotonic (`is_incumbent OR excluded.is_incumbent` — demotion stays
+   the roster/incumbent-backfill scripts' job). NOTE for the run: the default config has
+   always ingested `[current, current-1]`, so partial pre-partition-fix 118th data (first
+   1,000 vote records) may already exist — the re-run upserts over it idempotently, and
+   the coverage SQL above will show the before/after.
+
+Run order for the retrospective mini-spike, all dev-machine (after this merges):
+`CONGRESS=118 … federal-votes.ts` → `bill-cosponsors.ts --congress 118` → `tag-bills.ts`
+(until 0 untagged) → `_promise-corpus-spike.ts --state TX --cycle 2022 --json > spike-tx-2022.json`.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate

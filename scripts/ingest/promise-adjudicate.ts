@@ -47,7 +47,10 @@
  *   npx tsx --env-file=.env.local scripts/ingest/promise-adjudicate.ts --dry-run
  *   npx tsx --env-file=.env.local scripts/ingest/promise-adjudicate.ts
  *   Flags: --promise <id> (repeatable), --limit N, --dry-run, --json,
- *          --now YYYY-MM-DD (clock override for testing window logic).
+ *          --now YYYY-MM-DD (clock override for testing window logic),
+ *          --cycle N (adjudicate against that cycle's promised term — the
+ *          2022 retrospective runs --cycle 2022 for the closed 2023-2025
+ *          window; default is the 2026 TERM_WINDOW).
  */
 
 import { pathToFileURL } from "node:url";
@@ -96,6 +99,17 @@ export const TERM_WINDOW: TermWindow = {
   start: "2027-01-03",
   end: "2029-01-03",
 };
+
+/**
+ * The testable window for the term sought in a given election cycle: it
+ * opens the Jan 3 after the election and runs one House term (the rubric's
+ * default window). termWindowForCycle(2026) === TERM_WINDOW; the 2022
+ * retrospective uses termWindowForCycle(2022) → 2023-01-03 → 2025-01-03,
+ * a window that has CLOSED, making every rubric §4 rule reachable.
+ */
+export function termWindowForCycle(cycle: number): TermWindow {
+  return { start: `${cycle + 1}-01-03`, end: `${cycle + 3}-01-03` };
+}
 
 const MAX_TOKENS = 2048;
 
@@ -346,6 +360,7 @@ async function adjudicateWithModel(
   systemPrompt: string,
   promise: PromiseWithActions,
   nowIso: string,
+  window: TermWindow,
 ): Promise<VerdictRow> {
   const response = await anthropic.messages.create({
     model: ADJUDICATOR_MODEL,
@@ -358,7 +373,10 @@ async function adjudicateWithModel(
       },
     ],
     messages: [
-      { role: "user", content: buildAdjudicationPrompt(promise, nowIso) },
+      {
+        role: "user",
+        content: buildAdjudicationPrompt(promise, nowIso, window),
+      },
     ],
   });
   const textBlock = response.content.find((b) => b.type === "text");
@@ -494,15 +512,19 @@ async function main(): Promise<void> {
   const promiseIds = flagValues(argv, "--promise");
   const nowIso =
     flagValue(argv, "--now") ?? new Date().toISOString().slice(0, 10);
+  // --cycle N adjudicates against that cycle's promised term (the 2022
+  // retrospective: --cycle 2022 → window 2023-01-03..2025-01-03, closed).
+  const cycleArg = flagValue(argv, "--cycle");
+  const window = cycleArg ? termWindowForCycle(Number(cycleArg)) : TERM_WINDOW;
 
   const db = requireDb();
   const promises = await fetchPromisesWithActions(db, promiseIds, limit);
   process.stderr.write(
     `[promise-adjudicate] ${promises.length} promises (version=${ADJUDICATOR_VERSION} ` +
-      `now=${nowIso}${dryRun ? " DRY-RUN" : ""})\n`,
+      `now=${nowIso} window=${window.start}..${window.end}${dryRun ? " DRY-RUN" : ""})\n`,
   );
 
-  const preWindow = windowNotYetOpen(nowIso);
+  const preWindow = windowNotYetOpen(nowIso, window);
   let anthropic: Anthropic | null = null;
   let systemPrompt = "";
   if (!preWindow) {
@@ -523,7 +545,7 @@ async function main(): Promise<void> {
   for (const promise of promises) {
     let row: VerdictRow;
     if (preWindow) {
-      row = deterministicNotYetTestable(promise, nowIso);
+      row = deterministicNotYetTestable(promise, nowIso, window);
     } else {
       try {
         row = await adjudicateWithModel(
@@ -531,6 +553,7 @@ async function main(): Promise<void> {
           systemPrompt,
           promise,
           nowIso,
+          window,
         );
       } catch (err) {
         process.stderr.write(
@@ -554,7 +577,7 @@ async function main(): Promise<void> {
     `\n[promise-adjudicate] done${dryRun ? " (dry-run)" : ""}. ` +
       `${[...counts.entries()].map(([v, n]) => `${v}=${n}`).join(" ") || "nothing adjudicated"}\n` +
       (preWindow
-        ? `[promise-adjudicate] window ${TERM_WINDOW.start} not yet open — all verdicts deterministic §4.1.\n`
+        ? `[promise-adjudicate] window ${window.start} not yet open — all verdicts deterministic §4.1.\n`
         : ""),
   );
   if (asJson) console.log(JSON.stringify(report, null, 2));

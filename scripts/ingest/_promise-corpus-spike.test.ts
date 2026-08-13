@@ -18,6 +18,8 @@ import {
   selectCanonicalCapture,
   waybackReplayUrl,
   summarizeBuckets,
+  generalElectionDay,
+  cycleDefaults,
   BUCKET_NOTES,
   type SpikeBucket,
 } from "./_promise-corpus-spike";
@@ -146,6 +148,44 @@ describe("pickPrincipalCommittee", () => {
     expect(principal?.lastCycle).toBeNull();
     expect(principal?.website).toBeNull();
   });
+
+  it("prefers the committee active in the requested cycle (retrospective)", () => {
+    // Without a cycle the 2026 successor wins; --cycle 2022 must pick the
+    // committee that actually ran the 2022 campaign.
+    expect(pickPrincipalCommittee(payload, 2022)?.committeeId).toBe(
+      "C00000001",
+    );
+    expect(pickPrincipalCommittee(payload, 2026)?.committeeId).toBe(
+      "C00000002",
+    );
+  });
+
+  it("falls back to most-recently-active when no committee lists the cycle", () => {
+    expect(pickPrincipalCommittee(payload, 2014)?.committeeId).toBe(
+      "C00000002",
+    );
+  });
+});
+
+describe("cycle parameterization", () => {
+  it("computes the general-election day (first Tuesday after first Monday)", () => {
+    expect(generalElectionDay(2022)).toBe("2022-11-08");
+    expect(generalElectionDay(2024)).toBe("2024-11-05");
+    expect(generalElectionDay(2026)).toBe("2026-11-03");
+    expect(generalElectionDay(2028)).toBe("2028-11-07");
+  });
+
+  it("derives the capture window from the cycle", () => {
+    expect(cycleDefaults(2022)).toEqual({
+      electionDay: "2022-11-08",
+      fromDate: "2021-01-01",
+    });
+    // The 2026 defaults match the values previously hardcoded in main().
+    expect(cycleDefaults(2026)).toEqual({
+      electionDay: "2026-11-03",
+      fromDate: "2025-01-01",
+    });
+  });
 });
 
 describe("extractCommitteeWebsite", () => {
@@ -159,7 +199,9 @@ describe("extractCommitteeWebsite", () => {
 
   it("returns null for empty or malformed payloads", () => {
     expect(extractCommitteeWebsite({ results: [] })).toBeNull();
-    expect(extractCommitteeWebsite({ results: [{ website: null }] })).toBeNull();
+    expect(
+      extractCommitteeWebsite({ results: [{ website: null }] }),
+    ).toBeNull();
     expect(extractCommitteeWebsite(null)).toBeNull();
   });
 });
@@ -208,7 +250,12 @@ describe("parseCdxJson", () => {
     expect(parseCdxJson(null)).toEqual([]);
     expect(parseCdxJson("not json rows")).toEqual([]);
     expect(parseCdxJson([header])).toEqual([]);
-    expect(parseCdxJson([["wrong", "header"], ["a", "b"]])).toEqual([]);
+    expect(
+      parseCdxJson([
+        ["wrong", "header"],
+        ["a", "b"],
+      ]),
+    ).toEqual([]);
   });
 
   it("drops rows with malformed timestamps", () => {
