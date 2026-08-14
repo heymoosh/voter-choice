@@ -44,9 +44,15 @@ CANONICAL ISSUES (id — what it covers):
   water_infrastructure — water access, treatment, dams
   property_taxes — property tax rates, assessments
   election_integrity — voting rights, voter ID, election administration
-  congressional_accountability — stock-trading bans, term limits, ethics
+  congressional_accountability — stock-trading bans, ethics, transparency
+  trade_tariffs — tariffs, trade agreements, protectionism vs free trade
+  curriculum_culture — school curriculum content: DEI, gender-identity material, book policy, parental oversight
+  redistricting_reform — gerrymandering, who draws district maps
+  election_security_disinformation — AI deepfakes/disinformation in elections, election cybersecurity
+  congressional_term_limits — term limits for members of Congress
+  retirement_income_security — Social Security benefits, retirement age
 
-POLE DIRECTIONS (pole-vocab pole-vocab-v1) — in_favor/opposed are these FIXED per-issue sides, NOT "good vs bad". The [contested]/[valence] tag drives "stance": for [contested], set "stance" ONLY if the voter's words pick a side, else OMIT it (do NOT default to in_favor); for [valence], an aspirational concern is in_favor unless they want less government action.
+POLE DIRECTIONS (pole-vocab pole-vocab-v2) — in_favor/opposed are these FIXED per-issue sides, NOT "good vs bad". The [contested]/[valence] tag drives "stance": for [contested], set "stance" ONLY if the voter's words pick a side, else OMIT it (do NOT default to in_favor); for [valence], an aspirational concern is in_favor unless they want less government action.
   gun_rights_safety [contested] — in_favor=Gun access / rights; opposed=Gun regulation / safety
   healthcare_affordability [valence] — in_favor=Expand coverage & cap costs (government action); opposed=Market-based / limit government role
   housing_affordability [valence] — in_favor=Expand affordability / supply / tenant support; opposed=Cut housing programs / reduce government role
@@ -63,15 +69,25 @@ POLE DIRECTIONS (pole-vocab pole-vocab-v1) — in_favor/opposed are these FIXED 
   environment_climate [contested] — in_favor=Climate action / environmental protection; opposed=Deregulation / limit climate mandates
   election_integrity [contested] — in_favor=Voting access / expand participation; opposed=Voting restrictions / security-first
   congressional_accountability [valence] — in_favor=Stronger ethics & accountability; opposed=Status quo / weaker rules
+  trade_tariffs [contested] — in_favor=Trade protection / tariffs; opposed=Free trade / lower tariffs
+  curriculum_culture [contested] — in_favor=Curriculum restrictions & parental oversight; opposed=Inclusive curriculum & educator discretion
+  redistricting_reform [valence] — in_favor=Independent / anti-gerrymandering map-drawing; opposed=Legislature-controlled map-drawing
+  election_security_disinformation [valence] — in_favor=Protect elections from manipulation & disinformation; opposed=Minimal regulation of election speech & technology
+  congressional_term_limits [valence] — in_favor=Impose term limits; opposed=Preserve unlimited terms
+  retirement_income_security [valence] — in_favor=Protect / expand retirement benefits; opposed=Restructure / reduce benefits
 
-SUB-ISSUES (sub-issue sub-issue-v1) — when the voter's concern clearly fits one of these facets of a parent issue, set "subIssue" to its id; if none clearly fits, OMIT "subIssue". A sub-issue inherits the parent issue's pole direction — it never changes the side.
+SUB-ISSUES (sub-issue sub-issue-v2) — when the voter's concern clearly fits one of these facets of a parent issue, set "subIssue" to its id; if none clearly fits, OMIT "subIssue". A sub-issue inherits the parent issue's pole direction — it never changes the side.
   healthcare_affordability:
     drug_prices - the cost of prescription drugs and insulin, and how government negotiates or caps those prices.
     coverage_access - specific insurance-coverage mechanisms — marketplace enrollment windows, premium subsidies for individuals buying on ACA exchanges, Medicaid eligibility for a concrete population, coverage mandates, or protections for the uninsured. NOT general ACA overhaul, broad Medicaid restructuring, or bills primarily about healthcare spending levels.
     provider_costs - what hospitals and providers charge — surprise bills, price transparency, and market consolidation.
     senior_care - Medicare benefits and care for older adults — Medicare Advantage rules and long-term / nursing-home care.
     mental_behavioral_health - access to mental-health and addiction care — parity enforcement, treatment funding, and crisis services.
-(sub-issue sub-issue-v1)
+  border_security:
+    interior_ice_enforcement - immigration enforcement INSIDE the country — ICE staffing and removal operations, detainer requests, and local-cooperation (sanctuary) policy — as distinct from physical border infrastructure and Border Patrol presence at the line.
+  economy_jobs:
+    wages_worker_power - pay floors and workers' collective power — minimum wage, overtime, and the right to organize — as distinct from general jobs programs or infrastructure investment.
+(sub-issue sub-issue-v2)
 
 Rules:
   · Don't pad to a fixed count. One thing, one theme.

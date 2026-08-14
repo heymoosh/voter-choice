@@ -54,13 +54,13 @@ describe("pole vocabulary — coverage", () => {
     }
   });
 
-  it("has the 12 contested / 4 valence_dominant split the doc declares", () => {
+  it("has the 14 contested / 8 valence_dominant split the doc declares", () => {
     const contested = entries.filter(([, e]) => e.axisType === "contested");
     const valence = entries.filter(
       ([, e]) => e.axisType === "valence_dominant",
     );
-    expect(contested.length).toBe(12);
-    expect(valence.length).toBe(4);
+    expect(contested.length).toBe(14);
+    expect(valence.length).toBe(8);
   });
 
   it("isContested() agrees with the entries", () => {

@@ -50,7 +50,13 @@ export const CANONICAL_ISSUES_PROMPT_BLOCK = `CANONICAL ISSUES (id — what it c
   water_infrastructure — water access, treatment, dams
   property_taxes — property tax rates, assessments
   election_integrity — voting rights, voter ID, election administration
-  congressional_accountability — stock-trading bans, term limits, ethics
+  congressional_accountability — stock-trading bans, ethics, transparency
+  trade_tariffs — tariffs, trade agreements, protectionism vs free trade
+  curriculum_culture — school curriculum content: DEI, gender-identity material, book policy, parental oversight
+  redistricting_reform — gerrymandering, who draws district maps
+  election_security_disinformation — AI deepfakes/disinformation in elections, election cybersecurity
+  congressional_term_limits — term limits for members of Congress
+  retirement_income_security — Social Security benefits, retirement age
 
 ${renderResolverPoleDirections()}
 

@@ -18,6 +18,7 @@ import {
   type VoteMatch,
   type CosponsorMatch,
 } from "./promise-link";
+import { POLE_VOCABULARY_VERSION } from "../../src/lib/alignment/poleVocabulary";
 
 describe("voteActionSide", () => {
   it("YEA takes the bill's stance_lens side", () => {
@@ -150,8 +151,9 @@ describe("prompt and provenance contracts", () => {
     expect(prompt).toContain("opposed");
     expect(prompt).toContain("unclear");
     // The shared renderer's version stamp — proves the tagger and the
-    // linker consume the same vocabulary module.
-    expect(prompt).toContain("pole-vocab-v1");
+    // linker consume the same vocabulary module (constant, not a literal,
+    // so a vocabulary version bump can't silently desync this test).
+    expect(prompt).toContain(POLE_VOCABULARY_VERSION);
   });
 
   it("link_method names the join, the linker version, and the model", () => {

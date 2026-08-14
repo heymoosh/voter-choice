@@ -87,7 +87,13 @@ import {
 // "outcome"; outcomes only the executive branch can deliver are "oversight"
 // or not extracted. The v2 calibration example that taught the wrong type
 // for "push to consolidate" is corrected.
-export const EXTRACTOR_VERSION = "promise-extract-v3";
+// v4 (2026-08-13, vocabulary-gap review): canonical vocabulary expanded
+// 16→22 (trade_tariffs, curriculum_culture, redistricting_reform,
+// election_security_disinformation, congressional_term_limits,
+// retirement_income_security) + 2 sub-issues (interior_ice_enforcement,
+// wages_worker_power); pole-vocab-v2 / sub-issue-v2. Re-extraction re-files
+// promises under the expanded vocabulary (deterministic ids upsert in place).
+export const EXTRACTOR_VERSION = "promise-extract-v4";
 
 const EXTRACTION_MODEL = "claude-sonnet-5";
 

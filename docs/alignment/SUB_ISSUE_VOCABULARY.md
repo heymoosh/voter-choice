@@ -6,7 +6,7 @@ human-readable source of truth that `src/lib/alignment/subIssues.ts` mirrors.
 ## What this is and why
 
 A **sub-issue** is a TOPIC FACET of an existing canonical issue (see
-`docs/alignment/POLE_VOCABULARY.md` for the 16 canonical issues). It is an
+`docs/alignment/POLE_VOCABULARY.md` for the canonical issues). It is an
 **optional hierarchical layer**: where a canonical issue like
 `healthcare_affordability` bundles distinct topics (drug prices, coverage,
 provider costs, …), a sub-issue names one of those facets so scoring can
@@ -25,10 +25,18 @@ two cannot drift. Editing this prose requires mirroring the change in the module
 and bumping `SUB_ISSUE_VOCABULARY_VERSION`; `subIssues.test.ts` fails if the id
 set or any parent drifts.
 
-## Pilot scope
+## Scope
 
-Piloted on **`healthcare_affordability`** with the five sub-issues below. Other
-canonical issues have no sub-issues yet — the layer is additive and per-parent.
+Piloted on **`healthcare_affordability`** with five sub-issues; extended
+(**sub-issue-v2**, 2026-08-13 vocabulary-gap review) with one facet each under
+**`border_security`** and **`economy_jobs`**. Other canonical issues have no
+sub-issues yet — the layer is additive and per-parent.
+
+> **v2 scope rule, restated:** both v2 facets are direction-ALIGNED with their
+> parent's axis — they narrow topic only. The same review's direction-ORTHOGONAL
+> proposals (trade_tariffs, curriculum_culture, redistricting_reform,
+> election_security_disinformation) became canonical issues in pole-vocab-v2,
+> because a facet with its own poles is a canonical issue in this architecture.
 
 ## Entry template
 
@@ -108,7 +116,46 @@ parent: healthcare_affordability
 
 ---
 
-**5 healthcare sub-issues authored,** all with parent `healthcare_affordability`.
+# v2 sub-issues (2026-08-13 vocabulary-gap review)
+
+### interior_ice_enforcement
+parent: border_security
+- label: **Interior ICE Enforcement**
+- description: immigration enforcement INSIDE the country — ICE staffing and
+  removal operations, detainer requests, and local-cooperation (sanctuary)
+  policy — as distinct from physical border infrastructure and Border Patrol
+  presence at the line.
+- bill_signals: ICE staffing / funding for interior enforcement; detainer /
+  local law-enforcement cooperation mandates (e.g. conditioning grants);
+  sanctuary-jurisdiction penalties or protections; interior removal /
+  deportation operations policy.
+- direction: inherits border_security's axis (strengthen enforcement =
+  in_favor; limit / humane approach = opposed). Expanding ICE staffing →
+  in_favor; sanctuary protections → opposed.
+
+### wages_worker_power
+parent: economy_jobs
+- label: **Wages & Worker Power**
+- description: pay floors and workers' collective power — minimum wage,
+  overtime, and the right to organize — as distinct from general jobs programs
+  or infrastructure investment.
+- bill_signals: minimum-wage increases; PRO Act / union-organizing
+  protections; overtime-eligibility rules; gig-worker classification;
+  right-to-work (advances the parent's opposed pole).
+- direction: inherits economy_jobs' axis (public investment & worker
+  protections = in_favor; deregulation & lower taxes = opposed). Min-wage /
+  PRO Act → in_favor; right-to-work → opposed.
+- provenance note: surfaced by Muxin's manual worksheet pass, NOT the blind
+  automated review — the parent's in_favor bill_signals literally name
+  min-wage and the PRO Act, so the conservative reviewers correctly judged
+  those promises as "fits". The facet exists for granularity: a min-wage
+  candidate and an infrastructure-spending candidate should be
+  distinguishable.
+
+---
+
+**7 sub-issues authored:** 5 with parent `healthcare_affordability`, 1 with
+parent `border_security`, 1 with parent `economy_jobs`.
 
 ---
 

@@ -1,6 +1,7 @@
 /**
- * Sub-issue taxonomy — an OPTIONAL hierarchical layer beneath the 16 canonical
- * issues, piloted on `healthcare_affordability`. The machine-readable derivative
+ * Sub-issue taxonomy — an OPTIONAL hierarchical layer beneath the canonical
+ * issues, piloted on `healthcare_affordability` and extended (v2) to
+ * `border_security` and `economy_jobs`. The machine-readable derivative
  * of `docs/alignment/SUB_ISSUE_VOCABULARY.md`.
  *
  * WHY THIS EXISTS:
@@ -46,17 +47,21 @@ export interface SubIssueEntry {
  * Version stamp. Rendered into both consumers' prompts so a tagger/resolver
  * mismatch is detectable. Bump on ANY sub-issue change.
  */
-export const SUB_ISSUE_VOCABULARY_VERSION = "sub-issue-v1";
+// v2 (2026-08-13, vocabulary-gap review): +interior_ice_enforcement
+// (border_security), +wages_worker_power (economy_jobs). Both inherit their
+// parent's axis — they narrow topic, never direction (the direction-orthogonal
+// gap-report proposals became canonical issues in pole-vocab-v2 instead).
+export const SUB_ISSUE_VOCABULARY_VERSION = "sub-issue-v2";
 
 /**
  * Tagger version stamp for the sub-issue re-tag pass. Stored on the rows that
  * the re-tag insert writes (kept here so the taxonomy and the insert share one
  * constant). Bump when a re-tag is required.
  */
-export const SUB_TAGGER_VERSION = "healthcare-sub-v1";
+export const SUB_TAGGER_VERSION = "sub-retag-v2";
 
 /**
- * The healthcare sub-issues. Keys MUST equal `entry.id` (enforced by the test);
+ * The sub-issues. Keys MUST equal `entry.id` (enforced by the test);
  * every `parent` MUST be a canonical issue id (asserted at module scope below).
  */
 export const SUB_ISSUES: Record<string, SubIssueEntry> = {
@@ -158,6 +163,47 @@ export const SUB_ISSUES: Record<string, SubIssueEntry> = {
       "I can't find a therapist / mental-health care",
       "we need more addiction treatment",
       "fund the 988 crisis line",
+    ],
+  },
+
+  // --- sub-issue-v2 additions (2026-08-13 vocabulary-gap review) ---
+
+  interior_ice_enforcement: {
+    id: "interior_ice_enforcement",
+    parent: "border_security",
+    label: "Interior ICE Enforcement",
+    resolverDescription:
+      "immigration enforcement INSIDE the country — ICE staffing and removal operations, detainer requests, and local-cooperation (sanctuary) policy — as distinct from physical border infrastructure and Border Patrol presence at the line.",
+    billSignals: [
+      "ICE staffing / funding for interior enforcement",
+      "detainer / local law-enforcement cooperation mandates (e.g. conditioning grants)",
+      "sanctuary-jurisdiction penalties or protections",
+      "interior removal / deportation operations policy",
+    ],
+    exampleConcerns: [
+      "restore ICE staffing / let them do their job",
+      "cities shouldn't shield people here illegally",
+      "ICE raids are tearing families apart",
+    ],
+  },
+
+  wages_worker_power: {
+    id: "wages_worker_power",
+    parent: "economy_jobs",
+    label: "Wages & Worker Power",
+    resolverDescription:
+      "pay floors and workers' collective power — minimum wage, overtime, and the right to organize — as distinct from general jobs programs or infrastructure investment.",
+    billSignals: [
+      "minimum-wage increases",
+      "PRO Act / union-organizing protections",
+      "overtime-eligibility rules",
+      "gig-worker classification",
+      "right-to-work (advances the parent's opposed pole)",
+    ],
+    exampleConcerns: [
+      "wages are too low / I work full-time and still can't make rent",
+      "protect the right to unionize",
+      "raise the minimum wage",
     ],
   },
 };

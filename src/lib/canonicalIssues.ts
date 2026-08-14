@@ -25,6 +25,13 @@ export const CANONICAL_ISSUE_LABELS: Record<string, string> = {
   immigration: "Immigration",
   housing_affordability: "Housing Affordability",
   congressional_accountability: "Congressional Accountability",
+  // 2026-08-13 vocabulary expansion (vocab-gap review; pole-vocab-v2).
+  trade_tariffs: "Trade & Tariffs",
+  curriculum_culture: "School Curriculum & Culture",
+  redistricting_reform: "Redistricting & Gerrymandering",
+  election_security_disinformation: "Election Security & Disinformation",
+  congressional_term_limits: "Congressional Term Limits",
+  retirement_income_security: "Social Security & Retirement",
 };
 
 /**
@@ -89,6 +96,12 @@ export const ISSUE_JURISDICTION_LEAN: Record<string, IssueLevel> = {
   immigration: "federal",
   housing_affordability: "both",
   congressional_accountability: "both",
+  trade_tariffs: "federal",
+  curriculum_culture: "state",
+  redistricting_reform: "both",
+  election_security_disinformation: "both",
+  congressional_term_limits: "federal",
+  retirement_income_security: "federal",
 };
 
 /** Jurisdiction lean for an issue id; unknown ids lean "both" (never hidden). */
