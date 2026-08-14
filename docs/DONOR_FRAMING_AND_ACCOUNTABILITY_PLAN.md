@@ -1527,6 +1527,40 @@ previously would have inserted an orphan id silently). Run order note: do the
 delta pass whenever — it is independent of the 118th untagged run; the two
 share the insert script and its `claude-sonnet-5-agent-v1` version stamp.
 
+### Part 5 — 118th tagging + v2 delta pass RUN 2026-08-14: COMPLETE (audited)
+
+Both tagging jobs ran on Muxin's machine via the subscription workflows.
+Getting there surfaced and fixed two export blind spots, each caught by the
+run's own output: the "Total untagged" figure was the LIMIT page, not a count
+(#515 — true count + plateau semantics documented: bills judged and correctly
+left untagged re-export forever, so the pool converges to a plateau, never
+zero), and the pool turned out to be 29,874 bills — overwhelmingly
+state-legislature rows the effort was never aimed at, which the unscoped
+first-500 page was serving instead of the 118th bills (#516 — export now
+defaults to `jurisdiction LIKE 'federal-%'` and always prints the
+per-jurisdiction pool breakdown).
+
+Results:
+- **v2 delta pass (one-shot): 144 new-vocabulary tag rows** landed on
+  previously tagged bills — the six new ids are now reachable by the linker
+  on the pre-v2 corpus. 0 insert errors, 0 invalid ids.
+- **118th/federal untagged run:** after the scoped round (392 federal bills
+  judged, 5 tagged) plus the earlier unscoped rounds, every federal bill has
+  now been judged; the remaining federal untagged plateau (~387) is the
+  legitimate no-signal tail.
+- **Audit (the gate for calling it done):** 25 randomly sampled no-tag
+  federal bills reviewed against the 22-issue vocabulary → **25/25 correctly
+  untagged** (foreign policy, procedural rule votes, appropriations,
+  ceremonial resolutions). Two borderlines correctly resolved by the
+  vocabulary's own guards: a member-censure resolution (excluded by
+  congressional_accountability's halo-label guard on partisan single-target
+  actions) and the Antisemitism Awareness Act (outside curriculum_culture's
+  deliberate DEI/gender-content scope — watch if school-speech bills recur).
+
+**The 2022 retrospective's tagging prerequisite is met.** Remaining
+retrospective blockers: promise-extract v4 convergence (Wayback-limited,
+`_promise-version-report.ts` tracks it) and the TX 2022 mini-spike.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
