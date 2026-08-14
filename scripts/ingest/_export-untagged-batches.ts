@@ -21,6 +21,27 @@ async function main() {
   // (`AND it.tagger_version = <haiku version>`) re-exported bills forever
   // once they were tagged under the agent-run version string — the export's
   // job is gap-filling, not version-scoped re-tagging.
+  //
+  // CONVERGENCE CAVEAT (2026-08-14): a bill the tagger judged and correctly
+  // left untagged (procedural / no directional signal — the majority) has no
+  // issue_tags row, so it re-exports on every run. The pool therefore
+  // converges to a PLATEAU of legitimately-no-signal bills, not to zero —
+  // when the true total (printed below) stops dropping between rounds, the
+  // remainder is that plateau and tagging is done. An exact "judged under
+  // version X, no tag" marker would need schema support; not built until the
+  // plateau proves annoying in practice.
+  const totalResult = await db.execute(
+    sql`
+    SELECT COUNT(*)::int AS n
+    FROM bills b
+    WHERE NOT EXISTS (
+      SELECT 1 FROM issue_tags it
+      WHERE it.bill_id = b.id
+    )
+  `,
+  );
+  const trueTotal = (totalResult.rows[0] as { n: number }).n;
+
   const result = await db.execute(
     sql`
     SELECT b.id, b.title, b.summary, b.jurisdiction
@@ -35,7 +56,12 @@ async function main() {
   );
 
   const billsData = result.rows as unknown[];
-  console.log("Total untagged bills:", billsData.length);
+  console.log(
+    `Total untagged bills: ${trueTotal}` +
+      (trueTotal > billsData.length
+        ? ` (exporting the first ${billsData.length}; re-run after inserting to page through)`
+        : ""),
+  );
 
   if (billsData.length === 0) {
     console.log("No untagged bills found");
