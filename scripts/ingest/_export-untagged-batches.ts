@@ -1,6 +1,15 @@
 /**
  * Export untagged bills to 4 batch files for manual processing.
- * Usage: DATABASE_URL=<neon> npx tsx scripts/ingest/_export-untagged-batches.ts
+ *
+ * SCOPED TO FEDERAL BY DEFAULT (2026-08-14): the bills table holds the whole
+ * corpus — ~30k rows, the overwhelming majority state-legislature bills from
+ * the state ingests, which this subscription-tagging effort was never aimed
+ * at (state tagging has its own pipeline). Unscoped, the first-500 page was
+ * serving mostly state bills while the 532 118th federal bills — the reason
+ * this export exists — sat beyond the page horizon. Default: jurisdiction
+ * LIKE 'federal-%'. Pass --all to page the entire pool deliberately.
+ *
+ * Usage: npx tsx --env-file=.env.local scripts/ingest/_export-untagged-batches.ts [--all]
  */
 
 import { requireDb } from "../../db/client";
@@ -30,14 +39,39 @@ async function main() {
   // remainder is that plateau and tagging is done. An exact "judged under
   // version X, no tag" marker would need schema support; not built until the
   // plateau proves annoying in practice.
-  const totalResult = await db.execute(
+  const allJurisdictions = process.argv.includes("--all");
+
+  // Always show the whole pool's composition so the scope choice is visible.
+  const breakdown = await db.execute(
     sql`
-    SELECT COUNT(*)::int AS n
+    SELECT b.jurisdiction, COUNT(*)::int AS n
     FROM bills b
     WHERE NOT EXISTS (
       SELECT 1 FROM issue_tags it
       WHERE it.bill_id = b.id
     )
+    GROUP BY b.jurisdiction
+    ORDER BY n DESC
+  `,
+  );
+  console.log("Untagged pool by jurisdiction (all):");
+  for (const row of breakdown.rows as { jurisdiction: string; n: number }[]) {
+    console.log(`  ${String(row.n).padStart(6)}  ${row.jurisdiction}`);
+  }
+
+  const scopeFilter = allJurisdictions
+    ? sql`TRUE`
+    : sql`b.jurisdiction LIKE 'federal-%'`;
+
+  const totalResult = await db.execute(
+    sql`
+    SELECT COUNT(*)::int AS n
+    FROM bills b
+    WHERE ${scopeFilter}
+      AND NOT EXISTS (
+        SELECT 1 FROM issue_tags it
+        WHERE it.bill_id = b.id
+      )
   `,
   );
   const trueTotal = (totalResult.rows[0] as { n: number }).n;
@@ -46,18 +80,20 @@ async function main() {
     sql`
     SELECT b.id, b.title, b.summary, b.jurisdiction
     FROM bills b
-    WHERE NOT EXISTS (
-      SELECT 1 FROM issue_tags it
-      WHERE it.bill_id = b.id
-    )
+    WHERE ${scopeFilter}
+      AND NOT EXISTS (
+        SELECT 1 FROM issue_tags it
+        WHERE it.bill_id = b.id
+      )
     ORDER BY b.id
     LIMIT 500
   `,
   );
 
   const billsData = result.rows as unknown[];
+  const scopeLabel = allJurisdictions ? "all jurisdictions" : "federal";
   console.log(
-    `Total untagged bills: ${trueTotal}` +
+    `Total untagged bills (${scopeLabel}): ${trueTotal}` +
       (trueTotal > billsData.length
         ? ` (exporting the first ${billsData.length}; re-run after inserting to page through)`
         : ""),
