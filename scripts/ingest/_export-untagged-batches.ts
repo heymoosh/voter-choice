@@ -16,13 +16,6 @@ import { requireDb } from "../../db/client";
 import { sql } from "drizzle-orm";
 import * as fs from "node:fs";
 
-interface BillRow {
-  id: string;
-  title: string;
-  summary: string | null;
-  jurisdiction: string;
-}
-
 async function main() {
   const db = requireDb();
 
