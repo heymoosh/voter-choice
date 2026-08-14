@@ -16,6 +16,7 @@ import * as fs from "node:fs";
 import { sql } from "drizzle-orm";
 import { requireDb } from "../../db/client";
 import { issueTags } from "../../db/schema";
+import { isCanonicalIssueId } from "../../src/lib/canonicalIssues";
 
 // Bumped when the agent-run tagging model/prompt changes (subscription path:
 // _export-untagged-batches.ts → _tag-bills.workflow.js → this script).
@@ -51,6 +52,16 @@ async function main() {
     if (!VALID_STANCES.has(tag.stanceLens)) {
       console.error(
         `[insert-tags] skip ${tag.billId}/${tag.canonicalIssue}: invalid stanceLens="${tag.stanceLens}" (must be in_favor|opposed)`,
+      );
+      errors++;
+      continue;
+    }
+    // Agent-written result files can typo an issue id; an invalid id would
+    // silently orphan the tag from the vocabulary (and from linking). Reject
+    // loudly instead (2026-08-14, added with the vocab-delta pass).
+    if (!isCanonicalIssueId(tag.canonicalIssue)) {
+      console.error(
+        `[insert-tags] skip ${tag.billId}/${tag.canonicalIssue}: not a canonical issue id`,
       );
       errors++;
       continue;

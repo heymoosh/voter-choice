@@ -1509,6 +1509,24 @@ ids in place (deterministic-id upsert). The 118th-bill tagging workflow reads
 the vocabulary from source, so the 532-bill run automatically tags against
 v2 — run it after pulling this merge so the bills get the new ids too.
 
+**v2 delta re-tag for ALREADY-tagged bills (built 2026-08-14):** linking is a
+deterministic join on canonical_issue, and bills tagged before v2 were never
+judged against the six new ids — `_export-untagged-batches.ts` deliberately
+skips bills with any tag, so without a delta pass a promise under
+`retirement_income_security` (etc.) could never link to a pre-v2 bill. One-shot
+migration, subscription pattern: `_export-vocab-delta-batches.ts` (tagged
+bills with no new-id tag, existing tags exported as context) →
+`_vocab-delta-retag.workflow.js` (Sonnet agents judge ONLY the six new ids,
+never touching existing tags; carries the election_security_disinformation
+orientation guard so access-restricting "security" bills are not laundered
+in) → `insert-issue-tags.ts` per result file. Deliberately NOT loopable: most
+bills legitimately match none of the six, get no row, and would re-export
+forever — run once, convergence is human-managed. `insert-issue-tags.ts` also
+now validates issue ids against the canonical vocabulary (an agent typo
+previously would have inserted an orphan id silently). Run order note: do the
+delta pass whenever — it is independent of the 118th untagged run; the two
+share the insert script and its `claude-sonnet-5-agent-v1` version stamp.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
