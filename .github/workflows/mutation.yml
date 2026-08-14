@@ -49,10 +49,13 @@ jobs:
     # 45-min cap was first raised to 60, but by 2026-07 the full prompt-fleet
     # scope reached ~85 min (a run stalled at 67% when the 60-min wall killed
     # it, turning the required `mutation` check red and jamming auto-merge —
-    # the same failure mode 45→60 was meant to fix). 120 restores real margin
-    # over the current ~85-min run. Revisit (scope trim or concurrency) if it
-    # keeps climbing.
-    timeout-minutes: 120
+    # the same failure mode 45→60 was meant to fix). 120 restored margin over
+    # the then-~85-min run — but by 2026-08 the full run reached ~113 min and
+    # 4 of the 10 nightlies from 08-05 to 08-14 were killed at the 120 wall
+    # (silently — nobody watches the cron). 150 restores real margin again.
+    # If it keeps climbing past ~130, the next fix is scope trim or Stryker
+    # concurrency, not another cap raise.
+    timeout-minutes: 150
     steps:
       - name: Checkout
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -132,8 +135,18 @@ jobs:
         #     mutate the tests themselves.
         # FULL SCOPE is restored when `stryker.config.json` changes — the
         # mutate array and thresholds ARE the scope, so a narrowed run can't
-        # validate an edit to them — or when the mapping yields nothing, so we
-        # never silently narrow to zero.
+        # validate an edit to them.
+        #
+        # EMPTY MAPPING = SKIP, not full scope (changed 2026-08-14). The
+        # original rule ran FULL scope whenever the mapping yielded nothing
+        # ("never silently narrow to zero") — but the only PR-time changes
+        # that map to nothing are golden fixtures and tests with no sibling
+        # source (e.g. regenerating prompts/__tests__/*.golden.md, or the
+        # length test), and a workflow-only edit. None of those can change
+        # what a mutant does, yet each one triggered the full ~2h Stryker run
+        # at PR time (PR #510 hit exactly this). The nightly cron still runs
+        # the full scope every night, so drift coverage is unchanged — it
+        # just lands that night instead of blocking an unrelated merge.
         #
         # Deliberately NOT full-scope triggers, though both were in the first
         # draft of this step:
@@ -189,12 +202,18 @@ jobs:
           if [ -n "$targets" ]; then
             targets=$(printf '%s\n' $targets | sort -u | paste -sd, -)
           fi
-          if [ -n "$full" ] || [ -z "$targets" ]; then
-            echo "::notice::Mutating the full configured scope."
+          if [ -n "$full" ]; then
+            echo "::notice::Mutating the full configured scope (stryker.config.json changed)."
             echo "mutate=" >> "$GITHUB_OUTPUT"
+            echo "skip=" >> "$GITHUB_OUTPUT"
+          elif [ -z "$targets" ]; then
+            echo "::notice::Stryker skipped: scoped paths changed, but none map to a mutable source (golden fixtures / sibling-less tests / workflow edits cannot change what a mutant does). The nightly run keeps full coverage."
+            echo "mutate=" >> "$GITHUB_OUTPUT"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "::notice::Mutating only this PR's changed files: $targets"
             echo "mutate=$targets" >> "$GITHUB_OUTPUT"
+            echo "skip=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Note skip when Stryker did not run
@@ -208,14 +227,17 @@ jobs:
           fi
 
       - name: Setup Node
-        if: steps.decide.outputs.should_run == 'true'
+        # `skip` is set only by the PR-time narrowing step; on nightly/dispatch
+        # that step never runs, its outputs are empty, and these conditions
+        # stay true — so the heavy path is unchanged for non-PR events.
+        if: steps.decide.outputs.should_run == 'true' && steps.scope.outputs.skip != 'true'
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7
         with:
           node-version: "22"
           cache: "npm"
 
       - name: Install dependencies
-        if: steps.decide.outputs.should_run == 'true'
+        if: steps.decide.outputs.should_run == 'true' && steps.scope.outputs.skip != 'true'
         run: npm ci
 
       - name: Sync generated ballot prompt module
@@ -223,7 +245,7 @@ jobs:
         # hooks, so the `pretest` hook (which generates the ballot prompt
         # module imported by scoped tests) does not fire automatically.
         # Run it explicitly to avoid spurious import failures.
-        if: steps.decide.outputs.should_run == 'true'
+        if: steps.decide.outputs.should_run == 'true' && steps.scope.outputs.skip != 'true'
         run: npm run sync:ballot-prompt
 
       - name: Run Stryker mutation testing
@@ -236,7 +258,7 @@ jobs:
         # config is copied with that one field overridden; everything else,
         # including the mutate array (which --mutate then supersedes), is
         # inherited so the two paths can't drift.
-        if: steps.decide.outputs.should_run == 'true'
+        if: steps.decide.outputs.should_run == 'true' && steps.scope.outputs.skip != 'true'
         env:
           MUTATE: ${{ steps.scope.outputs.mutate }}
         run: |
@@ -257,7 +279,7 @@ jobs:
         # Always upload — even on failure — so reviewers can inspect the
         # HTML report when the threshold gate trips. Only upload when
         # Stryker actually ran (i.e., not on a skipped PR).
-        if: always() && steps.decide.outputs.should_run == 'true'
+        if: always() && steps.decide.outputs.should_run == 'true' && steps.scope.outputs.skip != 'true'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: mutation-report
