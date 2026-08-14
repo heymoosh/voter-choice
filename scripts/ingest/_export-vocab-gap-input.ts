@@ -33,15 +33,30 @@ interface PromiseRow {
   promise_type: string;
   promise_text: string;
   candidate_name: string | null;
-  seat: string | null;
+  state: string | null;
+  district: string | null;
+  office: string | null;
+}
+
+/** "TX-05" for house rows, "TX senate" for senate, null when unknown. */
+function seatLabel(row: PromiseRow): string | null {
+  if (!row.state) return null;
+  if (row.office === "house" && row.district) {
+    return `${row.state}-${row.district}`;
+  }
+  return row.office ? `${row.state} ${row.office}` : row.state;
 }
 
 async function main() {
   const db = requireDb();
+  // Column names per db/schema.ts `candidates`: full_name (NOT name), and no
+  // seat column — seat is composed from state/district/office (2026-08-14 fix;
+  // the original query referenced c.name/c.seat and failed at runtime).
   const result = await db.execute(
     sql`
     SELECT p.id, p.canonical_issue, p.sub_issue, p.promise_type,
-           p.promise_text, c.name AS candidate_name, c.seat AS seat
+           p.promise_text, c.full_name AS candidate_name,
+           c.state, c.district, c.office
     FROM candidate_promises p
     LEFT JOIN candidates c ON c.id = p.candidate_id
     ORDER BY p.canonical_issue, p.id
@@ -68,7 +83,7 @@ async function main() {
         promiseType: p.promise_type,
         text: p.promise_text,
         candidate: p.candidate_name,
-        seat: p.seat,
+        seat: seatLabel(p),
       })),
     }));
 
