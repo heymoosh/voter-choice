@@ -1770,20 +1770,33 @@ $242,661,019.89 / 369 rows** — identical to the dry run to the cent, confirmin
 aggregation is deterministic. 794 superseded amendments dropped, as before. Two live-run
 notes:
 
-1. **Quarantine earned its keep again.** The live file's absurd filings against
-   fec_id H6FL11274 (the dry run's $17.0B target) now appear as two rows — file 1957562
+1. **Quarantine earned its keep again — and the verification is DONE (2026-08-16,
+   `scripts/ingest/_verify-ie-spot-check.ts` run on Muxin's machine; fec.gov is
+   egress-blocked from the remote container).** The live file's absurd filings against
+   fec_id H6FL11274 (the dry run's $17.0B target) appear as two rows — file 1957562
    ($8B, spender C00945709) and file 1957556 ($9B, spender C00944025) — both quarantined
-   by `SUSPECT_AMOUNT_CEILING`, excluded from every figure above. fec.gov is egress-blocked
-   from the remote container, so the docquery verification of those two file numbers is a
-   five-minute browser job on Muxin's side (URLs handed over in-session); pending, not
-   blocking.
-2. **2,013 unresolved-candidate rows** (dry run saw 2,015 — the bulk file updates daily).
-   The scoping decision is now the last data decision holding `PAC_TRANSPARENCY_ENABLED`
-   besides hand-curation. Recommendation on the table: leave them unstored — the ledger is
+   by `SUSPECT_AMOUNT_CEILING`, excluded from every figure above. The as-filed documents
+   confirm both are junk paperwork from one individual ("Shawn Bettis / Tanking", a
+   residential Nokomis FL address) with internally inconsistent office fields ("US
+   Senator" / "President" on a House fec id). The same script cross-checked committee
+   C00418897 (VOTEVETS) against the OpenFEC API — FEC's processed database, an
+   independent path from the bulk CSV the ingest reads: FEC says $9,756,436.14
+   supporting S6IA00298; our aggregate matches to the cent. The pipeline is verified
+   against FEC's own systems.
+2. **2,013 unresolved-candidate rows — DECIDED 2026-08-16: left unstored (Muxin).**
+   (Dry run saw 2,015 — the bulk file updates daily.) Rationale: the ledger is
    per-candidate display, presidential (`P*`) committees are out of scope for a
-   congressional ledger, and roster-less fec ids are noise until a funding-mix row exists
-   to attach them to. **Muxin's call; not yet made.** Once decided, this line gets the
-   verdict and the flag checklist shrinks to the curation pass.
+   congressional ledger, and roster-less fec ids are noise until a funding-mix row
+   exists to attach them to. Nothing is discarded — the ingest is idempotent and
+   re-runnable, so anyone who later joins the roster picks up their rows on the next
+   run. Considered and set aside: a possible paid "follow this candidate after the
+   election" subscription (Muxin's product idea, noted here so it isn't lost) tracks
+   winners, who are in the roster already; if that product ever widens the roster,
+   the re-run covers it. Flag for that product later: FEC rules restrict commercial
+   use of individual CONTRIBUTOR data — committee-level spending like this is fine,
+   but revisit before any paid tier shows donor names. With this decision,
+   `PAC_TRANSPARENCY_ENABLED` is gated by exactly one remaining item: the
+   hand-curation pass (`status='verified'`) on the top spenders.
 
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
