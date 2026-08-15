@@ -1541,6 +1541,7 @@ defaults to `jurisdiction LIKE 'federal-%'` and always prints the
 per-jurisdiction pool breakdown).
 
 Results:
+
 - **v2 delta pass (one-shot): 144 new-vocabulary tag rows** landed on
   previously tagged bills — the six new ids are now reachable by the linker
   on the pre-v2 corpus. 0 insert errors, 0 invalid ids.
@@ -1758,6 +1759,31 @@ off, no query runs and neither block renders.
   the sponsor names on the biggest spenders worth showing. The flag stays OFF
   until both. Also open, deliberately: challengers and the race/duel surfaces
   show neither block yet — only the sitting-member seat card does.
+
+**6b — live run (Muxin's machine, 2026-08-15, cycle 2026): SUCCEEDED.** Prod now has the
+data. Migration `0023_add_independent_expenditures.sql` was applied first, manually as raw
+SQL per the repo convention (there is no drizzle journal — `npm run db:migrate` is a
+silent no-op; a throwaway applier script split the file on `--> statement-breakpoint`,
+skipped already-present 0022, applied 0023, and was deleted after). The ingest then wrote
+**452 committees + 1,330 IE aggregate rows: support $441,278,644.65 / 961 rows, oppose
+$242,661,019.89 / 369 rows** — identical to the dry run to the cent, confirming the
+aggregation is deterministic. 794 superseded amendments dropped, as before. Two live-run
+notes:
+
+1. **Quarantine earned its keep again.** The live file's absurd filings against
+   fec_id H6FL11274 (the dry run's $17.0B target) now appear as two rows — file 1957562
+   ($8B, spender C00945709) and file 1957556 ($9B, spender C00944025) — both quarantined
+   by `SUSPECT_AMOUNT_CEILING`, excluded from every figure above. fec.gov is egress-blocked
+   from the remote container, so the docquery verification of those two file numbers is a
+   five-minute browser job on Muxin's side (URLs handed over in-session); pending, not
+   blocking.
+2. **2,013 unresolved-candidate rows** (dry run saw 2,015 — the bulk file updates daily).
+   The scoping decision is now the last data decision holding `PAC_TRANSPARENCY_ENABLED`
+   besides hand-curation. Recommendation on the table: leave them unstored — the ledger is
+   per-candidate display, presidential (`P*`) committees are out of scope for a
+   congressional ledger, and roster-less fec ids are noise until a funding-mix row exists
+   to attach them to. **Muxin's call; not yet made.** Once decided, this line gets the
+   verdict and the flag checklist shrinks to the curation pass.
 
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
