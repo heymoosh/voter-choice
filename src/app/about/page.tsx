@@ -66,6 +66,17 @@ export default function AboutPage() {
         portable prompt. We&rsquo;d rather pause than monetize you.
       </p>
 
+      <h2>Credit where due</h2>
+      <p>
+        We&rsquo;re not the only ones working this beat.{" "}
+        <a href="https://integrityindex.us">Integrity Index</a> tracks which
+        members of Congress commit to refusing corporate PAC money, banning
+        congressional stock trading, banning lobbying after office, and
+        overturning <i>Citizens United</i> &mdash; clear-eyed work that helped
+        sharpen how we think about accountability. Their data is theirs; we
+        don&rsquo;t reproduce it here.
+      </p>
+
       <h2>Get in touch</h2>
       <p>
         Reach Grey Bird LLC at{" "}
