@@ -1595,6 +1595,14 @@ Next: `promise-extract.ts --corpus spike-tx-2022.json` (Muxin's machine)
 puts the 2022 promises in the ledger; the retrospective sequence proper
 (link → adjudicate on subscription subagents) runs from there.
 
+**Display decision, recorded for whenever the promise ledger ships (Muxin,
+2026-08-16): the no-promises state must SAY something short, never render a
+blank.** A candidate with no rows gets one plain line to the effect of "No
+campaign promises on file yet — that means we haven't captured any, not that
+none were made." No UI is being built now (explicitly deferred by Muxin);
+this note exists so the empty-state rule survives until the §6.4 ship gate
+is reached.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
@@ -1874,6 +1882,9 @@ from a verified/rejected gate into a positive attribution layer:
   summaries + citations written. `PAC_TRANSPARENCY_ENABLED` now has NO
   remaining data gate — the flag flip itself stays Muxin's call, and is the
   only step left on the whole Part 6 track.
+- **FLIPPED 2026-08-16 (Muxin, Vercel prod env): the Part 6 track is LIVE.**
+  Both blocks render on seat cards. Registry + flip-list updated to
+  `already_live`.
 
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
@@ -1913,6 +1924,13 @@ have `member_stock_transactions` and `scripts/ingest/stock-transactions.ts`).
 
 Action: add a credit line on `/about`, and separately email Nico
 (<https://linktr.ee/stocking_the_capitol>) before touching anything of theirs.
+
+**RESOLVED 2026-08-16:** the `/about` credit shipped (PR #525, "Credit where
+due" section — link + description, explicit their-data-is-theirs line, no
+data used). The email: **skipped, per Muxin** — it was only ever required
+before USING their data, which nothing does; their site publishes no
+policy/terms, and a public link with credit needs no permission. If their
+data is ever wanted, the ask-first rule above still stands.
 `palewire/moneyinpolitics.wtf` is a campaign-finance jargon glossary — a good candidate to link
 from the PAC gloss.
 
