@@ -1562,6 +1562,39 @@ Results:
 retrospective blockers: promise-extract v4 convergence (Wayback-limited,
 `_promise-version-report.ts` tracks it) and the TX 2022 mini-spike.
 
+### Part 5 — both remaining retrospective blockers CLEARED 2026-08-16
+
+**promise-extract-v4 convergence: COMPLETE.** The version report hit zero
+not-yet-re-extracted candidates (50 v4 rows; the wait-list — Herrera 11,
+Nehls 3, Goldman 1 — cleared in the final Wayback round). The 9 leftover v2
+rows went through the row-by-row review the report's design demanded
+(`_promise-stale-review.ts` put each stale row's text next to the
+candidate's current rows; Muxin ratified the verdicts): **7 duplicates
+pruned** (`_promise-prune-stale-v2.ts --confirm`, ids hardcoded, children
+first — 7 attached verdicts went with them), **2 kept deliberately** (Justin
+Early's AI-hiring and AI-training promises: same capture as his current
+rows, real verbatim promises the v4 extractor simply did not re-emit — an
+extractor-judgment difference, not duplicates). Notably ZERO vanished-promise
+cases — every stale row's content persists in current captures, so the prune
+cost no accountability record. Converged end state: 50 current rows + the 2
+kept v2 rows; old-version rows are valid data (linking/adjudication join on
+canonical_issue, not extractor version).
+
+**TX 2022 mini-spike: GO.** `--cycle 2022` run against the 33 TX 2022
+winners on the roster: **25/33 corpus-ready (76%)** — 2022 campaign site on
+file with an in-window (2021-01-01..2022-11-08) Wayback capture — including
+Crenshaw, Escobar, Cuellar, Crockett, Doggett. Misses: 4 `wayback_error`
+(retryable — re-run the spike to recover), 2 `website_no_captures`, 2
+`no_fec_id` (known backfill gap). Caveat logged by the spike itself: 80
+members of the 2023-01-03 term have no state column (never seat-backfilled)
+and are invisible to `--state` — TX elected 38 members in 2022, so ~5 TX
+winners are likely hiding in that gap; a seat backfill would raise the
+denominator. 25 is comfortably enough to run the experiment.
+
+Next: `promise-extract.ts --corpus spike-tx-2022.json` (Muxin's machine)
+puts the 2022 promises in the ledger; the retrospective sequence proper
+(link → adjudicate on subscription subagents) runs from there.
+
 ---
 
 ## Part 6 — Which industries and companies actually back a candidate
