@@ -31,6 +31,10 @@
 import { and, desc, eq, inArray, isNotNull, ne, or } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
+import {
+  PAC_COMMITTEE_DISPLAY_COLUMNS,
+  type CuratedAttribution,
+} from "./curated-attribution";
 
 /** Committee rows a human has rejected are never displayed. */
 const REJECTED_STATUS = "rejected";
@@ -45,7 +49,7 @@ export const MAX_SPONSORS_SHOWN = 8;
  */
 const DEFAULT_ELECTION_CYCLE = "2026";
 
-export interface PacSponsorEntry {
+export interface PacSponsorEntry extends CuratedAttribution {
   /** FEC committee id, e.g. "C00123456". */
   committeeId: string;
   /** PAC name exactly as filed with the FEC. */
@@ -62,15 +66,6 @@ export interface PacSponsorEntry {
    * than inventing one.
    */
   sector: string | null;
-  /**
-   * Human-curated plain-language line: what this committee is about / who is
-   * behind it, from cited reporting (migration 0024). Shown under ANY
-   * status; for rejected rows it is the ONLY attribution shown. Null = not
-   * yet curated.
-   */
-  curatedSummary: string | null;
-  /** Citation for `curatedSummary` — every curated claim links out. */
-  curatedSourceUrl: string | null;
   /** Dollars. Part of the "PACs" funding-mix bucket, not additional money. */
   amount: number;
   /** Itemized contributions behind `amount`. */
@@ -140,13 +135,7 @@ export async function lookupPacSponsors(
         committeeId: schema.pacCandidateContributions.committeeId,
         amountTotal: schema.pacCandidateContributions.amountTotal,
         transactionCount: schema.pacCandidateContributions.transactionCount,
-        name: schema.pacCommittees.name,
-        connectedOrg: schema.pacCommittees.connectedOrg,
-        sector: schema.pacCommittees.sector,
-        status: schema.pacCommittees.status,
-        evidenceUrl: schema.pacCommittees.evidenceUrl,
-        curatedSummary: schema.pacCommittees.curatedSummary,
-        curatedSourceUrl: schema.pacCommittees.curatedSourceUrl,
+        ...PAC_COMMITTEE_DISPLAY_COLUMNS,
       })
       .from(schema.pacCandidateContributions)
       .innerJoin(
