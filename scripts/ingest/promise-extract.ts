@@ -4,7 +4,8 @@
  * Part 5 — promise EXTRACTION pipeline (plan: extract → link → adjudicate;
  * this is stage 1). Reads the corpus the sourcing spike proved out
  * (`scripts/ingest/_promise-corpus-spike.ts --json` output), fetches each
- * corpus-ready candidate's exact Wayback capture, walks a bounded set of
+ * corpus-ready candidate's exact pinned web-archive capture (LoC elections
+ * archive or Wayback — see ./web-archives.ts), walks a bounded set of
  * same-site issue pages inside that capture, and asks Claude to extract
  * statements that pass the rubric's four-gate extraction test
  * (docs/PROMISE_ADJUDICATION_RUBRIC.md §1). Valid promises are upserted into
@@ -21,8 +22,8 @@
  *     archived page. A post-hoc gate (`quoteAppearsInSource`) drops any
  *     extraction whose quote does not appear in the fetched page text — the
  *     anti-hallucination rail.
- *   - REPRODUCIBILITY: `archive_url` is the exact Wayback replay URL the text
- *     was fetched from (after Wayback's own redirects), never the live site.
+ *   - REPRODUCIBILITY: `archive_url` is the exact replay URL the text was
+ *     fetched from (after the archive's own redirects), never the live site.
  *     `made_at` is the capture date parsed from that URL (the schema's
  *     recorded convention for campaign_site promises).
  *   - IDEMPOTENT: `candidate_promises.id` is a deterministic sha-256 over
@@ -37,7 +38,8 @@
  *   dollars, not hundreds — accuracy dominates the trade-off here.
  *
  * Operational posture (lessons from the spike runs, 2026-08-07):
- *   - Wayback throttles hard: default concurrency is 1, fail-soft fetch with
+ *   - Archives throttle (Wayback hard above ~1 rps; LoC deserves the same
+ *     politeness): default concurrency is 1, fail-soft fetch with
  *     retry/backoff (a flaky page must never abort the run).
  *   - Page budget per candidate is bounded (--max-pages, default 6) so cost
  *     and runtime stay predictable.
@@ -67,6 +69,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidatePromises } from "../../db/schema";
+import { parseReplayUrl, replayUrl, timestampToIsoDate } from "./web-archives";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
 import {
   SUB_ISSUE_VOCABULARY_VERSION,
@@ -181,38 +184,21 @@ export function loadCorpusRows(payload: unknown): CorpusRow[] {
 }
 
 // ---------------------------------------------------------------------------
-// Wayback URL plumbing (pure)
+// Replay-URL plumbing — shared with the sourcing spike (see
+// ./web-archives.ts). Since 2026-08-16 the corpus may pin captures on either
+// the Wayback Machine or the Library of Congress elections web archive; every
+// step below is archive-agnostic through parseReplayUrl/replayUrl.
 // ---------------------------------------------------------------------------
 
-const WAYBACK_PATH_RE = /\/web\/(\d{14})[a-z_]{0,4}\/(.+)$/u;
-
 /**
- * Parse a Wayback replay URL into { timestamp, original }. Returns null for
- * non-Wayback URLs.
- */
-export function parseWaybackUrl(
-  url: string,
-): { timestamp: string; original: string } | null {
-  const m = url.match(WAYBACK_PATH_RE);
-  if (!m) return null;
-  return { timestamp: m[1], original: m[2] };
-}
-
-/** Replay URL for an original page pinned near a capture timestamp. */
-export function waybackPageUrl(timestamp: string, original: string): string {
-  return `https://web.archive.org/web/${timestamp}/${original}`;
-}
-
-/**
- * Capture date (ISO yyyy-mm-dd) from a Wayback replay URL — the recorded
- * `made_at` convention for campaign_site promises (schema comment on
- * candidate_promises.made_at). Null for non-Wayback URLs.
+ * Capture date (ISO yyyy-mm-dd) from a replay URL (either archive) — the
+ * recorded `made_at` convention for campaign_site promises (schema comment on
+ * candidate_promises.made_at). Null for non-replay URLs.
  */
 export function captureDateFromArchiveUrl(url: string): string | null {
-  const parsed = parseWaybackUrl(url);
+  const parsed = parseReplayUrl(url);
   if (!parsed) return null;
-  const ts = parsed.timestamp;
-  return `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)}`;
+  return timestampToIsoDate(parsed.timestamp);
 }
 
 /**
@@ -227,7 +213,7 @@ export function captureDateFromArchiveUrl(url: string): string | null {
 export function cycleFromCorpus(rows: CorpusRow[]): number | null {
   let maxYear = 0;
   for (const r of rows) {
-    const parsed = parseWaybackUrl(r.canonicalCaptureUrl);
+    const parsed = parseReplayUrl(r.canonicalCaptureUrl);
     if (!parsed) continue;
     const year = Number(parsed.timestamp.slice(0, 4));
     if (year > maxYear) maxYear = year;
@@ -243,6 +229,8 @@ export function cycleFromCorpus(rows: CorpusRow[]): number | null {
 /**
  * Remove Wayback's injected chrome (toolbar, banners, scripts) so extracted
  * text and the verbatim-quote gate see only the archived page's own content.
+ * LoC's OpenWayback replay injects its banner client-side via script, so the
+ * generic script/style/comment stripping in htmlToText already covers it.
  */
 export function stripWaybackChrome(html: string): string {
   return html
@@ -328,9 +316,10 @@ function hostOf(url: string): string | null {
 }
 
 /**
- * Discover same-site issue-page URLs (ORIGINAL urls, not Wayback urls) from
- * an archived homepage's HTML. Handles both Wayback-rewritten hrefs
- * (/web/<ts>/<original>) and plain relative/absolute hrefs. Deduped, capped.
+ * Discover same-site issue-page URLs (ORIGINAL urls, not replay urls) from
+ * an archived homepage's HTML. Handles archive-rewritten hrefs
+ * (/web/<ts>/<original>, /all/<ts>/<original>) and plain relative/absolute
+ * hrefs. Deduped, capped.
  */
 export function extractIssuePageUrls(
   html: string,
@@ -348,9 +337,10 @@ export function extractIssuePageUrls(
     let href = m[1].trim();
     if (href.startsWith("javascript:") || href.startsWith("mailto:")) continue;
 
-    // Undo Wayback link rewriting → original URL.
-    const wayback = parseWaybackUrl(href);
-    if (wayback) href = wayback.original;
+    // Undo archive link rewriting (both archives' replay-path shapes) →
+    // original URL.
+    const rewritten = parseReplayUrl(href);
+    if (rewritten) href = rewritten.original;
 
     let resolved: URL;
     try {
@@ -800,7 +790,7 @@ async function extractCandidate(
   stats.pagesFetched++;
 
   const capture =
-    parseWaybackUrl(home.finalUrl) ?? parseWaybackUrl(row.canonicalCaptureUrl);
+    parseReplayUrl(home.finalUrl) ?? parseReplayUrl(row.canonicalCaptureUrl);
   const issueUrls = capture
     ? extractIssuePageUrls(home.html, row.website, maxPages - 1)
     : [];
@@ -819,13 +809,14 @@ async function extractCandidate(
     },
   ];
 
-  // Sub-pages replay at the homepage capture's timestamp; Wayback redirects
-  // to the nearest actual capture of each page, and finalUrl records the
-  // EXACT capture the text came from (the reproducibility rule).
+  // Sub-pages replay on the homepage capture's ARCHIVE at its timestamp; the
+  // archive redirects to the nearest actual capture of each page, and
+  // finalUrl records the EXACT capture the text came from (the
+  // reproducibility rule).
   for (const originalUrl of issueUrls) {
     if (!capture) break;
     const page = await fetchPageSoft(
-      waybackPageUrl(capture.timestamp, originalUrl),
+      replayUrl(capture.archive, capture.timestamp, originalUrl),
       fetcher,
       `page ${originalUrl}`,
     );

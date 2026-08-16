@@ -13,8 +13,6 @@ import {
   loadCorpusRows,
   cycleFromCorpus,
   buildPagePrompt,
-  parseWaybackUrl,
-  waybackPageUrl,
   captureDateFromArchiveUrl,
   stripWaybackChrome,
   decodeBasicEntities,
@@ -93,6 +91,18 @@ describe("cycleFromCorpus", () => {
     expect(cycleFromCorpus([rowWithCapture("20250601120000")])).toBe(2026);
   });
 
+  it("reads LoC replay URLs the same as Wayback ones", () => {
+    expect(
+      cycleFromCorpus([
+        {
+          ...loadCorpusRows([CORPUS_READY_ROW])[0],
+          canonicalCaptureUrl:
+            "https://webarchive.loc.gov/all/20221101120000/https://janeforcongress.com",
+        },
+      ]),
+    ).toBe(2022);
+  });
+
   it("returns null when no capture URL parses (caller decides the default)", () => {
     expect(
       cycleFromCorpus([
@@ -123,39 +133,12 @@ describe("buildPagePrompt", () => {
 });
 
 // ---------------------------------------------------------------------------
-// Wayback URL plumbing
+// Replay-URL plumbing (parse/build live in ./web-archives.ts with their own
+// tests; here only the made_at convention built on top of them)
 // ---------------------------------------------------------------------------
 
-describe("parseWaybackUrl", () => {
-  it("parses a replay URL into timestamp + original", () => {
-    expect(
-      parseWaybackUrl(
-        "https://web.archive.org/web/20260801120000/https://janeforcongress.com/issues",
-      ),
-    ).toEqual({
-      timestamp: "20260801120000",
-      original: "https://janeforcongress.com/issues",
-    });
-  });
-
-  it("tolerates replay-flag suffixes like id_ and if_", () => {
-    expect(
-      parseWaybackUrl(
-        "https://web.archive.org/web/20260801120000id_/https://janeforcongress.com",
-      ),
-    ).toEqual({
-      timestamp: "20260801120000",
-      original: "https://janeforcongress.com",
-    });
-  });
-
-  it("returns null for non-Wayback URLs", () => {
-    expect(parseWaybackUrl("https://janeforcongress.com/issues")).toBeNull();
-  });
-});
-
 describe("captureDateFromArchiveUrl", () => {
-  it("derives the ISO capture date from the replay timestamp", () => {
+  it("derives the ISO capture date from a Wayback replay timestamp", () => {
     expect(
       captureDateFromArchiveUrl(
         "https://web.archive.org/web/20261102235959/https://janeforcongress.com",
@@ -163,18 +146,16 @@ describe("captureDateFromArchiveUrl", () => {
     ).toBe("2026-11-02");
   });
 
-  it("returns null for a non-Wayback URL (no fabricated dates)", () => {
-    expect(captureDateFromArchiveUrl("https://janeforcongress.com")).toBeNull();
-  });
-});
-
-describe("waybackPageUrl", () => {
-  it("builds a replay URL pinned at the homepage capture timestamp", () => {
+  it("derives the ISO capture date from a LoC replay timestamp", () => {
     expect(
-      waybackPageUrl("20260801120000", "https://janeforcongress.com/issues"),
-    ).toBe(
-      "https://web.archive.org/web/20260801120000/https://janeforcongress.com/issues",
-    );
+      captureDateFromArchiveUrl(
+        "https://webarchive.loc.gov/all/20221101120000/https://janeforcongress.com",
+      ),
+    ).toBe("2022-11-01");
+  });
+
+  it("returns null for a non-replay URL (no fabricated dates)", () => {
+    expect(captureDateFromArchiveUrl("https://janeforcongress.com")).toBeNull();
   });
 });
 
@@ -256,6 +237,16 @@ describe("extractIssuePageUrls", () => {
     const html = `<a href="https://web.archive.org/web/20260801120000/https://janeforcongress.com/platform">Platform</a>`;
     expect(extractIssuePageUrls(html, base, 5)).toEqual([
       "https://janeforcongress.com/platform",
+    ]);
+  });
+
+  it("undoes LoC link rewriting, including path-relative hrefs", () => {
+    const html = `
+      <a href="https://webarchive.loc.gov/all/20221101120000/https://janeforcongress.com/platform">Platform</a>
+      <a href="/all/20221101120000/https://janeforcongress.com/priorities">Priorities</a>`;
+    expect(extractIssuePageUrls(html, base, 5)).toEqual([
+      "https://janeforcongress.com/platform",
+      "https://janeforcongress.com/priorities",
     ]);
   });
 

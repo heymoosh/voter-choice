@@ -1595,6 +1595,43 @@ Next: `promise-extract.ts --corpus spike-tx-2022.json` (Muxin's machine)
 puts the 2022 promises in the ledger; the retrospective sequence proper
 (link → adjudicate on subscription subagents) runs from there.
 
+**Archive-source decision (Muxin, 2026-08-16): move off the Wayback Machine
+as the primary capture source — "too brittle."** Three retrospective runs in
+a row died on Internet Archive 503 walls. New layering, built into
+`scripts/ingest/web-archives.ts` (shared by the spike and the extractor):
+
+- **Primary: Library of Congress United States Elections Web Archive**
+  (webarchive.loc.gov) — official campaign websites of congressional
+  candidates, archived weekly during election seasons since 2000, on stable
+  .gov infrastructure. Capture discovery via its Memento TimeMap API,
+  replay URLs (`/all/{ts}/{url}`) with the same redirect-to-exact-capture
+  semantics `archive_url` reproducibility depends on. Caveat: LoC access is
+  embargoed roughly a year after capture, so **current-cycle (2026) lookups
+  will usually still resolve on Wayback** — the retrospective (2022) is
+  where LoC carries the load.
+- **Fallback: Wayback CDX**, unchanged, tried only when LoC has no
+  in-window canonical capture.
+- The spike report now records which archive pinned each capture
+  (`captureArchive`), and the extractor is archive-agnostic end to end
+  (parse, sub-page replay, `made_at`, cycle derivation).
+
+Sources evaluated and REJECTED as promise sources, and why: **OnTheIssues**
+and other compilations (party platforms, PolitiFact trackers) are secondary
+sources — storing their excerpts would attribute an editor's rendition to
+the candidate, which the verbatim-quote/no-false-attribution rule exists to
+prevent; OnTheIssues' per-cycle House surveys ARE approved as a **manual
+ground-truth cross-check** (does a near-zero extraction yield look real?).
+**Archive.today** has no API and aggressive anti-bot walls — manual backup
+only, nothing built. **CampaignView (Harvard Dataverse, 2018–2022 House
+platforms)** is potentially valuable but needs a licence check before any
+use — same confirm-before-ingest posture as Ballotpedia, which **remains
+banned** (its appearance on the options list does not lift Open Risk #2).
+
+Operational note: the existing `spike-tx-2022.json` pins Wayback captures.
+To pick up LoC captures, re-run the spike first (same command,
+`--cycle 2022 --json > spike-tx-2022.json`), then the extract — the
+extractor's cycle-scoped resume skip makes the re-run safe.
+
 **Display decision, recorded for whenever the promise ledger ships (Muxin,
 2026-08-16): the no-promises state must SAY something short, never render a
 blank.** A candidate with no rows gets one plain line to the effect of "No
