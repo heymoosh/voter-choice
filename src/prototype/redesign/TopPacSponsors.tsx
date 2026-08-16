@@ -34,14 +34,21 @@ export interface PacSponsorRow {
   sponsor: string | null;
   /** Our sector inference; null = honestly unclassified, shown as nothing. */
   sector: string | null;
+  /**
+   * Human-curated plain-language line: what this committee is about / who is
+   * behind it, from cited reporting. Null = not yet curated.
+   */
+  curatedSummary?: string | null;
+  /** Citation link for the curated line. */
+  curatedSourceUrl?: string | null;
   amount: number;
   transactionCount: number;
   evidenceUrl: string;
   /**
-   * Curation state the read path carries through: 'auto' | 'verified'
-   * ('rejected' never reaches a display surface). Not rendered today — a
-   * "verified" marker is a decision for after the first curation pass, not
-   * something to invent here.
+   * Curation state the read path carries through: 'auto' | 'verified' |
+   * 'rejected' (a rejected row reaches display only with a curated summary,
+   * its filed claim already suppressed by the read path). Not rendered
+   * directly.
    */
   status?: string;
 }
@@ -92,6 +99,29 @@ export function TopPacSponsors({ data }: TopPacSponsorsProps) {
                 })}
               </span>
               <div className="src-body">
+                {/* The curated line leads when it exists: a human-written,
+                    cited statement of who is behind this PAC — shown for
+                    every status, because it is our claim, not the filer's. */}
+                {pac.curatedSummary && (
+                  <div
+                    className="src-agenda"
+                    data-testid={`curated-summary-${pac.committeeId}`}
+                  >
+                    {pac.curatedSummary}
+                    {pac.curatedSourceUrl && (
+                      <>
+                        {" "}
+                        <a
+                          href={pac.curatedSourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("topPacSponsors.curatedSourceLink")}
+                        </a>
+                      </>
+                    )}
+                  </div>
+                )}
                 <div className="src-agenda">
                   {pac.sponsor
                     ? t("topPacSponsors.sponsorFiled", { sponsor: pac.sponsor })

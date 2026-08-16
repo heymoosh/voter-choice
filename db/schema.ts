@@ -1352,6 +1352,15 @@ export const pacCommittees = pgTable(
     // The fec.gov committee page where the CONNECTED_ORG filing is visible —
     // every sponsor relationship carries its evidence link (plan rule).
     evidenceUrl: text("evidence_url").notNull(),
+    // HUMAN-CURATED plain-language line: what this committee is about / who
+    // is behind it, grounded in cited reporting. Written only by
+    // scripts/ingest/_apply-pac-curation.ts — no automated ingest may set it.
+    // Renders under ANY status incl. 'rejected' (rejection suppresses the
+    // committee's own filed claim, not our sourced statement). NULL = not
+    // yet curated. See db/migrations/0024_add_pac_curated_attribution.sql.
+    curatedSummary: text("curated_summary"),
+    // Citation for curated_summary — every curated claim links out.
+    curatedSourceUrl: text("curated_source_url"),
     lastSeenCycle: text("last_seen_cycle").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

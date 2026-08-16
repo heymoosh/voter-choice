@@ -906,6 +906,7 @@ const TRANSLATIONS = {
         'No sponsoring organization on this committee’s filing — we don’t guess one.',
       contributionCount: '{count} contributions this cycle',
       evidenceLink: 'FEC committee filing →',
+      curatedSourceLink: 'Source →',
       hiddenCount:
         '{count} smaller PACs gave too, and aren’t listed here.',
       empty:
@@ -927,6 +928,7 @@ const TRANSLATIONS = {
         'A non-connected committee — no sponsoring organization on its filing.',
       filingCount: '{count} filings this cycle',
       evidenceLink: 'FEC committee filing →',
+      curatedSourceLink: 'Source →',
       hiddenCount: '{count} more outside spenders aren’t listed here.',
       neverSummed:
         'These two figures are reported separately. Money spent against a candidate is not the opposite of money spent for one, so we never add them together or subtract one from the other.',
@@ -1775,6 +1777,7 @@ const TRANSLATIONS = {
         'Su registro no declara ninguna organización patrocinadora — no la adivinamos.',
       contributionCount: '{count} contribuciones en este ciclo',
       evidenceLink: 'Registro del comité ante la FEC →',
+      curatedSourceLink: 'Fuente →',
       hiddenCount:
         'Otros {count} PACs más pequeños también donaron y no aparecen aquí.',
       empty:
@@ -1795,6 +1798,7 @@ const TRANSLATIONS = {
         'Es un comité no conectado — su registro no declara ninguna organización patrocinadora.',
       filingCount: '{count} registros en este ciclo',
       evidenceLink: 'Registro del comité ante la FEC →',
+      curatedSourceLink: 'Fuente →',
       hiddenCount: 'Hay {count} gastadores externos más que no aparecen aquí.',
       neverSummed:
         'Estas dos cifras se reportan por separado. El dinero gastado en contra de un candidato no es lo opuesto al gastado a favor, así que nunca los sumamos ni restamos uno del otro.',

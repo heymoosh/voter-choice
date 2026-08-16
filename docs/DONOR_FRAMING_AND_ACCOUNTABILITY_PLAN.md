@@ -1831,6 +1831,48 @@ notes:
    `PAC_TRANSPARENCY_ENABLED` is gated by exactly one remaining item: the
    hand-curation pass (`status='verified'`) on the top spenders.
 
+**Hand-curation pass — researched attribution built 2026-08-16 (Muxin's
+direction: "what's important is people know what these PACs are about and
+what they're promoting or who they're representing — include them all, in
+simple language, with links").** That direction changed the curation design
+from a verified/rejected gate into a positive attribution layer:
+
+- **Migration 0024** adds `curated_summary` + `curated_source_url` to
+  pac_committees: a human-curated plain-language line ("who this committee
+  is / what it promotes") with its citation. Written ONLY through
+  `_apply-pac-curation.ts` (which refuses a summary without a source link);
+  no automated ingest may set it.
+- **Display contract change:** the curated line renders under ANY status —
+  including `rejected`, where it REPLACES the suppressed filed claim (it is
+  our sourced statement, not the filer's, and the anodyne-name super PACs
+  are exactly where readers need it). 6a now lists rejected committees when
+  they carry a summary (previously excluded outright); a rejected row with
+  no summary still renders nothing in 6a. 6b unchanged in money terms —
+  summaries are display-only and never touch any figure.
+- **The first 30 committees are curated** in
+  `scripts/ingest/data/pac-curation-2026-08.json` (committed for editorial
+  provenance): 25 verified / 5 rejected (UDP=AIPAC, A Stronger
+  Michigan=Center Forward dark money, Elect Chicago Women=AIPAC-funded
+  post-election revelation, Win It Back=Club for Growth, Bold America=stale
+  "Democrats 2024" filing; real affiliation CHC BOLD PAC). Sector overrides
+  land as `classification_method='human'`: the Fairshake crypto family →
+  Finance, banking & insurance; the four AI-network PACs → Technology.
+  Research ran on subscription subagents against cited third-party sources
+  (OpenSecrets, FactCheck.org, NPR, CLC, local outlets; Ballotpedia
+  excluded pending its licence). Disclosure noted in-session and here: the
+  Public First PACs are associated with an Anthropic funding pledge, and
+  this product runs on Anthropic models — they were curated under the same
+  standard as the OpenAI-side network, both attributed to Technology.
+- **Two committees carry honest-unknown summaries** (North Star Dawn:
+  dark-money-funded pro-Craig; Accountability Project Inc: Feb-2026 pop-up,
+  no press coverage found) — stating what is not public IS the plain-language
+  truth about them.
+- **Runbook (Muxin's machine):** apply migration 0024 (raw SQL, repo
+  convention), then `_apply-pac-curation.ts scripts/ingest/data/
+pac-curation-2026-08.json` (dry-run, then `--confirm`). After that,
+  `PAC_TRANSPARENCY_ENABLED` has no remaining data gate — the flag flip
+  itself stays Muxin's call.
+
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
 - _Who funds the super PAC_ (its own Schedule A receipts, incl. corporate donors) is a third,

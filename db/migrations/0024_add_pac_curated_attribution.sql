@@ -1,0 +1,33 @@
+-- ---------------------------------------------------------------------------
+-- Researched attribution for PAC committees (Muxin's 2026-08-16 direction on
+-- the hand-curation pass: "what's important is people know what these PACs
+-- are about and what they're promoting or who they're representing — include
+-- them all, in simple language, with links").
+--
+-- Two additive columns on pac_committees:
+--   * curated_summary — a HUMAN-CURATED plain-language sentence saying what
+--     the committee is about / who is behind it. Written only through
+--     scripts/ingest/_apply-pac-curation.ts (never by any automated ingest),
+--     grounded in cited third-party reporting. NULL = not yet curated.
+--   * curated_source_url — the citation for that sentence (news outlet,
+--     OpenSecrets, FactCheck.org, …). Every curated claim links out, same
+--     principle as evidence_url for the FEC filing itself.
+--
+-- Display contract (read paths, Part 6a/6b): the curated summary renders for
+-- ANY status including 'rejected' — rejection suppresses the committee's own
+-- filed sponsor/sector claim, but the curated summary is OUR sourced
+-- statement, and it is precisely the rejected-claim committees (anodyne-name
+-- super PACs) where readers most need it. It is additive-only display: never
+-- part of any funding-mix figure.
+--
+-- Additive only: two nullable columns, no existing rows touched. NOT applied
+-- to any database by this migration file — ships in the PR, applied
+-- separately per repo convention (raw SQL; there is no drizzle journal).
+--
+-- Next free migration number as of this branch (origin/main): 0023 exists,
+-- so this is 0024. Verify with `git log --oneline main -- db/migrations/`
+-- before applying on prod — do not renumber if another migration lands first.
+-- ---------------------------------------------------------------------------
+ALTER TABLE "pac_committees" ADD COLUMN "curated_summary" text;
+--> statement-breakpoint
+ALTER TABLE "pac_committees" ADD COLUMN "curated_source_url" text;

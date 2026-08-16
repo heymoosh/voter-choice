@@ -17,13 +17,18 @@
  *
  * HAND-CURATION CONTRACT. `pac_committees.status` is auto | verified |
  * rejected; 'rejected' is a human saying "this sponsor attribution is
- * wrong". Those rows are excluded here — the block's whole content is the
- * sponsor claim, so a rejected claim has nothing honest left to render.
+ * wrong". A rejected row's FILED sponsor/sector claim is never rendered.
+ * Since migration 0024, a rejected committee that carries a human-curated
+ * summary (our own sourced statement of who is behind it) IS listed — with
+ * the filed claim suppressed and the summary in its place; a rejected row
+ * with no summary is still excluded entirely, because there is nothing
+ * honest left to render (Muxin's 2026-08-16 direction: people should see
+ * what every PAC is about — don't drop them).
  *
  * Server-only. Never import it from client components.
  */
 
-import { and, desc, eq, inArray, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, ne, or } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 
@@ -57,13 +62,25 @@ export interface PacSponsorEntry {
    * than inventing one.
    */
   sector: string | null;
+  /**
+   * Human-curated plain-language line: what this committee is about / who is
+   * behind it, from cited reporting (migration 0024). Shown under ANY
+   * status; for rejected rows it is the ONLY attribution shown. Null = not
+   * yet curated.
+   */
+  curatedSummary: string | null;
+  /** Citation for `curatedSummary` — every curated claim links out. */
+  curatedSourceUrl: string | null;
   /** Dollars. Part of the "PACs" funding-mix bucket, not additional money. */
   amount: number;
   /** Itemized contributions behind `amount`. */
   transactionCount: number;
   /** fec.gov page where the sponsor filing is visible — every claim links out. */
   evidenceUrl: string;
-  /** 'auto' | 'verified' — 'rejected' rows never reach here. */
+  /**
+   * 'auto' | 'verified' | 'rejected' — a rejected row appears only when it
+   * carries a curated summary, and with its filed sponsor/sector nulled.
+   */
   status: string;
 }
 
@@ -128,6 +145,8 @@ export async function lookupPacSponsors(
         sector: schema.pacCommittees.sector,
         status: schema.pacCommittees.status,
         evidenceUrl: schema.pacCommittees.evidenceUrl,
+        curatedSummary: schema.pacCommittees.curatedSummary,
+        curatedSourceUrl: schema.pacCommittees.curatedSourceUrl,
       })
       .from(schema.pacCandidateContributions)
       .innerJoin(
@@ -141,9 +160,12 @@ export async function lookupPacSponsors(
         and(
           inArray(schema.pacCandidateContributions.candidateId, candidateIds),
           eq(schema.pacCandidateContributions.electionCycle, cycle),
-          // Hand-curation contract: a rejected sponsor attribution is never
-          // displayed (plan doc, Part 6a).
-          ne(schema.pacCommittees.status, REJECTED_STATUS),
+          // Hand-curation contract: a rejected row renders only when a
+          // human-curated summary can stand in for the thrown-out claim.
+          or(
+            ne(schema.pacCommittees.status, REJECTED_STATUS),
+            isNotNull(schema.pacCommittees.curatedSummary),
+          ),
         ),
       )
       .orderBy(desc(schema.pacCandidateContributions.amountTotal));
@@ -154,16 +176,22 @@ export async function lookupPacSponsors(
 
   const byCandidate = new Map<string, PacSponsorEntry[]>();
   for (const row of rows) {
-    // Defence in depth: the SQL filter above already excludes rejected rows,
-    // but a future caller passing pre-fetched rows must not be able to leak
-    // one through.
-    if (row.status === REJECTED_STATUS) continue;
+    const rejected = row.status === REJECTED_STATUS;
+    const curatedSummary = emptyToNull(row.curatedSummary);
+    // Defence in depth: the SQL filter above already excludes summary-less
+    // rejected rows, but a future caller passing pre-fetched rows must not
+    // be able to leak one through.
+    if (rejected && curatedSummary === null) continue;
     const list = byCandidate.get(row.candidateId) ?? [];
     list.push({
       committeeId: row.committeeId,
       name: row.name,
-      sponsor: emptyToNull(row.connectedOrg),
-      sector: emptyToNull(row.sector),
+      // A rejected row's FILED claim is suppressed; the curated summary is
+      // what renders in its place.
+      sponsor: rejected ? null : emptyToNull(row.connectedOrg),
+      sector: rejected ? null : emptyToNull(row.sector),
+      curatedSummary,
+      curatedSourceUrl: emptyToNull(row.curatedSourceUrl),
       // amount_total is numeric(14,2) → a string from drizzle/neon. Coerce
       // before any comparison, or the sort below would compare strings.
       amount: Number(row.amountTotal),

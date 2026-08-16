@@ -69,6 +69,15 @@ export interface OutsideSpender {
   sponsor: string | null;
   /** Sector, only where one exists. Null = honestly unclassified. */
   sector: string | null;
+  /**
+   * Human-curated plain-language line: what this committee is about / who is
+   * behind it, from cited reporting (migration 0024). Shown under ANY status,
+   * including 'rejected' — rejection suppresses the committee's own filed
+   * claim, not our sourced statement. Null = not yet curated.
+   */
+  curatedSummary: string | null;
+  /** Citation for `curatedSummary` — every curated claim links out. */
+  curatedSourceUrl: string | null;
   /** Dollars spent in THIS direction. Never added to the other direction. */
   amount: number;
   /** Itemized Schedule E filings behind `amount`. */
@@ -157,6 +166,8 @@ export async function lookupOutsideSpending(
         sector: schema.pacCommittees.sector,
         status: schema.pacCommittees.status,
         evidenceUrl: schema.pacCommittees.evidenceUrl,
+        curatedSummary: schema.pacCommittees.curatedSummary,
+        curatedSourceUrl: schema.pacCommittees.curatedSourceUrl,
       })
       .from(schema.independentExpenditures)
       .innerJoin(
@@ -206,6 +217,11 @@ export async function lookupOutsideSpending(
       // A rejected row keeps its spending and loses its sponsor claim.
       sponsor: rejected ? null : emptyToNull(row.connectedOrg),
       sector: rejected ? null : emptyToNull(row.sector),
+      // The curated summary survives rejection on purpose: it is OUR sourced
+      // statement of who is behind the spender, and the rejected (anodyne-
+      // name) committees are exactly where readers most need it.
+      curatedSummary: emptyToNull(row.curatedSummary),
+      curatedSourceUrl: emptyToNull(row.curatedSourceUrl),
       amount: Number(row.amountTotal),
       expenditureCount: row.expenditureCount,
       evidenceUrl: row.evidenceUrl,
