@@ -1867,11 +1867,13 @@ from a verified/rejected gate into a positive attribution layer:
   dark-money-funded pro-Craig; Accountability Project Inc: Feb-2026 pop-up,
   no press coverage found) — stating what is not public IS the plain-language
   truth about them.
-- **Runbook (Muxin's machine):** apply migration 0024 (raw SQL, repo
-  convention), then `_apply-pac-curation.ts scripts/ingest/data/
-pac-curation-2026-08.json` (dry-run, then `--confirm`). After that,
-  `PAC_TRANSPARENCY_ENABLED` has no remaining data gate — the flag flip
-  itself stays Muxin's call.
+- **RUN 2026-08-16 (Muxin's machine): COMPLETE.** Migration 0024 applied to
+  prod (both ALTERs, via the throwaway raw-SQL applier, deleted after), then
+  `_apply-pac-curation.ts … --confirm`: **Applied 30 verdict(s)**, zero
+  errors — every row transitioned from `auto`, sector overrides landed, all
+  summaries + citations written. `PAC_TRANSPARENCY_ENABLED` now has NO
+  remaining data gate — the flag flip itself stays Muxin's call, and is the
+  only step left on the whole Part 6 track.
 
 **Explicitly deferred (from the Perplexity research pass), so nobody scope-creeps into them:**
 
