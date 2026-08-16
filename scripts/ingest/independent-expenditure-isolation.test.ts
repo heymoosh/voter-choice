@@ -87,6 +87,11 @@ const ALLOWED_REFERENCE_FILES = new Set([
   // Part 6b display read path + its test (2026-08-13).
   "src/lib/server/outside-spending.ts",
   "src/lib/server/outside-spending.test.ts",
+  // Hand-curation queue export (2026-08-16): READ-ONLY aggregation of IE
+  // totals to rank committees by display salience for human review. Never
+  // writes, never feeds funding-mix math — it exists to gate what the 6a/6b
+  // display blocks may claim about sponsors.
+  "scripts/ingest/_export-pac-curation-queue.ts",
 ]);
 
 /** Usage of the table/module — identifiers and imports, not prose mentions. */
