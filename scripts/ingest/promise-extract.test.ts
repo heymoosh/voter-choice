@@ -11,6 +11,8 @@
 import { describe, it, expect } from "vitest";
 import {
   loadCorpusRows,
+  cycleFromCorpus,
+  buildPagePrompt,
   parseWaybackUrl,
   waybackPageUrl,
   captureDateFromArchiveUrl,
@@ -69,6 +71,54 @@ describe("loadCorpusRows", () => {
   it("returns [] for a non-array payload", () => {
     expect(loadCorpusRows({ rows: [] })).toEqual([]);
     expect(loadCorpusRows(undefined)).toEqual([]);
+  });
+});
+
+describe("cycleFromCorpus", () => {
+  const rowWithCapture = (ts: string) => ({
+    ...loadCorpusRows([CORPUS_READY_ROW])[0],
+    canonicalCaptureUrl: `https://web.archive.org/web/${ts}/https://janeforcongress.com`,
+  });
+
+  it("derives the cycle from the latest capture year (even year stays)", () => {
+    expect(
+      cycleFromCorpus([
+        rowWithCapture("20211215120000"),
+        rowWithCapture("20221101120000"),
+      ]),
+    ).toBe(2022);
+  });
+
+  it("rounds an odd latest year up to the election year", () => {
+    expect(cycleFromCorpus([rowWithCapture("20250601120000")])).toBe(2026);
+  });
+
+  it("returns null when no capture URL parses (caller decides the default)", () => {
+    expect(
+      cycleFromCorpus([
+        {
+          ...loadCorpusRows([CORPUS_READY_ROW])[0],
+          canonicalCaptureUrl: "https://janeforcongress.com",
+        },
+      ]),
+    ).toBeNull();
+    expect(cycleFromCorpus([])).toBeNull();
+  });
+});
+
+describe("buildPagePrompt", () => {
+  it("labels the candidate with the corpus cycle, not a hardcoded year", () => {
+    const prompt = buildPagePrompt({
+      candidateName: "Jane Doe",
+      office: "house",
+      state: "TX",
+      district: "21",
+      cycle: 2022,
+      pageUrl: "https://janeforcongress.com/issues",
+      pageText: "text",
+    });
+    expect(prompt).toContain("(U.S. House, TX-21, 2022)");
+    expect(prompt).not.toContain("2026");
   });
 });
 

@@ -42,8 +42,11 @@
  *   - Page budget per candidate is bounded (--max-pages, default 6) so cost
  *     and runtime stay predictable.
  *   - Resumable: candidates whose promises already exist for this
- *     EXTRACTION_MODEL_VERSION are skipped unless --force is passed with an
- *     explicit --candidate selector (tag-bills' targeted-only force rule).
+ *     EXTRACTION_MODEL_VERSION within the corpus's own cycle window (see
+ *     cycleFromCorpus — a sitting member's 2026 rows never suppress their
+ *     2022 retrospective extraction) are skipped unless --force is passed
+ *     with an explicit --candidate selector (tag-bills' targeted-only
+ *     force rule).
  *
  * Usage (from a dev machine with network + secrets; the corpus file is the
  * spike's --json output):
@@ -210,6 +213,27 @@ export function captureDateFromArchiveUrl(url: string): string | null {
   if (!parsed) return null;
   const ts = parsed.timestamp;
   return `${ts.slice(0, 4)}-${ts.slice(4, 6)}-${ts.slice(6, 8)}`;
+}
+
+/**
+ * Election cycle implied by a corpus: the latest capture year across its
+ * rows, rounded up to the even (federal-election) year. A 2022 retrospective
+ * spike carries 2021–2022 captures → 2022; a current-cycle spike carries
+ * 2025–2026 captures → 2026. The spike JSON does not carry its --cycle flag,
+ * so this derivation is what keeps one extract binary correct for both
+ * (2026-08-16, first retrospective run: the page prompt had "2026" hardcoded
+ * and the resume skip was cycle-blind). Null when no capture URL parses.
+ */
+export function cycleFromCorpus(rows: CorpusRow[]): number | null {
+  let maxYear = 0;
+  for (const r of rows) {
+    const parsed = parseWaybackUrl(r.canonicalCaptureUrl);
+    if (!parsed) continue;
+    const year = Number(parsed.timestamp.slice(0, 4));
+    if (year > maxYear) maxYear = year;
+  }
+  if (maxYear === 0) return null;
+  return maxYear % 2 === 0 ? maxYear : maxYear + 1;
 }
 
 // ---------------------------------------------------------------------------
@@ -461,6 +485,8 @@ export interface PageContext {
   office: string;
   state: string;
   district: string | null;
+  /** Election cycle of the CAPTURE (from cycleFromCorpus), not of today. */
+  cycle: number;
   pageUrl: string;
   pageText: string;
 }
@@ -470,7 +496,7 @@ export function buildPagePrompt(ctx: PageContext): string {
     ctx.office === "house" && ctx.district
       ? `U.S. House, ${ctx.state}-${ctx.district}`
       : `${ctx.office}, ${ctx.state}`;
-  return `Candidate: ${ctx.candidateName} (${seat}, 2026)
+  return `Candidate: ${ctx.candidateName} (${seat}, ${ctx.cycle})
 Archived campaign page: ${ctx.pageUrl}
 
 Page text:
@@ -757,6 +783,7 @@ async function extractCandidate(
   anthropic: Anthropic,
   systemPrompt: string,
   row: CorpusRow,
+  cycle: number,
   maxPages: number,
   fetcher: typeof fetch,
   stats: RunStats,
@@ -827,6 +854,7 @@ async function extractCandidate(
           office: row.office,
           state: row.state,
           district: row.district,
+          cycle,
           pageUrl: page.originalUrl,
           pageText: page.text,
         },
@@ -868,12 +896,25 @@ async function extractCandidate(
  * Candidate ids that already carry ≥1 promise row for the current
  * EXTRACTION_MODEL_VERSION — skipped so the run is resumable (kill and
  * restart freely; tag-bills' idempotency posture).
+ *
+ * CYCLE-SCOPED (2026-08-16): a retrospective corpus shares candidates with
+ * the current roster (sitting members appear in both), and a version-only
+ * skip treated their current-cycle rows as "already extracted" for the
+ * retrospective run — the first 2022 run silently skipped 2 of its 25
+ * candidates that way. made_at is the capture date, so the skip now counts
+ * only rows inside the corpus cycle's window (Jan 1 of the odd year through
+ * the cycle year's end). NULL made_at rows never count toward a skip: a
+ * false negative costs one repeat idempotent extraction; a false positive
+ * silently drops a cycle.
  */
 async function fetchAlreadyExtracted(
   db: DbClient,
   candidateIds: string[],
+  cycle: number,
 ): Promise<Set<string>> {
   if (candidateIds.length === 0) return new Set();
+  const windowStart = `${cycle - 1}-01-01`;
+  const windowEnd = `${cycle}-12-31`;
   // Drizzle's sql template expands a JS array to a parenthesized parameter
   // tuple "($1, $2, …)" — valid after IN, invalid inside ANY() (2026-08-12
   // first-run lesson: ANY(${arr}) rendered ANY(($2,…)) and failed).
@@ -882,6 +923,9 @@ async function fetchAlreadyExtracted(
     FROM candidate_promises
     WHERE extraction_model_version = ${EXTRACTION_MODEL_VERSION}
       AND candidate_id IN ${candidateIds}
+      AND made_at IS NOT NULL
+      AND made_at >= ${windowStart}::date
+      AND made_at <= ${windowEnd}::date
   `);
   return new Set(
     (rows.rows as { candidate_id: string }[]).map((r) => r.candidate_id),
@@ -1038,10 +1082,14 @@ async function main(): Promise<void> {
   }
   if (Number.isFinite(limit)) corpus = corpus.slice(0, limit);
 
+  // The corpus decides its own cycle (retrospective vs current); 2026 only
+  // as a last resort for a corpus with no parseable capture URLs.
+  const corpusCycle = cycleFromCorpus(corpus) ?? 2026;
+
   process.stderr.write(
     `[promise-extract] ${corpus.length} corpus-ready candidates from ${corpusPath} ` +
-      `(model=${EXTRACTION_MODEL} version=${EXTRACTION_MODEL_VERSION} max_pages=${maxPages} ` +
-      `concurrency=${concurrency}${dryRun ? " DRY-RUN" : ""})\n`,
+      `(model=${EXTRACTION_MODEL} version=${EXTRACTION_MODEL_VERSION} cycle=${corpusCycle} ` +
+      `max_pages=${maxPages} concurrency=${concurrency}${dryRun ? " DRY-RUN" : ""})\n`,
   );
 
   const db = requireDb();
@@ -1062,6 +1110,7 @@ async function main(): Promise<void> {
     : await fetchAlreadyExtracted(
         db,
         corpus.map((r) => r.candidateId),
+        corpusCycle,
       );
   const pending = corpus.filter((r) => {
     if (already.has(r.candidateId)) {
@@ -1085,6 +1134,7 @@ async function main(): Promise<void> {
       anthropic,
       systemPrompt,
       row,
+      corpusCycle,
       maxPages,
       fetch,
       stats,
@@ -1106,9 +1156,11 @@ async function main(): Promise<void> {
     allRows.push(...promises);
   });
 
-  const freshInput = stats.inputTokens - stats.cachedTokens;
+  // usage.input_tokens already EXCLUDES cache reads (they arrive separately
+  // as cache_read_input_tokens) — subtracting them again drove the estimate
+  // negative on cache-heavy runs (2026-08-16 retrospective run: -$0.02).
   const estimatedUsd =
-    (freshInput * SONNET_INPUT_COST_PER_MTK) / 1_000_000 +
+    (stats.inputTokens * SONNET_INPUT_COST_PER_MTK) / 1_000_000 +
     (stats.cachedTokens * SONNET_CACHED_COST_PER_MTK) / 1_000_000 +
     (stats.outputTokens * SONNET_OUTPUT_COST_PER_MTK) / 1_000_000;
 
