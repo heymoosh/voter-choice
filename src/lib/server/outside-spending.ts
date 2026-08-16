@@ -38,6 +38,10 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
+import {
+  PAC_COMMITTEE_DISPLAY_COLUMNS,
+  type CuratedAttribution,
+} from "./curated-attribution";
 
 /** Committee rows a human has rejected keep their money, lose their sponsor. */
 const REJECTED_STATUS = "rejected";
@@ -56,7 +60,7 @@ const DEFAULT_ELECTION_CYCLE = "2026";
 export const SPENDING_DIRECTIONS = ["support", "oppose"] as const;
 export type SpendingDirection = (typeof SPENDING_DIRECTIONS)[number];
 
-export interface OutsideSpender {
+export interface OutsideSpender extends CuratedAttribution {
   /** FEC committee id of the SPENDING committee — not the candidate's. */
   committeeId: string;
   /** Spender name as filed. The primary thing this block names. */
@@ -152,11 +156,7 @@ export async function lookupOutsideSpending(
         supportOppose: schema.independentExpenditures.supportOppose,
         amountTotal: schema.independentExpenditures.amountTotal,
         expenditureCount: schema.independentExpenditures.expenditureCount,
-        name: schema.pacCommittees.name,
-        connectedOrg: schema.pacCommittees.connectedOrg,
-        sector: schema.pacCommittees.sector,
-        status: schema.pacCommittees.status,
-        evidenceUrl: schema.pacCommittees.evidenceUrl,
+        ...PAC_COMMITTEE_DISPLAY_COLUMNS,
       })
       .from(schema.independentExpenditures)
       .innerJoin(
@@ -206,6 +206,11 @@ export async function lookupOutsideSpending(
       // A rejected row keeps its spending and loses its sponsor claim.
       sponsor: rejected ? null : emptyToNull(row.connectedOrg),
       sector: rejected ? null : emptyToNull(row.sector),
+      // The curated summary survives rejection on purpose: it is OUR sourced
+      // statement of who is behind the spender, and the rejected (anodyne-
+      // name) committees are exactly where readers most need it.
+      curatedSummary: emptyToNull(row.curatedSummary),
+      curatedSourceUrl: emptyToNull(row.curatedSourceUrl),
       amount: Number(row.amountTotal),
       expenditureCount: row.expenditureCount,
       evidenceUrl: row.evidenceUrl,

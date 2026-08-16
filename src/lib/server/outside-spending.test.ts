@@ -111,6 +111,8 @@ describe("lookupOutsideSpending", () => {
         name: "AN OUTSIDE GROUP",
         sponsor: null,
         sector: null,
+        curatedSummary: null,
+        curatedSourceUrl: null,
         amount: 7000,
         expenditureCount: 3,
         evidenceUrl: "https://www.fec.gov/data/committee/C00900001/",
@@ -129,6 +131,26 @@ describe("lookupOutsideSpending", () => {
       .spenders[0]!;
     expect(spender.sponsor).toBe("EXAMPLE CORP");
     expect(spender.sector).toBe("Technology");
+  });
+
+  it("keeps the curated summary on a rejected row — our sourced claim survives rejection", async () => {
+    // Migration 0024: rejection suppresses the FILED claim; the human-written
+    // cited line is precisely what should render for anodyne-name spenders.
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        ieRow({
+          status: "rejected",
+          connectedOrg: "MISLEADING FILED SPONSOR",
+          curatedSummary: "The super PAC of Example Org.",
+          curatedSourceUrl: "https://example.org/reporting",
+        }),
+      ]),
+    );
+    const spender = out(await lookupOutsideSpending(["federal-A"])).support
+      .spenders[0]!;
+    expect(spender.sponsor).toBeNull();
+    expect(spender.curatedSummary).toBe("The super PAC of Example Org.");
+    expect(spender.curatedSourceUrl).toBe("https://example.org/reporting");
   });
 
   it("keeps a rejected committee's spending but drops its rejected sponsor claim", async () => {

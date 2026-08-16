@@ -41,6 +41,13 @@ export interface OutsideSpenderRow {
   sponsor: string | null;
   /** Sector only where one exists; null = honestly unclassified. */
   sector: string | null;
+  /**
+   * Human-curated plain-language line: what this committee is about / who is
+   * behind it, from cited reporting. Null = not yet curated.
+   */
+  curatedSummary?: string | null;
+  /** Citation link for the curated line. */
+  curatedSourceUrl?: string | null;
   amount: number;
   expenditureCount: number;
   evidenceUrl: string;
@@ -119,6 +126,29 @@ function DirectionColumn({
                 })}
               </span>
               <div className="src-body">
+                {/* The curated line leads when it exists: a human-written,
+                    cited statement of who is behind this spender — shown for
+                    every status, because it is our claim, not the filer's. */}
+                {spender.curatedSummary && (
+                  <div
+                    className="src-agenda"
+                    data-testid={`curated-summary-${spender.committeeId}`}
+                  >
+                    {spender.curatedSummary}
+                    {spender.curatedSourceUrl && (
+                      <>
+                        {" "}
+                        <a
+                          href={spender.curatedSourceUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {t("outsideSpending.curatedSourceLink")}
+                        </a>
+                      </>
+                    )}
+                  </div>
+                )}
                 <div className="src-agenda">
                   {spender.sponsor
                     ? t("outsideSpending.sponsorFiled", {

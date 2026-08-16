@@ -93,6 +93,8 @@ describe("lookupPacSponsors", () => {
           name: "EXAMPLE CORP PAC",
           sponsor: "EXAMPLE CORP",
           sector: "Technology",
+          curatedSummary: null,
+          curatedSourceUrl: null,
           amount: 10000,
           transactionCount: 2,
           evidenceUrl: "https://www.fec.gov/data/committee/C00000001/",
@@ -109,6 +111,29 @@ describe("lookupPacSponsors", () => {
     const entry = out(await lookupPacSponsors(["federal-A"])).sponsors[0]!;
     expect(entry.sponsor).toBeNull();
     expect(entry.sector).toBeNull();
+  });
+
+  it("lists a rejected row that carries a curated summary, with its filed claim suppressed", async () => {
+    // Migration 0024: rejection kills the committee's own sponsor/sector
+    // claim, but our sourced plain-language line stands in for it.
+    mockedGetDb.mockReturnValue(
+      makeDbMock([
+        contributionRow({
+          status: "rejected",
+          connectedOrg: "MISLEADING FILED SPONSOR",
+          sector: "Technology",
+          curatedSummary: "A vehicle of Example Org — spends in primaries.",
+          curatedSourceUrl: "https://example.org/reporting",
+        }),
+      ]),
+    );
+    const entry = out(await lookupPacSponsors(["federal-A"])).sponsors[0]!;
+    expect(entry.sponsor).toBeNull();
+    expect(entry.sector).toBeNull();
+    expect(entry.curatedSummary).toBe(
+      "A vehicle of Example Org — spends in primaries.",
+    );
+    expect(entry.curatedSourceUrl).toBe("https://example.org/reporting");
   });
 
   it("never returns a row a human rejected", async () => {
