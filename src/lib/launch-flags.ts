@@ -101,11 +101,11 @@ export const LAUNCH_FLAG_REGISTRY: readonly LaunchFlagEntry[] = [
     envVar: "PAC_TRANSPARENCY_ENABLED",
     isLaunchConvention: false,
     surface: "server",
-    status: "pre_launch_dark",
+    status: "already_live",
     gates:
       'Both Part 6 money-transparency blocks on the seat card: "Top PACs and their sponsors" (6a) and "Outside spending about this race" (6b)',
     readAt: "src/lib/server/pac-transparency-flag.ts",
-    note: "Confirmed dark: sponsor attributions are auto-classified from FEC CONNECTED_ORG until a human curation pass has run (pac_committees.status = verified), and 6b's ingest has not been run against live 2026 data on prod. Flip only after Muxin's live 6b run + a curation pass.",
+    note: "FLIPPED LIVE by Muxin 2026-08-16 (Vercel prod env), after the live 6b ingest run and the 30-committee hand-curation pass (curated summaries + citations, migration 0024) — the two conditions the original dark note required.",
   },
   {
     envVar: "VOTER_ISSUE_EVENTS_ENABLED",
