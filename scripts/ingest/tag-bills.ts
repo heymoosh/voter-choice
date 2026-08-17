@@ -903,7 +903,22 @@ function isCliExecution(): boolean {
   return import.meta.url === pathToFileURL(resolve(entrypoint)).href;
 }
 
-if (isCliExecution()) {
+// This CLI calls the metered Anthropic API directly. Bulk tagging runs on
+// the Claude Max subscription now — scripts/ingest/_tag-bills.workflow.js,
+// run manually in a Claude Code session (this file's exports are still the
+// shared library that workflow's prompt points agents at). Refuses to run
+// without an explicit override so a stray invocation can't drain the
+// metered budget again (2026-06-28, 2026-08-17: this happened twice).
+const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
+
+if (isCliExecution() && !process.env[METERED_OVERRIDE_ENV]) {
+  console.error(
+    "[tag-bills] refusing to run: this calls the metered Anthropic API directly.\n" +
+      "Bulk tagging runs on the Claude Max subscription now — see scripts/ingest/_tag-bills.workflow.js.\n" +
+      `If you deliberately need this metered path (rare — get sign-off first), set ${METERED_OVERRIDE_ENV}=1.`,
+  );
+  process.exitCode = 1;
+} else if (isCliExecution()) {
   tagBills().catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[tag-bills] fatal: ${message}`);

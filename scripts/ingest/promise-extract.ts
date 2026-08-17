@@ -2,14 +2,36 @@
  * scripts/ingest/promise-extract.ts
  *
  * Part 5 — promise EXTRACTION pipeline (plan: extract → link → adjudicate;
- * this is stage 1). Reads the corpus the sourcing spike proved out
- * (`scripts/ingest/_promise-corpus-spike.ts --json` output), fetches each
- * corpus-ready candidate's exact pinned web-archive capture (LoC elections
- * archive or Wayback — see ./web-archives.ts), walks a bounded set of
- * same-site issue pages inside that capture, and asks Claude to extract
- * statements that pass the rubric's four-gate extraction test
- * (docs/PROMISE_ADJUDICATION_RUBRIC.md §1). Valid promises are upserted into
- * `candidate_promises` (migration 0021).
+ * this is stage 1). SHARED LIBRARY ONLY as of 2026-08-17 — this file no
+ * longer calls Claude itself. It holds every pure piece of the pipeline
+ * (corpus loading, archived-page fetch, HTML→text, issue-page discovery,
+ * deterministic promise ids, the verbatim-quote anti-hallucination gate,
+ * response validation, and the DB upsert) so the three scripts below can
+ * reuse it without duplicating a single rule:
+ *
+ *   1. scripts/ingest/_promise-extract-export.ts — fetches each corpus-ready
+ *      candidate's archived pages (network only, no LLM) and writes batch
+ *      files of { candidate, pages[] } for the workflow to read.
+ *   2. scripts/ingest/_promise-extract.workflow.js — run via the Workflow
+ *      tool in a Claude Code session (Claude Max SUBSCRIPTION, not the
+ *      metered API). One subagent per batch applies the four-gate rubric
+ *      below and writes a result file per batch — files in, files out, the
+ *      agents never touch the DB or the snapshot store directly.
+ *   3. scripts/ingest/_promise-extract-import.ts — re-validates every
+ *      extraction against the ORIGINAL exported page text (the verbatim gate
+ *      never trusts agent output blindly) and upserts into
+ *      `candidate_promises` (migration 0021).
+ *
+ * WHY: this script used to call the Anthropic API directly with an API key
+ * (`new Anthropic({ apiKey })`), which draws down a metered, capped
+ * workspace budget — completely separate from the Claude Max subscription.
+ * A 2026-08-17 national run (858 candidates) hit that cap partway through
+ * and silently produced zero promises for ~400 candidates until the
+ * workspace's monthly reset. Per standing policy (first stated 2026-06-28
+ * for tag-bills.ts, restated 2026-08-13 in the ingest/tagging plan, and
+ * again here): bulk backend LLM work runs on the subscription, never the
+ * metered key. See scripts/ingest/_tag-bills.workflow.js for the template
+ * this pipeline follows.
  *
  * Design rules enforced here (plan Part 5 + rubric 1.0.0):
  *   - DECLARE THE TEST AT EXTRACTION: the model must emit `promise_type` and
@@ -21,7 +43,8 @@
  *   - NO FALSE ATTRIBUTION: `promise_text` must be a VERBATIM quote from the
  *     archived page. A post-hoc gate (`quoteAppearsInSource`) drops any
  *     extraction whose quote does not appear in the fetched page text — the
- *     anti-hallucination rail.
+ *     anti-hallucination rail. The import script re-runs this gate against
+ *     the EXPORTED page text; it never trusts the extracting agent's word.
  *   - REPRODUCIBILITY: `archive_url` is the exact replay URL the text was
  *     fetched from (after the archive's own redirects), never the live site.
  *     `made_at` is the capture date parsed from that URL (the schema's
@@ -30,45 +53,32 @@
  *     candidate_id + archive_url + normalized promise text, so re-runs upsert
  *     on the PK instead of duplicating rows (the 0015/0016 roster lesson).
  *
- * Model choice: claude-sonnet-5 (not Haiku, unlike tag-bills.ts).
- *   Reasoning: this is NOT bounded classification — it is verbatim-quote
- *   extraction plus a four-way judgment call per statement, where a mistake
- *   is a false attribution to a named person. The corpus is small (58
- *   corpus-ready TX candidates × a handful of pages), so the total run costs
- *   dollars, not hundreds — accuracy dominates the trade-off here.
+ * Model: claude-sonnet-5, invoked as a Claude Code subagent (see the
+ * workflow above), not the raw Messages API. Reasoning for Sonnet over Haiku
+ * unchanged: this is NOT bounded classification — it is verbatim-quote
+ * extraction plus a four-way judgment call per statement, where a mistake is
+ * a false attribution to a named person.
  *
- * Operational posture (lessons from the spike runs, 2026-08-07):
+ * Operational posture (lessons from the spike runs, 2026-08-07 through
+ * 2026-08-17):
  *   - Archives throttle (Wayback hard above ~1 rps; LoC deserves the same
- *     politeness): default concurrency is 1, fail-soft fetch with
- *     retry/backoff (a flaky page must never abort the run).
- *   - Page budget per candidate is bounded (--max-pages, default 6) so cost
- *     and runtime stay predictable.
+ *     politeness): the export step's default fetch concurrency is 1,
+ *     fail-soft with retry/backoff (a flaky page must never abort the run).
+ *   - Page budget per candidate is bounded (--max-pages, default 6) so
+ *     runtime stays predictable and agent batches stay small.
  *   - Resumable: candidates whose promises already exist for this
  *     EXTRACTION_MODEL_VERSION within the corpus's own cycle window (see
  *     cycleFromCorpus — a sitting member's 2026 rows never suppress their
- *     2022 retrospective extraction) are skipped unless --force is passed
- *     with an explicit --candidate selector (tag-bills' targeted-only
- *     force rule).
+ *     2022 retrospective extraction) are skipped by the EXPORT step —
+ *     re-running export after a partial import naturally emits only what's
+ *     still missing from the DB.
  *
- * Usage (from a dev machine with network + secrets; the corpus file is the
- * spike's --json output):
- *   npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts \
- *     --state TX --concurrency 1 --json > /tmp/spike-tx.json
- *   npx tsx --env-file=.env.local scripts/ingest/promise-extract.ts \
- *     --corpus /tmp/spike-tx.json --dry-run          # inspect first
- *   npx tsx --env-file=.env.local scripts/ingest/promise-extract.ts \
- *     --corpus /tmp/spike-tx.json                    # write
- *   Flags: --candidate <candidates.id> (repeatable), --limit N, --max-pages N,
- *          --concurrency N, --dir <snapshot store dir> (default
- *          site-snapshots/, or SNAPSHOT_DIR — MUST match whatever --dir the
- *          corpus's snapshot:// captures were written under), --dry-run,
- *          --json (emit extractions to stdout).
+ * Direct-run usage: none. `npx tsx promise-extract.ts` now just prints the
+ * three-step pipeline above and exits — see main() below.
  */
 
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
-import Anthropic from "@anthropic-ai/sdk";
 import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidatePromises } from "../../db/schema";
@@ -105,33 +115,22 @@ import {
 // promises under the expanded vocabulary (deterministic ids upsert in place).
 export const EXTRACTOR_VERSION = "promise-extract-v4";
 
-const EXTRACTION_MODEL = "claude-sonnet-5";
+/** Metadata tag only — the model is invoked as a Claude Code subagent now,
+ * never instantiated directly in this file (see the header). */
+export const EXTRACTION_MODEL = "claude-sonnet-5";
 
 export const EXTRACTION_MODEL_VERSION = `${EXTRACTOR_VERSION}+${EXTRACTION_MODEL}`;
-
-/**
- * Promise extraction can legitimately return many promises per page. 8192
- * (up from 4096) after the first write run truncated a dense issue page
- * mid-array — truncation shows up as malformed JSON, and no retry can fix a
- * budget that is simply too small.
- */
-const MAX_TOKENS = 8192;
 
 /** Truncate page text so prompts stay bounded (campaign pages are short). */
 export const MAX_PAGE_CHARS = 30_000;
 
 /** Homepage + up to (N-1) same-site issue pages per candidate. */
-const DEFAULT_MAX_PAGES = 6;
+export const DEFAULT_MAX_PAGES = 6;
 
 /** Wayback throttles hard above ~1 rps (spike lesson) — default serial. */
-const DEFAULT_CONCURRENCY = 1;
+export const DEFAULT_CONCURRENCY = 1;
 
-const DEFAULT_VENUE = "campaign_site";
-
-// Approximate Sonnet pricing ($/MTok) — stderr observability only.
-const SONNET_INPUT_COST_PER_MTK = 3.0;
-const SONNET_CACHED_COST_PER_MTK = 0.3;
-const SONNET_OUTPUT_COST_PER_MTK = 15.0;
+export const DEFAULT_VENUE = "campaign_site";
 
 export const PROMISE_TYPES = new Set([
   "vote",
@@ -736,16 +735,9 @@ export interface ExtractedPromiseRow {
   conditionsDeadline: string | null;
 }
 
-interface RunStats {
-  candidatesProcessed: number;
-  candidatesSkippedExisting: number;
+export interface FetchStats {
   pagesFetched: number;
   pagesFailed: number;
-  rowsUpserted: number;
-  apiErrors: number;
-  inputTokens: number;
-  cachedTokens: number;
-  outputTokens: number;
 }
 
 /**
@@ -754,7 +746,8 @@ interface RunStats {
  * judgment. Distinct from per-entry validation drops, which never retry.
  * (2026-08-12 first write run: two of Hale's issue pages returned
  * malformed_json/response_not_array and his promises silently became zero,
- * while the dry-run minutes earlier had extracted both.)
+ * while the dry-run minutes earlier had extracted both.) Still used by the
+ * import step as a cheap pre-check before parseAndValidatePromises.
  */
 export function isParseableArray(rawJson: string): boolean {
   const fenceMatch = rawJson.match(/```(?:json)?\s*([\s\S]*?)```/u);
@@ -766,65 +759,27 @@ export function isParseableArray(rawJson: string): boolean {
   }
 }
 
-/** One format-retry per page, on top of the SDK's own transport retries. */
-const MAX_FORMAT_RETRIES = 1;
-
-async function extractPromisesForPage(
-  anthropic: Anthropic,
-  systemPrompt: string,
-  ctx: PageContext,
-  stats: RunStats,
-): Promise<ValidatedPromise[]> {
-  let rawText = "[]";
-  for (let attempt = 0; attempt <= MAX_FORMAT_RETRIES; attempt++) {
-    const response = await anthropic.messages.create({
-      model: EXTRACTION_MODEL,
-      max_tokens: MAX_TOKENS,
-      system: [
-        {
-          type: "text" as const,
-          text: systemPrompt,
-          cache_control: { type: "ephemeral" as const },
-        },
-      ],
-      messages: [{ role: "user", content: buildPagePrompt(ctx) }],
-    });
-
-    stats.inputTokens += response.usage?.input_tokens ?? 0;
-    stats.cachedTokens += response.usage?.cache_read_input_tokens ?? 0;
-    stats.outputTokens += response.usage?.output_tokens ?? 0;
-
-    const textBlock = response.content.find((b) => b.type === "text");
-    rawText = textBlock?.type === "text" ? textBlock.text.trim() : "[]";
-
-    if (isParseableArray(rawText)) break;
-    if (attempt < MAX_FORMAT_RETRIES) {
-      process.stderr.write(
-        `[promise-extract] format_retry page=${ctx.pageUrl} ` +
-          `stop_reason=${response.stop_reason ?? "?"} attempt=${attempt + 1}/${MAX_FORMAT_RETRIES + 1}\n`,
-      );
-    }
-  }
-
-  // Validate against the SAME truncated text the model saw, so the verbatim
-  // gate can never reject a quote for appearing beyond the truncation point.
-  return parseAndValidatePromises(
-    rawText,
-    ctx.pageText.slice(0, MAX_PAGE_CHARS),
-    ctx.pageUrl,
-  );
+export interface CandidatePageContent {
+  /** Original (live-site) URL — stored as source_url. */
+  originalUrl: string;
+  archiveUrl: string;
+  text: string;
 }
 
-async function extractCandidate(
-  anthropic: Anthropic,
-  systemPrompt: string,
+/**
+ * Fetch a candidate's homepage plus up to (maxPages - 1) discovered same-site
+ * issue pages, converted to plain text — the network half of extraction,
+ * with NO Claude call. This is what the export step runs; the extracting
+ * agent only ever sees the { originalUrl, archiveUrl, text } it returns.
+ * Pages under 100 chars (empty shells) are dropped — not worth a call.
+ */
+export async function fetchCandidatePages(
   row: CorpusRow,
-  cycle: number,
   maxPages: number,
   fetcher: typeof fetch,
-  stats: RunStats,
+  stats: FetchStats,
   snapshotDir: string,
-): Promise<ExtractedPromiseRow[]> {
+): Promise<CandidatePageContent[]> {
   const home = await fetchPageSoft(
     row.canonicalCaptureUrl,
     fetcher,
@@ -858,13 +813,7 @@ async function extractCandidate(
     ? extractIssuePageUrls(home.html, discoveryBase, maxPages - 1)
     : [];
 
-  interface PageToProcess {
-    /** Original (live-site) URL — stored as source_url. */
-    originalUrl: string;
-    archiveUrl: string;
-    text: string;
-  }
-  const pages: PageToProcess[] = [
+  const pages: CandidatePageContent[] = [
     {
       originalUrl: row.website,
       archiveUrl: home.finalUrl,
@@ -896,51 +845,7 @@ async function extractCandidate(
     });
   }
 
-  const extracted: ExtractedPromiseRow[] = [];
-  for (const page of pages) {
-    if (page.text.length < 100) continue; // empty shells aren't worth a call
-    let validated: ValidatedPromise[];
-    try {
-      validated = await extractPromisesForPage(
-        anthropic,
-        systemPrompt,
-        {
-          candidateName: row.name,
-          office: row.office,
-          state: row.state,
-          district: row.district,
-          cycle,
-          pageUrl: page.originalUrl,
-          pageText: page.text,
-        },
-        stats,
-      );
-    } catch (err) {
-      stats.apiErrors++;
-      process.stderr.write(
-        `[promise-extract] api_error page=${page.originalUrl}: ${err instanceof Error ? err.message : String(err)}\n`,
-      );
-      continue;
-    }
-    for (const p of validated) {
-      extracted.push({
-        id: computePromiseId(row.candidateId, page.archiveUrl, p.promiseText),
-        candidateId: row.candidateId,
-        canonicalIssue: p.canonicalIssue,
-        subIssue: p.subIssue,
-        promiseText: p.promiseText,
-        madeAt: captureDateFromArchiveUrl(page.archiveUrl),
-        venue: DEFAULT_VENUE,
-        sourceUrl: page.originalUrl,
-        archiveUrl: page.archiveUrl,
-        extractionModelVersion: EXTRACTION_MODEL_VERSION,
-        promiseType: p.promiseType,
-        conditionsDeadline: p.conditionsDeadline,
-      });
-    }
-  }
-
-  return dedupeByNormalizedText(extracted);
+  return pages.filter((p) => p.text.length >= 100);
 }
 
 // ---------------------------------------------------------------------------
@@ -962,7 +867,7 @@ async function extractCandidate(
  * false negative costs one repeat idempotent extraction; a false positive
  * silently drops a cycle.
  */
-async function fetchAlreadyExtracted(
+export async function fetchAlreadyExtracted(
   db: DbClient,
   candidateIds: string[],
   cycle: number,
@@ -987,7 +892,7 @@ async function fetchAlreadyExtracted(
   );
 }
 
-async function upsertPromises(
+export async function upsertPromises(
   db: DbClient,
   rows: ExtractedPromiseRow[],
   dryRun: boolean,
@@ -1039,13 +944,13 @@ async function upsertPromises(
 // CLI
 // ---------------------------------------------------------------------------
 
-function flagValue(argv: string[], flag: string): string | null {
+export function flagValue(argv: string[], flag: string): string | null {
   const idx = argv.indexOf(flag);
   if (idx < 0 || idx + 1 >= argv.length) return null;
   return argv[idx + 1];
 }
 
-function flagValues(argv: string[], flag: string): string[] {
+export function flagValues(argv: string[], flag: string): string[] {
   const out: string[] = [];
   for (let i = 0; i < argv.length - 1; i++) {
     if (argv[i] === flag) out.push(argv[i + 1]);
@@ -1053,7 +958,7 @@ function flagValues(argv: string[], flag: string): string[] {
   return out;
 }
 
-async function mapWithConcurrency<T, R>(
+export async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
   fn: (item: T, index: number) => Promise<R>,
@@ -1073,185 +978,22 @@ async function mapWithConcurrency<T, R>(
   return results;
 }
 
-async function main(): Promise<void> {
-  const argv = process.argv.slice(2);
-  const corpusPath = flagValue(argv, "--corpus");
-  if (!corpusPath) {
-    process.stderr.write(
-      "[promise-extract] --corpus <spike --json output file> is required.\n" +
-        "Produce it with: npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts --state TX --concurrency 1 --json > spike.json\n",
-    );
-    process.exit(1);
-  }
-  const dryRun = argv.includes("--dry-run");
-  const asJson = argv.includes("--json");
-  const limit = Number(flagValue(argv, "--limit") ?? Infinity);
-  const maxPages = Number(flagValue(argv, "--max-pages") ?? DEFAULT_MAX_PAGES);
-  const concurrency = Number(
-    flagValue(argv, "--concurrency") ?? DEFAULT_CONCURRENCY,
-  );
-  // Must match whatever --dir the corpus's snapshot:// captures were written
-  // under (promise-site-snapshot.ts / _loc-browser-fetch.ts default to the
-  // same SNAPSHOT_DIR-aware default, so this only matters for a non-default
-  // --dir run) — otherwise every snapshot:// read silently misses (2026-08-17
-  // finding).
-  const snapshotDir = flagValue(argv, "--dir") ?? defaultSnapshotDir();
-  const candidateFilter = new Set(flagValues(argv, "--candidate"));
-  const force = argv.includes("--force");
-  if (force && candidateFilter.size === 0) {
-    // tag-bills' targeted-only force rule: there is intentionally NO
-    // "re-extract the whole corpus" path without bumping EXTRACTOR_VERSION.
-    process.stderr.write(
-      "[promise-extract] --force requires an explicit --candidate selector. " +
-        "To re-extract everything, bump EXTRACTOR_VERSION instead.\n",
-    );
-    process.exit(1);
-  }
-
-  const anthropicApiKey =
-    process.env.ANTHROPIC_VOTER_API ?? process.env.ANTHROPIC_API_KEY ?? "";
-  if (!anthropicApiKey) {
-    process.stderr.write(
-      "[promise-extract] ANTHROPIC_VOTER_API is not set. Cannot call Claude.\n",
-    );
-    process.exit(1);
-  }
-
-  const rawCorpus = readFileSync(corpusPath, "utf8");
-  if (rawCorpus.trim().length === 0) {
-    // The spike writes its --json payload in one shot at the END of its run;
-    // a zero-byte file means the spike is still running or was interrupted.
-    process.stderr.write(
-      `[promise-extract] ${corpusPath} is empty — the spike writes its JSON only when it finishes. ` +
-        "Let the spike run to completion (the bucket table prints last), then re-run.\n",
-    );
-    process.exit(1);
-  }
-  let corpusPayload: unknown;
-  try {
-    corpusPayload = JSON.parse(rawCorpus) as unknown;
-  } catch {
-    process.stderr.write(
-      `[promise-extract] ${corpusPath} is not valid JSON — was the spike interrupted mid-write, ` +
-        "or was --json omitted from the spike command?\n",
-    );
-    process.exit(1);
-  }
-  let corpus = loadCorpusRows(corpusPayload);
-  if (candidateFilter.size > 0) {
-    corpus = corpus.filter((r) => candidateFilter.has(r.candidateId));
-  }
-  if (Number.isFinite(limit)) corpus = corpus.slice(0, limit);
-
-  // The corpus decides its own cycle (retrospective vs current); 2026 only
-  // as a last resort for a corpus with no parseable capture URLs.
-  const corpusCycle = cycleFromCorpus(corpus) ?? 2026;
-
+function main(): void {
   process.stderr.write(
-    `[promise-extract] ${corpus.length} corpus-ready candidates from ${corpusPath} ` +
-      `(model=${EXTRACTION_MODEL} version=${EXTRACTION_MODEL_VERSION} cycle=${corpusCycle} ` +
-      `max_pages=${maxPages} concurrency=${concurrency} dir=${snapshotDir}${dryRun ? " DRY-RUN" : ""})\n`,
+    "[promise-extract] This script no longer calls the Anthropic API directly.\n" +
+      "Removed 2026-08-17 — a national run hit the workspace's metered API cap partway through " +
+      "and silently produced zero promises for ~400 candidates. Bulk backend LLM work runs on " +
+      "the Claude Max subscription now, never a metered key (same standing policy as tag-bills).\n\n" +
+      "promise-extract.ts is a shared library only. Run the pipeline instead:\n" +
+      "  1) npx tsx --env-file=.env.local scripts/ingest/_promise-extract-export.ts \\\n" +
+      "       --corpus <spike --json output> --out /tmp/promise-batches\n" +
+      "  2) In a Claude Code session in this repo, run the workflow:\n" +
+      "       scripts/ingest/_promise-extract.workflow.js\n" +
+      "     args: { batchDir: '/tmp/promise-batches', resultDir: '/tmp/promise-results' }\n" +
+      "  3) npx tsx --env-file=.env.local scripts/ingest/_promise-extract-import.ts \\\n" +
+      "       --batches /tmp/promise-batches --results /tmp/promise-results [--dry-run]\n",
   );
-
-  const db = requireDb();
-  const stats: RunStats = {
-    candidatesProcessed: 0,
-    candidatesSkippedExisting: 0,
-    pagesFetched: 0,
-    pagesFailed: 0,
-    rowsUpserted: 0,
-    apiErrors: 0,
-    inputTokens: 0,
-    cachedTokens: 0,
-    outputTokens: 0,
-  };
-
-  const already = force
-    ? new Set<string>()
-    : await fetchAlreadyExtracted(
-        db,
-        corpus.map((r) => r.candidateId),
-        corpusCycle,
-      );
-  const pending = corpus.filter((r) => {
-    if (already.has(r.candidateId)) {
-      stats.candidatesSkippedExisting++;
-      return false;
-    }
-    return true;
-  });
-  if (stats.candidatesSkippedExisting > 0) {
-    process.stderr.write(
-      `[promise-extract] ${stats.candidatesSkippedExisting} candidates already extracted at ${EXTRACTION_MODEL_VERSION} — skipped (resumable run)\n`,
-    );
-  }
-
-  const anthropic = new Anthropic({ apiKey: anthropicApiKey });
-  const systemPrompt = buildExtractionSystemPrompt();
-  const allRows: ExtractedPromiseRow[] = [];
-
-  await mapWithConcurrency(pending, concurrency, async (row) => {
-    const promises = await extractCandidate(
-      anthropic,
-      systemPrompt,
-      row,
-      corpusCycle,
-      maxPages,
-      fetch,
-      stats,
-      snapshotDir,
-    );
-    stats.candidatesProcessed++;
-    process.stderr.write(
-      `[promise-extract] ${row.name} (${row.state}-${row.district ?? "?"}): ` +
-        `${promises.length} promises [${stats.candidatesProcessed}/${pending.length}]\n`,
-    );
-    if (promises.length > 0) {
-      try {
-        stats.rowsUpserted += await upsertPromises(db, promises, dryRun);
-      } catch (err) {
-        process.stderr.write(
-          `[promise-extract] db_error candidate=${row.candidateId}: ${err instanceof Error ? err.message : String(err)}\n`,
-        );
-      }
-    }
-    allRows.push(...promises);
-  });
-
-  // usage.input_tokens already EXCLUDES cache reads (they arrive separately
-  // as cache_read_input_tokens) — subtracting them again drove the estimate
-  // negative on cache-heavy runs (2026-08-16 retrospective run: -$0.02).
-  const estimatedUsd =
-    (stats.inputTokens * SONNET_INPUT_COST_PER_MTK) / 1_000_000 +
-    (stats.cachedTokens * SONNET_CACHED_COST_PER_MTK) / 1_000_000 +
-    (stats.outputTokens * SONNET_OUTPUT_COST_PER_MTK) / 1_000_000;
-
-  process.stderr.write(
-    `\n[promise-extract] done. candidates=${stats.candidatesProcessed} ` +
-      `skipped_existing=${stats.candidatesSkippedExisting} pages=${stats.pagesFetched} ` +
-      `page_failures=${stats.pagesFailed} promises=${allRows.length} ` +
-      `upserted=${stats.rowsUpserted}${dryRun ? " (dry-run)" : ""} api_errors=${stats.apiErrors} ` +
-      `tokens_in=${stats.inputTokens} cached=${stats.cachedTokens} out=${stats.outputTokens} ` +
-      `est_cost_usd=${estimatedUsd.toFixed(2)}\n`,
-  );
-
-  if (asJson) {
-    console.log(JSON.stringify(allRows, null, 2));
-  } else {
-    // Human summary: promises per candidate, so "zero promises found" states
-    // are visible in the report rather than silently absent.
-    const byCandidate = new Map<string, number>();
-    for (const r of pending) byCandidate.set(`${r.name}`, 0);
-    for (const r of allRows) {
-      const row = pending.find((p) => p.candidateId === r.candidateId);
-      if (row) byCandidate.set(row.name, (byCandidate.get(row.name) ?? 0) + 1);
-    }
-    for (const [name, count] of byCandidate) {
-      console.log(
-        `${String(count).padStart(3)}  ${name}${count === 0 ? "  (no promise corpus from this capture)" : ""}`,
-      );
-    }
-  }
+  process.exit(1);
 }
 
 const isDirectRun =
@@ -1259,10 +1001,5 @@ const isDirectRun =
   import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isDirectRun) {
-  main().catch((err) => {
-    process.stderr.write(
-      `[promise-extract] fatal: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,
-    );
-    process.exit(1);
-  });
+  main();
 }

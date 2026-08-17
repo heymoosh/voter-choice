@@ -246,7 +246,22 @@ async function main() {
   );
 }
 
-main().catch((e) => {
-  console.error("[classify] fatal:", e.message);
+// Calls the metered Anthropic API directly. Superseded by
+// scripts/ingest/tag-bills.ts and its subscription workflow
+// (scripts/ingest/_tag-bills.workflow.js). Get sign-off before overriding,
+// and prefer the current pipeline instead.
+const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
+
+if (!process.env[METERED_OVERRIDE_ENV]) {
+  console.error(
+    "[classify] refusing to run: this calls the metered Anthropic API directly and is " +
+      "superseded by tag-bills.ts / _tag-bills.workflow.js.\n" +
+      `Get explicit sign-off before running it, then set ${METERED_OVERRIDE_ENV}=1.`,
+  );
   process.exit(1);
-});
+} else {
+  main().catch((e) => {
+    console.error("[classify] fatal:", e.message);
+    process.exit(1);
+  });
+}
