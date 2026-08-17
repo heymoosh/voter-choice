@@ -67,9 +67,14 @@
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts
- *     [--state TX] [--cycle 2026] [--office house|senate|both] [--limit N]
+ *     [--state TX|ALL] [--cycle 2026] [--office house|senate|both] [--limit N]
  *     [--concurrency N] [--election-day YYYY-MM-DD] [--from YYYY-MM-DD]
  *     [--skip-wayback] [--json]
+ *
+ * --state ALL covers every state in one pass (same per-request politeness,
+ * just a longer run; the report adds a per-state corpus-ready breakdown).
+ * In retrospective mode ALL also INCLUDES members with no state column —
+ * the ~80-member seat-backfill gap a single-state filter cannot see.
  *
  * RETROSPECTIVE MODE (--cycle 2022, or any cycle whose election day has
  * passed): the roster switches from official_roster_candidates to that
@@ -554,7 +559,10 @@ async function main(): Promise<void> {
   // pre-resolved from the candidates table, and the FEC committee/website
   // lookups prefer what was filed FOR that cycle.
   const cycle = Number(arg("--cycle") ?? arg("--year") ?? 2026);
+  // --state ALL runs the whole country in one pass (per-state politeness is
+  // unchanged — same serial FEC/archive budget, just a longer run).
   const state = (arg("--state") ?? "TX").toUpperCase();
+  const allStates = state === "ALL";
   const office = arg("--office") ?? "house";
   const limit = Number(arg("--limit") ?? 0);
   const concurrency = Math.max(1, Number(arg("--concurrency") ?? 4));
@@ -604,11 +612,14 @@ async function main(): Promise<void> {
           jurisdictions.map((j) => sql`${j}`),
           sql`, `,
         )})
-        AND c.state = ${state}
-      ORDER BY office, district, name
+        ${allStates ? sql`` : sql`AND c.state = ${state}`}
+      ORDER BY state, office, district, name
     `);
     roster = (winnersRes.rows as unknown as RosterRow[]).map((r) => ({
       ...r,
+      // --state ALL includes never-seat-backfilled members whose state is
+      // NULL; keep the report legible for them.
+      state: r.state ?? "??",
       candidateId: (r as unknown as { candidate_id: string }).candidate_id,
       fecCandidateId: (r as unknown as { fec_candidate_id: string | null })
         .fec_candidate_id,
@@ -616,38 +627,43 @@ async function main(): Promise<void> {
 
     // Members without seat columns (state NULL — rows created by the votes
     // ingest and never touched by the roster/incumbent backfills) are
-    // invisible to the state filter. Count them so the miss is explicit.
-    const missingRes = await db.execute(sql`
-      SELECT COUNT(*) AS n
-      FROM candidates c
-      JOIN candidate_offices o ON o.candidate_id = c.id
-      WHERE o.term_start = ${termStart}
-        AND o.jurisdiction IN (${sql.join(
-          jurisdictions.map((j) => sql`${j}`),
-          sql`, `,
-        )})
-        AND c.state IS NULL
-    `);
-    const missing = Number(
-      (missingRes.rows[0] as { n?: unknown } | undefined)?.n ?? 0,
-    );
-    if (missing > 0) {
-      process.stderr.write(
-        `[promise-corpus-spike] note: ${missing} ${termStart}-term members have no state ` +
-          "column (never seat-backfilled) and are invisible to the --state filter, ALL states.\n",
+    // invisible to a single-state filter. --state ALL INCLUDES them (the
+    // filter is gone), which closes the ~80-member retrospective gap; for a
+    // single state, count them so the miss stays explicit.
+    if (!allStates) {
+      const missingRes = await db.execute(sql`
+        SELECT COUNT(*) AS n
+        FROM candidates c
+        JOIN candidate_offices o ON o.candidate_id = c.id
+        WHERE o.term_start = ${termStart}
+          AND o.jurisdiction IN (${sql.join(
+            jurisdictions.map((j) => sql`${j}`),
+            sql`, `,
+          )})
+          AND c.state IS NULL
+      `);
+      const missing = Number(
+        (missingRes.rows[0] as { n?: unknown } | undefined)?.n ?? 0,
       );
+      if (missing > 0) {
+        process.stderr.write(
+          `[promise-corpus-spike] note: ${missing} ${termStart}-term members have no state ` +
+            "column (never seat-backfilled) and are invisible to the --state filter " +
+            "(--state ALL includes them).\n",
+        );
+      }
     }
   } else {
     const rosterRes = await db.execute(sql`
       SELECT DISTINCT state, office, district, name
       FROM official_roster_candidates
       WHERE election_year = ${cycle}
-        AND state = ${state}
+        ${allStates ? sql`` : sql`AND state = ${state}`}
         AND office IN (${sql.join(
           offices.map((o) => sql`${o}`),
           sql`, `,
         )})
-      ORDER BY office, district, name
+      ORDER BY state, office, district, name
     `);
     roster = rosterRes.rows as unknown as RosterRow[];
   }
@@ -876,6 +892,22 @@ async function main(): Promise<void> {
     console.log(
       `  ${bucket.padEnd(24)} ${String(n).padStart(3)} (${String(pct(n)).padStart(2)}%)  ${note}`,
     );
+  }
+
+  if (allStates) {
+    const byState = new Map<string, { archived: number; total: number }>();
+    for (const r of rows) {
+      const key = r.state || "??";
+      const v = byState.get(key) ?? { archived: 0, total: 0 };
+      v.total++;
+      if (r.bucket === "website_archived") v.archived++;
+      byState.set(key, v);
+    }
+    console.log("per-state corpus-ready:");
+    for (const [st, v] of [...byState.entries()].sort()) {
+      console.log(`  ${st.padEnd(2)}  ${v.archived}/${v.total}`);
+    }
+    console.log("");
   }
 
   const archived = rows.filter((r) => r.bucket === "website_archived");
