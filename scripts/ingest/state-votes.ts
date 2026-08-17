@@ -369,7 +369,7 @@ export async function ingestStateVotes({
 } = {}): Promise<PlannedStateRows> {
   const config = resolveRuntimeConfig(env);
 
-  // Stagger startup across matrix jobs to prevent all 6 parallel jobs from
+  // Stagger startup across matrix jobs to prevent all parallel jobs from
   // firing their first OpenStates request simultaneously and triggering 429s.
   // Hash the state abbreviation to a deterministic 0-29s window.
   const startupJitterMs = computeStartupJitter(config.state);
@@ -384,11 +384,19 @@ export async function ingestStateVotes({
     `[state-votes:${config.state}] starting jurisdiction=${config.jurisdictionId}`,
   );
 
+  // One 12-minute retry budget for the WHOLE state, not per HTTP call — a
+  // state with several paginated/session calls must not accumulate
+  // multiple independent 12-minute budgets in sequence (bounded today by
+  // the workflow's job timeout, but that's a backstop, not the intended
+  // ceiling).
+  const stateDeadlineAt = Date.now() + RETRY_BUDGET_MS;
+
   const jurisdictionJson = await fetchOpenStatesJson(
     `/jurisdictions/${encodeURIComponent(config.jurisdictionId)}`,
     config,
     fetcher,
     { include: "legislative_sessions" },
+    stateDeadlineAt,
   );
   const sessions = selectOpenStatesSessions(jurisdictionJson, {
     explicitSessionIds: config.explicitSessionIds,
@@ -407,6 +415,7 @@ export async function ingestStateVotes({
         config,
         session.id,
         fetcher,
+        stateDeadlineAt,
       )) {
         mergeStatePlans(
           plan,
@@ -458,18 +467,25 @@ async function* fetchOpenStatesBills(
   config: RuntimeConfig,
   sessionId: string,
   fetcher: Fetcher,
+  deadlineAt: number,
 ): AsyncGenerator<UnknownRecord> {
   let page = 1;
   let yielded = 0;
 
   while (!config.maxBills || yielded < config.maxBills) {
-    const json = await fetchOpenStatesJson("/bills", config, fetcher, {
-      jurisdiction: config.jurisdictionId,
-      session: sessionId,
-      include: "votes",
-      page: String(page),
-      per_page: String(config.perPage),
-    });
+    const json = await fetchOpenStatesJson(
+      "/bills",
+      config,
+      fetcher,
+      {
+        jurisdiction: config.jurisdictionId,
+        session: sessionId,
+        include: "votes",
+        page: String(page),
+        per_page: String(config.perPage),
+      },
+      deadlineAt,
+    );
     const results = extractResults(json);
     for (const result of results) {
       if (config.maxBills && yielded >= config.maxBills) return;
@@ -482,11 +498,16 @@ async function* fetchOpenStatesBills(
   }
 }
 
+/** Retry wall-clock budget — shared across every call for one state, not
+ * reset per HTTP call (see ingestStateVotes' stateDeadlineAt). */
+const RETRY_BUDGET_MS = 720_000; // 12 minutes
+
 async function fetchOpenStatesJson(
   path: string,
   config: RuntimeConfig,
   fetcher: Fetcher,
   params: Record<string, string>,
+  deadlineAt: number = Date.now() + RETRY_BUDGET_MS,
 ): Promise<unknown> {
   const url = new URL(`${config.openStatesBaseUrl}${path}`);
   for (const [key, value] of Object.entries(params)) {
@@ -499,19 +520,20 @@ async function fetchOpenStatesJson(
 
   // Three separate retry curves share this one attempt loop:
   //  - 429 (rate limit): full-jitter backoff, respects Retry-After. The
-  //    matrix runs 6 parallel jobs against the same API key — without
-  //    jitter, all jobs back off in lockstep and re-hit the limit together.
+  //    matrix runs 2 parallel jobs (see max-parallel in
+  //    .github/workflows/ingest-states.yml) against the same API key —
+  //    without jitter, jobs back off in lockstep and re-hit the limit
+  //    together.
   //  - 5xx (gateway/server errors): plainer exponential backoff — OpenStates
   //    502/504 gateway timeouts, not a rate limit, so Retry-After is not
   //    meaningful here.
   //  - network-transient (socket/connect/timeout errors, incl. mid-body-read
   //    failures): same exponential backoff as 5xx.
-  // A 12-minute wall-clock budget bounds the whole loop regardless of which
-  // curve is firing, so a degraded-but-not-dead endpoint can't stall a
-  // single state past the workflow's job timeout.
+  // A 12-minute wall-clock budget (shared across every call this state
+  // makes, via deadlineAt) bounds the whole loop regardless of which curve
+  // is firing, so a degraded-but-not-dead endpoint can't stall a single
+  // state past the workflow's job timeout.
   const MAX_RETRIES = 5;
-  const RETRY_BUDGET_MS = 720_000; // 12 minutes
-  const loopStartedAt = Date.now();
   let capMs = 15_000; // 429 backoff: doubles each attempt — 15s, 30s, 60s, ...
   let backoffMs = 2_000; // 5xx / network backoff: doubles each attempt
 
@@ -533,20 +555,20 @@ async function fetchOpenStatesJson(
       });
     } catch (error) {
       const responseMs = Date.now() - requestStartedAt;
-      const elapsedMs = Date.now() - loopStartedAt;
+      const remainingMs = deadlineAt - Date.now();
       console.warn(
         `[state-votes] fetch_error attempt=${attempt + 1}/${MAX_RETRIES + 1} response_ms=${responseMs} path=${path} error=${flattenErrorChain(error)}`,
       );
       if (
         !isTransientNetworkError(error) ||
         attempt === MAX_RETRIES ||
-        elapsedMs >= RETRY_BUDGET_MS
+        remainingMs <= 0
       ) {
         throw error;
       }
       const waitMs = Math.min(
         backoffMs,
-        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+        Math.max(0, remainingMs),
       );
       console.warn(
         `[state-votes] fetch_retry attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs} path=${path}`,
@@ -578,8 +600,8 @@ async function fetchOpenStatesJson(
           `[state-votes] rate_limited_body attempt=${attempt + 1}/${MAX_RETRIES} body=${body}`,
         );
       }
-      const elapsedMs = Date.now() - loopStartedAt;
-      if (attempt === MAX_RETRIES || elapsedMs >= RETRY_BUDGET_MS) {
+      const remainingMs = deadlineAt - Date.now();
+      if (attempt === MAX_RETRIES || remainingMs <= 0) {
         throw new Error(`OpenStates HTTP 429 after ${attempt + 1} attempts`);
       }
       // Full jitter: sleep random(0, cap) unless server gives Retry-After
@@ -588,7 +610,7 @@ async function fetchOpenStatesJson(
         : Math.floor(Math.random() * capMs);
       const waitMs = Math.min(
         rawWaitMs,
-        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+        Math.max(0, remainingMs),
       );
       console.warn(
         `[state-votes] rate_limited_retry attempt=${attempt + 1}/${MAX_RETRIES} wait_ms=${waitMs} path=${path}`,
@@ -600,18 +622,18 @@ async function fetchOpenStatesJson(
 
     if (isRetryableHttpStatus(response.status)) {
       const body = await readResponseBodySample(response, 1024);
-      const elapsedMs = Date.now() - loopStartedAt;
+      const remainingMs = deadlineAt - Date.now();
       console.warn(
         `[state-votes] gateway_error attempt=${attempt + 1}/${MAX_RETRIES + 1} status=${response.status} response_ms=${responseMs} path=${path} body=${body || "<empty>"}`,
       );
-      if (attempt === MAX_RETRIES || elapsedMs >= RETRY_BUDGET_MS) {
+      if (attempt === MAX_RETRIES || remainingMs <= 0) {
         throw new Error(
           `OpenStates HTTP ${response.status} after ${attempt + 1} attempts response_ms=${responseMs} path=${path} body=${body || "<empty>"}`,
         );
       }
       const waitMs = Math.min(
         backoffMs,
-        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+        Math.max(0, remainingMs),
       );
       console.warn(
         `[state-votes] gateway_error_retry attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs} path=${path}`,
@@ -631,20 +653,20 @@ async function fetchOpenStatesJson(
     try {
       return await response.json();
     } catch (error) {
-      const elapsedMs = Date.now() - loopStartedAt;
+      const remainingMs = deadlineAt - Date.now();
       console.warn(
         `[state-votes] body_read_error attempt=${attempt + 1}/${MAX_RETRIES + 1} path=${path} error=${flattenErrorChain(error)}`,
       );
       if (
         !isTransientNetworkError(error) ||
         attempt === MAX_RETRIES ||
-        elapsedMs >= RETRY_BUDGET_MS
+        remainingMs <= 0
       ) {
         throw error;
       }
       const waitMs = Math.min(
         backoffMs,
-        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+        Math.max(0, remainingMs),
       );
       await new Promise((resolve) => setTimeout(resolve, waitMs));
       backoffMs = Math.min(backoffMs * 2, 300_000);

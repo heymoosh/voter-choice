@@ -746,8 +746,10 @@ export interface FetchStats {
  * judgment. Distinct from per-entry validation drops, which never retry.
  * (2026-08-12 first write run: two of Hale's issue pages returned
  * malformed_json/response_not_array and his promises silently became zero,
- * while the dry-run minutes earlier had extracted both.) Still used by the
- * import step as a cheap pre-check before parseAndValidatePromises.
+ * while the dry-run minutes earlier had extracted both.) Used by the import
+ * step as a cheap pre-check before parseAndValidatePromises, purely to
+ * COUNT and surface malformed pages in the run summary — parseAndValidate-
+ * Promises makes the actual parse/skip decision either way.
  */
 export function isParseableArray(rawJson: string): boolean {
   const fenceMatch = rawJson.match(/```(?:json)?\s*([\s\S]*?)```/u);
@@ -989,7 +991,7 @@ function main(): void {
       "       --corpus <spike --json output> --out /tmp/promise-batches\n" +
       "  2) In a Claude Code session in this repo, run the workflow:\n" +
       "       scripts/ingest/_promise-extract.workflow.js\n" +
-      "     args: { batchDir: '/tmp/promise-batches', resultDir: '/tmp/promise-results' }\n" +
+      "     args: { batchFiles: <manifest.batchFiles from step 1>, resultDir: '/tmp/promise-results' }\n" +
       "  3) npx tsx --env-file=.env.local scripts/ingest/_promise-extract-import.ts \\\n" +
       "       --batches /tmp/promise-batches --results /tmp/promise-results [--dry-run]\n",
   );

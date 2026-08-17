@@ -34,6 +34,7 @@ import {
   computePromiseId,
   dedupeByNormalizedText,
   flagValue,
+  isParseableArray,
   parseAndValidatePromises,
   upsertPromises,
   type ExtractedPromiseRow,
@@ -99,11 +100,27 @@ async function main(): Promise<void> {
   let candidatesImported = 0;
   let candidatesNotYetExtracted = 0;
   let rowsUpserted = 0;
+  let batchesUnparseable = 0;
+  let pagesMalformed = 0;
 
   for (const batchPath of batchFiles) {
-    const candidates = JSON.parse(
-      readFileSync(batchPath, "utf8"),
-    ) as ExportedCandidate[];
+    let candidates: ExportedCandidate[];
+    try {
+      candidates = JSON.parse(
+        readFileSync(batchPath, "utf8"),
+      ) as ExportedCandidate[];
+    } catch (err) {
+      // A corrupted/truncated batch file must not abort the whole run —
+      // the sorted for-loop would otherwise skip every batch after it,
+      // reintroducing the exact "missing vs. genuinely-zero" collapse this
+      // file's header exists to avoid.
+      batchesUnparseable++;
+      process.stderr.write(
+        `[promise-extract-import] UNPARSEABLE batch file ${batchPath}, skipping ` +
+          `(${err instanceof Error ? err.message : String(err)})\n`,
+      );
+      continue;
+    }
     const resultPath = resultFileFor(batchPath, resultDir);
 
     if (!existsSync(resultPath)) {
@@ -115,9 +132,23 @@ async function main(): Promise<void> {
       continue;
     }
 
-    const results = JSON.parse(
-      readFileSync(resultPath, "utf8"),
-    ) as ExtractionResultEntry[];
+    let results: ExtractionResultEntry[];
+    try {
+      results = JSON.parse(
+        readFileSync(resultPath, "utf8"),
+      ) as ExtractionResultEntry[];
+    } catch (err) {
+      // Same reasoning as the batch-file guard above: a present-but-
+      // malformed result file (agent crashed mid-write) must be treated
+      // as not-yet-extracted, not as a fatal abort of every later batch.
+      candidatesNotYetExtracted += candidates.length;
+      process.stderr.write(
+        `[promise-extract-import] UNPARSEABLE result file ${resultPath}, treating ` +
+          `${candidates.length} candidates from ${batchPath} as not-yet-extracted ` +
+          `(${err instanceof Error ? err.message : String(err)})\n`,
+      );
+      continue;
+    }
 
     // pageText lookup keyed by candidateId + pageUrl (the export/import contract).
     const pageTextByKey = new Map<string, string>();
@@ -137,6 +168,13 @@ async function main(): Promise<void> {
             "reason=no_matching_exported_page (stale result file?)\n",
         );
         continue;
+      }
+      // Nothing retries a single malformed page today (unlike the old
+      // per-page format-retry this pipeline replaced) — this at least makes
+      // the loss VISIBLE instead of indistinguishable from a legitimately
+      // empty page (the 2026-08-12 Hale incident this guards against).
+      if (!isParseableArray(entry.promisesJson)) {
+        pagesMalformed++;
       }
       const validated = parseAndValidatePromises(
         entry.promisesJson,
@@ -192,9 +230,18 @@ async function main(): Promise<void> {
   process.stderr.write(
     `\n[promise-extract-import] done. candidates_imported=${candidatesImported} ` +
       `candidates_not_yet_extracted=${candidatesNotYetExtracted} promises=${allRows.length} ` +
-      `upserted=${rowsUpserted}${dryRun ? " (dry-run)" : ""}\n` +
+      `upserted=${rowsUpserted}${dryRun ? " (dry-run)" : ""}` +
+      `${batchesUnparseable > 0 ? ` batches_unparseable=${batchesUnparseable}` : ""}` +
+      `${pagesMalformed > 0 ? ` pages_malformed_json=${pagesMalformed}` : ""}\n` +
       (candidatesNotYetExtracted > 0
         ? "Not-yet-extracted candidates need the workflow run for their batch(es) before re-running this import.\n"
+        : "") +
+      (batchesUnparseable > 0
+        ? `${batchesUnparseable} batch file(s) were unparseable and were skipped entirely — investigate before trusting this run's totals.\n`
+        : "") +
+      (pagesMalformed > 0
+        ? `${pagesMalformed} page(s) returned unparseable JSON and were silently skipped (no retry) — ` +
+          "these candidates may look like they have fewer promises than they should; re-run their batch(es).\n"
         : ""),
   );
 

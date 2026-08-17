@@ -309,20 +309,25 @@ async function upsertTagsForBill(
 // CLI — submit
 // ---------------------------------------------------------------------------
 
-async function runSubmit(): Promise<void> {
+async function runSubmit(explicitLimit: number | undefined): Promise<void> {
   const anthropicApiKey = process.env.ANTHROPIC_VOTER_API ?? "";
   if (!anthropicApiKey) {
     throw new Error("[tag-bills-batch] ANTHROPIC_VOTER_API is not set.");
   }
+  if (!explicitLimit) {
+    throw new Error(
+      "[tag-bills-batch] --submit requires an explicit --limit <n> (max " +
+        `${FETCH_LIMIT}) — no caller may run this uncapped.`,
+    );
+  }
+  const limit = Math.min(explicitLimit, FETCH_LIMIT);
 
   const client = new Anthropic({ apiKey: anthropicApiKey });
   const db = requireDb();
   const systemPrompt = buildSystemPrompt();
 
-  process.stderr.write(
-    `[tag-bills-batch] fetching untagged bills (limit=${FETCH_LIMIT})…\n`,
-  );
-  const bills = await fetchUntaggedBills(db, FETCH_LIMIT);
+  process.stderr.write(`[tag-bills-batch] fetching untagged bills (limit=${limit})…\n`);
+  const bills = await fetchUntaggedBills(db, limit);
 
   if (bills.length === 0) {
     console.log(
@@ -473,7 +478,10 @@ if (isCliExecution() && !process.env[METERED_OVERRIDE_ENV]) {
   const mode = args[0];
 
   if (mode === "--submit") {
-    runSubmit().catch((error) => {
+    const limitIdx = args.indexOf("--limit");
+    const explicitLimit =
+      limitIdx >= 0 && args[limitIdx + 1] ? Number(args[limitIdx + 1]) : undefined;
+    runSubmit(explicitLimit).catch((error) => {
       const message = error instanceof Error ? error.message : String(error);
       console.error(`[tag-bills-batch] fatal: ${message}`);
       process.exitCode = 1;
@@ -488,7 +496,7 @@ if (isCliExecution() && !process.env[METERED_OVERRIDE_ENV]) {
   } else {
     console.error(
       "Usage:\n" +
-        "  npx tsx scripts/ingest/tag-bills-batch.ts --submit\n" +
+        "  npx tsx scripts/ingest/tag-bills-batch.ts --submit --limit <n>\n" +
         "  npx tsx scripts/ingest/tag-bills-batch.ts --collect [<batch_id>]",
     );
     process.exitCode = 1;
