@@ -12,13 +12,14 @@ import { pathToFileURL } from "node:url";
 import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { bills, candidateOffices, candidates, votes } from "../../db/schema";
+import {
+  flattenErrorChain,
+  isRetryableHttpStatus,
+  isTransientNetworkError,
+} from "./_retry";
 
 export type NormalizedStateVoteCast =
-  | "yea"
-  | "nay"
-  | "present"
-  | "absent"
-  | "not_voting";
+  "yea" | "nay" | "present" | "absent" | "not_voting";
 
 type StateChamber = "house" | "senate";
 type StateJurisdiction = `state-${string}-${StateChamber}`;
@@ -58,6 +59,7 @@ export type PlannedStateRows = {
   votes: Map<string, VoteRow>;
   counts: {
     sessionsSelected: number;
+    sessionsFailed: number;
     billsSeen: number;
     billRowsPlanned: number;
     voteEventsSeen: number;
@@ -242,6 +244,7 @@ export function createEmptyStatePlan(): PlannedStateRows {
     votes: new Map(),
     counts: {
       sessionsSelected: 0,
+      sessionsFailed: 0,
       billsSeen: 0,
       billRowsPlanned: 0,
       voteEventsSeen: 0,
@@ -315,6 +318,7 @@ export function mergeStatePlans(
   for (const row of incoming.votes.values()) setLatestVote(target.votes, row);
 
   target.counts.sessionsSelected += incoming.counts.sessionsSelected;
+  target.counts.sessionsFailed += incoming.counts.sessionsFailed;
   target.counts.billsSeen += incoming.counts.billsSeen;
   target.counts.billRowsPlanned = target.bills.size;
   target.counts.voteEventsSeen += incoming.counts.voteEventsSeen;
@@ -398,16 +402,33 @@ export async function ingestStateVotes({
   );
 
   for (const session of sessions) {
-    for await (const bill of fetchOpenStatesBills(
-      config,
-      session.id,
-      fetcher,
-    )) {
-      mergeStatePlans(
-        plan,
-        planOpenStatesBill(bill, { state: config.state, session }),
+    try {
+      for await (const bill of fetchOpenStatesBills(
+        config,
+        session.id,
+        fetcher,
+      )) {
+        mergeStatePlans(
+          plan,
+          planOpenStatesBill(bill, { state: config.state, session }),
+        );
+      }
+    } catch (error) {
+      plan.counts.sessionsFailed += 1;
+      console.error(
+        `[state-votes:${config.state}] session_failed session=${session.id} error=${flattenErrorChain(error)}`,
       );
     }
+  }
+
+  if (
+    plan.counts.sessionsFailed > 0 &&
+    plan.counts.sessionsFailed === sessions.length &&
+    plan.bills.size === 0
+  ) {
+    throw new Error(
+      `[state-votes:${config.state}] every session failed (${plan.counts.sessionsFailed}/${sessions.length}) and no rows were planned`,
+    );
   }
 
   await writeStatePlan(db, plan);
@@ -415,6 +436,7 @@ export async function ingestStateVotes({
     [
       `[state-votes:${config.state}] complete`,
       `sessions=${plan.counts.sessionsSelected}`,
+      `sessions_failed=${plan.counts.sessionsFailed}`,
       `bills_seen=${plan.counts.billsSeen}`,
       `bill_rows=${plan.bills.size}`,
       `vote_events=${plan.counts.voteEventsSeen}`,
@@ -440,7 +462,7 @@ async function* fetchOpenStatesBills(
   let page = 1;
   let yielded = 0;
 
-  while (true) {
+  while (!config.maxBills || yielded < config.maxBills) {
     const json = await fetchOpenStatesJson("/bills", config, fetcher, {
       jurisdiction: config.jurisdictionId,
       session: sessionId,
@@ -475,22 +497,70 @@ async function fetchOpenStatesJson(
     url.searchParams.append("include", "abstracts");
   }
 
-  // Retry on 429 (rate limit) with exponential backoff + full jitter.
-  // The matrix runs 6 parallel jobs against the same API key. Without jitter,
-  // all jobs back off in lockstep and re-hit the rate limit together every cycle.
-  // Full jitter (0 .. cap) spreads retries across the window so they stagger.
-  const MAX_RETRIES = 8;
-  let capMs = 15_000; // doubles each attempt: 15s, 30s, 60s, 120s, 240s, ...
+  // Three separate retry curves share this one attempt loop:
+  //  - 429 (rate limit): full-jitter backoff, respects Retry-After. The
+  //    matrix runs 6 parallel jobs against the same API key — without
+  //    jitter, all jobs back off in lockstep and re-hit the limit together.
+  //  - 5xx (gateway/server errors): plainer exponential backoff — OpenStates
+  //    502/504 gateway timeouts, not a rate limit, so Retry-After is not
+  //    meaningful here.
+  //  - network-transient (socket/connect/timeout errors, incl. mid-body-read
+  //    failures): same exponential backoff as 5xx.
+  // A 12-minute wall-clock budget bounds the whole loop regardless of which
+  // curve is firing, so a degraded-but-not-dead endpoint can't stall a
+  // single state past the workflow's job timeout.
+  const MAX_RETRIES = 5;
+  const RETRY_BUDGET_MS = 720_000; // 12 minutes
+  const loopStartedAt = Date.now();
+  let capMs = 15_000; // 429 backoff: doubles each attempt — 15s, 30s, 60s, ...
+  let backoffMs = 2_000; // 5xx / network backoff: doubles each attempt
 
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     const requestStartedAt = Date.now();
-    const response = await fetcher(url.href, {
-      headers: {
-        "user-agent": "voter-choice-state-ingest",
-        "X-API-KEY": config.openStatesApiKey,
-      },
-    });
+    const controller = new AbortController();
+    const abortTimer = setTimeout(() => controller.abort(), 60_000);
+    let response: Response;
+    try {
+      console.log(
+        `[state-votes] fetch_attempt attempt=${attempt + 1}/${MAX_RETRIES + 1} path=${path}`,
+      );
+      response = await fetcher(url.href, {
+        headers: {
+          "user-agent": "voter-choice-state-ingest",
+          "X-API-KEY": config.openStatesApiKey,
+        },
+        signal: controller.signal,
+      });
+    } catch (error) {
+      const responseMs = Date.now() - requestStartedAt;
+      const elapsedMs = Date.now() - loopStartedAt;
+      console.warn(
+        `[state-votes] fetch_error attempt=${attempt + 1}/${MAX_RETRIES + 1} response_ms=${responseMs} path=${path} error=${flattenErrorChain(error)}`,
+      );
+      if (
+        !isTransientNetworkError(error) ||
+        attempt === MAX_RETRIES ||
+        elapsedMs >= RETRY_BUDGET_MS
+      ) {
+        throw error;
+      }
+      const waitMs = Math.min(
+        backoffMs,
+        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+      );
+      console.warn(
+        `[state-votes] fetch_retry attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs} path=${path}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      backoffMs = Math.min(backoffMs * 2, 300_000);
+      continue;
+    } finally {
+      clearTimeout(abortTimer);
+    }
     const responseMs = Date.now() - requestStartedAt;
+    console.log(
+      `[state-votes] fetch_done attempt=${attempt + 1}/${MAX_RETRIES + 1} status=${response.status} response_ms=${responseMs} path=${path}`,
+    );
 
     if (response.status === 429) {
       const body = await readResponseBodySample(response, 1024);
@@ -508,18 +578,46 @@ async function fetchOpenStatesJson(
           `[state-votes] rate_limited_body attempt=${attempt + 1}/${MAX_RETRIES} body=${body}`,
         );
       }
-      if (attempt === MAX_RETRIES) {
-        throw new Error(`OpenStates HTTP 429 after ${MAX_RETRIES} retries`);
+      const elapsedMs = Date.now() - loopStartedAt;
+      if (attempt === MAX_RETRIES || elapsedMs >= RETRY_BUDGET_MS) {
+        throw new Error(`OpenStates HTTP 429 after ${attempt + 1} attempts`);
       }
       // Full jitter: sleep random(0, cap) unless server gives Retry-After
-      const waitMs = retryAfter
+      const rawWaitMs = retryAfter
         ? Number(retryAfter) * 1000
         : Math.floor(Math.random() * capMs);
+      const waitMs = Math.min(
+        rawWaitMs,
+        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+      );
       console.warn(
         `[state-votes] rate_limited_retry attempt=${attempt + 1}/${MAX_RETRIES} wait_ms=${waitMs} path=${path}`,
       );
       await new Promise((resolve) => setTimeout(resolve, waitMs));
       capMs = Math.min(capMs * 2, 300_000); // cap at 5 minutes
+      continue;
+    }
+
+    if (isRetryableHttpStatus(response.status)) {
+      const body = await readResponseBodySample(response, 1024);
+      const elapsedMs = Date.now() - loopStartedAt;
+      console.warn(
+        `[state-votes] gateway_error attempt=${attempt + 1}/${MAX_RETRIES + 1} status=${response.status} response_ms=${responseMs} path=${path} body=${body || "<empty>"}`,
+      );
+      if (attempt === MAX_RETRIES || elapsedMs >= RETRY_BUDGET_MS) {
+        throw new Error(
+          `OpenStates HTTP ${response.status} after ${attempt + 1} attempts response_ms=${responseMs} path=${path} body=${body || "<empty>"}`,
+        );
+      }
+      const waitMs = Math.min(
+        backoffMs,
+        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+      );
+      console.warn(
+        `[state-votes] gateway_error_retry attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs} path=${path}`,
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      backoffMs = Math.min(backoffMs * 2, 300_000);
       continue;
     }
 
@@ -529,7 +627,29 @@ async function fetchOpenStatesJson(
         `OpenStates HTTP ${response.status} response_ms=${responseMs} path=${path} body=${body || "<empty>"}`,
       );
     }
-    return response.json();
+
+    try {
+      return await response.json();
+    } catch (error) {
+      const elapsedMs = Date.now() - loopStartedAt;
+      console.warn(
+        `[state-votes] body_read_error attempt=${attempt + 1}/${MAX_RETRIES + 1} path=${path} error=${flattenErrorChain(error)}`,
+      );
+      if (
+        !isTransientNetworkError(error) ||
+        attempt === MAX_RETRIES ||
+        elapsedMs >= RETRY_BUDGET_MS
+      ) {
+        throw error;
+      }
+      const waitMs = Math.min(
+        backoffMs,
+        Math.max(0, RETRY_BUDGET_MS - elapsedMs),
+      );
+      await new Promise((resolve) => setTimeout(resolve, waitMs));
+      backoffMs = Math.min(backoffMs * 2, 300_000);
+      continue;
+    }
   }
 
   // Unreachable but satisfies TypeScript
@@ -1200,7 +1320,7 @@ function trimTrailingSlash(value: string): string {
 }
 
 function safeErrorMessage(error: unknown): string {
-  if (error instanceof Error) return error.message.replace(/\s+/gu, " ");
+  if (error instanceof Error) return flattenErrorChain(error);
   return "unknown";
 }
 
