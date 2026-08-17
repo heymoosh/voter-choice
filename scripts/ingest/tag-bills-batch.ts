@@ -448,7 +448,27 @@ function isCliExecution(): boolean {
   return import.meta.url === pathToFileURL(resolve(entrypoint)).href;
 }
 
-if (isCliExecution()) {
+/**
+ * This script submits directly to the metered Anthropic Batch API
+ * (ANTHROPIC_VOTER_API) — the exact "live financial risk" path
+ * docs/operations/ingest-and-tagging-plan-2026-07-31.md asked to be
+ * disarmed, and the .github/workflows/ingest-tag-bills.yml trigger no
+ * longer calls it. Bulk tagging runs on the Claude Max subscription now:
+ * scripts/ingest/_tag-bills.workflow.js, run manually in a Claude Code
+ * session. This CLI refuses to run without an explicit override so a stray
+ * `npx tsx tag-bills-batch.ts --submit` can never silently drain the
+ * workspace budget again.
+ */
+const METERED_OVERRIDE_ENV = "TAG_BILLS_BATCH_ALLOW_METERED_API";
+
+if (isCliExecution() && !process.env[METERED_OVERRIDE_ENV]) {
+  console.error(
+    "[tag-bills-batch] refusing to run: this calls the metered Anthropic Batch API directly.\n" +
+      "Bulk tagging runs on the Claude Max subscription now — see scripts/ingest/_tag-bills.workflow.js.\n" +
+      `If you deliberately need this metered path (rare — get sign-off first), set ${METERED_OVERRIDE_ENV}=1.`,
+  );
+  process.exitCode = 1;
+} else if (isCliExecution()) {
   const args = process.argv.slice(2);
   const mode = args[0];
 

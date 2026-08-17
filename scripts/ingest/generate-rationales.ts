@@ -236,16 +236,14 @@ export async function generateRationales({
    *    - Fetch press release text from press_release_sources URLs (HTTP GET).
    *    - Strip HTML tags from the fetched text.
    *    - Build the prompt: buildRationalePrompt({ memberName, billTitle, ... }).
-   *    - Call the Anthropic SDK (same pattern as summarize-bills.ts):
-   *
-   *      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_VOTER_API });
-   *      const response = await client.messages.create({
-   *        model: config.modelId,
-   *        max_tokens: 256,
-   *        system: [{ type: "text", text: buildSystemPrompt(),
-   *                   cache_control: { type: "ephemeral" } }],
-   *        messages: [{ role: "user", content: prompt }],
-   *      });
+   *    - Call Claude — NOT via a direct Anthropic SDK call with a metered API
+   *      key (summarize-bills.ts's pattern, kept here only as history — it
+   *      is exactly the pattern that drained the workspace budget twice,
+   *      2026-06-28 and 2026-08-17). Wire this the way
+   *      scripts/ingest/_tag-bills.workflow.js does: export batches → a
+   *      Claude Code workflow's subscription subagents do the generation →
+   *      an import script writes the results. Do not activate this scaffold
+   *      with `new Anthropic({ apiKey: ... })`.
    *
    *    - Parse: parseRationaleResponse(response.content[0].text).
    *    - Upsert: update voteRationales WHERE candidateId + billId.

@@ -191,6 +191,19 @@ export interface SnapshotPage {
   /** The EXACT capture served, as a snapshot:// URL (reproducibility rule). */
   finalUrl: string;
   html: string;
+  /**
+   * Where the live fetch actually landed when this page was captured
+   * (the manifest's finalLiveUrl — e.g. a bare→www redirect, or the LoC
+   * replay URL a browser-driven LoC capture served). Callers doing
+   * same-site link discovery on this page's html MUST resolve against this,
+   * not the requested original: the manifest joins on the exact original
+   * string, and discovery-time captures were themselves recorded keyed by
+   * whatever URL their OWN discovery resolved against (2026-08-17 — fixing
+   * discovery to use the redirect-followed URL at capture time and still
+   * discovering from the pre-redirect original at read time made the two
+   * sides key sub-pages differently and silently dropped them all).
+   */
+  liveUrl: string;
 }
 
 /**
@@ -214,5 +227,6 @@ export function readSnapshotPage(
   return {
     finalUrl: replayUrl("snapshot", entry.timestamp, entry.original),
     html: readFileSync(absPath, "utf8"),
+    liveUrl: entry.finalLiveUrl,
   };
 }

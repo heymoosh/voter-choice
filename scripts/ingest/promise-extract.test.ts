@@ -34,7 +34,8 @@ import {
   MAX_PAGE_CHARS,
   PROMISE_TYPES,
 } from "./promise-extract";
-import { writeSnapshot } from "./site-snapshot-store";
+import { readSnapshotPage, writeSnapshot } from "./site-snapshot-store";
+import { parseReplayUrl } from "./web-archives";
 
 // ---------------------------------------------------------------------------
 // Corpus loading
@@ -605,5 +606,109 @@ describe("fetchPageSoft", () => {
       const miss = await fetchPageSoft(url, failingFetcher, "test", otherDir);
       expect(miss).toBeNull();
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Snapshot-store join: extract-time sub-page discovery must resolve against
+// the SAME URL capture-time discovery used, or the two sides key sub-pages
+// differently and every one silently misses (2026-08-17 — a fix for issue-
+// discovery's base URL regressed this by discovering at read time against
+// the pre-redirect original instead of the capture's liveUrl). This
+// reproduces extractCandidate's own discoveryBase computation without
+// needing to export that function.
+// ---------------------------------------------------------------------------
+
+describe("snapshot-store join: discovery base for a snapshot:// capture", () => {
+  let dir: string;
+  afterEach(() => rmSync(dir, { recursive: true, force: true }));
+
+  const discoveryBaseFor = (home: { liveUrl?: string }, capture: string) =>
+    home.liveUrl
+      ? (parseReplayUrl(home.liveUrl)?.original ?? home.liveUrl)
+      : capture;
+
+  it("resolves a sub-page captured under a redirect-followed (bare -> www) URL", () => {
+    dir = mkdtempSync(join(tmpdir(), "promise-extract-join-"));
+    // Capture-time (promise-site-snapshot.ts): filed bare, live fetch
+    // redirects to www; discovery ran against the www liveUrl, so the
+    // sub-page was written keyed under a www original.
+    writeSnapshot(dir, {
+      timestamp: "20260817001530",
+      original: "https://janeforcongress.com",
+      finalLiveUrl: "https://www.janeforcongress.com/",
+      candidateId: "cand-1",
+      html: '<a href="/issues">Issues</a>',
+      fetchedAt: "2026-08-17T00:15:30.000Z",
+    });
+    writeSnapshot(dir, {
+      timestamp: "20260817001531",
+      original: "https://www.janeforcongress.com/issues",
+      finalLiveUrl: "https://www.janeforcongress.com/issues",
+      candidateId: "cand-1",
+      html: "<html>issues</html>",
+      fetchedAt: "2026-08-17T00:15:31.000Z",
+    });
+
+    const home = readSnapshotPage(
+      "snapshot://20260817001530/https://janeforcongress.com",
+      dir,
+    )!;
+    expect(home.liveUrl).toBe("https://www.janeforcongress.com/");
+
+    const base = discoveryBaseFor(home, "https://janeforcongress.com");
+    const [discovered] = extractIssuePageUrls(home.html, base, 5);
+    expect(
+      readSnapshotPage(`snapshot://20260817001530/${discovered}`, dir)?.html,
+    ).toBe("<html>issues</html>");
+
+    // The bug: discovering against the requested (bare) original instead of
+    // liveUrl resolves to a key the store never captured a sub-page under.
+    const [wrongDiscovered] = extractIssuePageUrls(
+      home.html,
+      "https://janeforcongress.com",
+      5,
+    );
+    expect(
+      readSnapshotPage(`snapshot://20260817001530/${wrongDiscovered}`, dir),
+    ).toBeNull();
+  });
+
+  it("resolves a sub-page captured via an LoC-replay liveUrl (_loc-browser-fetch.ts)", () => {
+    dir = mkdtempSync(join(tmpdir(), "promise-extract-join-loc-"));
+    // Capture-time (_loc-browser-fetch.ts): homepage recorded under the
+    // FEC-filed original, but finalLiveUrl is the LoC REPLAY URL actually
+    // served, whose parsed original differs (LoC canonicalized a trailing
+    // slash). Discovery ran against that served original.
+    writeSnapshot(dir, {
+      timestamp: "20220301090000",
+      original: "https://janeforcongress.com",
+      finalLiveUrl:
+        "https://webarchive.loc.gov/all/20220301090000/https://janeforcongress.com/",
+      candidateId: "cand-1",
+      html: '<a href="/platform">Platform</a>',
+      fetchedAt: "2026-08-17T00:00:00.000Z",
+    });
+    writeSnapshot(dir, {
+      timestamp: "20220301090000",
+      original: "https://janeforcongress.com/platform",
+      finalLiveUrl:
+        "https://webarchive.loc.gov/all/20220301090000/https://janeforcongress.com/platform",
+      candidateId: "cand-1",
+      html: "<html>platform</html>",
+      fetchedAt: "2026-08-17T00:00:01.000Z",
+    });
+
+    const home = readSnapshotPage(
+      "snapshot://20220301090000/https://janeforcongress.com",
+      dir,
+    )!;
+
+    const base = discoveryBaseFor(home, "https://janeforcongress.com");
+    expect(base).toBe("https://janeforcongress.com/");
+    const [discovered] = extractIssuePageUrls(home.html, base, 5);
+    expect(
+      readSnapshotPage(`snapshot://20220301090000/${discovered}`, dir)?.html,
+    ).toBe("<html>platform</html>");
   });
 });

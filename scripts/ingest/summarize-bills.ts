@@ -557,7 +557,20 @@ function isCliExecution(): boolean {
   return import.meta.url === pathToFileURL(resolve(entrypoint)).href;
 }
 
-if (isCliExecution()) {
+// Calls the metered Anthropic API directly, including under --dry-run
+// (which skips DB writes but still generates via the API). No subscription
+// equivalent built yet — get sign-off before overriding.
+const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
+
+if (isCliExecution() && !process.env[METERED_OVERRIDE_ENV]) {
+  console.error(
+    "[summarize-bills] refusing to run: this calls the metered Anthropic API directly, " +
+      "including under --dry-run.\n" +
+      "No subscription-workflow replacement exists yet — get explicit sign-off before " +
+      `running it, then set ${METERED_OVERRIDE_ENV}=1.`,
+  );
+  process.exitCode = 1;
+} else if (isCliExecution()) {
   summarizeBills().catch((error) => {
     const message = error instanceof Error ? error.message : String(error);
     console.error(`[summarize-bills] fatal: ${message}`);

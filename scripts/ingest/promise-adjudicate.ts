@@ -589,7 +589,22 @@ const isDirectRun =
   process.argv[1] !== undefined &&
   import.meta.url === pathToFileURL(process.argv[1]).href;
 
-if (isDirectRun) {
+// Calls the metered Anthropic API directly when the adjudication window is
+// open (no Claude Max subscription equivalent built yet — this is stage 3
+// of the extract -> link -> adjudicate pipeline; see promise-extract.ts's
+// header for why bulk LLM work here should not use the metered key). Manual
+// dev-only script (not wired into any GitHub Actions workflow), but gated
+// anyway per standing policy — get sign-off before overriding.
+const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
+
+if (isDirectRun && !process.env[METERED_OVERRIDE_ENV]) {
+  process.stderr.write(
+    "[promise-adjudicate] refusing to run: this can call the metered Anthropic API directly.\n" +
+      "No subscription-workflow replacement exists for this stage yet — get explicit sign-off " +
+      `before running it, then set ${METERED_OVERRIDE_ENV}=1.\n`,
+  );
+  process.exit(1);
+} else if (isDirectRun) {
   main().catch((err) => {
     process.stderr.write(
       `[promise-adjudicate] fatal: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,

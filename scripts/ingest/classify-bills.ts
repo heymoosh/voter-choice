@@ -265,7 +265,23 @@ async function main() {
   console.log(`[classify] batch=${batchNumber} total_tags=${total}`);
 }
 
-main().catch((error) => {
-  console.error("[classify] fatal:", error);
+// Calls the metered Anthropic API directly. Also stale — CANONICAL_ISSUES
+// above is a hardcoded 15-issue list, not src/lib/canonicalIssues.ts's
+// current 22+ vocabulary; superseded by scripts/ingest/tag-bills.ts and its
+// subscription workflow (scripts/ingest/_tag-bills.workflow.js). Get
+// sign-off before overriding, and prefer the current pipeline instead.
+const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
+
+if (!process.env[METERED_OVERRIDE_ENV]) {
+  console.error(
+    "[classify] refusing to run: this calls the metered Anthropic API directly and is stale " +
+      "(15-issue hardcoded vocab, superseded by tag-bills.ts).\n" +
+      `Get explicit sign-off before running it, then set ${METERED_OVERRIDE_ENV}=1.`,
+  );
   process.exit(1);
-});
+} else {
+  main().catch((error) => {
+    console.error("[classify] fatal:", error);
+    process.exit(1);
+  });
+}

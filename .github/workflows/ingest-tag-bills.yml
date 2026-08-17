@@ -5,11 +5,16 @@ on:
   # Anthropic Batch API using the app's front-end API key (ANTHROPIC_VOTER_API),
   # draining the monthly budget (usage spikes observed 6/21 & 6/28, both Sundays).
   # Per owner directive, that key is for front-end user usage ONLY — no unattended
-  # backend jobs. Tagging is now owner-initiated (run on demand via the manual
-  # trigger below); a Claude Code / Max re-architecture is the planned follow-up.
+  # backend jobs.
   #   schedule:
   #     - cron: "0 9 * * 0"   # Sunday 09:00 UTC (was: after both ingest jobs complete)
-  # Allow manual trigger for re-tagging or backfill (kept)
+  # DISARMED 2026-08-17: the manual trigger below used to run the same metered
+  # Batch API path — never fully disarmed after 2026-06-28 despite the plan doc
+  # calling it a live financial risk. It now just fails with instructions
+  # (see the job below). Tagging runs on the Claude Max subscription instead —
+  # scripts/ingest/_tag-bills.workflow.js, invoked manually in a Claude Code
+  # session. Kept as workflow_dispatch (not deleted) so this file stays the
+  # documented, discoverable place to look for "how does bill tagging run".
   workflow_dispatch:
 
 permissions:
@@ -61,14 +66,13 @@ jobs:
           echo "::add-mask::$OPENSTATES_API_KEY"
 
           # ---------------------------------------------------------------
-          # ANTHROPIC_VOTER_API — Anthropic API key used for LLM tagging
-          # UUID: c569bc18-1095-4532-b5df-b42a00f87c2e
-          # Same secret as the chat API (deploy.yml). Pulled here so the
-          # tagger can call Claude without app-side access.
+          # ANTHROPIC_VOTER_API — REMOVED 2026-08-17. This job no longer calls
+          # Claude at all (see the "Tagging is disarmed" step below), so it no
+          # longer pulls the metered API key. Do not re-add this block without
+          # re-reading docs/operations/ingest-and-tagging-plan-2026-07-31.md —
+          # this exact secret pull is the "live financial risk" that plan
+          # called out and asked to be removed first.
           # ---------------------------------------------------------------
-          ANTHROPIC_VOTER_API=$(bws secret get c569bc18-1095-4532-b5df-b42a00f87c2e --access-token "$BWS_ACCESS_TOKEN" --output json | jq -r '.value')
-          echo "ANTHROPIC_VOTER_API=$ANTHROPIC_VOTER_API" >> "$GITHUB_ENV"
-          echo "::add-mask::$ANTHROPIC_VOTER_API"
 
           # ---------------------------------------------------------------
           # INGEST_FAILURE_WEBHOOK_URL — optional; webhook for ingest failure alerts.
@@ -87,12 +91,15 @@ jobs:
             fi
           fi
 
-      - name: Submit batch tagging job (Phase D — Batch API submit)
-        run: npx tsx scripts/ingest/tag-bills-batch.ts --submit
-
-      - name: Collect batch tagging results (Phase D — Batch API collect)
-        run: npx tsx scripts/ingest/tag-bills-batch.ts --collect
-        timeout-minutes: 360
+      - name: Tagging is disarmed here — run it via the Claude Max subscription instead
+        run: |
+          echo "::error::This workflow no longer runs bill tagging."
+          echo "tag-bills-batch.ts called the metered Anthropic Batch API directly — the exact"
+          echo "live financial risk docs/operations/ingest-and-tagging-plan-2026-07-31.md asked"
+          echo "to be disarmed. Bulk LLM tagging now runs on the Claude Max subscription:"
+          echo "  scripts/ingest/_tag-bills.workflow.js — run manually in a Claude Code session"
+          echo "  (see that file's header for the full export -> workflow -> insert steps)."
+          exit 1
 
       - name: Notify on ingest failure
         if: failure()
