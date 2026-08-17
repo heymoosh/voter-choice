@@ -308,10 +308,10 @@ export function htmlToText(html: string): string {
  * Deliberately generous — the four-gate LLM filter is the precision layer;
  * this list only bounds which pages we spend fetches and tokens on.
  */
-const ISSUE_PATH_RE =
+export const ISSUE_PATH_RE =
   /(issue|platform|priorit|polic|agenda|plan|vision|stance|record|about|meet)/iu;
 
-function hostOf(url: string): string | null {
+export function hostOf(url: string): string | null {
   try {
     return new URL(url).hostname.replace(/^www\./u, "").toLowerCase();
   } catch {
