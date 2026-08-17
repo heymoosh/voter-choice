@@ -17,6 +17,20 @@
  *   wayback  — Internet Archive Wayback Machine (web.archive.org). Broadest
  *              coverage, brittle availability. FALLBACK.
  *
+ * 2026-08-17 amendment: LoC's replay host turned out to sit behind a
+ * Cloudflare bot challenge (confirmed by a live curl — "Just a moment…"),
+ * so no script can reach it; it stays parseable here (a human browser CAN
+ * replay LoC URLs) but a third kind became the current-cycle primary per
+ * Muxin's "we do it ourselves":
+ *
+ *   snapshot — SELF-HOSTED captures of live campaign sites, taken by
+ *              scripts/ingest/promise-site-snapshot.ts and stored locally
+ *              (see ./site-snapshot-store.ts). Pinned as
+ *              `snapshot://<14-digit-ts>/<original-url>` — the same shape
+ *              as archive replay URLs so the whole downstream pipeline
+ *              (made_at, cycle derivation, deterministic promise ids) is
+ *              unchanged.
+ *
  * Both run (Open)Wayback-style replay: a 14-digit timestamp in the path, a
  * redirect to the nearest actual capture, and the post-redirect URL naming
  * the EXACT capture served — which is what the extractor's reproducibility
@@ -28,7 +42,7 @@
  * Pure string functions only — no fetching. Callers own network posture.
  */
 
-export type WebArchiveId = "wayback" | "loc";
+export type WebArchiveId = "wayback" | "loc" | "snapshot";
 
 export interface ArchiveCapture {
   archive: WebArchiveId;
@@ -51,11 +65,18 @@ const REPLAY_PATH_PATTERNS: readonly {
 }[] = [
   { archive: "wayback", re: /\/web\/(\d{14})[a-z_]{0,4}\/(.+)$/u },
   { archive: "loc", re: /\/all\/(\d{14})[a-z_]{0,4}\/(.+)$/u },
+  { archive: "snapshot", re: /^snapshot:\/\/(\d{14})\/(.+)$/u },
 ];
 
+/**
+ * Replay-URL prefixes per archive; `replayUrl` appends `/{ts}/{original}`.
+ * The snapshot "host" is just the scheme — `snapshot:/` + `/{ts}/…` yields
+ * `snapshot://{ts}/{original}`.
+ */
 const REPLAY_HOSTS: Record<WebArchiveId, string> = {
   wayback: "https://web.archive.org/web",
   loc: "https://webarchive.loc.gov/all",
+  snapshot: "snapshot:/",
 };
 
 /**

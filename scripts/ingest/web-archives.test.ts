@@ -65,6 +65,18 @@ describe("parseReplayUrl", () => {
     });
   });
 
+  it("parses a self-hosted snapshot URL", () => {
+    expect(
+      parseReplayUrl(
+        "snapshot://20260817001530/https://janeforcongress.com/issues",
+      ),
+    ).toEqual({
+      archive: "snapshot",
+      timestamp: "20260817001530",
+      original: "https://janeforcongress.com/issues",
+    });
+  });
+
   it("returns null for live-site URLs", () => {
     expect(parseReplayUrl("https://janeforcongress.com/issues")).toBeNull();
   });
@@ -89,6 +101,20 @@ describe("replayUrl", () => {
     expect(parseReplayUrl(url)).toEqual({
       archive: "loc",
       timestamp: "20221108060000",
+      original: "https://example.com/a",
+    });
+  });
+
+  it("builds and round-trips snapshot URLs", () => {
+    const url = replayUrl(
+      "snapshot",
+      "20260817001530",
+      "https://example.com/a",
+    );
+    expect(url).toBe("snapshot://20260817001530/https://example.com/a");
+    expect(parseReplayUrl(url)).toEqual({
+      archive: "snapshot",
+      timestamp: "20260817001530",
       original: "https://example.com/a",
     });
   });

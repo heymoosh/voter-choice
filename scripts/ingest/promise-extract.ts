@@ -70,6 +70,7 @@ import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidatePromises } from "../../db/schema";
 import { parseReplayUrl, replayUrl, timestampToIsoDate } from "./web-archives";
+import { readSnapshotPage } from "./site-snapshot-store";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
 import {
   SUB_ISSUE_VOCABULARY_VERSION,
@@ -631,11 +632,27 @@ export interface FetchedPage {
   html: string;
 }
 
-async function fetchPageSoft(
+/**
+ * Fetch a page fail-soft (retry on 429/5xx, hard timeout, null on terminal
+ * failure). `snapshot://` URLs never touch the network — they resolve from
+ * the local self-hosted snapshot store instead (2026-08-17 capture layer).
+ * Exported for reuse by promise-site-snapshot.ts, which uses the same
+ * posture against LIVE sites.
+ */
+export async function fetchPageSoft(
   url: string,
   fetcher: typeof fetch,
   label: string,
 ): Promise<FetchedPage | null> {
+  if (parseReplayUrl(url)?.archive === "snapshot") {
+    const page = readSnapshotPage(url);
+    if (!page) {
+      process.stderr.write(
+        `[promise-extract] ${label} failed: snapshot store has no capture for ${url}\n`,
+      );
+    }
+    return page;
+  }
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await fetcher(url, {

@@ -1632,6 +1632,37 @@ To pick up LoC captures, re-run the spike first (same command,
 `--cycle 2022 --json > spike-tx-2022.json`), then the extract — the
 extractor's cycle-scoped resume skip makes the re-run safe.
 
+**2026-08-17 amendment — LoC is programmatically unreachable; self-hosted
+snapshots become the current-cycle primary (Muxin: "we do it ourselves").**
+The first live LoC run answered the coverage question before it could be
+asked: `webarchive.loc.gov` sits behind a **Cloudflare bot challenge**
+("Just a moment…", confirmed by Muxin's curl of the Crenshaw TimeMap), so
+no script — spike, extractor, or curl — can reach it. A human browser CAN
+replay LoC URLs, so LoC stays useful as a manual spot-check, and the code
+path stays (a circuit breaker now disables LoC after the first terminal
+failure per run instead of retrying per site). Consequences:
+
+- **Current cycle (2026): capture the live sites ourselves.** New
+  `scripts/ingest/promise-site-snapshot.ts` fetches each corpus
+  candidate's live homepage + issue pages and stores raw HTML in a local,
+  gitignored store (`site-snapshots/`, `site-snapshot-store.ts`:
+  content-addressed bodies + JSONL manifest). Pages are pinned as
+  `snapshot://<14-digit-ts>/<original-url>` — same replay shape as
+  Wayback/LoC — so made_at, cycle derivation, deterministic promise ids
+  and the extractor work unchanged; `--json` emits an extraction-ready
+  corpus, and the extractor resolves `snapshot://` archive_urls from the
+  local store (nearest-capture semantics, exact capture recorded).
+  Copyright posture: full-page copies never leave the store; only
+  verbatim quotes with citations ship. Wayback Save-Page-Now remains a
+  best-effort supplement for public verifiability, never a blocker.
+- **Retrospectives (2022 and earlier): Wayback remains the only
+  programmatic source** — nobody else holds the era's captures in a
+  script-reachable form. A snapshot taken today is NOT evidence of what a
+  2022 site said, so the 2022 extract still waits out IA's outage
+  (resumable; unchanged commands).
+- The 2026-08-16 "LoC as primary" record above stands as written history;
+  this amendment supersedes its ordering claim for practical purposes.
+
 **Display decision, recorded for whenever the promise ledger ships (Muxin,
 2026-08-16): the no-promises state must SAY something short, never render a
 blank.** A candidate with no rows gets one plain line to the effect of "No
