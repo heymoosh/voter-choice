@@ -1689,6 +1689,26 @@ Muxin): two more capabilities.**
    `_loc-browser-fetch.ts --corpus spike-tx-2022.json --cycle 2022
 --json` → extract.
 
+**2026-08-17 amendment — Common Crawl added as a THIRD 2022-retrospective
+capture source.** `scripts/ingest/promise-commoncrawl-snapshot.ts` (plus
+`common-crawl-archive.ts` for the index-query/WARC-fetch mechanics) queries
+Common Crawl's public index for each candidate's homepage + issue pages and
+writes captures into the same local snapshot store, under the same
+`snapshot://` identity scheme as the self-hosted and LoC-browser paths — no
+extractor changes needed. Tradeoffs, unlike the other two sources: no
+human-browsable replay host (captures are cited by crawl id + URL, not a
+clickable link), and coverage is broader-but-not-comprehensive (whatever
+Common Crawl happened to index, not a targeted fetch). Corpus rows from this
+source are tagged `captureArchive: "commoncrawl"` (distinct from
+`"snapshot"`, which now means self-hosted-live-fetch only) so a third-party
+2022 crawl is never indistinguishable from a live capture taken today.
+Retry tooling: `scripts/ingest/_retry-targets-from-manifest.ts` filters a
+corpus down to candidates still missing an in-window capture, so a retry
+after an outage only re-queries what's missing. As of this amendment, Common
+Crawl's index service itself is down (confirmed via direct connection
+tests, not a local/sandbox restriction) — the 2022 retrospective capture is
+paused on that recovering, not on any code gap.
+
 **Display decision, recorded for whenever the promise ledger ships (Muxin,
 2026-08-16): the no-promises state must SAY something short, never render a
 blank.** A candidate with no rows gets one plain line to the effect of "No

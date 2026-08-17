@@ -248,9 +248,13 @@ async function snapshotCandidateFromCommonCrawl(
     }
 
     const timestamp = homeRecord.timestamp;
-    const record = (original: string, html: string) =>
+    // Each page keeps ITS OWN Common Crawl capture timestamp, not the
+    // homepage's — an issue page's crawl can legitimately be a different
+    // date than the homepage's, and made_at (promise-extract.ts, load-
+    // bearing for kept/broken timing adjudication) is derived from this.
+    const record = (pageTimestamp: string, original: string, html: string) =>
       writeSnapshot(dir, {
-        timestamp,
+        timestamp: pageTimestamp,
         original,
         // Common Crawl has no human-browsable replay host — cite exactly
         // which crawl + URL this came from (machine-precise, not
@@ -264,7 +268,7 @@ async function snapshotCandidateFromCommonCrawl(
         fetchedAt: new Date().toISOString(),
       });
 
-    record(target.website, homeHtml);
+    record(timestamp, target.website, homeHtml);
     let pagesCaptured = 1;
     let pagesFailed = 0;
 
@@ -292,7 +296,7 @@ async function snapshotCandidateFromCommonCrawl(
       // independently reproduce), NOT issueRecord.original (CC's own URL
       // form, which can differ by a trailing slash) — see
       // matchDiscoveredRecords' doc comment.
-      record(discoveredUrl, html);
+      record(issueRecord.timestamp, discoveredUrl, html);
       pagesCaptured++;
     }
 
@@ -410,14 +414,36 @@ async function main(): Promise<void> {
       targets,
       concurrency,
       async (t) => {
-        const r = await snapshotCandidateFromCommonCrawl(
-          t,
-          indexes,
-          window,
-          dir,
-          maxPages,
-          fetch,
-        );
+        let r: SnapshotResult & { ccStatus: string };
+        try {
+          r = await snapshotCandidateFromCommonCrawl(
+            t,
+            indexes,
+            window,
+            dir,
+            maxPages,
+            fetch,
+          );
+        } catch (err) {
+          // A mid-body socket drop (response.text()/arrayBuffer() throwing
+          // after headers already arrived) is not caught by fetchSoft's own
+          // retry loop — without this, one candidate's bad luck aborts the
+          // whole multi-hundred-candidate run instead of just costing this
+          // one candidate, undermining the fail-soft posture the rest of
+          // this pipeline is built around (see common-crawl-archive.ts).
+          process.stderr.write(
+            `[promise-commoncrawl-snapshot] ${t.name}: uncaught error, treating as blocked (${
+              err instanceof Error ? err.message : String(err)
+            })\n`,
+          );
+          r = {
+            target: t,
+            canonicalCaptureUrl: null,
+            pagesCaptured: 0,
+            pagesFailed: 0,
+            ccStatus: CC_STATUS_BLOCKED,
+          };
+        }
         if (r.ccStatus === CC_STATUS_BLOCKED) {
           consecutiveBlocked++;
           if (
@@ -466,7 +492,11 @@ async function main(): Promise<void> {
 
   if (asJson) {
     console.log(
-      JSON.stringify(results.map(toCorpusRow).filter(Boolean), null, 2),
+      JSON.stringify(
+        results.map((r) => toCorpusRow(r, "commoncrawl")).filter(Boolean),
+        null,
+        2,
+      ),
     );
   }
 }

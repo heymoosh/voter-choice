@@ -387,7 +387,14 @@ async function main(): Promise<void> {
 
   if (asJson) {
     console.log(
-      JSON.stringify(results.map(toCorpusRow).filter(Boolean), null, 2),
+      JSON.stringify(
+        // "loc" — distinct from self-hosted "snapshot" captures, since this
+        // tool sources pages via a real browser hitting webarchive.loc.gov,
+        // not a live-site fetch (see promise-site-snapshot.ts's toCorpusRow).
+        results.map((r) => toCorpusRow(r, "loc")).filter(Boolean),
+        null,
+        2,
+      ),
     );
   }
 }

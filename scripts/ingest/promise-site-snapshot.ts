@@ -166,9 +166,19 @@ async function snapshotCandidate(
   };
 }
 
-/** Corpus row (promise-extract.ts `loadCorpusRows` shape) for a capture. */
+/**
+ * Corpus row (promise-extract.ts `loadCorpusRows` shape) for a capture.
+ *
+ * captureArchive defaults to "snapshot" (this file's own self-hosted
+ * live-fetch source) but MUST be overridden by other capture tools that
+ * reuse this row-builder — e.g. promise-commoncrawl-snapshot.ts passes
+ * "commoncrawl" — so a third-party 2022 crawl isn't indistinguishable from
+ * a live self-fetch taken today (provenance, not just storage addressing;
+ * both still share the `snapshot://` store scheme).
+ */
 export function toCorpusRow(
   result: SnapshotResult,
+  captureArchive = "snapshot",
 ): Record<string, unknown> | null {
   if (!result.canonicalCaptureUrl) return null;
   const t = result.target;
@@ -182,7 +192,7 @@ export function toCorpusRow(
     website: t.website,
     captureCount: result.pagesCaptured,
     canonicalCaptureUrl: result.canonicalCaptureUrl,
-    captureArchive: "snapshot",
+    captureArchive,
   };
 }
 
@@ -261,7 +271,11 @@ async function main(): Promise<void> {
 
   if (asJson) {
     console.log(
-      JSON.stringify(results.map(toCorpusRow).filter(Boolean), null, 2),
+      JSON.stringify(
+        results.map((r) => toCorpusRow(r)).filter(Boolean),
+        null,
+        2,
+      ),
     );
   }
 }
