@@ -234,14 +234,50 @@ export function gunzipSoft(buf: Buffer): string | null {
 // Networked fetch — fail-soft, retry on 429/5xx (this file's own copy of
 // the posture shared with _promise-corpus-spike.ts / promise-extract.ts;
 // consolidating the three retry loops is deferred, code-review finding #7).
+//
+// PACING (2026-08-17 national-run finding): a 418-candidate single pass at
+// --concurrency 1 still collapsed to 30/292 captured with 3,583 "fetch
+// failed" lines -- because concurrency=1 only SERIALIZES requests, it adds
+// no actual delay between them. When a query failed its 3 retries, the loop
+// fired the NEXT index's query immediately: a throttled server saw a client
+// that responds to throttling with MORE traffic per candidate (up to 14
+// index queries x 4 attempts each), not less. requestPace below adds a real
+// minimum interval between requests to the SAME host -- index.commoncrawl.org
+// (the shared, rate-limited CDX query endpoint) gets real spacing;
+// data.commoncrawl.org (S3-backed WARC byte-range reads) does not need it.
+// Thrown network exceptions (not a 429/503 the server sent on purpose, but a
+// connection failing outright) now back off much slower than a polite
+// "slow down" status would ask for -- a hard failure is a stronger signal.
 // ---------------------------------------------------------------------------
 
 const RETRYABLE = new Set([429, 502, 503, 504]);
 const MAX_RETRIES = 3;
 const TIMEOUT_MS = 30_000;
+const EXCEPTION_BACKOFF_MS = [5000, 15000, 45000];
+const PACED_HOSTS: Record<string, number> = {
+  "index.commoncrawl.org": 1000,
+};
 
 async function sleep(ms: number): Promise<void> {
   await new Promise((r) => setTimeout(r, ms));
+}
+
+const lastRequestAtByHost = new Map<string, number>();
+
+/** Enforce a minimum interval between requests to a paced host. */
+async function requestPace(url: string): Promise<void> {
+  let host: string;
+  try {
+    host = new URL(url).hostname;
+  } catch {
+    return;
+  }
+  const paceMs = PACED_HOSTS[host];
+  if (!paceMs) return;
+  const last = lastRequestAtByHost.get(host) ?? 0;
+  const wait = paceMs - (Date.now() - last);
+  if (wait > 0) await sleep(wait);
+  lastRequestAtByHost.set(host, Date.now());
 }
 
 async function fetchSoft(
@@ -251,6 +287,7 @@ async function fetchSoft(
   init: RequestInit = {},
 ): Promise<Response | null> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+    await requestPace(url);
     try {
       const response = await fetcher(url, {
         ...init,
@@ -271,7 +308,7 @@ async function fetchSoft(
       return null;
     } catch (err) {
       if (attempt < MAX_RETRIES) {
-        await sleep(1000 * 2 ** attempt);
+        await sleep(EXCEPTION_BACKOFF_MS[attempt]);
         continue;
       }
       process.stderr.write(

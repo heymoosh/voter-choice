@@ -187,6 +187,19 @@ interface CaptureWindow {
   cutoffCompact: string;
 }
 
+/**
+ * Two different reasons a candidate ends up with zero captures, and they
+ * must not be conflated: a genuine miss means every index query SUCCEEDED
+ * and simply had nothing for this site; "blocked" means the query itself
+ * never got an answer (2026-08-17 national-run finding: 30/292 captured
+ * with the rest logged identically as "no capture" — indistinguishable from
+ * Common Crawl's index server rate-limiting the run). The circuit breaker
+ * in main() watches for CC_STATUS_BLOCKED specifically.
+ */
+export const CC_STATUS_GENUINE_MISS = "no Common Crawl capture in window";
+export const CC_STATUS_BLOCKED =
+  "index queries failed (Common Crawl unreachable/blocked?)";
+
 async function snapshotCandidateFromCommonCrawl(
   target: SnapshotTarget,
   indexes: CommonCrawlIndex[],
@@ -206,9 +219,13 @@ async function snapshotCandidateFromCommonCrawl(
   const hostname = hostOf(target.website);
   if (!hostname) return miss("unparseable website URL");
 
+  let anyIndexQueryFailed = false;
   for (const index of indexes) {
     const records = await fetchIndexRecords(index, hostname, fetcher);
-    if (!records) continue; // this index's query itself failed — try an older one
+    if (!records) {
+      anyIndexQueryFailed = true;
+      continue; // this index's query itself failed — try an older one
+    }
     const inWindow = records.filter(
       (r) =>
         r.timestamp >= window.fromCompact &&
@@ -288,23 +305,30 @@ async function snapshotCandidateFromCommonCrawl(
     };
   }
 
-  return miss("no Common Crawl capture in window");
+  return miss(anyIndexQueryFailed ? CC_STATUS_BLOCKED : CC_STATUS_GENUINE_MISS);
 }
 
 // ---------------------------------------------------------------------------
 // Main
 // ---------------------------------------------------------------------------
 
+/**
+ * shouldAbort is checked before each new item is picked up — a worker that
+ * sees it return true simply stops, leaving later items unattempted (not
+ * failed). Used as the circuit breaker's enforcement point below.
+ */
 async function mapWithConcurrency<T, R>(
   items: T[],
   limit: number,
   fn: (item: T) => Promise<R>,
-): Promise<R[]> {
-  const out = new Array<R>(items.length);
+  shouldAbort: () => boolean = () => false,
+): Promise<(R | undefined)[]> {
+  const out = new Array<R | undefined>(items.length);
   let next = 0;
   await Promise.all(
     Array.from({ length: Math.min(limit, items.length) }, async () => {
       for (let i = next++; i < items.length; i = next++) {
+        if (shouldAbort()) return;
         out[i] = await fn(items[i]);
       }
     }),
@@ -372,9 +396,49 @@ async function main(): Promise<void> {
       `(${indexes[indexes.length - 1].id}..${indexes[0].id}), max_pages=${maxPages} concurrency=${concurrency} dir=${dir}\n`,
   );
 
-  const results = await mapWithConcurrency(targets, concurrency, (t) =>
-    snapshotCandidateFromCommonCrawl(t, indexes, window, dir, maxPages, fetch),
-  );
+  // Circuit breaker (2026-08-17 finding): a candidate whose EVERY index
+  // query goes unanswered is almost certainly a rate-limited/blocked run,
+  // not 14 real misses in a row. Tripping after enough of those IN A ROW
+  // stops the run from grinding through hundreds more doomed requests and
+  // deepening whatever throttle caused it.
+  const BLOCKED_CIRCUIT_BREAKER = 20;
+  let consecutiveBlocked = 0;
+  let breakerTripped = false;
+
+  const results = (
+    await mapWithConcurrency(
+      targets,
+      concurrency,
+      async (t) => {
+        const r = await snapshotCandidateFromCommonCrawl(
+          t,
+          indexes,
+          window,
+          dir,
+          maxPages,
+          fetch,
+        );
+        if (r.ccStatus === CC_STATUS_BLOCKED) {
+          consecutiveBlocked++;
+          if (
+            consecutiveBlocked >= BLOCKED_CIRCUIT_BREAKER &&
+            !breakerTripped
+          ) {
+            breakerTripped = true;
+            process.stderr.write(
+              `[promise-commoncrawl-snapshot] CIRCUIT BREAKER: ${BLOCKED_CIRCUIT_BREAKER} consecutive ` +
+                "candidates got zero answered Common Crawl index queries — almost certainly rate-limited " +
+                "or blocked. Aborting the remaining run instead of grinding through more doomed requests.\n",
+            );
+          }
+        } else {
+          consecutiveBlocked = 0;
+        }
+        return r;
+      },
+      () => breakerTripped,
+    )
+  ).filter((r): r is SnapshotResult & { ccStatus: string } => r !== undefined);
 
   for (const r of results) {
     process.stderr.write(
@@ -385,10 +449,19 @@ async function main(): Promise<void> {
   }
 
   const captured = results.filter((r) => r.canonicalCaptureUrl !== null);
+  const blocked = results.filter((r) => r.ccStatus === CC_STATUS_BLOCKED);
+  const genuineMiss = results.filter(
+    (r) => r.ccStatus === CC_STATUS_GENUINE_MISS,
+  );
+  const notAttempted = targets.length - results.length;
   const pages = results.reduce((n, r) => n + r.pagesCaptured, 0);
   process.stderr.write(
-    `[promise-commoncrawl-snapshot] done: ${captured.length}/${results.length} sites ` +
-      `captured (${pages} pages) into ${dir}\n`,
+    `[promise-commoncrawl-snapshot] done: ${captured.length}/${targets.length} sites captured (${pages} pages); ` +
+      `${genuineMiss.length} genuinely not in Common Crawl; ${blocked.length} blocked/unknown` +
+      (notAttempted > 0
+        ? `; ${notAttempted} never attempted (circuit breaker)`
+        : "") +
+      ` — into ${dir}\n`,
   );
 
   if (asJson) {
