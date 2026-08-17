@@ -141,6 +141,8 @@ async function loadRaw(page: Page, url: string): Promise<BrowserPage | null> {
       `  >>> CLICK THE CHECKBOX in the Chrome window now — waiting up to ` +
       `${CHALLENGE_TOTAL_MS / 1000}s…\n`,
   );
+  const HEARTBEAT_EVERY_MS = 15_000;
+  let sinceHeartbeat = 0;
   for (
     let waited = 0;
     waited < CHALLENGE_TOTAL_MS;
@@ -149,6 +151,17 @@ async function loadRaw(page: Page, url: string): Promise<BrowserPage | null> {
     await page.waitForTimeout(CHALLENGE_POLL_MS);
     const title = await page.title().catch(() => "");
     if (!CHALLENGE_TITLE_RE.test(title)) break;
+    // The wait loop otherwise prints nothing for up to 120s — indistinguishable
+    // from a hung script. A periodic heartbeat (2026-08-17, live-run
+    // confusion: "I'm clicking but I don't see a difference in terminal")
+    // says the poll loop is alive and still seeing the challenge title.
+    sinceHeartbeat += CHALLENGE_POLL_MS;
+    if (sinceHeartbeat >= HEARTBEAT_EVERY_MS) {
+      sinceHeartbeat = 0;
+      process.stderr.write(
+        `[loc-browser-fetch]   ...still waiting (${Math.round((waited + CHALLENGE_POLL_MS) / 1000)}s/${CHALLENGE_TOTAL_MS / 1000}s, title="${title}") — click the checkbox in the Chrome window if you haven't\n`,
+      );
+    }
   }
 
   // Whatever happened above, one clean re-request tells the truth: with a
