@@ -633,6 +633,17 @@ export interface FetchedPage {
   /** The exact URL the content came from, after Wayback's own redirects. */
   finalUrl: string;
   html: string;
+  /**
+   * Where the live fetch actually landed when a snapshot:// capture was
+   * taken (site-snapshot-store's SnapshotPage.liveUrl) — undefined for a
+   * live network fetch (which already IS the redirect-followed URL, via
+   * response.url()). Same-site link discovery on this page's html must
+   * resolve against this when present, not the requested original: the
+   * store's manifest joins on the exact original string, and the capture
+   * that wrote this page discovered its own sub-pages against this same
+   * live URL.
+   */
+  liveUrl?: string;
 }
 
 /**
@@ -828,13 +839,23 @@ async function extractCandidate(
 
   const capture =
     parseReplayUrl(home.finalUrl) ?? parseReplayUrl(row.canonicalCaptureUrl);
-  // Discover issue-page links against the capture's OWN original URL, not
-  // the FEC-filed row.website: a site that moved domains between filing and
+  // Discover issue-page links against the redirect-followed URL, not the
+  // FEC-filed row.website: a site that moved domains between filing and
   // capture serves links whose host matches the capture, not the old filing
   // (2026-08-17 finding) — using row.website as the base silently zeroed out
-  // issue-page discovery for any such site.
+  // issue-page discovery for any such site. For a snapshot:// capture this
+  // MUST be home.liveUrl (parsed back to a plain original when it's itself
+  // a replay URL, e.g. an LoC-sourced snapshot), not capture.original: the
+  // snapshot store's manifest joins on the exact original string, and the
+  // capture that wrote this page discovered ITS sub-pages against liveUrl —
+  // discovering against capture.original here would key sub-page lookups
+  // differently than they were written and silently miss every one
+  // (2026-08-17, second finding: the first fix alone regressed this).
+  const discoveryBase = home.liveUrl
+    ? (parseReplayUrl(home.liveUrl)?.original ?? home.liveUrl)
+    : (capture?.original ?? row.website);
   const issueUrls = capture
-    ? extractIssuePageUrls(home.html, capture.original, maxPages - 1)
+    ? extractIssuePageUrls(home.html, discoveryBase, maxPages - 1)
     : [];
 
   interface PageToProcess {
