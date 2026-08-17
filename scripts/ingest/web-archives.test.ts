@@ -4,6 +4,7 @@ import {
   parseMementoTimeMap,
   parseReplayUrl,
   replayUrl,
+  timestampToEpochSeconds,
   timestampToIsoDate,
 } from "./web-archives";
 
@@ -167,5 +168,24 @@ describe("timestampToIsoDate", () => {
   it("returns null for malformed timestamps", () => {
     expect(timestampToIsoDate("2022")).toBeNull();
     expect(timestampToIsoDate("not-a-timestamp")).toBeNull();
+  });
+});
+
+describe("timestampToEpochSeconds", () => {
+  it("converts a 14-digit replay timestamp to UTC epoch seconds", () => {
+    expect(timestampToEpochSeconds("20221108235959")).toBe(
+      Date.UTC(2022, 10, 8, 23, 59, 59) / 1000,
+    );
+  });
+
+  it("puts one second past midnight one second ahead of the second before it, across the year boundary", () => {
+    const beforeMidnight = timestampToEpochSeconds("20251231235959")!;
+    const afterMidnight = timestampToEpochSeconds("20260101000000")!;
+    expect(afterMidnight - beforeMidnight).toBe(1);
+  });
+
+  it("returns null for malformed timestamps", () => {
+    expect(timestampToEpochSeconds("2022")).toBeNull();
+    expect(timestampToEpochSeconds("not-a-timestamp")).toBeNull();
   });
 });

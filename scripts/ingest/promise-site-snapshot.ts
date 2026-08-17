@@ -139,9 +139,14 @@ async function snapshotCandidate(
   let pagesCaptured = 1;
   let pagesFailed = 0;
 
+  // Discover issue-page links against the REDIRECT-FOLLOWED final URL, not
+  // the FEC-filed target.website: a site that moved domains serves nav
+  // links whose host matches where it lives now, not where it was filed
+  // (2026-08-17 finding) — using target.website as the base silently zeroed
+  // out issue-page discovery for any such site.
   for (const url of extractIssuePageUrls(
     home.html,
-    target.website,
+    home.finalUrl,
     maxPages - 1,
   )) {
     const page = await fetchPageSoft(url, fetcher, `live page ${url}`);
