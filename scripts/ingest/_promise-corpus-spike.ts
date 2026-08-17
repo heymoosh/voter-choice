@@ -14,8 +14,12 @@
  *   3. Did their principal campaign committee file a website URL on FEC
  *      Form 1?                            OpenFEC /candidate/{id}/committees
  *                                         + /committee/{id} (`website` field)
- *   4. Does the Wayback Machine hold captures of that site inside the 2026
- *      cycle window?                      Wayback CDX API
+ *   4. Does a web archive hold captures of that site inside the cycle
+ *      window?  LoC elections web archive FIRST (Memento TimeMap), Wayback
+ *      CDX as fallback — see ./web-archives.ts for the 2026-08-16 decision
+ *      (IA outages blocked three retrospective runs; LoC is purpose-built
+ *      for campaign sites but embargoes access ~1 year after capture, so
+ *      current-cycle lookups usually resolve on Wayback anyway)
  *
  * Source choice, deliberate: FEC Form 1 is a FILING — the committee itself
  * declared the URL under its own signature, so it is evidence, not an
@@ -46,17 +50,20 @@
  *                             promise extraction from social pages is a
  *                             different (harder) problem than campaign sites,
  *                             and Wayback's coverage of them is poor.
- *   wayback_error           — CDX API unreachable after retries.
- *   website_no_captures     — real campaign URL, zero cycle-window captures.
- *                             Actionable: these are Save-Page-Now candidates
- *                             while the sites are still live.
- *   website_archived        — real campaign URL with ≥1 in-window capture,
- *                             including the canonical capture the plan's
- *                             capture policy would pin. THE CORPUS-READY
- *                             BUCKET — the spike's headline number.
+ *   wayback_error           — no LoC canonical AND the Wayback CDX lookup
+ *                             failed after retries. Operational.
+ *   website_no_captures     — real campaign URL, zero cycle-window captures
+ *                             on either archive. Actionable: these are
+ *                             Save-Page-Now candidates while the sites are
+ *                             still live.
+ *   website_archived        — real campaign URL with ≥1 in-window capture
+ *                             (LoC or Wayback), including the canonical
+ *                             capture the plan's capture policy would pin.
+ *                             THE CORPUS-READY BUCKET — the headline number.
  *
- * READ-ONLY: no DB writes, no schema. Networked (OpenFEC + Wayback), so it
- * runs from a normal dev machine, not the sandboxed session that wrote it.
+ * READ-ONLY: no DB writes, no schema. Networked (OpenFEC + LoC + Wayback),
+ * so it runs from a normal dev machine, not the sandboxed session that
+ * wrote it.
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts
@@ -77,7 +84,7 @@
  * API key: OpenFEC uses api.data.gov keys — the SAME key infrastructure as
  * CONGRESS_GOV_API_KEY, so that key is tried when FEC_API_KEY is unset, and
  * DEMO_KEY (tightly rate-limited, fine for one small state) is the last
- * resort. Wayback CDX needs no key.
+ * resort. Neither archive lookup needs a key.
  *
  * Pilot default is Texas: 38 House districts sits inside the plan's "one
  * state's House delegation (~20-50 members)" pilot band, and the TX roster
@@ -90,6 +97,12 @@ import { resolve } from "node:path";
 import { sql } from "drizzle-orm";
 import { requireDb } from "../../db/client";
 import { resolveCandidateId } from "../../src/lib/server/alignment";
+import {
+  locTimeMapUrl,
+  parseMementoTimeMap,
+  replayUrl,
+  type WebArchiveId,
+} from "./web-archives";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -322,7 +335,7 @@ export function selectCanonicalCapture(
 }
 
 export function waybackReplayUrl(capture: CdxCapture): string {
-  return `https://web.archive.org/web/${capture.timestamp}/${capture.original}`;
+  return replayUrl("wayback", capture.timestamp, capture.original);
 }
 
 // ---------------------------------------------------------------------------
@@ -368,22 +381,27 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
- * GET a JSON URL with retry on 429/5xx and a hard timeout. Returns null on
- * any terminal failure — one candidate's flaky lookup must never abort the
- * report (crs-summaries.ts's fail-soft rule).
+ * GET a URL's body as text with retry on 429/5xx and a hard timeout. Returns
+ * null on any terminal failure — one candidate's flaky lookup must never
+ * abort the report (crs-summaries.ts's fail-soft rule). When `emptyOn404` is
+ * set, a 404 returns "" instead of null: LoC's TimeMap endpoint 404s for a
+ * URL it holds no captures of, which is a definitive answer, not an error.
  */
-async function fetchJsonSoft(
+async function fetchTextSoft(
   url: string,
   fetcher: typeof fetch,
   label: string,
-): Promise<unknown | null> {
+  accept: string,
+  emptyOn404 = false,
+): Promise<string | null> {
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
       const response = await fetcher(url, {
         signal: AbortSignal.timeout(TIMEOUT_MS),
-        headers: { accept: "application/json" },
+        headers: { accept },
       });
-      if (response.ok) return await response.json();
+      if (response.ok) return await response.text();
+      if (emptyOn404 && response.status === 404) return "";
       if (RETRYABLE.has(response.status) && attempt < MAX_RETRIES) {
         const waitMs = 1000 * 2 ** attempt;
         process.stderr.write(
@@ -411,6 +429,24 @@ async function fetchJsonSoft(
   return null;
 }
 
+/** fetchTextSoft + JSON.parse; a body that fails to parse is a null too. */
+async function fetchJsonSoft(
+  url: string,
+  fetcher: typeof fetch,
+  label: string,
+): Promise<unknown | null> {
+  const body = await fetchTextSoft(url, fetcher, label, "application/json");
+  if (body === null) return null;
+  try {
+    return JSON.parse(body);
+  } catch {
+    process.stderr.write(
+      `[promise-corpus-spike] ${label} returned unparseable JSON\n`,
+    );
+    return null;
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Report plumbing
 // ---------------------------------------------------------------------------
@@ -429,16 +465,19 @@ export type SpikeBucket =
 
 /** Buckets in report order, with the one-line meaning printed beside each. */
 export const BUCKET_NOTES: Record<SpikeBucket, string> = {
-  website_archived: "corpus-ready — URL on file + in-window Wayback capture",
-  website_no_captures: "URL on file, no capture — Save-Page-Now candidates",
+  website_archived:
+    "corpus-ready — URL on file + in-window capture (LoC or Wayback)",
+  website_no_captures:
+    "URL on file, no capture on either archive — Save-Page-Now candidates",
   social_media_only: "Form 1 site is a social profile — different pipeline",
   no_website_on_file: "principal committee filed no usable website",
   no_principal_committee: "FEC candidate with no designation-P committee",
   no_fec_id: "candidates row lacks fec_candidate_id (known backfill gap)",
   unresolved: "no candidates-row match (Part 2 residual misses)",
   fec_api_error: "OpenFEC lookup failed after retries (operational)",
-  wayback_error: "CDX lookup failed after retries (operational)",
-  wayback_skipped: "URL on file; --skip-wayback left captures unchecked",
+  wayback_error:
+    "no LoC canonical + Wayback CDX failed after retries (operational)",
+  wayback_skipped: "URL on file; --skip-wayback left both archives unchecked",
 };
 
 export interface SpikeRow {
@@ -454,6 +493,8 @@ export interface SpikeRow {
   website: string | null;
   captureCount: number;
   canonicalCaptureUrl: string | null;
+  /** Which archive the canonical capture was pinned on (null until pinned). */
+  captureArchive: WebArchiveId | null;
 }
 
 export function summarizeBuckets(
@@ -663,6 +704,7 @@ async function main(): Promise<void> {
         website: null,
         captureCount: 0,
         canonicalCaptureUrl: null,
+        captureArchive: null,
       };
 
       const jurisdiction = `federal-${r.office}`;
@@ -731,6 +773,38 @@ async function main(): Promise<void> {
 
       if (skipWayback) return { ...base, bucket: "wayback_skipped" };
 
+      // LoC elections web archive FIRST (2026-08-16 decision: purpose-built
+      // for campaign sites, stable .gov infra — Wayback's outages blocked
+      // three retrospective runs). LoC access is embargoed ~1 year after
+      // capture, so current-cycle sites usually fall through to Wayback
+      // below while retrospectives resolve on LoC.
+      const timeMapBody = await fetchTextSoft(
+        locTimeMapUrl(website),
+        fetch,
+        `loc timemap ${website}`,
+        "application/link-format",
+        true,
+      );
+      if (timeMapBody !== null) {
+        const locInWindow = parseMementoTimeMap(timeMapBody).filter(
+          (c) => c.timestamp >= `${cdxFrom}000000` && c.timestamp <= cdxCutoff,
+        );
+        const locCanonical = selectCanonicalCapture(locInWindow, cdxCutoff);
+        if (locCanonical) {
+          base.captureCount = locInWindow.length;
+          base.canonicalCaptureUrl = replayUrl(
+            "loc",
+            locCanonical.timestamp,
+            locCanonical.original,
+          );
+          base.captureArchive = "loc";
+          return { ...base, bucket: "website_archived" };
+        }
+      }
+
+      // Wayback CDX fallback. A wayback_error bucket now means BOTH archives
+      // came up empty-handed operationally (LoC errored or had no in-window
+      // capture, AND the CDX lookup failed).
       const cdxPayload = await fetchJsonSoft(
         `https://web.archive.org/cdx/search/cdx?url=${encodeURIComponent(cdxUrlKey(website))}` +
           `&output=json&from=${cdxFrom}&to=${cdxCutoff.slice(0, 8)}` +
@@ -745,6 +819,7 @@ async function main(): Promise<void> {
       const canonical = selectCanonicalCapture(captures, cdxCutoff);
       if (!canonical) return { ...base, bucket: "website_no_captures" };
       base.canonicalCaptureUrl = waybackReplayUrl(canonical);
+      base.captureArchive = "wayback";
       return { ...base, bucket: "website_archived" };
     },
   );
@@ -797,7 +872,8 @@ async function main(): Promise<void> {
   show(
     "website_archived",
     (r) =>
-      `${seat(r)} "${r.name}" → ${r.website} (${r.captureCount} captures; canonical ${r.canonicalCaptureUrl})`,
+      `${seat(r)} "${r.name}" → ${r.website} ` +
+      `(${r.captureCount} ${r.captureArchive ?? "?"} captures; canonical ${r.canonicalCaptureUrl})`,
   );
   show(
     "website_no_captures",
