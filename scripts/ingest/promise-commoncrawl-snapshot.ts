@@ -50,7 +50,7 @@
 import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 import { resolve } from "node:path";
-import { extractIssuePageUrls, hostOf } from "./promise-extract";
+import { extractIssuePageUrls, hostOf, htmlToText } from "./promise-extract";
 import {
   loadSnapshotTargets,
   toCorpusRow,
@@ -77,6 +77,26 @@ import {
 // ---------------------------------------------------------------------------
 // Pure selection logic (no network) — testable in isolation
 // ---------------------------------------------------------------------------
+
+/**
+ * Same threshold promise-extract.ts already uses to skip an "empty shell"
+ * page before spending an LLM call on it — reused here as the bar for
+ * accepting a capture AT ALL. Live-run finding (2026-08-17, smoke test):
+ * Common Crawl crawled nathanielmoran.com during a dead window — the
+ * domain was pointed at hosting with no site configured yet — and captured
+ * a cPanel default-parking-page redirect stub (`<body></body>`, a
+ * meta-refresh to /cgi-sys/defaultwebpage.cgi). That's a real HTTP 200
+ * response with real bytes; nothing about the fetch mechanics flags it.
+ * Only the content itself — near-zero real text — gives it away. A crawl
+ * whose "homepage" is a parking-page stub must be rejected and an OLDER
+ * crawl tried, or the candidate looks successfully sourced while actually
+ * holding zero real campaign content.
+ */
+const MIN_HOMEPAGE_TEXT_CHARS = 100;
+
+export function looksLikeRealPage(html: string): boolean {
+  return htmlToText(html).length >= MIN_HOMEPAGE_TEXT_CHARS;
+}
 
 /** Records whose path is the site root ("/" or ""), nearest before cutoff. */
 export function selectHomepageRecord(
@@ -199,6 +219,16 @@ async function snapshotCandidateFromCommonCrawl(
 
     const homeHtml = await fetchWarcHtml(homeRecord, fetcher);
     if (!homeHtml) continue; // fetch/parse failed — try an older crawl's copy
+    if (!looksLikeRealPage(homeHtml)) {
+      // A real HTTP 200 with real bytes, but the content itself is a
+      // parking-page stub (see looksLikeRealPage's comment) — try an older
+      // crawl rather than accepting this as a successful capture.
+      process.stderr.write(
+        `[promise-commoncrawl-snapshot] ${target.name}: ${index.id} homepage ` +
+          `looks like a placeholder/parked page (too little text) — trying an older crawl\n`,
+      );
+      continue;
+    }
 
     const timestamp = homeRecord.timestamp;
     const record = (original: string, html: string) =>

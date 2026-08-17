@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it } from "vitest";
 import {
+  looksLikeRealPage,
   matchDiscoveredRecords,
   selectHomepageRecord,
 } from "./promise-commoncrawl-snapshot";
@@ -24,6 +25,32 @@ const record = (
   offset: 0,
   length: 100,
   ...overrides,
+});
+
+describe("looksLikeRealPage", () => {
+  it("rejects a cPanel default-parking-page stub (live-run finding, 2026-08-17)", () => {
+    // The exact HTML Common Crawl served for nathanielmoran.com in one
+    // crawl window (2026-08-17 smoke test): the domain was pointed at
+    // hosting with no site configured yet, and CC captured the redirect
+    // stub, not the campaign site.
+    const html =
+      '<html><head><META HTTP-EQUIV="Cache-control" CONTENT="no-cache">' +
+      '<META HTTP-EQUIV="refresh" CONTENT="0;URL=/cgi-sys/defaultwebpage.cgi">' +
+      "</head><body></body></html>";
+    expect(looksLikeRealPage(html)).toBe(false);
+  });
+
+  it("accepts a page with real campaign content", () => {
+    const html =
+      "<html><body><h1>Jane Doe for Congress</h1>" +
+      "<p>I will vote against any national sales tax and fight for working families in every corner of this district.</p>" +
+      "</body></html>";
+    expect(looksLikeRealPage(html)).toBe(true);
+  });
+
+  it("rejects an empty body", () => {
+    expect(looksLikeRealPage("<html><body></body></html>")).toBe(false);
+  });
 });
 
 describe("selectHomepageRecord", () => {
