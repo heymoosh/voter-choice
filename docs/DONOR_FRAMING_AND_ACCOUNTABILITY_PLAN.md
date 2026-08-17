@@ -1663,6 +1663,32 @@ failure per run instead of retrying per site). Consequences:
 - The 2026-08-16 "LoC as primary" record above stands as written history;
   this amendment supersedes its ordering claim for practical purposes.
 
+**2026-08-17 (same day, after the first national-scope questions from
+Muxin): two more capabilities.**
+
+1. **Every state, one command (Muxin: "We're supposed to cover EVERY
+   state").** `--state ALL` on the spike drops the state filter and runs
+   the whole country in one pass (same per-request politeness; the report
+   adds a per-state corpus-ready breakdown). In retrospective mode ALL
+   also INCLUDES the ~80 never-seat-backfilled members a single-state
+   filter cannot see — closing that gap for national runs. The national
+   2026 chain is: spike `--state ALL --skip-wayback --concurrency 1
+--json` → `promise-site-snapshot.ts --json` → `promise-extract.ts`.
+2. **LoC through a real browser (Muxin: "can't you use … a clicking
+   around chrome"?).** Headless access is dead — curl, node fetch, and
+   Exa's crawler all die on the Cloudflare challenge (tested 2026-08-17)
+   — but a real, visible Chrome passes it like a human.
+   `scripts/ingest/_loc-browser-fetch.ts` drives one via Playwright
+   (persistent profile under the snapshot store keeps the clearance
+   cookie; the human can complete a challenge if one appears): TimeMap →
+   canonical capture → replay pages at human-ish pacing → raw response
+   bodies into the snapshot store keyed by the LoC capture identity, with
+   the public LoC replay URL recorded in the manifest so every stored
+   page stays human-verifiable at webarchive.loc.gov. This gives the 2022
+   retrospective a second source besides Wayback: same corpus file,
+   `_loc-browser-fetch.ts --corpus spike-tx-2022.json --cycle 2022
+--json` → extract.
+
 **Display decision, recorded for whenever the promise ledger ships (Muxin,
 2026-08-16): the no-promises state must SAY something short, never render a
 blank.** A candidate with no rows gets one plain line to the effect of "No
