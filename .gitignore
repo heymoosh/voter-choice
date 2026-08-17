@@ -115,3 +115,9 @@ scripts/ingest/_cutover-backup-*.json
 .claude/scheduled_tasks.lock
 _alignment-review/
 .claude/worktrees/
+
+# Self-hosted campaign-site snapshots (promise-site-snapshot.ts) — the local
+# evidence store behind snapshot:// archive_urls. Full-page copies stay
+# LOCAL, never committed (copyright posture: only verbatim quotes with
+# citations ever ship).
+site-snapshots/

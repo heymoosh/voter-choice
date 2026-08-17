@@ -687,6 +687,10 @@ async function main(): Promise<void> {
   const cdxCutoff = toCdxCutoff(electionDay);
   const cdxFrom = fromDate.replace(/-/gu, "");
 
+  // Shared across workers: after the first terminal LoC failure the rest of
+  // the run skips LoC entirely (Cloudflare-challenge / outage posture).
+  let locUnreachable = false;
+
   const rows = await mapWithConcurrency(
     roster,
     concurrency,
@@ -775,16 +779,31 @@ async function main(): Promise<void> {
 
       // LoC elections web archive FIRST (2026-08-16 decision: purpose-built
       // for campaign sites, stable .gov infra — Wayback's outages blocked
-      // three retrospective runs). LoC access is embargoed ~1 year after
-      // capture, so current-cycle sites usually fall through to Wayback
-      // below while retrospectives resolve on LoC.
-      const timeMapBody = await fetchTextSoft(
-        locTimeMapUrl(website),
-        fetch,
-        `loc timemap ${website}`,
-        "application/link-format",
-        true,
-      );
+      // three retrospective runs). Two known ways this yields nothing:
+      // LoC access is embargoed ~1 year after capture (current-cycle sites
+      // fall through to Wayback), and — 2026-08-17 live finding — the
+      // replay host sits behind a Cloudflare bot challenge that scripts
+      // cannot pass, which the circuit breaker below turns into a single
+      // skip instead of a per-site retry storm. When LoC is unreachable,
+      // self-hosted snapshots (promise-site-snapshot.ts) are the primary
+      // capture path for live sites.
+      let timeMapBody: string | null = null;
+      if (!locUnreachable) {
+        timeMapBody = await fetchTextSoft(
+          locTimeMapUrl(website),
+          fetch,
+          `loc timemap ${website}`,
+          "application/link-format",
+          true,
+        );
+        if (timeMapBody === null && !locUnreachable) {
+          locUnreachable = true;
+          process.stderr.write(
+            "[promise-corpus-spike] loc unreachable (bot challenge / outage?) — " +
+              "skipping LoC for the rest of this run\n",
+          );
+        }
+      }
       if (timeMapBody !== null) {
         const locAll = parseMementoTimeMap(timeMapBody);
         const locInWindow = locAll.filter(
