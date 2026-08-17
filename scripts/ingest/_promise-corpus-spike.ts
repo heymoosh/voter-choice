@@ -786,7 +786,8 @@ async function main(): Promise<void> {
         true,
       );
       if (timeMapBody !== null) {
-        const locInWindow = parseMementoTimeMap(timeMapBody).filter(
+        const locAll = parseMementoTimeMap(timeMapBody);
+        const locInWindow = locAll.filter(
           (c) => c.timestamp >= `${cdxFrom}000000` && c.timestamp <= cdxCutoff,
         );
         const locCanonical = selectCanonicalCapture(locInWindow, cdxCutoff);
@@ -800,6 +801,13 @@ async function main(): Promise<void> {
           base.captureArchive = "loc";
           return { ...base, bucket: "website_archived" };
         }
+        // Never fall through silently: an all-quiet run where every site
+        // lands on Wayback should be readable as "LoC had nothing", not
+        // mistaken for LoC never being asked (2026-08-17 first live run).
+        process.stderr.write(
+          `[promise-corpus-spike] loc: no in-window capture for ${website} ` +
+            `(${locAll.length} total, ${locInWindow.length} in-window) — falling back to Wayback\n`,
+        );
       }
 
       // Wayback CDX fallback. A wayback_error bucket now means BOTH archives
