@@ -69,7 +69,12 @@
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-corpus-spike.ts
  *     [--state TX|ALL] [--cycle 2026] [--office house|senate|both] [--limit N]
  *     [--concurrency N] [--election-day YYYY-MM-DD] [--from YYYY-MM-DD]
- *     [--skip-wayback] [--json]
+ *     [--skip-wayback] [--fec-delay-ms N] [--json]
+ *
+ * OpenFEC calls are globally paced (default one per 3.7s — api.data.gov
+ * keys allow 1,000 requests/HOUR, and a national run needs ~4,000; see
+ * fecPace). A national --state ALL sweep therefore takes ~4 hours by
+ * design. --fec-delay-ms 0 disables pacing for small single-state runs.
  *
  * --state ALL covers every state in one pass (same per-request politeness,
  * just a longer run; the report adds a per-state corpus-ready breakdown).
@@ -386,6 +391,25 @@ async function sleep(ms: number): Promise<void> {
 }
 
 /**
+ * Global pacing for OpenFEC calls. api.data.gov keys default to 1,000
+ * requests/HOUR; a national (--state ALL) run makes ~4,000. Without pacing
+ * the run burns the whole quota in minutes and then 429s for the rest of
+ * the hour (first national run, 2026-08-17) — worker concurrency does not
+ * help because the quota is global. One request per ~3.7s stays under
+ * 1,000/hr indefinitely. Tune with --fec-delay-ms (0 disables).
+ */
+let fecMinIntervalMs = 3700;
+let nextFecSlot = 0;
+
+async function fecPace(): Promise<void> {
+  if (fecMinIntervalMs <= 0) return;
+  const now = Date.now();
+  const wait = Math.max(0, nextFecSlot - now);
+  nextFecSlot = Math.max(now, nextFecSlot) + fecMinIntervalMs;
+  if (wait > 0) await sleep(wait);
+}
+
+/**
  * GET a URL's body as text with retry on 429/5xx and a hard timeout. Returns
  * null on any terminal failure — one candidate's flaky lookup must never
  * abort the report (crs-summaries.ts's fail-soft rule). When `emptyOn404` is
@@ -408,7 +432,10 @@ async function fetchTextSoft(
       if (response.ok) return await response.text();
       if (emptyOn404 && response.status === 404) return "";
       if (RETRYABLE.has(response.status) && attempt < MAX_RETRIES) {
-        const waitMs = 1000 * 2 ** attempt;
+        // A 429 is a spent QUOTA (api.data.gov: hourly), not a blip —
+        // seconds-scale backoff is useless against it. Wait 15s/30s/60s.
+        const waitMs =
+          response.status === 429 ? 15_000 * 2 ** attempt : 1000 * 2 ** attempt;
         process.stderr.write(
           `[promise-corpus-spike] retryable ${response.status} ${label} ` +
             `attempt=${attempt + 1}/${MAX_RETRIES + 1} wait_ms=${waitMs}\n`,
@@ -571,6 +598,7 @@ async function main(): Promise<void> {
   const fromDate = arg("--from") ?? defaults.fromDate;
   const skipWayback = process.argv.includes("--skip-wayback");
   const asJson = process.argv.includes("--json");
+  fecMinIntervalMs = Number(arg("--fec-delay-ms") ?? fecMinIntervalMs);
   const todayIso = new Date().toISOString().slice(0, 10);
   const retrospective = electionDay < todayIso;
 
@@ -741,6 +769,7 @@ async function main(): Promise<void> {
       if (!fecCandidateId) return { ...base, bucket: "no_fec_id" };
       base.fecCandidateId = fecCandidateId;
 
+      await fecPace();
       const committeesPayload = await fetchJsonSoft(
         `${OPENFEC_BASE_URL}/candidate/${encodeURIComponent(fecCandidateId)}/committees/` +
           `?api_key=${apiKey}&per_page=100`,
@@ -761,6 +790,7 @@ async function main(): Promise<void> {
         // {cycle} is the Form 1 snapshot of that era. Best-effort — a miss
         // (endpoint flake, field absent) falls through to the current
         // filing, whose old captures Wayback may still hold.
+        await fecPace();
         const historyPayload = await fetchJsonSoft(
           `${OPENFEC_BASE_URL}/committee/${encodeURIComponent(principal.committeeId)}/history/` +
             `${cycle}/?api_key=${apiKey}`,
@@ -773,6 +803,7 @@ async function main(): Promise<void> {
       }
       if (!normalizeCampaignUrl(rawWebsite)) rawWebsite = principal.website;
       if (!normalizeCampaignUrl(rawWebsite)) {
+        await fecPace();
         const detailPayload = await fetchJsonSoft(
           `${OPENFEC_BASE_URL}/committee/${encodeURIComponent(principal.committeeId)}/` +
             `?api_key=${apiKey}`,

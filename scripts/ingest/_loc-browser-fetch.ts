@@ -61,8 +61,14 @@ import {
 
 /** Human-ish pacing between page loads (LoC is a library, not an API). */
 const PAGE_DELAY_MS = 1500;
-/** How long to wait for a Cloudflare challenge to clear before retrying. */
-const CHALLENGE_WAIT_MS = 8000;
+/**
+ * How long the HUMAN gets to click the Cloudflare checkbox before we give
+ * up on a URL (first live run 2026-08-17: 3×8s was no time to react at
+ * all — the run steamrolled through 31 "timemap unreachable" misses while
+ * the checkbox sat unclicked).
+ */
+const CHALLENGE_TOTAL_MS = 120_000;
+const CHALLENGE_POLL_MS = 3000;
 const NAV_TIMEOUT_MS = 60_000;
 
 interface BrowserPage {
@@ -73,42 +79,82 @@ interface BrowserPage {
   status: number;
 }
 
+async function gotoSafe(page: Page, url: string) {
+  try {
+    return await page.goto(url, {
+      waitUntil: "domcontentloaded",
+      timeout: NAV_TIMEOUT_MS,
+    });
+  } catch {
+    return null;
+  }
+}
+
+function toBody(response: {
+  url(): string;
+  text(): Promise<string>;
+  status(): number;
+}): Promise<BrowserPage> {
+  return response.text().then((body) => ({
+    finalUrl: response.url(),
+    body,
+    status: response.status(),
+  }));
+}
+
+const CHALLENGE_TITLE_RE = /just a moment|attention required|checking your/iu;
+
 /**
- * Load a URL and return the raw navigation-response body. A non-ok status
- * (Cloudflare challenges arrive as 403) gets a grace period for the
- * challenge to clear — automatically or by the human at the keyboard —
- * then one retry.
+ * Load a URL and return the raw navigation-response body. A non-ok,
+ * non-404 status is treated as a Cloudflare challenge: the page stays put
+ * (reloading would reset an in-progress checkbox) while the human clicks,
+ * polling the tab title until the challenge page is gone, then re-requests
+ * the URL — the clearance cookie earned by the click makes the retry a
+ * clean 200. Sets `loadRaw.challengeCleared` the first time a challenge is
+ * actually cleared so the caller can distinguish "human clicked through"
+ * from "never got past the wall".
  */
 async function loadRaw(page: Page, url: string): Promise<BrowserPage | null> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    let response;
-    try {
-      response = await page.goto(url, {
-        waitUntil: "domcontentloaded",
-        timeout: NAV_TIMEOUT_MS,
-      });
-    } catch {
-      return null;
-    }
-    if (!response) return null;
-    if (response.ok()) {
-      return {
-        finalUrl: response.url(),
-        body: await response.text(),
-        status: response.status(),
-      };
-    }
-    if (response.status() === 404) {
-      return { finalUrl: response.url(), body: "", status: 404 };
-    }
+  let response = await gotoSafe(page, url);
+  if (!response) return null;
+  if (response.ok()) return toBody(response);
+  if (response.status() === 404) {
+    return { finalUrl: response.url(), body: "", status: 404 };
+  }
+
+  process.stderr.write(
+    `\n[loc-browser-fetch] Cloudflare check (${response.status()}) on ${url}\n` +
+      `  >>> CLICK THE CHECKBOX in the Chrome window now — waiting up to ` +
+      `${CHALLENGE_TOTAL_MS / 1000}s…\n`,
+  );
+  for (
+    let waited = 0;
+    waited < CHALLENGE_TOTAL_MS;
+    waited += CHALLENGE_POLL_MS
+  ) {
+    await page.waitForTimeout(CHALLENGE_POLL_MS);
+    const title = await page.title().catch(() => "");
+    if (!CHALLENGE_TITLE_RE.test(title)) break;
+  }
+
+  // Whatever happened above, one clean re-request tells the truth: with a
+  // clearance cookie it is a 200; without one it is another 403.
+  response = await gotoSafe(page, url);
+  if (!response) return null;
+  if (response.ok()) {
+    loadRaw.challengeCleared = true;
     process.stderr.write(
-      `[loc-browser-fetch] ${url} → ${response.status()}; waiting for the ` +
-        `challenge to clear (complete it in the Chrome window if asked)…\n`,
+      "[loc-browser-fetch] challenge cleared — the cookie persists, the rest " +
+        "of the run should not ask again\n",
     );
-    await page.waitForTimeout(CHALLENGE_WAIT_MS);
+    return toBody(response);
+  }
+  if (response.status() === 404) {
+    return { finalUrl: response.url(), body: "", status: 404 };
   }
   return null;
 }
+loadRaw.challengeCleared = false;
 
 async function fetchCandidateFromLoc(
   page: Page,
@@ -255,6 +301,9 @@ async function main(): Promise<void> {
     });
   }
   const page = context.pages()[0] ?? (await context.newPage());
+  process.stderr.write(
+    `[loc-browser-fetch] browser: ${context.browser()?.version() ?? "persistent chromium"}\n`,
+  );
 
   const results: (SnapshotResult & { locStatus: string })[] = [];
   for (const target of targets) {
@@ -271,6 +320,28 @@ async function main(): Promise<void> {
         "\n",
     );
     results.push(result);
+
+    // Fail fast instead of grinding through every candidate against a wall:
+    // if the very first candidate could not even fetch its TimeMap and no
+    // challenge was ever cleared, the clearance flow is not working — 30
+    // more attempts will not change that.
+    if (
+      results.length === 1 &&
+      result.locStatus === "timemap unreachable" &&
+      !loadRaw.challengeCleared
+    ) {
+      process.stderr.write(
+        "\n[loc-browser-fetch] ABORTING: the Cloudflare wall never cleared " +
+          "(no challenge was completed). Either the checkbox was not " +
+          "clicked in time, or Cloudflare refuses this browser even with a " +
+          "click. Re-run and click the checkbox when prompted; if it still " +
+          "aborts here, LoC needs the fully-manual save path — ask Claude " +
+          "to build the manual-import mode.\n",
+      );
+      await context.close();
+      process.exit(2);
+    }
+
     await page.waitForTimeout(PAGE_DELAY_MS);
   }
   await context.close();
