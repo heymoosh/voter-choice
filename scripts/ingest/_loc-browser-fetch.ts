@@ -106,7 +106,11 @@ const CHALLENGE_TITLE_RE = /just a moment|attention required|checking your/iu;
 
 /**
  * Load a URL and return the raw navigation-response body. A non-ok,
- * non-404 status is treated as a Cloudflare challenge: the page stays put
+ * non-404 status is a Cloudflare challenge ONLY if the loaded page's title
+ * actually matches the challenge markers ("Just a moment…" etc) — a plain
+ * LoC outage (e.g. a bare 503) renders no such page, and telling the
+ * operator to click a checkbox that was never shown just burns the full
+ * wait with nothing to click. On an actual challenge: the page stays put
  * (reloading would reset an in-progress checkbox) while the human clicks,
  * polling the tab title until the challenge page is gone, then re-requests
  * the URL — the clearance cookie earned by the click makes the retry a
@@ -120,6 +124,16 @@ async function loadRaw(page: Page, url: string): Promise<BrowserPage | null> {
   if (response.ok()) return toBody(response);
   if (response.status() === 404) {
     return { finalUrl: response.url(), body: "", status: 404 };
+  }
+
+  const title = await page.title().catch(() => "");
+  if (!CHALLENGE_TITLE_RE.test(title)) {
+    process.stderr.write(
+      `[loc-browser-fetch] LoC returned ${response.status()} on ${url} ` +
+        `(title="${title}") — not a Cloudflare challenge page, likely an ` +
+        "LoC outage. Skipping without waiting for a click.\n",
+    );
+    return null;
   }
 
   process.stderr.write(
@@ -209,9 +223,13 @@ async function fetchCandidateFromLoc(
   let pagesCaptured = 1;
   let pagesFailed = 0;
 
+  // Discover issue-page links against the capture's OWN served original, not
+  // target.website: a site that moved domains between filing and this LoC
+  // capture serves links whose host matches the capture, not the old filing
+  // (same 2026-08-17 finding as promise-site-snapshot.ts / promise-extract.ts).
   for (const url of extractIssuePageUrls(
     home.body,
-    target.website,
+    served.original,
     maxPages - 1,
   )) {
     await page.waitForTimeout(PAGE_DELAY_MS);
@@ -331,11 +349,13 @@ async function main(): Promise<void> {
       !loadRaw.challengeCleared
     ) {
       process.stderr.write(
-        "\n[loc-browser-fetch] ABORTING: the Cloudflare wall never cleared " +
-          "(no challenge was completed). Either the checkbox was not " +
-          "clicked in time, or Cloudflare refuses this browser even with a " +
-          "click. Re-run and click the checkbox when prompted; if it still " +
-          "aborts here, LoC needs the fully-manual save path — ask Claude " +
+        "\n[loc-browser-fetch] ABORTING: the very first candidate's TimeMap " +
+          "never loaded and no Cloudflare challenge was completed. Either " +
+          "the checkbox was not clicked in time, Cloudflare refuses this " +
+          "browser even with a click, or LoC itself is down (check the " +
+          "stderr line above for this candidate — it says which). Re-run " +
+          "and click the checkbox when prompted; if it still aborts here on " +
+          "a challenge, LoC needs the fully-manual save path — ask Claude " +
           "to build the manual-import mode.\n",
       );
       await context.close();

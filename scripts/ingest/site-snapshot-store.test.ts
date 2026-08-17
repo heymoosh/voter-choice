@@ -66,6 +66,18 @@ describe("selectNearestSnapshot", () => {
   it("returns null for an empty list", () => {
     expect(selectNearestSnapshot([], "20260817000000")).toBeNull();
   });
+
+  it("compares real elapsed time, not raw digit distance, across a year boundary", () => {
+    // want is 11 real seconds after e1 (New Year's Eve) but a full day
+    // before e2 (Jan 2). A raw numeric diff on the 14-digit strings reads
+    // e1 as ~69.7M "units" away (crossing the 12/31→01/01 rollover) and e2
+    // as under 1M — backwards from the real 11s vs ~86,390s elapsed time.
+    const e1 = entry("20251231235959");
+    const e2 = entry("20260102000000");
+    expect(selectNearestSnapshot([e1, e2], "20260101000010")?.timestamp).toBe(
+      "20251231235959",
+    );
+  });
 });
 
 describe("writeSnapshot + readSnapshotPage round-trip", () => {

@@ -33,7 +33,11 @@ import {
   writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-import { parseReplayUrl, replayUrl } from "./web-archives";
+import {
+  parseReplayUrl,
+  replayUrl,
+  timestampToEpochSeconds,
+} from "./web-archives";
 
 export interface SnapshotManifestEntry {
   /** 14-digit UTC capture timestamp (the run's per-candidate pin). */
@@ -98,20 +102,23 @@ export function parseManifest(jsonl: string): SnapshotManifestEntry[] {
 }
 
 /**
- * The entry whose timestamp is numerically closest to the requested one —
- * the local equivalent of an archive redirecting to its nearest capture.
- * Ties (equidistant before/after) resolve to the EARLIER capture, keeping
- * the choice deterministic. Null for an empty list.
+ * The entry chronologically closest to the requested timestamp — the local
+ * equivalent of an archive redirecting to its nearest capture. Compares
+ * parsed epoch seconds, not raw digit strings (a raw comparison mis-ranks
+ * across day/month/year boundaries — see timestampToEpochSeconds). Ties
+ * (equidistant before/after) resolve to the EARLIER capture, keeping the
+ * choice deterministic. Null for an empty list.
  */
 export function selectNearestSnapshot(
   entries: SnapshotManifestEntry[],
   timestamp: string,
 ): SnapshotManifestEntry | null {
-  const want = Number(timestamp);
+  const want = timestampToEpochSeconds(timestamp) ?? Number(timestamp);
   let best: SnapshotManifestEntry | null = null;
   let bestDiff = Number.POSITIVE_INFINITY;
   for (const e of entries) {
-    const diff = Math.abs(Number(e.timestamp) - want);
+    const epoch = timestampToEpochSeconds(e.timestamp) ?? Number(e.timestamp);
+    const diff = Math.abs(epoch - want);
     if (
       diff < bestDiff ||
       (diff === bestDiff && best !== null && e.timestamp < best.timestamp)

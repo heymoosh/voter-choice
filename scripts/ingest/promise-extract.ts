@@ -59,7 +59,10 @@
  *   npx tsx --env-file=.env.local scripts/ingest/promise-extract.ts \
  *     --corpus /tmp/spike-tx.json                    # write
  *   Flags: --candidate <candidates.id> (repeatable), --limit N, --max-pages N,
- *          --concurrency N, --dry-run, --json (emit extractions to stdout).
+ *          --concurrency N, --dir <snapshot store dir> (default
+ *          site-snapshots/, or SNAPSHOT_DIR — MUST match whatever --dir the
+ *          corpus's snapshot:// captures were written under), --dry-run,
+ *          --json (emit extractions to stdout).
  */
 
 import { createHash } from "node:crypto";
@@ -70,7 +73,7 @@ import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { candidatePromises } from "../../db/schema";
 import { parseReplayUrl, replayUrl, timestampToIsoDate } from "./web-archives";
-import { readSnapshotPage } from "./site-snapshot-store";
+import { defaultSnapshotDir, readSnapshotPage } from "./site-snapshot-store";
 import { CANONICAL_ISSUE_LABELS } from "../../src/lib/canonicalIssues";
 import {
   SUB_ISSUE_VOCABULARY_VERSION,
@@ -643,15 +646,30 @@ export async function fetchPageSoft(
   url: string,
   fetcher: typeof fetch,
   label: string,
+  snapshotDir: string = defaultSnapshotDir(),
 ): Promise<FetchedPage | null> {
-  if (parseReplayUrl(url)?.archive === "snapshot") {
-    const page = readSnapshotPage(url);
+  const replay = parseReplayUrl(url);
+  if (replay?.archive === "snapshot") {
+    const page = readSnapshotPage(url, snapshotDir);
     if (!page) {
       process.stderr.write(
-        `[promise-extract] ${label} failed: snapshot store has no capture for ${url}\n`,
+        `[promise-extract] ${label} failed: snapshot store (${snapshotDir}) has no capture for ${url}\n`,
       );
     }
     return page;
+  }
+  if (replay?.archive === "loc") {
+    // LoC's replay host sits behind a Cloudflare bot challenge no script
+    // passes (2026-08-17 finding) — a plain fetch() always 403s here. Refuse
+    // loudly instead of burning retries on a URL that can never succeed:
+    // re-capture this candidate with _loc-browser-fetch.ts (real Chrome,
+    // writes into the snapshot store) instead of feeding a LoC-pinned
+    // corpus straight to this script.
+    process.stderr.write(
+      `[promise-extract] ${label} refused: LoC replay URLs are Cloudflare-gated for plain fetch (${url}). ` +
+        "Capture this candidate with scripts/ingest/_loc-browser-fetch.ts first.\n",
+    );
+    return null;
   }
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
     try {
@@ -794,11 +812,13 @@ async function extractCandidate(
   maxPages: number,
   fetcher: typeof fetch,
   stats: RunStats,
+  snapshotDir: string,
 ): Promise<ExtractedPromiseRow[]> {
   const home = await fetchPageSoft(
     row.canonicalCaptureUrl,
     fetcher,
     `home ${row.name}`,
+    snapshotDir,
   );
   if (!home) {
     stats.pagesFailed++;
@@ -808,8 +828,13 @@ async function extractCandidate(
 
   const capture =
     parseReplayUrl(home.finalUrl) ?? parseReplayUrl(row.canonicalCaptureUrl);
+  // Discover issue-page links against the capture's OWN original URL, not
+  // the FEC-filed row.website: a site that moved domains between filing and
+  // capture serves links whose host matches the capture, not the old filing
+  // (2026-08-17 finding) — using row.website as the base silently zeroed out
+  // issue-page discovery for any such site.
   const issueUrls = capture
-    ? extractIssuePageUrls(home.html, row.website, maxPages - 1)
+    ? extractIssuePageUrls(home.html, capture.original, maxPages - 1)
     : [];
 
   interface PageToProcess {
@@ -836,6 +861,7 @@ async function extractCandidate(
       replayUrl(capture.archive, capture.timestamp, originalUrl),
       fetcher,
       `page ${originalUrl}`,
+      snapshotDir,
     );
     if (!page) {
       stats.pagesFailed++;
@@ -1043,6 +1069,12 @@ async function main(): Promise<void> {
   const concurrency = Number(
     flagValue(argv, "--concurrency") ?? DEFAULT_CONCURRENCY,
   );
+  // Must match whatever --dir the corpus's snapshot:// captures were written
+  // under (promise-site-snapshot.ts / _loc-browser-fetch.ts default to the
+  // same SNAPSHOT_DIR-aware default, so this only matters for a non-default
+  // --dir run) — otherwise every snapshot:// read silently misses (2026-08-17
+  // finding).
+  const snapshotDir = flagValue(argv, "--dir") ?? defaultSnapshotDir();
   const candidateFilter = new Set(flagValues(argv, "--candidate"));
   const force = argv.includes("--force");
   if (force && candidateFilter.size === 0) {
@@ -1097,7 +1129,7 @@ async function main(): Promise<void> {
   process.stderr.write(
     `[promise-extract] ${corpus.length} corpus-ready candidates from ${corpusPath} ` +
       `(model=${EXTRACTION_MODEL} version=${EXTRACTION_MODEL_VERSION} cycle=${corpusCycle} ` +
-      `max_pages=${maxPages} concurrency=${concurrency}${dryRun ? " DRY-RUN" : ""})\n`,
+      `max_pages=${maxPages} concurrency=${concurrency} dir=${snapshotDir}${dryRun ? " DRY-RUN" : ""})\n`,
   );
 
   const db = requireDb();
@@ -1146,6 +1178,7 @@ async function main(): Promise<void> {
       maxPages,
       fetch,
       stats,
+      snapshotDir,
     );
     stats.candidatesProcessed++;
     process.stderr.write(

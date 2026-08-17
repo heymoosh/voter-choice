@@ -598,7 +598,18 @@ async function main(): Promise<void> {
   const fromDate = arg("--from") ?? defaults.fromDate;
   const skipWayback = process.argv.includes("--skip-wayback");
   const asJson = process.argv.includes("--json");
-  fecMinIntervalMs = Number(arg("--fec-delay-ms") ?? fecMinIntervalMs);
+  const fecDelayArg = arg("--fec-delay-ms");
+  if (fecDelayArg !== undefined) {
+    const parsed = Number(fecDelayArg);
+    if (Number.isNaN(parsed)) {
+      process.stderr.write(
+        `[promise-corpus-spike] --fec-delay-ms must be a number, got "${fecDelayArg}". ` +
+          "A non-numeric value silently disables FEC quota pacing (NaN comparisons are always false).\n",
+      );
+      process.exit(1);
+    }
+    fecMinIntervalMs = parsed;
+  }
   const todayIso = new Date().toISOString().slice(0, 10);
   const retrospective = electionDay < todayIso;
 

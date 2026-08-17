@@ -137,3 +137,23 @@ export function timestampToIsoDate(timestamp: string): string | null {
   if (!/^\d{14}$/u.test(timestamp)) return null;
   return `${timestamp.slice(0, 4)}-${timestamp.slice(4, 6)}-${timestamp.slice(6, 8)}`;
 }
+
+/**
+ * A 14-digit replay timestamp as UTC epoch seconds — for "nearest capture"
+ * comparisons. Treating the digits as a plain integer (as if "20260101" were
+ * numerically close to "20251231") breaks across any day/month/year
+ * boundary: e.g. 20260101000010 minus 20251231235959 is ~69.7M "raw units"
+ * even though the two instants are 11 seconds apart, while
+ * 20260102000000 (a full day later) reads as under 1M raw units away.
+ * Null for malformed timestamps.
+ */
+export function timestampToEpochSeconds(timestamp: string): number | null {
+  if (!/^\d{14}$/u.test(timestamp)) return null;
+  const year = Number(timestamp.slice(0, 4));
+  const month = Number(timestamp.slice(4, 6));
+  const day = Number(timestamp.slice(6, 8));
+  const hour = Number(timestamp.slice(8, 10));
+  const minute = Number(timestamp.slice(10, 12));
+  const second = Number(timestamp.slice(12, 14));
+  return Date.UTC(year, month - 1, day, hour, minute, second) / 1000;
+}

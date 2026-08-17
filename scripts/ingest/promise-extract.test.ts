@@ -8,7 +8,10 @@
  * running the script itself (see the header of promise-extract.ts).
  */
 
-import { describe, it, expect } from "vitest";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { afterEach, describe, it, expect } from "vitest";
 import {
   loadCorpusRows,
   cycleFromCorpus,
@@ -25,11 +28,13 @@ import {
   isParseableArray,
   dedupeByNormalizedText,
   buildExtractionSystemPrompt,
+  fetchPageSoft,
   EXTRACTION_MODEL_VERSION,
   EXTRACTOR_VERSION,
   MAX_PAGE_CHARS,
   PROMISE_TYPES,
 } from "./promise-extract";
+import { writeSnapshot } from "./site-snapshot-store";
 
 // ---------------------------------------------------------------------------
 // Corpus loading
@@ -548,5 +553,57 @@ describe("prompt and version contracts", () => {
 
   it("page prompts are truncated to the declared budget", () => {
     expect(MAX_PAGE_CHARS).toBeGreaterThan(1000);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// fetchPageSoft — the snapshot:// and loc:// branches never touch the
+// network, so they're deterministic and safe to unit test directly.
+// ---------------------------------------------------------------------------
+
+describe("fetchPageSoft", () => {
+  const failingFetcher = (() => {
+    throw new Error("fetchPageSoft should not have called the network fetcher");
+  }) as unknown as typeof fetch;
+
+  it("refuses a LoC replay URL loudly instead of attempting a fetch (Cloudflare-gated)", async () => {
+    const page = await fetchPageSoft(
+      "https://webarchive.loc.gov/all/20221101120000/https://janeforcongress.com",
+      failingFetcher,
+      "test",
+    );
+    expect(page).toBeNull();
+  });
+
+  describe("--dir plumb-through for snapshot:// URLs", () => {
+    let dir: string;
+    let otherDir: string;
+    afterEach(() => {
+      rmSync(dir, { recursive: true, force: true });
+      rmSync(otherDir, { recursive: true, force: true });
+    });
+
+    it("reads from the store dir it was given, not just the default", async () => {
+      dir = mkdtempSync(join(tmpdir(), "promise-extract-fetch-"));
+      otherDir = mkdtempSync(join(tmpdir(), "promise-extract-other-"));
+      writeSnapshot(dir, {
+        timestamp: "20260817001530",
+        original: "https://janeforcongress.com",
+        finalLiveUrl: "https://janeforcongress.com",
+        candidateId: "cand-1",
+        html: "<html><body>I will vote NO on X.</body></html>",
+        fetchedAt: "2026-08-17T00:15:30.000Z",
+      });
+
+      const url = "snapshot://20260817001530/https://janeforcongress.com";
+      const page = await fetchPageSoft(url, failingFetcher, "test", dir);
+      expect(page?.html).toContain("I will vote NO on X.");
+
+      // Without threading the same dir, the capture is invisible — this is
+      // the bug the --dir plumb-through fixes (default dir never matches a
+      // corpus captured under a non-default --dir).
+      const miss = await fetchPageSoft(url, failingFetcher, "test", otherDir);
+      expect(miss).toBeNull();
+    });
   });
 });
