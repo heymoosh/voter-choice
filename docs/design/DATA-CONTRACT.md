@@ -156,3 +156,24 @@ never exact amounts).
 
 Mock numbers on the canvas for any of these will not ship; the design's own
 "citation required — else omit" rule is enforced at build time.
+
+## 7. System-1 / somatic guide concepts — data readiness
+
+Mapping the "Activating the Disengaged Voter" + RepCheck somatic prototype concepts
+against real data. **None of these block starting design** — the gaps are small,
+well-defined backend cards that can be built while design happens.
+
+| Concept | Data status |
+|---|---|
+| Swipe cards, somatic prompts ("feels unfair?"), micro-animations, haptics, 1-tap pledge (client-side), System-1/System-2 mode toggle | **Front-end only** — no backend at all |
+| Small-donor vs PAC split bar | **SHIPPED** (funding mix) |
+| Named top funder ("Tech PAC $140k") | **SHIPPED** (`topPacs`) |
+| Key-vote highlight ("Clean Energy Act: YES") | **PARTIAL** — curated key votes (flag-gated, partial coverage); notable-votes derivation is a pending card |
+| "State taxpayers paid $X billion — did you get what you paid for?" | **GAP, tiny** — IRS gross-collections-by-state is one small public table per year; new micro-ingest (or static JSON). No personal income asked, exactly as intended |
+| "82% of money came from out-of-state" | **GAP, modest** — donor geography isn't bucketed today, but FEC bulk individual data (already ingested) carries contributor state; needs a new in-state/out-of-state cut. PAC "location" is murkier (HQ state ≠ interest) — honest label is "donors outside your state," not "out-of-state lobbyists" |
+| Challenger "takes $0 corporate PAC money" | **GAP, known** — challengers mostly carry `totalReceipts` only; the challenger-committee-aggregates extension (already on the gap list) is needed before $0-PAC claims can be verified rather than asserted |
+| Challenger pledge ("promises a ban on stock trading") | **IN FLIGHT** — promise ledger corpus (separate session); serve shapes in §4 |
+| Aggregate pledge counts ("N neighbors pledged") | **GAP, small** — client-only pledges need no backend; showing counts would reuse the anonymous-counter infra (new event type) |
+| "$4,200/household corporate handouts approved" | **DOES NOT EXIST and cannot ship** — same class as PAC ROI (§6): no dataset can attribute per-household dollar harm to votes. Design the emotional frame without invented dollar attributions |
+| "Voted to let them keep raising prices" (causal framing) | **Constrained** — must use alignment wording ("voted the donors' way on k of n"), never causation/lobbying/timing claims (§5) |
+| Challenger photos + names up front | **Data exists**, but conflicts with the current blind-identity design principle — a design decision, not a backend one |
