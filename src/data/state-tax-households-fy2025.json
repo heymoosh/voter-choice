@@ -1,0 +1,323 @@
+{
+  "fiscalYear": 2025,
+  "householdsYear": 2024,
+  "source_urls": {
+    "irs": "https://www.irs.gov/pub/irs-soi/25db-1-05-co.xlsx",
+    "census": "https://data.census.gov/api/access/data/table?id=ACSDT1Y2024.B11001&g=010XX00US$0400000",
+    "census_us": "https://data.census.gov/api/access/data/table?id=ACSDT1Y2024.B11001&g=010XX00US"
+  },
+  "caveat": "IRS Data Book Table 1-5 notes (quoted verbatim): \"Classification by state is based on the individual\u2019s address (or, in the case of businesses, the location of the principal office or place of business). However, some individuals may use the address of a tax attorney or accountant. Sole proprietors may use their business addresses. Such addresses could have been located in a state other than the state in which the individual resided. Similarly, taxes withheld and reported by employers located near a state boundary might include substantial amounts withheld from salaries of employees who reside in a neighboring state. Also, while taxes of corporations may be paid from the principal office, the operations of these corporations may be located in one or more other state(s).\" Gross collections include business (corporate) income taxes and employment/payroll taxes withheld by employers, plus penalties and interest \u2014 so per-household figures are a framing average, not what a household literally paid.",
+  "us_total": {
+    "collections_usd": 5313762307000,
+    "households": 132737146,
+    "avg_per_household": 40000
+  },
+  "states": {
+    "AK": {
+      "name": "Alaska",
+      "collections_usd": 7901015000,
+      "households": 274045,
+      "avg_per_household": 28800
+    },
+    "AL": {
+      "name": "Alabama",
+      "collections_usd": 39556383000,
+      "households": 2059528,
+      "avg_per_household": 19200
+    },
+    "AR": {
+      "name": "Arkansas",
+      "collections_usd": 41993215000,
+      "households": 1246754,
+      "avg_per_household": 33700
+    },
+    "AZ": {
+      "name": "Arizona",
+      "collections_usd": 81704937000,
+      "households": 2982475,
+      "avg_per_household": 27400
+    },
+    "CA": {
+      "name": "California",
+      "collections_usd": 766546878000,
+      "households": 13797638,
+      "avg_per_household": 55600
+    },
+    "CO": {
+      "name": "Colorado",
+      "collections_usd": 96626284000,
+      "households": 2479892,
+      "avg_per_household": 39000
+    },
+    "CT": {
+      "name": "Connecticut",
+      "collections_usd": 75717007000,
+      "households": 1455235,
+      "avg_per_household": 52000
+    },
+    "DC": {
+      "name": "District of Columbia",
+      "collections_usd": 41665341000,
+      "households": 329687,
+      "avg_per_household": 126400
+    },
+    "DE": {
+      "name": "Delaware",
+      "collections_usd": 22225310000,
+      "households": 412304,
+      "avg_per_household": 53900
+    },
+    "FL": {
+      "name": "Florida",
+      "collections_usd": 357963545000,
+      "households": 9141675,
+      "avg_per_household": 39200
+    },
+    "GA": {
+      "name": "Georgia",
+      "collections_usd": 145090716000,
+      "households": 4220732,
+      "avg_per_household": 34400
+    },
+    "HI": {
+      "name": "Hawaii",
+      "collections_usd": 12482130000,
+      "households": 493151,
+      "avg_per_household": 25300
+    },
+    "IA": {
+      "name": "Iowa",
+      "collections_usd": 36732089000,
+      "households": 1343422,
+      "avg_per_household": 27300
+    },
+    "ID": {
+      "name": "Idaho",
+      "collections_usd": 18465311000,
+      "households": 751181,
+      "avg_per_household": 24600
+    },
+    "IL": {
+      "name": "Illinois",
+      "collections_usd": 227701096000,
+      "households": 5105448,
+      "avg_per_household": 44600
+    },
+    "IN": {
+      "name": "Indiana",
+      "collections_usd": 82675760000,
+      "households": 2775637,
+      "avg_per_household": 29800
+    },
+    "KS": {
+      "name": "Kansas",
+      "collections_usd": 33418884000,
+      "households": 1204374,
+      "avg_per_household": 27700
+    },
+    "KY": {
+      "name": "Kentucky",
+      "collections_usd": 53980324000,
+      "households": 1865456,
+      "avg_per_household": 28900
+    },
+    "LA": {
+      "name": "Louisiana",
+      "collections_usd": 58020980000,
+      "households": 1848965,
+      "avg_per_household": 31400
+    },
+    "MA": {
+      "name": "Massachusetts",
+      "collections_usd": 179763422000,
+      "households": 2829804,
+      "avg_per_household": 63500
+    },
+    "MD": {
+      "name": "Maryland",
+      "collections_usd": 94421309000,
+      "households": 2401394,
+      "avg_per_household": 39300
+    },
+    "ME": {
+      "name": "Maine",
+      "collections_usd": 13209666000,
+      "households": 615235,
+      "avg_per_household": 21500
+    },
+    "MI": {
+      "name": "Michigan",
+      "collections_usd": 111932794000,
+      "households": 4131281,
+      "avg_per_household": 27100
+    },
+    "MN": {
+      "name": "Minnesota",
+      "collections_usd": 126264511000,
+      "households": 2363442,
+      "avg_per_household": 53400
+    },
+    "MO": {
+      "name": "Missouri",
+      "collections_usd": 94946399000,
+      "households": 2563244,
+      "avg_per_household": 37000
+    },
+    "MS": {
+      "name": "Mississippi",
+      "collections_usd": 16161684000,
+      "households": 1176690,
+      "avg_per_household": 13700
+    },
+    "MT": {
+      "name": "Montana",
+      "collections_usd": 14961867000,
+      "households": 468981,
+      "avg_per_household": 31900
+    },
+    "NC": {
+      "name": "North Carolina",
+      "collections_usd": 127876096000,
+      "households": 4496359,
+      "avg_per_household": 28400
+    },
+    "ND": {
+      "name": "North Dakota",
+      "collections_usd": 10283933000,
+      "households": 349705,
+      "avg_per_household": 29400
+    },
+    "NE": {
+      "name": "Nebraska",
+      "collections_usd": 44161088000,
+      "households": 824012,
+      "avg_per_household": 53600
+    },
+    "NH": {
+      "name": "New Hampshire",
+      "collections_usd": 17894548000,
+      "households": 570689,
+      "avg_per_household": 31400
+    },
+    "NJ": {
+      "name": "New Jersey",
+      "collections_usd": 192087307000,
+      "households": 3543944,
+      "avg_per_household": 54200
+    },
+    "NM": {
+      "name": "New Mexico",
+      "collections_usd": 13898191000,
+      "households": 856970,
+      "avg_per_household": 16200
+    },
+    "NV": {
+      "name": "Nevada",
+      "collections_usd": 38748094000,
+      "households": 1238925,
+      "avg_per_household": 31300
+    },
+    "NY": {
+      "name": "New York",
+      "collections_usd": 411353724000,
+      "households": 7828074,
+      "avg_per_household": 52500
+    },
+    "OH": {
+      "name": "Ohio",
+      "collections_usd": 210201173000,
+      "households": 4929322,
+      "avg_per_household": 42600
+    },
+    "OK": {
+      "name": "Oklahoma",
+      "collections_usd": 39144062000,
+      "households": 1603748,
+      "avg_per_household": 24400
+    },
+    "OR": {
+      "name": "Oregon",
+      "collections_usd": 45515518000,
+      "households": 1744270,
+      "avg_per_household": 26100
+    },
+    "PA": {
+      "name": "Pennsylvania",
+      "collections_usd": 188912192000,
+      "households": 5361724,
+      "avg_per_household": 35200
+    },
+    "RI": {
+      "name": "Rhode Island",
+      "collections_usd": 17754504000,
+      "households": 448318,
+      "avg_per_household": 39600
+    },
+    "SC": {
+      "name": "South Carolina",
+      "collections_usd": 44537997000,
+      "households": 2222890,
+      "avg_per_household": 20000
+    },
+    "SD": {
+      "name": "South Dakota",
+      "collections_usd": 14406058000,
+      "households": 382302,
+      "avg_per_household": 37700
+    },
+    "TN": {
+      "name": "Tennessee",
+      "collections_usd": 94326299000,
+      "households": 2928765,
+      "avg_per_household": 32200
+    },
+    "TX": {
+      "name": "Texas",
+      "collections_usd": 479519074000,
+      "households": 11449769,
+      "avg_per_household": 41900
+    },
+    "UT": {
+      "name": "Utah",
+      "collections_usd": 43012453000,
+      "households": 1184428,
+      "avg_per_household": 36300
+    },
+    "VA": {
+      "name": "Virginia",
+      "collections_usd": 125945030000,
+      "households": 3449307,
+      "avg_per_household": 36500
+    },
+    "VT": {
+      "name": "Vermont",
+      "collections_usd": 6451566000,
+      "households": 285548,
+      "avg_per_household": 22600
+    },
+    "WA": {
+      "name": "Washington",
+      "collections_usd": 172294598000,
+      "households": 3168080,
+      "avg_per_household": 54400
+    },
+    "WI": {
+      "name": "Wisconsin",
+      "collections_usd": 76364971000,
+      "households": 2535198,
+      "avg_per_household": 30100
+    },
+    "WV": {
+      "name": "West Virginia",
+      "collections_usd": 9340884000,
+      "households": 740840,
+      "avg_per_household": 12600
+    },
+    "WY": {
+      "name": "Wyoming",
+      "collections_usd": 8570767000,
+      "households": 256289,
+      "avg_per_household": 33400
+    }
+  }
+}
