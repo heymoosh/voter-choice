@@ -20,13 +20,21 @@ face; never render a fabricated zero.
 
 Input: `{ address }` (street address today).
 
-**Location-entry facts for design:** a zip always resolves the state → both senators.
-For the House seat, ~85% of zips sit entirely inside one district (splits concentrate in
-cities), so a zip-first flow can resolve the full delegation for most users via a public
-zip→district crosswalk, asking for street (or zip+4) only when the zip is split.
-The crosswalk ingest is **PLANNED-IF-CHOSEN** (open decision, Muxin leaning zip for data
-minimization); the shipped backend needs the street address. Either way the address is
-used once for geocoding, held only until the tab closes, never stored.
+**Location entry: zip-first is DECIDED (Muxin, 2026-08-18).** The crosswalk ingest +
+zip input on `/api/delegation` are PLANNED backend work — design does not need to wait
+for them. Design against these states:
+
+| State | When | What the data can serve |
+|---|---|---|
+| `zip → full delegation` | ~85% of zips (single-district) | both senators + House seat, everything in the seat table below |
+| `zip → senators + split-zip ask` | ~15% of zips (splits cluster in cities) | senators render immediately; House needs one more input — **street address is the free, reliable fallback**. Zip+4→district has no free public dataset (commercial only), so design the ask as street, not zip+4, unless we later buy data |
+| `zip invalid / unknown` | typo, new zip | designed error state, retry |
+| `no_representation` | DC + territories | existing designed state (delegate/no-vote seats) |
+| Ballot logistics gap | any zip-only entry | polling place / hours / early-voting lookups need a street address — with zip-only, these degrade to state-level info (registration deadline, ID rules, county lookup link). Honest degrade, optionally upgraded later if the user gives an address (e.g. at scorecard time) |
+
+Data-minimization payoff: zip-only entries never send an address to us or to Google
+Places. Whatever is entered is still used once, held only until the tab closes, never
+stored.
 Output: `{ status, stateCode, stateName, county, districtLabel, seats[] }`.
 Statuses: `ok` | `geocode_failed` | `no_representation` (DC/territories) | `db_unavailable`
 — each is a designed screen, not an error toast.
