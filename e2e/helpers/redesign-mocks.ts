@@ -530,7 +530,6 @@ export async function mockPolisRespond(
   return { calls };
 }
 
-/** Drive home → cold-open → workspace over the installed mocks. */
 /**
  * Drive home → address entry → the delegation overview → "Tailor to your
  * issues" → the cold-open conversation → locked issues → into the first
@@ -578,22 +577,6 @@ export async function goToWorkspace(page: Page): Promise<void> {
   // left, and it's the same signal on mobile and desktop now (no more
   // tap-to-open overlay distinction).
   await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
-}
-
-/**
- * Drive home → address entry → the delegation overview, WITHOUT tailoring —
- * the new default landing state (facts-only, no issues). Companion to
- * goToWorkspace for specs that specifically want the no-issues path.
- */
-export async function goToOverviewNoIssues(page: Page): Promise<void> {
-  await page.goto("/");
-  await page.evaluate(() => localStorage.clear());
-  await page.goto("/");
-  await page
-    .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
-    .fill("1100 Congress Ave, Austin, TX 78701");
-  await page.getByRole("button", { name: "Pull my representatives →" }).click();
-  await page.getByTestId("delegation-overview").waitFor({ timeout: 15000 });
 }
 
 /**
