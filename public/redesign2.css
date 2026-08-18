@@ -3630,6 +3630,19 @@
   line-height: 1.45;
   margin-top: 10px;
 }
+/* Reps-first flow: the shared invitation state standing in for the
+   alignment banner/money-verdict chips when the user has no issues yet.
+   Its CTA button reuses .mny-expander's chrome (RepCard's existing generic
+   expander shell) rather than inventing a new button style. */
+.rep-card .issue-invitation {
+  margin-top: 10px;
+}
+.rep-card .issue-invitation p {
+  font-size: 13px;
+  color: var(--ink-3);
+  line-height: 1.45;
+  margin: 0 0 10px;
+}
 @media (min-width: 600px) {
   .rep-card .sec-h {
     font-size: 23px;
@@ -5519,6 +5532,21 @@
   display: grid;
   gap: 7px;
 }
+/* Reps-first flow: facts-only substitute for .cd-issues when the user has
+   no issues yet — a plain list of one-liners, no bar/track (there's no
+   score to plot). */
+.cd-facts-list {
+  margin: 10px 0 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 6px;
+}
+.cd-facts-list li {
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
 .cd-irow {
   display: grid;
   grid-template-columns: 1fr 70px 30px;
@@ -5670,6 +5698,24 @@
   margin: 5px 0 0;
   max-width: 560px;
   line-height: 1.5;
+}
+/* Reps-first flow: prominent optional entry into the issues conversation,
+   shown only while the user has no issues yet. Mirrors .dg-print.ready's
+   brand pill treatment (the overview's other primary CTA) so it reads as
+   equally significant, not a stray link. */
+.dg-tailor-cta {
+  margin-top: 12px;
+  min-height: 40px;
+  padding: 0 18px;
+  border-radius: 11px;
+  font-family: var(--sans);
+  font-weight: 600;
+  font-size: 13px;
+  border: 1.5px solid var(--brand);
+  background: var(--brand);
+  color: var(--paper-2);
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
 }
 .dg-prog {
   display: flex;

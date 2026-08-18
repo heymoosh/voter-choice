@@ -229,6 +229,11 @@ function App2Inner() {
     // Workspace-family stages need refetched data — resume via loading. After a
     // tab close sessionStorage is empty, so address is absent and this falls back
     // to "home"; on a same-tab reload the address survives and we resume.
+    // Reps-first flow: "coldopen"/"orientation" sessions (a reload mid-tailor,
+    // pre-lock) migrate for free here — the resume effect calls startLookup
+    // with resuming: true, which now always lands on analyze()/workspace
+    // (using whatever issues were durably saved), same as every other
+    // workspace-family stage. No separate migration code needed.
     const s = savedSession.stage || "home";
     if (
       [
@@ -408,11 +413,14 @@ function App2Inner() {
     void fetchBallotLogistics(addr, sd).then((logistics) => {
       if (logistics) setPollingInfo(pollingInfoFromLogistics(logistics, sd));
     });
-    if (resuming && issues.length > 0) {
-      await analyze(result, sd, issues);
-    } else {
-      setStage("coldopen");
-    }
+    // Reps-first flow (2026-08-18 product decision): land straight on the
+    // delegation overview — issues intake is now an OPTIONAL "tailor to
+    // your issues" step reachable from the workspace, not a forced gate. A
+    // resuming session with issues already locked re-scores against them;
+    // everyone else (including a fresh address) goes straight to analyze()
+    // with an empty issue list, which /api/race-data tolerates (racePatterns
+    // stays populated, alignmentScores is honestly null).
+    await analyze(result, sd, resuming ? issues : []);
   }
 
   async function analyze(delegationResult, sd, lockedIssues) {
@@ -427,16 +435,23 @@ function App2Inner() {
     setActiveSeatId((prev) =>
       prev && built.some((s) => s.id === prev) ? prev : built[0]?.id,
     );
-    // Web-search fallback for members without a DB record — fire and forget.
-    preloadSeatResearch(built, decorated, delegationResult.stateCode, () =>
-      setResearchTick((t) => t + 1),
-    );
-    // Polis preview/scopes — best-effort, never blocks the workspace.
-    void loadPolisScopes({
-      stateCode: delegationResult.stateCode,
-      stateName: delegationResult.stateName,
-      userConcerns: decorated.map((i) => i.canonicalIssue).filter(Boolean),
-    }).then(setPolisScopes);
+    // Spend gating: web-search fallback + Polis scopes both cost money, so
+    // they only fire once the user has actually given us issues to research
+    // against — a plain address entry (no issues) must never burn spend.
+    // They fire naturally once the user tailors (handleApplyIssues/onLock
+    // both route back through analyze()).
+    if (decorated.length > 0) {
+      // Web-search fallback for members without a DB record — fire and forget.
+      preloadSeatResearch(built, decorated, delegationResult.stateCode, () =>
+        setResearchTick((t) => t + 1),
+      );
+      // Polis preview/scopes — best-effort, never blocks the workspace.
+      void loadPolisScopes({
+        stateCode: delegationResult.stateCode,
+        stateName: delegationResult.stateName,
+        userConcerns: decorated.map((i) => i.canonicalIssue).filter(Boolean),
+      }).then(setPolisScopes);
+    }
     setStage("workspace");
     if (typeof window !== "undefined")
       window.scrollTo({ top: 0, behavior: "auto" });
@@ -832,12 +847,16 @@ function App2Inner() {
           savedIssues={issues.length > 0 ? issues : null}
           contextNote="your 3 members of Congress"
           onLock={(locked) => {
-            // Issues are locked → show the guided orientation interstitial
-            // before the first representative. Its CTA runs analyze().
-            pendingLockedIssuesRef.current = locked;
-            setStage("orientation");
+            // Reps-first flow: issues are locked → straight to analyze() and
+            // the workspace. No forced confirm screen, no forced orientation
+            // interstitial — those existed to prep the user for a per-rep
+            // review loop that's no longer the mandatory first thing they
+            // see. OrientationView/its stage stay wired below (unreachable
+            // from this path today) in case a future entry point wants it.
+            void analyze(delegation, stateData, locked);
           }}
           onBudgetBlock={handleConvoBudgetBlock}
+          onCancel={seats.length > 0 ? () => setStage("workspace") : undefined}
         />
       );
     }
@@ -1088,6 +1107,7 @@ function App2Inner() {
           onRetryChat={handleRetryChat}
           onShowBudgetOptions={handleBudgetBlock}
           onEditIssues={() => setEditIssuesOpen(true)}
+          onTailorIssues={() => setStage("coldopen")}
           issueDeltas={issueDeltas}
           onRevisitSeat={(seatId) => {
             setActiveSeatId(seatId);

@@ -531,6 +531,18 @@ export async function mockPolisRespond(
 }
 
 /** Drive home → cold-open → workspace over the installed mocks. */
+/**
+ * Drive home → address entry → the delegation overview → "Tailor to your
+ * issues" → the cold-open conversation → locked issues → into the first
+ * seat's deep view — the SCORED happy path most specs still want.
+ *
+ * Reps-first flow (2026-08-18): address entry lands directly on the
+ * delegation overview now (facts-only, no forced intake gate). Issues are
+ * an OPTIONAL step reached via the overview's "Tailor to your issues" CTA,
+ * and locking them finalizes immediately — no pre-lock confirm screen
+ * (IntakeLocked, retired from this path) and no forced orientation
+ * interstitial sit between the conversation and the workspace anymore.
+ */
 export async function goToWorkspace(page: Page): Promise<void> {
   // Cold-open issue extraction now streams from /api/chat; mock it so Send
   // produces the locked issues (otherwise button.lock never appears).
@@ -542,19 +554,18 @@ export async function goToWorkspace(page: Page): Promise<void> {
     .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
     .fill("1100 Congress Ave, Austin, TX 78701");
   await page.getByRole("button", { name: "Pull my representatives →" }).click();
+  // Lands on the delegation overview directly — no issues yet.
+  await page.getByTestId("delegation-overview").waitFor({ timeout: 15000 });
+  await page.getByTestId("tailor-issues-cta").click();
   // Cold-open: free-text issues → preset interpretation list → lock.
   await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
   await page
     .locator(".coldopen textarea")
     .fill("Insulin prices are insane and rent went up again.");
   await page.locator("button.send").click();
+  // Locking finalizes immediately and returns to the overview — no
+  // intermediate confirm screen, no orientation interstitial.
   await page.locator("button.lock").click({ timeout: 15000 });
-  // IntakeLocked is a distinct pre-lock confirm screen between the
-  // conversation and onLock firing; confirm through it.
-  await page.getByTestId("issue-locked-confirm-btn").click({ timeout: 15000 });
-  // Guided orientation interstitial sits between locking issues and the first
-  // representative; click through it to reach the workspace.
-  await page.getByTestId("orientation-continue").click({ timeout: 15000 });
   // Workspace now lands on the delegation overview (one card per seat)
   // first; click into the first seat to reach its deep view.
   await page
@@ -567,6 +578,22 @@ export async function goToWorkspace(page: Page): Promise<void> {
   // left, and it's the same signal on mobile and desktop now (no more
   // tap-to-open overlay distinction).
   await page.locator(".rep-card").first().waitFor({ timeout: 20000 });
+}
+
+/**
+ * Drive home → address entry → the delegation overview, WITHOUT tailoring —
+ * the new default landing state (facts-only, no issues). Companion to
+ * goToWorkspace for specs that specifically want the no-issues path.
+ */
+export async function goToOverviewNoIssues(page: Page): Promise<void> {
+  await page.goto("/");
+  await page.evaluate(() => localStorage.clear());
+  await page.goto("/");
+  await page
+    .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
+    .fill("1100 Congress Ave, Austin, TX 78701");
+  await page.getByRole("button", { name: "Pull my representatives →" }).click();
+  await page.getByTestId("delegation-overview").waitFor({ timeout: 15000 });
 }
 
 /**

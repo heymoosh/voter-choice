@@ -1,21 +1,24 @@
 // @ts-nocheck
 "use client";
-/* Conversational issue intake at the cold-open stage — replaces the one-shot
-   ColdOpenView in the redesign (the legacy app keeps its own). The shell,
-   context line, and opening copy match the shipped cold open; the loop inside
-   is the shared IssueConversation (extract → converse → lock).
+/* Conversational issue intake — reached from the delegation overview's
+   optional "Tailor to your issues" entry point (reps-first flow, 2026-08-18
+   product decision: issues are no longer a forced gate before seeing your
+   representatives). The shell, context line, and opening copy match the
+   shipped cold open; the loop inside is the shared IssueConversation
+   (extract → converse → lock).
 
-   The conversation's "Lock these in" click doesn't finalize directly — it
-   gates into IntakeLocked, a distinct pre-lock confirm screen (card "Intake
-   locked state: is IntakeLocked meant to ship as its own screen?" —
-   decision: yes, ship it as its own step). onLock only fires from that
-   screen's own confirm control; its back control returns here without
-   losing the conversation. */
+   The conversation's "Lock these in" click finalizes directly (onLock) —
+   the IntakeLocked pre-lock confirm screen and the guided orientation
+   interstitial that used to sit between it and the workspace are both
+   dropped from this path (fewer clicks was the point of the flow change).
+   IntakeLocked's own editable review card (IssueReviewCard) isn't lost:
+   IssueConversation already renders the same component inline as the
+   themes card. IntakeLocked.tsx itself stays in the tree unused, in case a
+   future entry point wants a distinct confirm step again. */
 
-import React, { useState } from "react";
+import React from "react";
 import { AppNav, useI18n } from "../VoterChoiceApp";
 import { IssueConversation, useIssueConversation } from "./IssueConversation";
-import { IntakeLocked } from "./IntakeLocked";
 
 export function IntakeView({
   address,
@@ -23,9 +26,11 @@ export function IntakeView({
   contextNote,
   onLock,
   onBudgetBlock,
+  // Only passed when there's an existing workspace to return to (tailoring
+  // from an already-populated delegation, not the forced first-run path).
+  onCancel,
 }) {
   const { t } = useI18n();
-  const [confirmingLock, setConfirmingLock] = useState(false);
   const convo = useIssueConversation({
     seedIssues: savedIssues && savedIssues.length ? savedIssues : null,
     onBudgetBlock,
@@ -39,17 +44,12 @@ export function IntakeView({
     },
   });
 
-  // Canvas's IqShell renders a real "Step 1 of 3 · ..." label that tracks
-  // where the conversation actually is (screens-intake.jsx's IntakeAsk /
-  // IntakePropose / IntakeLocked each pass their own `step` string to the
-  // shared shell) — not a hardcoded string. Same three states, driven by
-  // the same convo/confirmingLock state IssueConversation and IntakeLocked
-  // already switch on below.
-  const step = confirmingLock
-    ? t("intake.stepReady")
-    : convo.issues.length > 0
-      ? t("intake.stepRefine")
-      : t("intake.stepAsk");
+  // Canvas's IqShell renders a real "Step 1 of ..." label that tracks where
+  // the conversation actually is. Locking now finalizes directly (no
+  // IntakeLocked confirm screen in between), so only the two live states —
+  // asking vs. refining — apply here.
+  const step =
+    convo.issues.length > 0 ? t("intake.stepRefine") : t("intake.stepAsk");
 
   return (
     <>
@@ -58,6 +58,16 @@ export function IntakeView({
         <div className="co-context">
           <b>{address}</b> · {contextNote || "your representatives"}
           <span className="step">{step}</span>
+          {onCancel && (
+            <button
+              type="button"
+              className="linklike"
+              onClick={onCancel}
+              data-testid="intake-cancel"
+            >
+              {t("intake.cancelLabel")}
+            </button>
+          )}
         </div>
 
         {/* Canvas's IntakeAsk hero (kicker + h1 + intro paragraph) only
@@ -91,22 +101,13 @@ export function IntakeView({
           </div>
         </div>
 
-        {confirmingLock ? (
-          <IntakeLocked
-            issues={convo.issues}
-            setIssues={convo.setIssues}
-            log={convo.log}
-            onConfirm={onLock}
-            onBack={() => setConfirmingLock(false)}
-          />
-        ) : (
-          <IssueConversation
-            convo={convo}
-            primaryLabel={t("intake.primaryBtn")}
-            onPrimary={() => setConfirmingLock(true)}
-            placeholder={t("intake.placeholderFirst")}
-          />
-        )}
+        <IssueConversation
+          convo={convo}
+          primaryLabel={t("intake.primaryBtn")}
+          primarySubLabel={t("intake.primarySubLabel")}
+          onPrimary={onLock}
+          placeholder={t("intake.placeholderFirst")}
+        />
       </div>
     </>
   );

@@ -52,6 +52,31 @@ function ProvBadge({ researched }) {
   );
 }
 
+/** Reps-first flow (2026-08-18): shared invitation state for every
+ *  issue-dependent section on this card (alignment banner, money-verdict
+ *  chips, per-issue rows) when the user hasn't given us issues yet. Facts
+ *  stay visible everywhere else on the card; this is the ONE honest
+ *  substitute for "how does their record line up with what you value" —
+ *  never a blank shell, never a fabricated score. */
+function IssueInvitation({ onTailorIssues }) {
+  const { t } = useI18n();
+  return (
+    <div className="issue-invitation" data-testid="issue-invitation">
+      <p>{t("repCard.issueInvitationBody")}</p>
+      {onTailorIssues && (
+        <button
+          type="button"
+          className="mny-expander"
+          data-testid="issue-invitation-cta"
+          onClick={onTailorIssues}
+        >
+          <span>{t("repCard.issueInvitationCta")}</span>
+        </button>
+      )}
+    </div>
+  );
+}
+
 /** True when a seat's alignment is backed by researched public statements
  * rather than a roll-call voting record — either an executive seat
  * (seat.researched) or a Congress seat whose record hasn't posted yet
@@ -896,6 +921,10 @@ export function RepCard({
   onOpenDuel,
   onShowBudgetOptions,
   onEditIssues,
+  // Reps-first flow: distinct from onEditIssues (which re-opens the modal
+  // for an EXISTING issue list) — this sends a first-time visitor into the
+  // cold-open conversation. Only meaningful when userIssues is empty.
+  onTailorIssues,
   // Curated revolving-door record for THIS seat's incumbent — GAPS §5: no
   // ingestion pipeline exists yet, so no caller passes this today. Optional
   // and absent by design; gates both the .rd-band callout and the md-grid
@@ -1046,60 +1075,73 @@ export function RepCard({
             <h2 className="sec-h">{t("repCard.stepAlignmentHeading")}</h2>
           </div>
         </div>
-        {!seat.researched && (
-          <div className="al-legend">
-            <span>
-              <i className="i-vote" aria-hidden="true" />
-              {t("repCard.legendVote")}
-            </span>
-            <span>
-              <i className="i-money" aria-hidden="true" />
-              {t("repCard.legendMoney")}
-            </span>
-          </div>
-        )}
-        {seat.researched ? (
-          <ResearchedPositions
-            positions={seat.positions}
-            userIssues={userIssues}
-          />
+        {userIssues.length === 0 ? (
+          // Reps-first flow: no issues yet — the alignment banner, its
+          // per-issue chips, and the edit-issues entry all only mean
+          // something once the user has told us what to score against. One
+          // shared invitation replaces all of them; nothing else in this
+          // section renders.
+          <IssueInvitation onTailorIssues={onTailorIssues} />
         ) : (
-          <AlignmentScoreBanner
-            candidate={cand}
-            alignmentEntry={seat.alignmentEntry}
-            userIssues={userIssues}
-            expandedIssue={expandedIssue}
-            onToggleIssue={(ci) =>
-              setExpandedIssue(expandedIssue === ci ? null : ci)
-            }
-            anonCtx={anonCtx}
-            research={research}
-            rowVariant="canvas"
-            totalVotes={totalVotes}
-            onSeeAllVotes={() => setAllVotesOpen(true)}
-            donorCoalition={cand.donorCoalition}
-          />
-        )}
+          <>
+            {!seat.researched && (
+              <div className="al-legend">
+                <span>
+                  <i className="i-vote" aria-hidden="true" />
+                  {t("repCard.legendVote")}
+                </span>
+                <span>
+                  <i className="i-money" aria-hidden="true" />
+                  {t("repCard.legendMoney")}
+                </span>
+              </div>
+            )}
+            {seat.researched ? (
+              <ResearchedPositions
+                positions={seat.positions}
+                userIssues={userIssues}
+              />
+            ) : (
+              <AlignmentScoreBanner
+                candidate={cand}
+                alignmentEntry={seat.alignmentEntry}
+                userIssues={userIssues}
+                expandedIssue={expandedIssue}
+                onToggleIssue={(ci) =>
+                  setExpandedIssue(expandedIssue === ci ? null : ci)
+                }
+                anonCtx={anonCtx}
+                research={research}
+                rowVariant="canvas"
+                totalVotes={totalVotes}
+                onSeeAllVotes={() => setAllVotesOpen(true)}
+                donorCoalition={cand.donorCoalition}
+              />
+            )}
 
-        {/* Edit-issues entry (work order Frames 2+3 §1) — restyled onto the
-            same mny-expander shell the money section's own expander uses
-            (public/redesign2.css .rep-card .mny-expander is generic chrome,
-            not money-specific); provoked by the score itself, the
-            always-available fallback lives in Settings (nav ⚙). */}
-        {onEditIssues && (
-          <button
-            className="mny-expander"
-            data-testid="edit-issues-alignment"
-            onClick={onEditIssues}
-          >
-            <span>
-              {t("repCard.editIssuesButtonLabel", { n: userIssues.length })}
-              <small>{t("repCard.editIssuesButtonSub")}</small>
-            </span>
-            <span className="car" aria-hidden="true">
-              ✎
-            </span>
-          </button>
+            {/* Edit-issues entry (work order Frames 2+3 §1) — restyled onto
+                the same mny-expander shell the money section's own expander
+                uses (public/redesign2.css .rep-card .mny-expander is generic
+                chrome, not money-specific); provoked by the score itself,
+                the always-available fallback lives in Settings (nav ⚙). */}
+            {onEditIssues && (
+              <button
+                className="mny-expander"
+                data-testid="edit-issues-alignment"
+                onClick={onEditIssues}
+              >
+                <span>
+                  {t("repCard.editIssuesButtonLabel", {
+                    n: userIssues.length,
+                  })}
+                  <small>{t("repCard.editIssuesButtonSub")}</small>
+                </span>
+                <span className="car" aria-hidden="true">
+                  ✎
+                </span>
+              </button>
+            )}
+          </>
         )}
       </div>
 

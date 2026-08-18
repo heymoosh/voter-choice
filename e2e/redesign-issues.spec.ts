@@ -31,7 +31,10 @@ async function installDataMocks(page: Page) {
   await mockCounters(page);
 }
 
-/** Drive home → cold-open up to the extracted themes card (not locked). */
+/** Drive home → the delegation overview → "Tailor to your issues" → the
+ *  extracted themes card (not locked). Reps-first flow (2026-08-18): the
+ *  cold-open conversation is reached from the overview now, not the forced
+ *  first step after address entry. */
 async function goToIntakeReview(page: Page) {
   await mockChat(page);
   await page.goto("/");
@@ -41,6 +44,8 @@ async function goToIntakeReview(page: Page) {
     .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
     .fill("1100 Congress Ave, Austin, TX 78701");
   await page.getByRole("button", { name: "Pull my representatives →" }).click();
+  await page.getByTestId("delegation-overview").waitFor({ timeout: 15000 });
+  await page.getByTestId("tailor-issues-cta").click();
   await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
   await page
     .getByTestId("issue-convo-input")
@@ -77,13 +82,10 @@ test.describe("conversational issue intake", () => {
       page.getByTestId("issue-themes-card").locator(".theme-row"),
     ).toHaveCount(3);
 
-    // Lock → IntakeLocked pre-lock confirm screen → guided orientation
-    // interstitial → workspace, with all three issues scored against.
+    // Lock finalizes immediately — no pre-lock confirm screen, no
+    // orientation interstitial (both retired from this path, 2026-08-18
+    // reps-first flow) — straight back to the overview, scored.
     await page.getByTestId("issue-primary").click();
-    await page
-      .getByTestId("issue-locked-confirm-btn")
-      .click({ timeout: 15000 });
-    await page.getByTestId("orientation-continue").click({ timeout: 15000 });
     // Workspace now lands on the delegation overview (one card per seat)
     // first; click into the first seat to reach its deep view.
     await page

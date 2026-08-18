@@ -5,19 +5,22 @@
 // cases that historically made surfaces disagree (the "I gave 3 issues and
 // every screen showed me a different set" report) and pins the invariant:
 //
-//   1. FULL-LIST surfaces — the intake review card, the IntakeLocked confirm
-//      screen, and the workspace ballot rail — show EVERY locked issue.
-//   2. The intake banner's federal/state split is computed from the same
-//      decorated levels the workspace uses (a custom/unmapped issue counts
-//      as "both", not as nothing — IntakeLocked.tsx).
-//   3. SEAT-SCOPED surfaces agree with each other exactly: the overview
+//   1. FULL-LIST surfaces — the intake review card and the edit-issues modal
+//      (reached via the workspace's alignment fine print) — show EVERY
+//      locked issue. (The IntakeLocked pre-lock confirm screen this used to
+//      also pin was retired in the 2026-08-18 reps-first flow change —
+//      locking now finalizes directly from the conversation's own review
+//      card, which is the same IssueReviewCard component, so the full-list
+//      invariant still holds pre-lock; there's just one fewer screen to
+//      pin it on.)
+//   2. SEAT-SCOPED surfaces agree with each other exactly: the overview
 //      card's issue rows (seatIssueAlignmentRows), the deep card's alignment
 //      rows (AlignmentScoreBanner), and the all-votes panel's issue groups
 //      (voteGroupsForUserIssues) present the same set, order, and labels.
 //      An issue with no matched roll-call votes appears with an honest empty
 //      state — it does not vanish from the votes panel while sitting as a
 //      "—" row on the card above it.
-//   4. Level scoping is the ONLY difference between the full list and the
+//   3. Level scoping is the ONLY difference between the full list and the
 //      seat-scoped set: a state-leaning issue is consistently absent from
 //      every federal seat surface (and only from those).
 //
@@ -115,7 +118,7 @@ test.describe("issue set persists across intake, overview, deep view, and voting
     await mockCounters(page);
     await mockChatMixedLevels(page);
 
-    // ---- Intake: extract 3 issues in one turn -------------------------
+    // ---- Land on the overview, then tailor: extract 3 issues in one turn ---
     await page.goto("/");
     await page.evaluate(() => localStorage.clear());
     await page.goto("/");
@@ -125,36 +128,26 @@ test.describe("issue set persists across intake, overview, deep view, and voting
     await page
       .getByRole("button", { name: "Pull my representatives →" })
       .click();
+    await page.getByTestId("delegation-overview").waitFor({ timeout: 15000 });
+    await page.getByTestId("tailor-issues-cta").click();
     await page.getByTestId("issue-convo-input").waitFor({ timeout: 15000 });
     await page
       .getByTestId("issue-convo-input")
       .fill("Insulin prices, my rent, and my property taxes are all insane.");
     await page.getByTestId("issue-convo-send").click();
     await page.getByTestId("issue-themes-card").waitFor({ timeout: 15000 });
+    // Full-list surface #1: the conversation's own review card shows every
+    // locked issue, pre-lock.
     await expect(
       page.getByTestId("issue-themes-card").locator(".theme-row"),
     ).toHaveCount(3);
 
-    // ---- IntakeLocked confirm screen: full list + coherent split ------
+    // Lock finalizes immediately (no pre-lock confirm screen, no
+    // orientation interstitial — both retired in the reps-first flow
+    // change) — straight back to the overview, scored.
     await page.getByTestId("issue-primary").click();
-    const confirm = page.getByTestId("issue-locked-confirm");
-    await expect(confirm.locator(".theme-row")).toHaveCount(3);
-    // Decorated levels: insulin=federal, rent=both, property=state →
-    // 2 apply federally, 2 at the state level. The split must be derived
-    // from the same list rendered above it (IntakeLocked counts on the
-    // decorated levels the workspace itself will use).
-    await expect(confirm.locator(".iq-locked .iq-juris.fed")).toHaveText(
-      "2 Federal",
-    );
-    await expect(confirm.locator(".iq-locked .iq-juris.state")).toHaveText(
-      "2 State",
-    );
 
     // ---- Delegation overview: seat-scoped rows ------------------------
-    await page
-      .getByTestId("issue-locked-confirm-btn")
-      .click({ timeout: 15000 });
-    await page.getByTestId("orientation-continue").click({ timeout: 15000 });
     const firstCard = page.locator('[data-testid="seat-card"]').first();
     await firstCard.waitFor({ timeout: 15000 });
     // Federal seat card: exactly the two federally-applicable issues, in

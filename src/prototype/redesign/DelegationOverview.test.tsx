@@ -400,3 +400,191 @@ describe("DelegationOverview", () => {
     expect(screen.getByTestId("seat-card").className).not.toContain("blind");
   });
 });
+
+// Reps-first flow (2026-08-18): no forced issues intake before the
+// overview — an empty issue list is a first-class, honest state, not an
+// error. These pin the facts-only substitute for the per-issue alignment
+// section, and the optional tailor CTA.
+describe("DelegationOverview — no issues yet (facts-only)", () => {
+  it("replaces the per-issue alignment section with a facts summary, never a fabricated score", () => {
+    const seats = [mkSeat()];
+    renderOverview({ seats, verdicts: {}, userIssues: [], onOpen: () => {} });
+    const card = screen.getByTestId("seat-card");
+    expect(screen.getByTestId("seat-facts")).toBeInTheDocument();
+    expect(card.querySelector(".cd-issues")).not.toBeInTheDocument();
+    expect(card).not.toHaveTextContent("Aligns with your issues");
+  });
+
+  it("shows an honest attendance one-liner when attendance data exists, and an honest fallback when it doesn't", () => {
+    const withAttendance = [
+      mkSeat({
+        attendance: { missedPct: 2, of: "500 floor votes", band: "good" },
+      }),
+    ];
+    const { unmount } = renderOverview({
+      seats: withAttendance,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+    });
+    expect(screen.getByTestId("seat-facts")).toHaveTextContent(
+      "98% attendance",
+    );
+    expect(screen.getByTestId("seat-facts")).toHaveTextContent("Rarely misses");
+    unmount();
+
+    const withoutAttendance = [mkSeat({ attendance: null })];
+    renderOverview({
+      seats: withoutAttendance,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+    });
+    expect(screen.getByTestId("seat-facts")).toHaveTextContent(
+      "Attendance isn't available for this member yet",
+    );
+  });
+
+  it("names the top PAC sponsors by amount, with an 'and N more' tail, or an honest empty line when there are none traced", () => {
+    const withSponsors = [
+      mkSeat({
+        topPacs: {
+          electionCycle: "2026",
+          hiddenCount: 1,
+          sponsors: [
+            {
+              committeeId: "c1",
+              name: "Small PAC",
+              sponsor: null,
+              sector: null,
+              amount: 5_000,
+              transactionCount: 1,
+              evidenceUrl: "https://example.com/c1",
+            },
+            {
+              committeeId: "c2",
+              name: "Big PAC",
+              sponsor: null,
+              sector: null,
+              amount: 50_000,
+              transactionCount: 3,
+              evidenceUrl: "https://example.com/c2",
+            },
+            {
+              committeeId: "c3",
+              name: "Mid PAC",
+              sponsor: null,
+              sector: null,
+              amount: 20_000,
+              transactionCount: 2,
+              evidenceUrl: "https://example.com/c3",
+            },
+          ],
+        },
+      }),
+    ];
+    const { unmount } = renderOverview({
+      seats: withSponsors,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+    });
+    // Sorted by amount desc: Big PAC (50k), Mid PAC (20k) — Small PAC (5k)
+    // folds into "and 2 more" (1 remaining listed sponsor + hiddenCount 1).
+    const facts = screen.getByTestId("seat-facts");
+    expect(facts).toHaveTextContent("Big PAC, Mid PAC");
+    expect(facts).toHaveTextContent("and 2 more");
+    unmount();
+
+    const noSponsors = [
+      mkSeat({
+        topPacs: { electionCycle: "2026", hiddenCount: 0, sponsors: [] },
+      }),
+    ];
+    renderOverview({
+      seats: noSponsors,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+    });
+    expect(screen.getByTestId("seat-facts")).toHaveTextContent(
+      "No named PAC sponsors traced yet",
+    );
+  });
+
+  it("omits the PAC-sponsor line entirely when topPacs is null (we didn't look), not an empty-state line", () => {
+    const seats = [mkSeat({ topPacs: null })];
+    renderOverview({ seats, verdicts: {}, userIssues: [], onOpen: () => {} });
+    const facts = screen.getByTestId("seat-facts");
+    expect(facts).not.toHaveTextContent("PAC sponsors");
+  });
+
+  it("shows the curated key-vote count when CAN2026 context exists, and omits the line when it's null", () => {
+    const withCanContext = [
+      mkSeat({
+        canContext: {
+          ratings: [],
+          donorTrail: null,
+          keyVotes: [
+            { billLabel: "H.R. 1", stance: "with" } as never,
+            { billLabel: "H.R. 2", stance: "against" } as never,
+          ],
+        } as never,
+      }),
+    ];
+    const { unmount } = renderOverview({
+      seats: withCanContext,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+    });
+    expect(screen.getByTestId("seat-facts")).toHaveTextContent(
+      "2 curated key votes on record",
+    );
+    unmount();
+
+    const noCanContext = [mkSeat({ canContext: null })];
+    renderOverview({
+      seats: noCanContext,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+    });
+    expect(screen.getByTestId("seat-facts")).not.toHaveTextContent(
+      "curated key vote",
+    );
+  });
+
+  it("shows the challenger count, including the honest zero case (never omitted, unlike the null-vs-empty fields above)", () => {
+    const seats = [mkSeat({ challengers: [] })];
+    renderOverview({ seats, verdicts: {}, userIssues: [], onOpen: () => {} });
+    expect(screen.getByTestId("seat-facts")).toHaveTextContent(
+      "0 challengers filed to run in 2026",
+    );
+  });
+
+  it("shows the optional tailor CTA only when there are no issues yet, and it fires onTailorIssues", async () => {
+    const onTailorIssues = vi.fn();
+    const seats = [mkSeat()];
+    const { unmount } = renderOverview({
+      seats,
+      verdicts: {},
+      userIssues: [],
+      onOpen: () => {},
+      onTailorIssues,
+    });
+    const cta = screen.getByTestId("tailor-issues-cta");
+    await userEvent.click(cta);
+    expect(onTailorIssues).toHaveBeenCalledTimes(1);
+    unmount();
+
+    renderOverview({
+      seats,
+      verdicts: {},
+      userIssues,
+      onOpen: () => {},
+      onTailorIssues,
+    });
+    expect(screen.queryByTestId("tailor-issues-cta")).not.toBeInTheDocument();
+  });
+});

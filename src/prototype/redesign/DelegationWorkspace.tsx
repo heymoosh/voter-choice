@@ -95,6 +95,11 @@ export function DelegationWorkspace({
   onRetryChat,
   onShowBudgetOptions,
   onEditIssues,
+  // Optional issues-intake entry point (reps-first flow) — distinct from
+  // onEditIssues, which opens the re-score modal and only makes sense once
+  // issues already exist. onTailorIssues sends the user to the cold-open
+  // conversation for the first time.
+  onTailorIssues,
   issueDeltas,
   onRevisitSeat,
   onDismissDeltas,
@@ -125,6 +130,7 @@ export function DelegationWorkspace({
           revealed={revealed}
           onOpen={onOpenSeat}
           onPrint={onPrint}
+          onTailorIssues={onTailorIssues}
         />
         <div className="rf-affordance-row">
           <RosterFeedbackWidget
@@ -250,6 +256,7 @@ export function DelegationWorkspace({
             onOpenDuel={onOpenDuel}
             onShowBudgetOptions={onShowBudgetOptions}
             onEditIssues={onEditIssues}
+            onTailorIssues={onTailorIssues}
           />
 
           {/* upSeats.length, not seats.length — a not-up-2026 seat can never

@@ -14,6 +14,7 @@ import {
   mockResearch,
   mockPolis,
   mockCounters,
+  mockChat,
   goToWorkspace,
   goToStanding,
 } from "./helpers/redesign-mocks";
@@ -23,8 +24,82 @@ test.skip(
   "redesign specs need the congress-assessment build (flag unset)",
 );
 
+// Reps-first flow (2026-08-18 product decision): address entry lands
+// directly on the delegation overview — facts-only, reps immediately
+// visible. Issues intake is now an OPTIONAL "tailor to your issues" step
+// reachable from the overview, not a forced gate before seeing anyone.
+test.describe("reps-first flow — address → overview (no issues) → optional tailor", () => {
+  test("lands on the delegation overview with no issues, gates research/Polis spend until issues exist, then re-scores after tailoring", async ({
+    page,
+  }) => {
+    await mockDelegation(page);
+    await mockSeatRaceData(page);
+    await mockChat(page);
+    await mockCounters(page);
+    // Track /api/polis calls directly (rather than mockPolis's canned
+    // response) so this test can assert on WHEN the call happens, not just
+    // that it eventually succeeds.
+    const polisRequests: string[] = [];
+    await page.route("**/api/polis?*", async (route) => {
+      polisRequests.push(route.request().url());
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          scope: "state",
+          sampleSize: 0,
+          thresholdMet: false,
+          countToUnlock: 200,
+          dots: [],
+          you: null,
+          consensus: [],
+          groups: [],
+        }),
+      });
+    });
+
+    await page.goto("/");
+    await page.evaluate(() => localStorage.clear());
+    await page.goto("/");
+    await page
+      .getByPlaceholder("1100 Congress Ave, Austin, TX 78701")
+      .fill("1100 Congress Ave, Austin, TX 78701");
+    await page
+      .getByRole("button", { name: "Pull my representatives →" })
+      .click();
+
+    // No forced cold-open, no forced orientation — straight to the overview.
+    const overview = page.getByTestId("delegation-overview");
+    await overview.waitFor({ timeout: 15000 });
+    await expect(
+      overview.locator('[data-testid="seat-facts"]').first(),
+    ).toBeVisible();
+    await expect(overview).not.toContainText("Aligns with your issues");
+
+    // Spend gating: no issues yet, so no Polis-scope research call fires.
+    expect(polisRequests).toHaveLength(0);
+
+    // Second journey: tailor → issues → re-scored.
+    await page.getByTestId("tailor-issues-cta").click();
+    await page.locator(".coldopen textarea").waitFor({ timeout: 15000 });
+    await page
+      .locator(".coldopen textarea")
+      .fill("Insulin prices are insane and rent went up again.");
+    await page.locator("button.send").click();
+    // Locking finalizes immediately — no confirm screen, no orientation.
+    await page.locator("button.lock").click({ timeout: 15000 });
+
+    // Back on the overview, now scored against the tailored issues.
+    await overview.waitFor({ timeout: 15000 });
+    await expect(
+      overview.locator('[data-testid="seat-card"]').first(),
+    ).toContainText("Aligns with your issues");
+    await expect.poll(() => polisRequests.length).toBeGreaterThan(0);
+  });
+});
+
 test.describe("delegation flow — address → assess → verdicts", () => {
-  test("walks home → cold-open → workspace with real card surfaces", async ({
+  test("walks home → overview → tailor issues → workspace with real card surfaces", async ({
     page,
   }) => {
     // v3 rail removal (2026-07-21): the seat page renders identically at

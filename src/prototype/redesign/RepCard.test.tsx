@@ -1275,3 +1275,46 @@ describe("RepCard §2 — PAC transparency blocks [Part 6a/6b]", () => {
     );
   });
 });
+
+// Reps-first flow (2026-08-18): issues are optional now — a seat page with
+// no issues yet must never fabricate an alignment score or a money verdict.
+// It shows ONE honest invitation instead of the alignment banner/per-issue
+// chips, while every issue-free section (funding, attendance, committees,
+// PAC sponsors, outside spending) keeps rendering normally.
+describe("RepCard — no issues yet (invitation state)", () => {
+  it("shows the shared invitation instead of the alignment banner, and never renders a fabricated verdict", () => {
+    renderCard(mkSeat(), { userIssues: [] });
+    expect(screen.getByTestId("issue-invitation")).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("edit-issues-alignment"),
+    ).not.toBeInTheDocument();
+    expect(screen.queryByTestId("money-verdict")).not.toBeInTheDocument();
+    expect(screen.getByTestId("issue-invitation")).toHaveTextContent(
+      "optional",
+    );
+  });
+
+  it("clicking the invitation's CTA calls onTailorIssues", () => {
+    const onTailorIssues = vi.fn();
+    renderCard(mkSeat(), { userIssues: [], onTailorIssues });
+    fireEvent.click(screen.getByTestId("issue-invitation-cta"));
+    expect(onTailorIssues).toHaveBeenCalledTimes(1);
+  });
+
+  it("still renders issue-free sections (attendance, funding total) with no issues", () => {
+    const { container } = renderCard(
+      mkSeat({
+        attendance: { missedPct: 3, of: "500 floor votes", band: "good" },
+      }),
+      { userIssues: [] },
+    );
+    expect(container.querySelector(".att-band")).toBeInTheDocument();
+    expect(container.querySelector(".mny-total")).toHaveTextContent("$4.2M");
+  });
+
+  it("renders the normal alignment banner (not the invitation) once issues exist", () => {
+    renderCard(mkSeat(), { userIssues, onEditIssues: () => {} });
+    expect(screen.queryByTestId("issue-invitation")).not.toBeInTheDocument();
+    expect(screen.getByTestId("edit-issues-alignment")).toBeInTheDocument();
+  });
+});

@@ -79,6 +79,91 @@ function dg3(v: number | null): "na" | "good" | "mid" | "bad" {
   return v == null ? "na" : v >= 67 ? "good" : v >= 34 ? "mid" : "bad";
 }
 
+/** Facts-only summary rows for a seat with no user issues yet — reps-first
+ *  flow (2026-08-18): the per-issue alignment section only means anything
+ *  once the user has issues, so an empty issue list gets an honest,
+ *  issue-free substitute composed from data ALREADY on the seat (never a
+ *  fabricated score). Same honest-null discipline as the rest of this file:
+ *  a field we didn't look up (null) is omitted, a field we looked up and
+ *  found empty renders its own explicit "not yet traced" line. */
+function seatFactsRows(
+  seat: DelegationSeatVM,
+  t: (key: string, vars?: Record<string, unknown>) => string,
+): string[] {
+  const rows: string[] = [];
+
+  const attendance = seat.attendance;
+  if (attendance) {
+    const presentPct = Math.round((100 - attendance.missedPct) * 10) / 10;
+    const bandLabel = (
+      {
+        good: t("repCard.attendanceGood"),
+        mid: t("repCard.attendanceMid"),
+        bad: t("repCard.attendanceBad"),
+      } as Record<string, string>
+    )[attendance.band];
+    rows.push(
+      t("delegationOverview.factsAttendance", {
+        pct: presentPct,
+        band: bandLabel,
+      }),
+    );
+  } else {
+    rows.push(
+      seat.level === "federal"
+        ? t("repCard.attendanceUnavailableFederal")
+        : t("repCard.attendanceUnavailableState"),
+    );
+  }
+
+  // topPacs === null ⇒ we didn't look (flag off / unresolved candidate) ⇒
+  // omit the row entirely; an object with an empty sponsors array ⇒ we
+  // looked and found none ⇒ say so explicitly.
+  if (seat.topPacs) {
+    const sorted = [...(seat.topPacs.sponsors || [])].sort(
+      (a, b) => (b.amount || 0) - (a.amount || 0),
+    );
+    if (sorted.length === 0) {
+      rows.push(t("delegationOverview.factsTopPacsNone"));
+    } else {
+      const top = sorted.slice(0, 2).map((s) => s.name);
+      const extra =
+        sorted.length - top.length + (seat.topPacs.hiddenCount || 0);
+      rows.push(
+        t("delegationOverview.factsTopPacs", { names: top.join(", ") }) +
+          (extra > 0
+            ? t("delegationOverview.factsTopPacsMore", { n: extra })
+            : ""),
+      );
+    }
+  }
+
+  // canContext === null ⇒ CAN2026 hasn't ingested this seat yet ⇒ omit.
+  if (seat.canContext) {
+    const n = (seat.canContext.keyVotes || []).length;
+    rows.push(
+      t(
+        n === 1
+          ? "delegationOverview.factsKeyVotesSingular"
+          : "delegationOverview.factsKeyVotesPlural",
+        { n },
+      ),
+    );
+  }
+
+  const challengerCount = (seat.challengers || []).length;
+  rows.push(
+    t(
+      challengerCount === 1
+        ? "delegationOverview.factsChallengersSingular"
+        : "delegationOverview.factsChallengersPlural",
+      { n: challengerCount },
+    ),
+  );
+
+  return rows;
+}
+
 /** Provenance badge — the design's unifier (roll-call vs researched).
  *  Mirrors HeadToHead.tsx's ProvBadge exactly. */
 function DgProv({ researched }: { researched: boolean }) {
@@ -202,30 +287,43 @@ function SeatCard({
         </div>
       )}
 
-      <div className="cd-align">
-        <div className="cd-align-top">
-          <span className="lab">Aligns with your issues</span>
-          <span className={"cd-pct tone-" + dg3(align)}>
-            {align == null ? "—" : `${align}%`}
-          </span>
-        </div>
-        {rows.length > 0 && (
-          <div className="cd-issues">
-            {rows.map((row) => (
-              <div className="cd-irow" key={row.label}>
-                <span className="ik">{row.label}</span>
-                <span className="cd-track">
-                  <i
-                    className={"bar-" + dg3(row.pct)}
-                    style={{ width: `${row.pct ?? 0}%` }}
-                  />
-                </span>
-                <span className="iv">{row.fraction ?? "—"}</span>
-              </div>
-            ))}
+      {userIssues.length > 0 ? (
+        <div className="cd-align">
+          <div className="cd-align-top">
+            <span className="lab">Aligns with your issues</span>
+            <span className={"cd-pct tone-" + dg3(align)}>
+              {align == null ? "—" : `${align}%`}
+            </span>
           </div>
-        )}
-      </div>
+          {rows.length > 0 && (
+            <div className="cd-issues">
+              {rows.map((row) => (
+                <div className="cd-irow" key={row.label}>
+                  <span className="ik">{row.label}</span>
+                  <span className="cd-track">
+                    <i
+                      className={"bar-" + dg3(row.pct)}
+                      style={{ width: `${row.pct ?? 0}%` }}
+                    />
+                  </span>
+                  <span className="iv">{row.fraction ?? "—"}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="cd-align cd-facts" data-testid="seat-facts">
+          <div className="cd-align-top">
+            <span className="lab">{t("delegationOverview.factsHeading")}</span>
+          </div>
+          <ul className="cd-facts-list">
+            {seatFactsRows(seat, t).map((line, i) => (
+              <li key={i}>{line}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {cand?.fundingMix && (
         <>
@@ -368,6 +466,7 @@ export function DelegationOverview({
   revealed,
   onOpen,
   onPrint,
+  onTailorIssues,
 }: {
   seats: DelegationSeatVM[];
   verdicts: Record<string, "keep" | "replace" | undefined>;
@@ -377,6 +476,7 @@ export function DelegationOverview({
   revealed?: Set<string>;
   onOpen: (seatId: string) => void;
   onPrint?: () => void;
+  onTailorIssues?: () => void;
 }) {
   const { t } = useI18n();
   const upSeats = seats.filter((s) => s.nextElection?.onBallot2026 !== false);
@@ -393,7 +493,21 @@ export function DelegationOverview({
         <div className="dg-ov-intro">
           <div className="dg-kicker">★ {t("delegationOverview.kicker")}</div>
           <h2>{t("delegationOverview.heading")}</h2>
-          <p className="sub">{t("delegationOverview.sub")}</p>
+          <p className="sub">
+            {userIssues.length > 0
+              ? t("delegationOverview.sub")
+              : t("delegationOverview.subNoIssues")}
+          </p>
+          {userIssues.length === 0 && onTailorIssues && (
+            <button
+              type="button"
+              className="dg-tailor-cta"
+              data-testid="tailor-issues-cta"
+              onClick={onTailorIssues}
+            >
+              {t("delegationOverview.tailorCta")}
+            </button>
+          )}
         </div>
         <div className="dg-prog">
           <div className="meter">

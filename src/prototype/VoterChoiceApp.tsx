@@ -336,9 +336,11 @@ const TRANSLATIONS = {
         'Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking to me below and I\'ll adjust them.',
       sendBtn: 'Send →',
       inputHint: 'Nothing leaves your browser until you lock these in',
-      stepAsk: 'Step 1 of 3 · your issues',
-      stepRefine: 'Step 1 of 3 · refine',
-      stepReady: 'Step 1 of 3 · ready',
+      // No longer "step 1 of 3" — tailoring is a standalone optional loop
+      // now, not one leg of a forced 3-step onboarding sequence.
+      stepAsk: 'Your issues',
+      stepRefine: 'Refining',
+      cancelLabel: '← Back to your delegation',
       placeholderFirst: "Things that have been on your mind — frustrations, hopes, fights you've watched in your community…",
       placeholderFollow: "Tell me more about what you value, ask why I picked these, or add what I missed…",
       chip1: "That's not quite right — let me explain",
@@ -424,6 +426,20 @@ const TRANSLATIONS = {
       mixKeyLargeSub: 'individuals',
       mixKeyPacLabel: 'PACs',
       mixKeyPacSub: 'groups & lobbies',
+      // Reps-first flow (2026-08-18): issues are optional now, reached via
+      // this CTA instead of a forced gate before the overview.
+      subNoIssues:
+        "See the record behind every seat — money, votes, and attendance. Tailor to your issues any time to see how they line up.",
+      tailorCta: 'Tailor to your issues (optional) →',
+      factsHeading: 'What we know about this seat',
+      factsAttendance: '{pct}% attendance — {band}',
+      factsTopPacs: 'Top PAC sponsors: {names}',
+      factsTopPacsMore: ' and {n} more',
+      factsTopPacsNone: 'No named PAC sponsors traced yet',
+      factsKeyVotesSingular: '{n} curated key vote on record',
+      factsKeyVotesPlural: '{n} curated key votes on record',
+      factsChallengersSingular: '{n} challenger filed to run in 2026',
+      factsChallengersPlural: '{n} challengers filed to run in 2026',
     },
     editIssues: {
       eyebrow: 'Amend your issues',
@@ -682,6 +698,11 @@ const TRANSLATIONS = {
       // Edit-issues entry (mny-expander-styled button, RepCard §1)
       editIssuesButtonLabel: 'Edit your {n} ranked issues',
       editIssuesButtonSub: 'every seat re-scores instantly',
+      // Reps-first flow (2026-08-18): shared invitation replacing the
+      // alignment banner/money-verdict/per-issue chips when no issues exist.
+      issueInvitationBody:
+        "Rank your issues to see how their record lines up — optional.",
+      issueInvitationCta: 'Tailor to your issues →',
       // Money section expander/collapse chrome (RepCard §2)
       moneyExpanderLabel: 'Where the money comes from — and why it matters',
       moneyCollapseLabel: 'Hide where the money comes from',
@@ -1236,9 +1257,9 @@ const TRANSLATIONS = {
         'Usa las flechas para reordenar · haz clic en un nombre para renombrar · Eliminar para borrar un tema · o sigue hablando conmigo abajo y los ajustaré.',
       sendBtn: 'Enviar →',
       inputHint: 'Nada sale de tu navegador hasta que confirmes estos temas',
-      stepAsk: 'Paso 1 de 3 · tus temas',
-      stepRefine: 'Paso 1 de 3 · refinar',
-      stepReady: 'Paso 1 de 3 · listo',
+      stepAsk: 'Tus temas',
+      stepRefine: 'Refinando',
+      cancelLabel: '← Volver a tu delegación',
       placeholderFirst: 'Las cosas que han estado en tu mente — frustraciones, esperanzas, peleas que has visto en tu comunidad…',
       placeholderFollow: 'Cuéntame más sobre lo que valoras, pregunta por qué elegí estos, o agrega lo que olvidé…',
       chip1: 'Eso no está del todo bien — déjame explicar',
@@ -1324,6 +1345,18 @@ const TRANSLATIONS = {
       mixKeyLargeSub: 'individuos',
       mixKeyPacLabel: 'PAC',
       mixKeyPacSub: 'grupos y lobbies',
+      subNoIssues:
+        'Mira el historial detrás de cada escaño — dinero, votos y asistencia. Ajusta tus temas cuando quieras para ver cómo se alinean.',
+      tailorCta: 'Ajustar según tus temas (opcional) →',
+      factsHeading: 'Lo que sabemos sobre este escaño',
+      factsAttendance: '{pct}% de asistencia — {band}',
+      factsTopPacs: 'Principales PAC patrocinadores: {names}',
+      factsTopPacsMore: ' y {n} más',
+      factsTopPacsNone: 'Aún no se han rastreado PAC con nombre',
+      factsKeyVotesSingular: '{n} voto clave documentado',
+      factsKeyVotesPlural: '{n} votos clave documentados',
+      factsChallengersSingular: '{n} contrincante inscrito para 2026',
+      factsChallengersPlural: '{n} contrincantes inscritos para 2026',
     },
     editIssues: {
       eyebrow: 'Modifica tus temas',
@@ -1561,6 +1594,9 @@ const TRANSLATIONS = {
       overviewSuccessorChip: '→ {name}',
       editIssuesButtonLabel: 'Edita tus {n} temas priorizados',
       editIssuesButtonSub: 'cada puesto se vuelve a puntuar al instante',
+      issueInvitationBody:
+        'Prioriza tus temas para ver cómo se compara su historial — opcional.',
+      issueInvitationCta: 'Ajustar según tus temas →',
       moneyExpanderLabel: 'De dónde viene el dinero — y por qué importa',
       moneyCollapseLabel: 'Ocultar de dónde viene el dinero',
       moneyExpanderRankedSourceSingular: '{n} fuente clasificada',
