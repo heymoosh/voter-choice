@@ -54,10 +54,26 @@ Input includes the voter's issues. **`issues: []` is valid**:
   untraced-PAC % . Survives `donorCoalition == null` (state coverage gaps) → omit, don't zero.
 - `alignmentScores` — **null when no issues.** Per-issue with/against + contributing
   votes (bill title, vote cast, date, tally, source, member rationale labeled
-  `stated | inferred`). Only exists after the voter ranks issues.
+  `stated | inferred`). Only exists after the voter picks issues **with stances**
+  (see the ladder below — ranking is not what gates it).
 
 A no-issues default view is therefore **facts-only**: money facts, attendance,
 committees, key votes — no verdict language until issues exist.
+
+### Personalization ladder — what each voter input unlocks (verified in code)
+
+| Voter gives us | Unlocks | Cost of skipping |
+|---|---|---|
+| Nothing | Everything in §1 + `racePatterns` — the full facts view | none; already complete |
+| Issue **topics** only | The member's record *on* those issues (votes per issue) | no with/against verdict possible |
+| Topics + **stance** (`in_favor \| opposed`) | Full alignment: "aligns with you %", per-issue with/against, contributing votes, money-vs-your-issue verdicts | this is the load-bearing input |
+| **Ranking / order** | ONLY display order + the "your #1 issue vs their money" callout | nearly free to drop — rank never reaches the backend; scoring is unweighted |
+
+Implication for flow design: **ranking can be omitted at zero data cost** (the ranked
+component stays in the design system; the flow just doesn't require it). Stance capture
+is the one step that buys alignment — and it doesn't require a chat: any stance-carrying
+picker works (e.g. chips whose labels embed the direction). Today the intake
+conversation is merely one way of producing `{ issue, stance }` pairs.
 
 ## 3. GET /api/donors — bucket vocabulary (SHIPPED)
 
