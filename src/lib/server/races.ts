@@ -54,6 +54,14 @@ export interface SeatChallenger {
    * concept). Never set alongside a promoted "on the ballot" status.
    */
   isRunoffPending?: boolean;
+  /**
+   * Part 5 promise-ledger top issues — attached post-hoc by the
+   * /api/delegation route via `lookupCandidateTopIssues`
+   * (src/lib/server/promises.ts), not by this module. Undefined = no
+   * promises on file yet for this candidate (the pilot corpus is small);
+   * distinct from an empty array, which this module never produces.
+   */
+  topIssues?: { canonicalIssue: string; promiseCount: number }[];
 }
 
 export interface SeatChallengers {

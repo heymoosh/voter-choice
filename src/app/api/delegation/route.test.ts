@@ -38,12 +38,24 @@ vi.mock("../../../lib/server/outside-spending", async (importOriginal) => ({
   lookupOutsideSpending: vi.fn(),
 }));
 
+vi.mock("../../../lib/server/races", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../lib/server/races")>()),
+  lookupChallengers: vi.fn(),
+}));
+
+vi.mock("../../../lib/server/promises", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../lib/server/promises")>()),
+  lookupCandidateTopIssues: vi.fn(),
+}));
+
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { geocodeAddressToDistrict } from "../../../lib/server/census-geocode";
 import { resolveDelegation } from "../../../lib/server/delegation";
 import { lookupCanSeatContext } from "../../../lib/server/can-context";
 import { lookupPacSponsors } from "../../../lib/server/pac-sponsors";
 import { lookupOutsideSpending } from "../../../lib/server/outside-spending";
+import { lookupChallengers } from "../../../lib/server/races";
+import { lookupCandidateTopIssues } from "../../../lib/server/promises";
 import { POST } from "./route";
 
 const mockedRateLimit = vi.mocked(checkRaceDataRateLimit);
@@ -52,6 +64,8 @@ const mockedResolve = vi.mocked(resolveDelegation);
 const mockedCanContext = vi.mocked(lookupCanSeatContext);
 const mockedPacSponsors = vi.mocked(lookupPacSponsors);
 const mockedOutsideSpending = vi.mocked(lookupOutsideSpending);
+const mockedChallengers = vi.mocked(lookupChallengers);
+const mockedTopIssues = vi.mocked(lookupCandidateTopIssues);
 
 function makeRequest(body: unknown): NextRequest {
   return new Request("http://localhost/api/delegation", {
@@ -94,6 +108,8 @@ const SEATS = [
 beforeEach(() => {
   vi.clearAllMocks();
   mockedRateLimit.mockResolvedValue(true);
+  mockedChallengers.mockResolvedValue({ house: [], senate: [] });
+  mockedTopIssues.mockResolvedValue(new Map());
 });
 
 describe("POST /api/delegation — validation", () => {
@@ -433,6 +449,78 @@ describe("POST /api/delegation — PAC transparency gate (Part 6a/6b)", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.seats[0].topPacs.sponsors).toEqual([]);
+    consoleSpy.mockRestore();
+  });
+});
+
+describe("POST /api/delegation — promise-ledger top issues on challengers (Part 5)", () => {
+  const CHALLENGER = {
+    id: "federal-C1",
+    name: "Jane Challenger",
+    party: "Republican",
+    totalReceipts: 250_000,
+    rosterProvenance: { source: "fec", asOf: "2026-06-30" } as never,
+  };
+
+  const TOP_ISSUES = [
+    { canonicalIssue: "healthcare_affordability", promiseCount: 3 },
+    { canonicalIssue: "economy_jobs", promiseCount: 1 },
+  ];
+
+  it("attaches topIssues to a house challenger when promises are on file", async () => {
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedChallengers.mockResolvedValue({
+      house: [CHALLENGER],
+      senate: [],
+    });
+    mockedTopIssues.mockResolvedValue(new Map([[CHALLENGER.id, TOP_ISSUES]]));
+
+    const body = await (
+      await POST(makeRequest({ address: "123 Main St Trenton NJ" }))
+    ).json();
+    expect(mockedTopIssues).toHaveBeenCalledWith([CHALLENGER.id]);
+    expect(body.seats[0].challengers[0].topIssues).toEqual(TOP_ISSUES);
+  });
+
+  it("leaves topIssues absent (not an empty array) for a challenger with no promises on file", async () => {
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedChallengers.mockResolvedValue({
+      house: [CHALLENGER],
+      senate: [],
+    });
+    mockedTopIssues.mockResolvedValue(new Map());
+
+    const body = await (
+      await POST(makeRequest({ address: "123 Main St Trenton NJ" }))
+    ).json();
+    expect(body.seats[0].challengers[0]).not.toHaveProperty("topIssues");
+  });
+
+  it("runs no top-issues lookup when there are no challengers at all", async () => {
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedChallengers.mockResolvedValue({ house: [], senate: [] });
+
+    await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    expect(mockedTopIssues).not.toHaveBeenCalled();
+  });
+
+  it("degrades to no topIssues (delegation still 200) when the lookup throws", async () => {
+    const consoleSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    mockedGeocode.mockResolvedValue(GEO_OK);
+    mockedResolve.mockResolvedValue({ status: "ok", seats: SEATS });
+    mockedChallengers.mockResolvedValue({
+      house: [CHALLENGER],
+      senate: [],
+    });
+    mockedTopIssues.mockRejectedValue(new Error("relation does not exist"));
+
+    const res = await POST(makeRequest({ address: "123 Main St Trenton NJ" }));
+    expect(res.status).toBe(200);
+    const body = await res.json();
+    expect(body.seats[0].challengers[0]).not.toHaveProperty("topIssues");
     consoleSpy.mockRestore();
   });
 });

@@ -72,6 +72,13 @@ export interface ApiSeatChallenger {
   party: string | null;
   totalReceipts: number | null;
   rosterProvenance: RosterProvenance;
+  /**
+   * Part 5 promise-ledger top issues by promise count, for the "how they
+   * plan to tackle it" click-through (see /api/promises). Undefined = no
+   * promises extracted yet for this candidate — the pilot corpus is small;
+   * never render this as "no priorities."
+   */
+  topIssues?: { canonicalIssue: string; promiseCount: number }[];
 }
 
 export interface ApiCommitteeAssignment {

@@ -47,6 +47,10 @@ import {
   emptyOutsideSpending,
   type OutsideSpendingResult,
 } from "../../../lib/server/outside-spending";
+import {
+  lookupCandidateTopIssues,
+  type CandidateTopIssue,
+} from "../../../lib/server/promises";
 import { isOfficialRosterEnabled } from "../../../lib/server/officialRosterFlag";
 import { isIncumbentSeekingReelection } from "../../../lib/server/officialRoster";
 
@@ -121,6 +125,35 @@ export async function POST(request: NextRequest) {
     challengers = await lookupChallengers(stateCode, district);
   } catch (err) {
     console.error("[delegation] challenger lookup failed:", err);
+  }
+
+  // Part 5 promise-ledger top issues, for a challenger's card ("how they
+  // plan to tackle it"). Best-effort: a lookup failure never degrades the
+  // delegation response itself. Batched once over every challenger id
+  // across both chambers (senate filers repeat across senate seats).
+  const challengerIds = [
+    ...challengers.house.map((c) => c.id),
+    ...challengers.senate.map((c) => c.id),
+  ];
+  let topIssuesByCandidate = new Map<string, CandidateTopIssue[]>();
+  if (challengerIds.length > 0) {
+    try {
+      topIssuesByCandidate = await lookupCandidateTopIssues(challengerIds);
+    } catch (err) {
+      console.error("[delegation] promise top-issues lookup failed:", err);
+    }
+  }
+  if (topIssuesByCandidate.size > 0) {
+    challengers = {
+      house: challengers.house.map((c) => ({
+        ...c,
+        topIssues: topIssuesByCandidate.get(c.id),
+      })),
+      senate: challengers.senate.map((c) => ({
+        ...c,
+        topIssues: topIssuesByCandidate.get(c.id),
+      })),
+    };
   }
   // CAN2026 curated context (race ratings, donor trails, key-vote prose) —
   // display-side only, never a scoring input. Empty until the CAN ingest
