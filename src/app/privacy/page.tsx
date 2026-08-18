@@ -4,6 +4,7 @@ import {
   StaticsEffectiveDate,
   StaticsCopyrightFooter,
 } from "../_components/StaticsPage";
+import { NEVER_SELL_STATEMENT } from "../../lib/privacy-copy";
 
 export const metadata: Metadata = {
   title: "Privacy Policy — Voter Choice",
@@ -16,15 +17,19 @@ export default function PrivacyPolicy() {
     <StaticsPage
       eyebrow="Privacy Policy"
       title="What stays here, what doesn't."
-      meta={<StaticsEffectiveDate date="April 12, 2026" />}
+      meta={<StaticsEffectiveDate date="August 18, 2026" />}
       footer={<StaticsCopyrightFooter />}
     >
       {/* Intro */}
       <p>
         Voter Choice is operated by Grey Bird LLC. We built this tool to
-        minimize data collection and to keep your ballot research under your
-        control.
+        minimize data collection and to keep your research on your elected
+        officials under your control.
       </p>
+
+      {/* We Never Sell Your Data */}
+      <h2>We Never Sell Your Data</h2>
+      <p>{NEVER_SELL_STATEMENT}</p>
 
       {/* Minimal Data Collection */}
       <h2>Minimal Data Collection</h2>
@@ -33,22 +38,17 @@ export default function PrivacyPolicy() {
         sign-ups. We do record anonymous, content-free usage counts for AI calls
         to monitor operating cost (see <strong>Anonymous Usage Metrics</strong>{" "}
         below) &mdash; those records never include your words, your address, or
-        your IP address. The app stores your{" "}
-        <strong>language preference</strong> in your browser&apos;s localStorage
-        so the interface can stay in English or Spanish across visits. It also
-        stores your <strong>draft ballot picks</strong> and (optionally) a{" "}
-        <strong>bring-your-own Anthropic key</strong> in localStorage. None of
+        your IP address. Across visits, your browser&apos;s localStorage keeps
+        only your <strong>language preference</strong>, your{" "}
+        <strong>chosen issues</strong>, and a{" "}
+        <strong>state-level location</strong> (never your street address, and
+        never a county) &mdash; plus, optionally, a{" "}
+        <strong>bring-your-own Anthropic key</strong>. Your{" "}
+        <strong>precise address</strong> and{" "}
+        <strong>in-progress assessment</strong> are kept in sessionStorage only
+        for the current browser tab and are cleared when you close it. None of
         this leaves your device unless you take an action that explicitly sends
         it.
-      </p>
-
-      {/* Zip Code Processing */}
-      <h2>Zip Code Processing</h2>
-      <p>
-        A bare zip code can be processed in your browser to look up election
-        information from static data files. If you enter a full address, it may
-        be used for address autocomplete and polling-place lookup as described
-        below.
       </p>
 
       {/* Chat Conversations */}

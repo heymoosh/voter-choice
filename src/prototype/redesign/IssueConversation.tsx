@@ -20,7 +20,7 @@
    conversation and bubble up to the host (which opens the budget modal). */
 
 import React, { useRef, useState } from "react";
-import { IssueRow, useI18n } from "../VoterChoiceApp";
+import { IssueRow, useI18n, useNav } from "../VoterChoiceApp";
 import { getChatSessionId } from "../realData";
 import { buildThemeExtractionPrompt } from "../../lib/prompts/theme-extraction";
 import {
@@ -56,6 +56,34 @@ function themesToIssues(themes, sourceText) {
       text,
     })),
   }));
+}
+
+/** Shared "what leaves your browser" note rendered under every intake
+   composer (IssueConversation's live chat AND IntakeLocked's confirm
+   screen — canvas's IqComposer shows it on every intake step). Centralized
+   here so the never-sell statement + privacy link can't drift between the
+   two call sites the way the intake copy itself once did (the honest-copy
+   fix that replaced "nothing leaves your browser" — false, intake turns
+   hit /api/chat — with this note + a real link to /privacy). */
+export function IntakePrivacyLine() {
+  const { t } = useI18n();
+  const { navigate } = useNav();
+  return (
+    <div className="co-privacy">
+      <span className="dot">●</span> {t("intake.inputHint")}{" "}
+      <a
+        className="co-privacy-link"
+        onClick={() => navigate("privacy")}
+        role="link"
+        tabIndex={0}
+        onKeyDown={(e) => {
+          if (e.key === "Enter") navigate("privacy");
+        }}
+      >
+        {t("settings.privacyLink")}
+      </a>
+    </div>
+  );
 }
 
 /* Map issues back to the Theme[] shape the refinement prompt re-injects. */
@@ -413,9 +441,7 @@ export function IssueConversation({
             {t("intake.sendBtn")}
           </button>
         </div>
-        <div className="co-privacy">
-          <span className="dot">●</span> {t("intake.inputHint")}
-        </div>
+        <IntakePrivacyLine />
         {error && (
           <div
             style={{

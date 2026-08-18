@@ -25,7 +25,7 @@
 
 import React from "react";
 import { useI18n } from "../VoterChoiceApp";
-import { IssueReviewCard } from "./IssueConversation";
+import { IssueReviewCard, IntakePrivacyLine } from "./IssueConversation";
 import { decorateIssues, issuesForLevel } from "./delegationData";
 
 export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
@@ -109,9 +109,7 @@ export function IntakeLocked({ issues, setIssues, log, onConfirm, onBack }) {
             step regardless of state (screens-intake.jsx); the port had
             dropped it on this screen when the back link took its slot in
             the row. */}
-        <div className="co-privacy">
-          <span className="dot">●</span> {t("intake.inputHint")}
-        </div>
+        <IntakePrivacyLine />
       </div>
     </div>
   );

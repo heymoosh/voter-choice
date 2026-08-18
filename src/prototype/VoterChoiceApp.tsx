@@ -39,6 +39,7 @@ import { buildThemeExtractionPrompt } from "../lib/prompts/theme-extraction";
 import { parseThemeExtraction } from "../lib/prompts/parse-theme-extraction";
 import { getFallbackStateData, getStateData, findUpcomingElection } from "../lib/getStateData";
 import { getStateRule } from "../lib/state-rules/lookup";
+import { NEVER_SELL_STATEMENT } from "../lib/privacy-copy";
 import {
   useGooglePlacesAutocomplete,
   getPlacesApiKey,
@@ -335,7 +336,7 @@ const TRANSLATIONS = {
       issueInstruction:
         'Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking to me below and I\'ll adjust them.',
       sendBtn: 'Send →',
-      inputHint: 'Nothing leaves your browser until you lock these in',
+      inputHint: 'Your chat here helps pick your issues. We keep only your issues and state on this device — never your address, never your name. We never sell your data.',
       stepAsk: 'Step 1 of 3 · your issues',
       stepRefine: 'Step 1 of 3 · refine',
       stepReady: 'Step 1 of 3 · ready',
@@ -1235,7 +1236,7 @@ const TRANSLATIONS = {
       issueInstruction:
         'Usa las flechas para reordenar · haz clic en un nombre para renombrar · Eliminar para borrar un tema · o sigue hablando conmigo abajo y los ajustaré.',
       sendBtn: 'Enviar →',
-      inputHint: 'Nada sale de tu navegador hasta que confirmes estos temas',
+      inputHint: 'Este chat nos ayuda a elegir tus temas. Solo guardamos tus temas y tu estado en este dispositivo — nunca tu dirección, nunca tu nombre. Nunca vendemos tus datos.',
       stepAsk: 'Paso 1 de 3 · tus temas',
       stepRefine: 'Paso 1 de 3 · refinar',
       stepReady: 'Paso 1 de 3 · listo',
@@ -6335,16 +6336,19 @@ function TipJarPage({ onBack }) {
 function PrivacyPage({ onBack }) {
   return (
     <StaticPage onBack={onBack} eyebrow="Privacy policy" title="What stays here, what doesn't." dek="No analytics, no telemetry, no accounts. Most of what you do never leaves your browser." className="sp-privacy">
-      <p className="sp-meta">Effective April 12, 2026 · Grey Bird LLC</p>
+      <p className="sp-meta">Effective August 18, 2026 · Grey Bird LLC</p>
+
+      <h2>We never sell your data</h2>
+      <p>{NEVER_SELL_STATEMENT}</p>
 
       <h2>Minimal data collection</h2>
-      <p>We use no third-party analytics, ad pixels, accounts, or sign-ups. Across visits, your browser's localStorage keeps only your <b>language</b>, your <b>issues</b>, a <b>county-level location</b> (never your street address), and optionally a <b>bring-your-own Anthropic key</b>. Your <b>precise address</b> and <b>in-progress assessment</b> are kept only for the current tab and cleared when you close it. None of this leaves your device unless you take an action that explicitly sends it.</p>
+      <p>We use no third-party analytics, ad pixels, accounts, or sign-ups. Across visits, your browser's localStorage keeps only your <b>language</b>, your <b>issues</b>, a <b>state-level location</b> (never your street address, never a county), and optionally a <b>bring-your-own Anthropic key</b>. Your <b>precise address</b> and <b>in-progress assessment</b> are kept only for the current tab and cleared when you close it. None of this leaves your device unless you take an action that explicitly sends it.</p>
 
       <h2>Polis — the shared opinion map</h2>
       <p>When you add your views to <b>Polis</b> (our map of where voters stand), your <b>chosen issues</b> and <b>state-level location</b> are retained on our servers — <b>de-identified and shown only in aggregate</b>, never tied to your street address, name, or chat. It's the one place your data persists beyond your browser, and it exists only so the map can show how your priorities compare to your neighbors'.</p>
 
       <h2>Your address</h2>
-      <p>If you enter your street address, it may be used for autocomplete (Google Places) in your browser, is sent to the <b>US Census Bureau</b> to look up your representatives, and is sent to the <b>Google Civic Information API</b> through our server for polling-place and contest lookup. We do not intentionally log or store your address on our servers, and we do not include it in the AI chat prompt. In your browser it is held only for the current tab and cleared when you close it — only a county-level location is kept across visits.</p>
+      <p>If you enter your street address, it may be used for autocomplete (Google Places) in your browser, is sent to the <b>US Census Bureau</b> to look up your representatives, and is sent to the <b>Google Civic Information API</b> through our server for polling-place and contest lookup. We do not intentionally log or store your address on our servers, and we do not include it in the AI chat prompt. In your browser it is held only for the current tab and cleared when you close it — only a state-level location is kept across visits.</p>
 
       <h2>Chat conversations</h2>
       <p>Chat exists in browser memory while the page is open. It is not intentionally stored, logged, or persisted by our servers. Messages are sent to the <b>Anthropic API</b> for processing. Don't type your name, exact address, phone, email, or other identifying details into chat. See <a href="https://www.anthropic.com/policies/privacy" target="_blank" rel="noopener noreferrer">Anthropic's privacy policy</a>.</p>

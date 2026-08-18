@@ -3887,6 +3887,15 @@ Bumps
 .bf-app .co-privacy .dot {
   color: var(--keep);
 }
+/* Privacy-policy link inline in the .co-privacy note — underlined, inherits
+   the note's small mono sizing rather than picking up .linklike's larger
+   14px/600-weight treatment (built for standalone secondary actions, not an
+   inline word inside a sentence). */
+.bf-app .co-privacy-link {
+  color: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
 
 /* ---------- Intake Round 3.1 — composer chrome parity ----------
    Muxin's verdict on the Round-3 build: "I like the Design version of the
