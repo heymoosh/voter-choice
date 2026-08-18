@@ -462,7 +462,7 @@ async function fetchTextSoft(
 }
 
 /** fetchTextSoft + JSON.parse; a body that fails to parse is a null too. */
-async function fetchJsonSoft(
+export async function fetchJsonSoft(
   url: string,
   fetcher: typeof fetch,
   label: string,
