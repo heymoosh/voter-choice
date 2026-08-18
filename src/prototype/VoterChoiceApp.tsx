@@ -336,7 +336,7 @@ const TRANSLATIONS = {
       issueInstruction:
         'Use the arrows to re-rank · click a name to rename · Remove to delete an issue · or keep talking to me below and I\'ll adjust them.',
       sendBtn: 'Send →',
-      inputHint: 'Your chat here helps pick your issues. We keep only your issues and state on this device — never your address, never your name. We never sell your data.',
+      inputHint: 'Your address stays in this tab only, cleared when you close it — after that, just your issues and state remain. We never sell your data.',
       stepAsk: 'Step 1 of 3 · your issues',
       stepRefine: 'Step 1 of 3 · refine',
       stepReady: 'Step 1 of 3 · ready',
@@ -1236,7 +1236,7 @@ const TRANSLATIONS = {
       issueInstruction:
         'Usa las flechas para reordenar · haz clic en un nombre para renombrar · Eliminar para borrar un tema · o sigue hablando conmigo abajo y los ajustaré.',
       sendBtn: 'Enviar →',
-      inputHint: 'Este chat nos ayuda a elegir tus temas. Solo guardamos tus temas y tu estado en este dispositivo — nunca tu dirección, nunca tu nombre. Nunca vendemos tus datos.',
+      inputHint: 'Tu dirección se guarda solo en esta pestaña y se borra al cerrarla — después, solo quedan tus temas y tu estado. Nunca vendemos tus datos.',
       stepAsk: 'Paso 1 de 3 · tus temas',
       stepRefine: 'Paso 1 de 3 · refinar',
       stepReady: 'Paso 1 de 3 · listo',
