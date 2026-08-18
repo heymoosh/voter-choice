@@ -1,12 +1,13 @@
 /**
  * scripts/ingest/_fec-id-backfill-scope.ts
  *
- * READ-ONLY scope check for the "123 of 629 federal incumbents have a null
- * fec_candidate_id" gap (docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md Part 2
- * / Part 5 open item). It is the reason ~103 of the 2022 promise-ledger
- * candidates land in `_promise-corpus-spike.ts`'s `no_fec_id` bucket even
- * though they are real incumbents with real FEC filings — our own
- * `candidates` row just never got the join key.
+ * Scope check (default) + guarded apply (--apply) for the "123 of 629
+ * federal incumbents have a null fec_candidate_id" gap
+ * (docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md Part 2 / Part 5 open item).
+ * It is the reason ~103 of the 2022 promise-ledger candidates land in
+ * `_promise-corpus-spike.ts`'s `no_fec_id` bucket even though they are real
+ * incumbents with real FEC filings — our own `candidates` row just never got
+ * the join key.
  *
  * unitedstates/congress-legislators (CC0, already the source
  * committee-assignments.ts uses) publishes `id.bioguide` and `id.fec` per
@@ -14,20 +15,21 @@
  * crosswalk, not a name guess, matching the "a filing/crosswalk is evidence"
  * standard the rest of this pipeline already holds itself to.
  *
- * This script only REPORTS how many `federal-<BIOGUIDE>` candidates rows with
- * a null fec_candidate_id have a resolvable bioguide->fec match in that
- * crosswalk. It does not write to the DB — the actual backfill (an UPDATE
- * against prod `candidates`) needs Muxin's explicit go-ahead per this
- * project's DB-change norms, run separately once this scope is reviewed.
+ * Default mode only REPORTS how many `federal-<BIOGUIDE>` candidates rows
+ * with a null fec_candidate_id have a resolvable bioguide->fec match. --apply
+ * performs the UPDATE (approved 2026-08-18) — each write is individually
+ * guarded by `fec_candidate_id IS NULL`, so it only fills blanks and is safe
+ * to re-run.
  *
  * Usage:
  *   npx tsx --env-file=.env.local scripts/ingest/_fec-id-backfill-scope.ts [--sample N]
+ *   npx tsx --env-file=.env.local scripts/ingest/_fec-id-backfill-scope.ts --apply
  */
 
 import yaml from "js-yaml";
 import { requireDb } from "../../db/client";
 import { candidates } from "../../db/schema";
-import { and, isNull, like } from "drizzle-orm";
+import { and, eq, isNull, like } from "drizzle-orm";
 
 const LEGISLATORS_API_URL =
   "https://api.github.com/repos/unitedstates/congress-legislators/contents/legislators-current.yaml";
@@ -116,6 +118,34 @@ async function main(): Promise<void> {
       process.stderr.write(`  ${u.candidateId} (${u.name})\n`);
     }
   }
+
+  if (!process.argv.includes("--apply")) return;
+
+  process.stderr.write(
+    `\n[fec-id-backfill-scope] --apply: writing ${matched.length} fec_candidate_id values ` +
+      `(each guarded by IS NULL)...\n`,
+  );
+  let updated = 0;
+  for (const m of matched) {
+    const result = await db
+      .update(candidates)
+      .set({ fecCandidateId: m.fecId })
+      .where(and(eq(candidates.id, m.candidateId), isNull(candidates.fecCandidateId)))
+      .returning({ id: candidates.id });
+    if (result.length > 0) updated++;
+  }
+  process.stderr.write(`[fec-id-backfill-scope] applied: ${updated}/${matched.length} rows updated\n`);
+
+  const verify = await db
+    .select({ id: candidates.id, fecCandidateId: candidates.fecCandidateId })
+    .from(candidates)
+    .where(
+      and(isNull(candidates.fecCandidateId), like(candidates.id, "federal-%")),
+    );
+  process.stderr.write(
+    `[fec-id-backfill-scope] post-apply: ${verify.length} federal-* rows still null ` +
+      `(expected ${nullRows.length - updated})\n`,
+  );
 }
 
 main().catch((err) => {
