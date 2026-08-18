@@ -96,7 +96,12 @@ export async function startNextDev(
     stdio: ["ignore", logFd, logFd],
     detached: true,
   });
-  const url = `http://127.0.0.1:${port}`;
+  // Next 16's dev-origin CORS check silently blocks hydration (not just
+  // HMR) when the app is hit at 127.0.0.1 — the dev server logs "Blocked
+  // cross-origin request ... from 127.0.0.1" and React never mounts, with
+  // zero console/page errors to explain why. localhost isn't subject to
+  // the same check.
+  const url = `http://localhost:${port}`;
   try {
     await waitForServer(url);
   } catch (err) {
