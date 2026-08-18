@@ -14,8 +14,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
-import { getClientIP } from "../../../lib/server/client-ip";
+import { guardedGetParams } from "../../../lib/server/rate-limited-get-params";
 import { lookupCandidatePromises } from "../../../lib/server/promises";
 import { isCanonicalIssueId } from "../../../lib/canonicalIssues";
 
@@ -55,14 +54,7 @@ function parseAndValidateParams(
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
-  const ip = getClientIP(request);
-  const rateLimitOk = await checkCounterRateLimit(ip);
-  if (!rateLimitOk) {
-    return Response.json({ error: "Rate limit exceeded." }, { status: 429 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const paramsOrError = parseAndValidateParams(searchParams);
+  const paramsOrError = await guardedGetParams(request, parseAndValidateParams);
   if (paramsOrError instanceof Response) return paramsOrError;
 
   const { candidateId, canonicalIssue } = paramsOrError;

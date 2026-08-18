@@ -14,8 +14,7 @@
  */
 
 import { NextRequest } from "next/server";
-import { checkCounterRateLimit } from "../../../lib/server/counters-rate-limit";
-import { getClientIP } from "../../../lib/server/client-ip";
+import { guardedGetParams } from "../../../lib/server/rate-limited-get-params";
 import { lookupDonorCoalition } from "../../../lib/server/donors";
 
 // ---------------------------------------------------------------------------
@@ -91,15 +90,8 @@ function parseAndValidateParams(
 // ---------------------------------------------------------------------------
 
 export async function GET(request: NextRequest) {
-  // Rate-limit (same IP-based pattern as /api/alignment)
-  const ip = getClientIP(request);
-  const rateLimitOk = await checkCounterRateLimit(ip);
-  if (!rateLimitOk) {
-    return Response.json({ error: "Rate limit exceeded." }, { status: 429 });
-  }
-
-  const { searchParams } = new URL(request.url);
-  const paramsOrError = parseAndValidateParams(searchParams);
+  // Rate-limit (same IP-based pattern as /api/alignment), then parse.
+  const paramsOrError = await guardedGetParams(request, parseAndValidateParams);
   if (paramsOrError instanceof Response) return paramsOrError;
 
   const { candidateName, stateCode, jurisdiction, electionCycle } =
