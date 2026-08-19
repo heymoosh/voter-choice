@@ -118,6 +118,16 @@ export const LAUNCH_FLAG_REGISTRY: readonly LaunchFlagEntry[] = [
     note: "Confirmed dark: leave UNSET until the rubric §6.4 ship gate clears (independent-annotator gold pass, κ >= 0.70, >= 90% adjudicator agreement, zero kept<->broken polarity flips) AND Muxin signs off regardless of the numbers. No reader/UI exists yet either way (deferred to a separate Claude Design session).",
   },
   {
+    envVar: "BILLIONAIRE_DONOR_MATCH_ENABLED",
+    isLaunchConvention: false,
+    surface: "server",
+    status: "pre_launch_dark",
+    gates:
+      "billionaire_donor_contributions (matched itemized FEC donor records against BILLIONAIRE_SEED) rendered anywhere",
+    readAt: "src/lib/server/billionaire-donor-flag.ts",
+    note: "Confirmed dark: leave UNSET. Matched rows include low-confidence, human-review-only entries (name match with a contradicting employer) that must be reviewed by a human before ever surfacing — see db/schema.ts's billionaire_donor_contributions header. No reader/UI exists yet either way (deferred to a separate Claude Design session).",
+  },
+  {
     envVar: "VOTER_ISSUE_EVENTS_ENABLED",
     isLaunchConvention: false,
     surface: "server",

@@ -124,6 +124,13 @@ jobs:
       - name: Run federal independent expenditures ingest (Part 6b)
         run: npx tsx scripts/ingest/federal-independent-expenditures.ts --cycle 2026
 
+      # Must run AFTER Part 6b above: its PAC-path matching is scoped to
+      # committees that already have an independent_expenditures row this
+      # cycle. Writes are gated dark by BILLIONAIRE_DONOR_MATCH_ENABLED (no
+      # reader/UI exists yet) — this just keeps the underlying data current.
+      - name: Run billionaire donor match ingest
+        run: npx tsx scripts/ingest/billionaire-donor-match.ts --cycle 2026
+
       - name: Notify on ingest failure
         if: failure()
         env:

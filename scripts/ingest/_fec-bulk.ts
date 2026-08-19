@@ -253,6 +253,39 @@ export async function loadFederalCandidateMapWithFundingMix(
   return map;
 }
 
+/**
+ * Map FEC candidate id → our candidates.id for EVERY tracked federal
+ * candidate with a resolvable FEC id — unlike
+ * loadFederalCandidateMapWithFundingMix, not scoped to candidates that
+ * already have a funding-mix row. Use this when the caller is not deriving a
+ * re-cut of the funding mix (e.g. billionaire-donor-match.ts, which persists
+ * raw matched contributions rather than a bucket total that could clobber a
+ * funding-mix row at the same unique key).
+ */
+export async function loadFederalCandidateMap(
+  db: DbClient,
+): Promise<Map<string, string>> {
+  const rows = (await db
+    .select({
+      id: candidates.id,
+      sourceId: candidates.sourceId,
+      fecCandidateId: candidates.fecCandidateId,
+      rawMetadata: candidates.rawMetadata,
+    })
+    .from(candidates)
+    .where(
+      sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`,
+    )) as CandidateFecRow[];
+
+  const map = new Map<string, string>();
+  for (const row of rows) {
+    for (const fecId of fecCandidateIdsForRow(row)) {
+      if (!map.has(fecId)) map.set(fecId, row.id);
+    }
+  }
+  return map;
+}
+
 export function fecCandidateIdsForRow(row: CandidateFecRow): string[] {
   const ids = new Set<string>();
   if (row.fecCandidateId) ids.add(row.fecCandidateId.trim().toUpperCase());

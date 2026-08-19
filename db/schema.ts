@@ -1482,3 +1482,83 @@ export const independentExpenditures = pgTable(
     ),
   ],
 );
+
+// ---------------------------------------------------------------------------
+// billionaire_donor_contributions — matched itemized FEC contributions
+// (Schedule A / individual "indiv" bulk file) from someone on the
+// hand-verified BILLIONAIRE_SEED list (scripts/ingest/_billionaire-seed.ts).
+//
+// TWO KINDS OF ROW, both raw facts, never combined into a fabricated total:
+//   - committeeType='candidate': a direct contribution to a candidate's own
+//     principal campaign committee. candidateId is set.
+//   - committeeType='pac': a contribution to a Super PAC / outside-spending
+//     committee. candidateId is NULL here on purpose — a PAC pools money from
+//     many donors, so attributing one donor's dollars to a specific race the
+//     PAC later spent on would misrepresent the money. Which candidates a PAC
+//     spent FOR/AGAINST is already tracked in independent_expenditures,
+//     joined on committeeId; read paths compose the two facts ("billionaire X
+//     gave $Y to PAC Z" + "PAC Z spent $W supporting candidate D") without
+//     ever multiplying or attributing the donor's exact dollars to the race.
+//
+// Every row carries its own raw FEC fields (donor name/city/state/employer/
+// occupation exactly as filed) plus matchConfidence + matchSignals, so any
+// match — high, medium, or low — is human-auditable before a UI ever surfaces
+// it. Low-confidence (name-only, employer contradicts) rows are kept, not
+// dropped, precisely so a human reviewer can see the near-miss rather than
+// have it silently vanish.
+//
+// No display flag reads this table yet — gated by
+// BILLIONAIRE_DONOR_MATCH_ENABLED (src/lib/server/billionaire-donor-flag.ts),
+// default OFF. UI/design work is out of scope for this ingest; see
+// docs/operations/launch-flip-list.md.
+// ---------------------------------------------------------------------------
+export const billionaireDonorContributions = pgTable(
+  "billionaire_donor_contributions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    // Stable slug from BILLIONAIRE_SEED (e.g. "elon-musk") — the seed list is
+    // code, not a DB table, so this is a soft reference, not an FK.
+    billionaireKey: text("billionaire_key").notNull(),
+    billionaireName: text("billionaire_name").notNull(),
+    committeeId: text("committee_id").notNull(),
+    /** 'candidate' | 'pac' — see table header. */
+    committeeType: text("committee_type").notNull(),
+    /** Set only when committeeType='candidate'. */
+    candidateId: text("candidate_id").references(() => candidates.id),
+    electionCycle: text("election_cycle").notNull(),
+    amount: numeric("amount", { precision: 14, scale: 2 }).notNull(),
+    contributionDate: date("contribution_date"),
+    // Raw FEC fields exactly as filed — the evidence behind the match.
+    donorNameRaw: text("donor_name_raw").notNull(),
+    donorCity: text("donor_city"),
+    donorState: text("donor_state"),
+    donorEmployer: text("donor_employer"),
+    donorOccupation: text("donor_occupation"),
+    /** 'high' | 'medium' | 'low' — see scoreMatchConfidence. */
+    matchConfidence: text("match_confidence").notNull(),
+    matchSignals: text("match_signals").notNull(),
+    /** FEC SUB_ID — the true unique id for one itemized line. */
+    fecSubId: text("fec_sub_id").notNull(),
+    source: text("source").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    // Re-runs upsert on the FEC transaction id, not duplicate rows.
+    unique("billionaire_donor_contributions_sub_id_uidx").on(t.fecSubId),
+    index("billionaire_donor_contributions_billionaire_idx").on(
+      t.billionaireKey,
+      t.electionCycle,
+    ),
+    index("billionaire_donor_contributions_candidate_idx").on(
+      t.candidateId,
+      t.electionCycle,
+    ),
+    index("billionaire_donor_contributions_committee_idx").on(
+      t.committeeId,
+      t.electionCycle,
+    ),
+  ],
+);

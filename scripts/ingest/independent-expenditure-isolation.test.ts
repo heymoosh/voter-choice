@@ -92,6 +92,15 @@ const ALLOWED_REFERENCE_FILES = new Set([
   // writes, never feeds funding-mix math — it exists to gate what the 6a/6b
   // display blocks may claim about sponsors.
   "scripts/ingest/_export-pac-curation-queue.ts",
+  // Billionaire donor match ingest (2026-08-19): reads ONLY committeeId (a
+  // distinct-id scoping query, never amountTotal or supportOppose) to know
+  // which Super PACs already have at least one IE row this cycle, so the
+  // itemized-contribution scan only looks at PACs actually spending on races
+  // we track. Never writes to independent_expenditures, never sums an IE
+  // amount into anything, and never attributes a donor's dollars to a
+  // specific candidate/race — see billionaire_donor_contributions' header in
+  // db/schema.ts for why candidateId stays NULL on every PAC-path row.
+  "scripts/ingest/billionaire-donor-match.ts",
 ]);
 
 /** Usage of the table/module — identifiers and imports, not prose mentions. */

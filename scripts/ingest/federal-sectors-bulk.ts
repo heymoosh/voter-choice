@@ -155,10 +155,16 @@ export interface IndivContributionRow {
   transactionType: string;
   entityType: string;
   contributorName: string;
+  city: string;
+  state: string;
   employer: string;
   occupation: string;
+  /** Raw MM/DD/YYYY-packed TRANSACTION_DT, e.g. "01312026". Empty if blank. */
+  transactionDate: string;
   transactionAmount: number;
   memoCode: string | null;
+  /** FEC SUB_ID — the true unique id for one itemized line, for dedupe. */
+  subId: string;
 }
 
 export interface SectorAggregate {
@@ -264,10 +270,14 @@ export function parseIndivContributionLine(
     transactionType,
     entityType: (fields[6] ?? "").trim().toUpperCase(),
     contributorName: (fields[7] ?? "").trim(),
+    city: (fields[8] ?? "").trim(),
+    state: (fields[9] ?? "").trim().toUpperCase(),
     employer: (fields[11] ?? "").trim(),
     occupation: (fields[12] ?? "").trim(),
+    transactionDate: (fields[13] ?? "").trim(),
     transactionAmount: Number.parseFloat((fields[14] ?? "").trim()),
     memoCode: emptyToNull(fields[18]),
+    subId: (fields[20] ?? "").trim(),
   };
 }
 
