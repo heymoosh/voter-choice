@@ -422,6 +422,79 @@ I think it's gonna be a lot of vibe checks, honestly, but also doing whatever we
 
 ---
 
+### Reps-first / System-1 redesign — backend data cards (2026-08-18)
+
+Backend-only support for the reps-first + System-1/somatic redesign Muxin is doing in
+Claude Design. Ground rules for every card here: NO UI/UX in the repo (design leads on
+the canvas; see docs/design/DATA-CONTRACT.md for the shapes + honesty constraints);
+data-before-UI; cards marked design-gated don't start until the designed UX is settled.
+
+**[P1] Zip→district crosswalk ingest**
+- Ingest a public zip↔congressional-district crosswalk (OpenSourceActivismTech `us-zipcodes-congress`; verify current-cycle districts before load). New table: zip5, state, district(s), single_district flag. Include a refresh-policy note for redistricting cycles. Data-only card — no API changes.
+- Context: ~85% of zips sit in one district; splits cluster in cities. Split zips fall back to a street-address ask (zip+4→district has no free dataset — do NOT build zip+4).
+- STATUS: Backlog
+- DECISION: Zip-first location entry approved (Muxin 2026-08-18) for data minimization.
+<!-- card-id: 187f78f1-b0b6-4e44-b26e-1ca932a77048 -->
+
+**[P1] /api/delegation accepts zip input**
+- Accept `{ zip }` alongside `{ address }`. Single-district zip → full seats payload unchanged. Split zip → new `zip_split` status: senators + candidate-district list + ask-for-street. Invalid zip → designed error status. Territories keep `no_representation`. Contract states in docs/design/DATA-CONTRACT.md §1.
+- Touches src/app/api/** → needs the security-reviewed label (get Muxin's OK).
+- DEPENDS ON: Zip→district crosswalk ingest
+- STATUS: Backlog
+<!-- card-id: d78f9c35-1c1b-4476-b497-de25e54a2d48 -->
+
+**[P2] Civic-logistics contract for zip-only entries**
+- Zip-only users can't get polling place/hours (street needed by /api/civic). Define the honest degrade payload (state-level: registration deadline, ID rules, county lookup link) + the later-address upgrade path (e.g. at scorecard time). Backend contract only.
+- DEPENDS ON: /api/delegation accepts zip input
+- STATUS: Backlog
+<!-- card-id: 5f2c2297-f2dc-4813-9bc7-a715f4ec3a86 -->
+
+**[P1] IRS state tax aggregates + household counts (micro-ingest)**
+- Ingest IRS SOI gross federal collections by state (one small public table/year) + Census household counts per state. Serve: state total + average per household (labeled "average"). Powers the "did you get what you paid for?" System-1 card with zero personal-income questions.
+- STATUS: Backlog
+- DECISION: Approved (Muxin 2026-08-18). Per-household is division only — NEVER attribute dollar harm to a specific rep's vote (bills bundle provisions; votes are collective; incidence contested).
+<!-- card-id: a8183423-780e-4297-bf85-9a70f6f519ef -->
+
+**[P2] In-state vs out-of-state donor cut**
+- New donor bucket derived from FEC bulk individual data we already ingest (contributor state field): % of individual dollars from inside vs outside the candidate's state. PAC HQ state is a weaker signal — if included, label separately.
+- Copy constraint (from the design-side audit lineage): "donors outside your state," never "out-of-state lobbyists."
+- STATUS: Backlog
+<!-- card-id: 5d1c9bda-89f4-4b88-8503-6f19dee37989 -->
+
+**[P2] Anonymous pledge counters**
+- 1-tap pledge stays client-side by default. This card adds optional aggregate counts ("N pledges in your district/state") reusing the anonymous-counter infra (voter_issue_events pattern): new event type, state-level only, no identifiers. Build only if the designed UX shows counts.
+- STATUS: Backlog
+<!-- card-id: d0e2fe36-3c69-407c-b631-89f902c42224 -->
+
+**[P2] Curated influence context-stats table**
+- Small curated table `{stat, scope, source_url, year, caveat}` of published money-in-politics findings (e.g. Alexander/Mazza/Scholz 2009 repatriation-holiday study, 220:1 — include the IFS critique as the caveat). Rendered as cited editorial context lines.
+- STATUS: Backlog
+- DECISION: Curated-cited only (Muxin 2026-08-18) — never computed per-PAC/per-rep; the tax-savings-per-lobbying attribution only exists for a handful of academically studied bills.
+<!-- card-id: 7798f591-1bde-4208-867d-86ab0796f080 -->
+
+**[P2] Challenger committee funding aggregates (design-gated)**
+- Run the incumbent donor pipeline on roster-matched challenger committees so challengers get a funding mix + PAC receipts, not just `totalReceipts`. Enables verified "takes $0 corporate PAC money" claims and the duel's challenger money column (long-standing gap from the design-side data audit). No FEC match stays "No FEC match yet — so no dollar shown", never $0.
+- STATUS: Backlog
+<!-- card-id: 7e4800cf-0251-4f31-ac68-3186a79c7fa2 -->
+
+**[P2] Revive promise read path (design-gated)**
+- Branch `feat/promise-read-path` (closed PR #540) holds the reviewed serve code: src/lib/server/promises.ts, GET /api/promises, challenger topIssues on /api/delegation. Revive once the Claude Design UX for promises is settled AND the corpus session has filled data. Serve shapes documented in docs/design/DATA-CONTRACT.md §4.
+- Touches src/app/api/** → needs the security-reviewed label (get Muxin's OK).
+- STATUS: Backlog
+<!-- card-id: a7715c96-60f4-48d9-bc9b-517be1828051 -->
+
+**[P2] Notable-votes derivation (design-gated)**
+- Issue-agnostic "top actions" ranking over votes + issue_tags (candidate criteria: close tallies, party-cross votes, high tagger confidence, recency). Ranking criteria are editorial — needs Muxin's DECISION before build. Then a server lib (src/lib/server/notable-votes.ts) + delegation extension.
+- STATUS: Backlog
+<!-- card-id: c15149ff-65ed-41c0-8eec-291326b5559a -->
+
+**[P2] Warning-signal derivations (design-gated)**
+- Muxin approved all four SignalBadge trigger signals (2026-08-18): attendance far below chamber median (data already computed) → broken promise verdict (corpus-gated) → donor-alignment ("voted the donors' way, k of n" — alignment wording only, never causation/timing) → stock-trades-near-committees (member_stock_transactions × committee_memberships overlap; ranges only per the honesty contract). This card = the two NEW derivations (donor-alignment, stock overlap). Badge itself is design-side.
+- STATUS: Backlog
+<!-- card-id: 5f560e5a-f5be-4305-88ce-5f303bda349d -->
+
+---
+
 ## Phase 2 — Intermediary [PROPOSED — refine later]
 
 Expand beyond Congress without full ballot ingestion (non-legislative candidates via web search, state/local depth, engagement/Polis).
