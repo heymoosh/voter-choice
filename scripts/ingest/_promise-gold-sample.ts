@@ -187,6 +187,21 @@ async function main(): Promise<void> {
     }
     cycle = parsed;
   }
+  // --round verdict with no --cycle silently defaults every promise's
+  // promised_window to the 2026 TERM_WINDOW and filters actions to it —
+  // for any other cycle's promises (e.g. the 2022 retrospective) that
+  // window is wrong and their in-window evidence gets dropped, the same
+  // footgun the adjudicate CLI's --promise-without---cycle case was
+  // upgraded to a hard refusal for (2026-08-19). Extraction round has no
+  // window-dependent output, so it stays unscoped by default.
+  if (round === "verdict" && cycle === undefined) {
+    process.stderr.write(
+      "[promise-gold-sample] --round verdict requires --cycle N — without it every promise's " +
+        "promised_window defaults to 2027-01-03..2029-01-03, which silently filters out a " +
+        "different cycle's real evidence.\n",
+    );
+    process.exit(1);
+  }
 
   const db = requireDb();
   const rows =

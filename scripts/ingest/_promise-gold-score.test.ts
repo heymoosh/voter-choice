@@ -44,6 +44,7 @@ describe("csv round-trip", () => {
         promiseType: "vote",
         conditionsDeadline: null,
         archiveUrl: "https://web.archive.org/web/20260801/https://example.com",
+        promisedWindow: "2027-01-03..2029-01-03",
         linkedActions: [],
       },
     ]);
