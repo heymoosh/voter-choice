@@ -116,10 +116,14 @@ describe("parseIndivContributionLine", () => {
       transactionType: "15",
       entityType: "IND",
       contributorName: "DOE, JANE",
+      city: "TRENTON",
+      state: "NJ",
       employer: "MERCK & CO",
       occupation: "SCIENTIST",
+      transactionDate: "01312026",
       transactionAmount: 500,
       memoCode: null,
+      subId: "4021620261234567890",
     });
   });
 
