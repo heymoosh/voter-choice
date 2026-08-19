@@ -148,12 +148,18 @@ never exact amounts).
 
 ## 6. Does not exist — do not design numbers for these
 
-- **Named individual donors** (no dataset; "top donors" = named PACs + buckets).
+- **Named individual donors, in general** (no dataset; "top donors" = named PACs +
+  buckets) — **except** a narrow, curated billionaire watchlist match, see §8. There is
+  still no comprehensive per-donor lookup; anyone not on that ~59-person list is
+  invisible.
 - **Salience / "top actions" score** (derived notable-votes ranking is PLANNED; criteria
   pending sign-off).
 - Average gift size · donation→vote timing/receipts · member-level lobbying (LDA names
-  chambers, not members) · revolving-door records · PAC ROI figures · super-PAC donor
-  attribution to candidates · dark-money donor lists ("donors not publicly disclosed").
+  chambers, not members) · revolving-door records · PAC ROI figures · a **specific
+  dollar amount** attributed from a super-PAC donor to a specific candidate's race (§8's
+  PAC-path rows deliberately stop at "gave $X to PAC Y" + "PAC Y spent $Z on this race"
+  as two separate facts — never multiplied or netted into one number) · dark-money donor
+  lists ("donors not publicly disclosed").
 
 Mock numbers on the canvas for any of these will not ship; the design's own
 "citation required — else omit" rule is enforced at build time.
@@ -180,3 +186,61 @@ well-defined backend cards that can be built while design happens.
 | "$4,200/household corporate handouts approved [by this rep's votes]"                                                                 | **CANNOT SHIP** — the vote-attribution step is the problem, not the division: bills bundle hundreds of provisions, votes are collective, incidence is contested. "Avg taxes per household" (above) is fine; "this vote cost your household $Z" is not                                                                                                                                                                                                                                                                                                                |
 | "Voted to let them keep raising prices" (causal framing)                                                                             | **Constrained** — must use alignment wording ("voted the donors' way on k of n"), never causation/lobbying/timing claims (§5)                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | Challenger photos + names up front                                                                                                   | **DECIDED (Muxin 2026-08-18): blind by default stays, especially for challengers.** The somatic hero card must be designed blind (e.g. "Challenger A · 100% grassroots funded" + reveal), no photos pre-reveal                                                                                                                                                                                                                                                                                                                                                       |
+
+## 8. Billionaire donor matches (DB SHIPPED · dark · serve shapes SPEC)
+
+New backend-only work (2026-08-19), not yet reachable by any endpoint — the table exists
+in prod and is populated by a weekly ingest, gated fully dark by
+`BILLIONAIRE_DONOR_MATCH_ENABLED` (default off). No serve shape or UI decision exists
+yet; design against the facts below with the same "close the gap before building UI"
+discipline as everything else in this doc, and read the scope note below before treating
+this as general donor lookup.
+
+**Scope, precisely:** not general individual-donor lookup — FEC's full itemized donor
+data still isn't served anywhere (see §6). This is a curated, hand-verified watchlist of
+~59 well-known US billionaires (Musk, Bezos, Soros, the Kochs, Griffin, and similar —
+each individually sourced from Wikipedia/Forbes, not comprehensive), matched by name
+against FEC records. Anyone not on that list is invisible here, same as before.
+
+Two kinds of match, both raw evidence rows, deliberately never combined into a
+fabricated number:
+
+- **Direct-to-candidate** — a billionaire personally wrote the candidate's committee a
+  check (capped ~$3,300/cycle by law). Carries `candidateId`.
+- **Via a Super PAC** — a billionaire gave to a PAC that is *separately* known (via §1's
+  `outsideSpending` / `topPacs` data) to have spent money supporting or opposing a
+  candidate. `candidateId` is deliberately NULL on these rows — a PAC pools many donors'
+  money, so this never claims "this billionaire's exact dollars funded the ad against
+  your candidate," only two true facts side by side: "gave $X to PAC Y" + "PAC Y spent
+  $Z FOR/AGAINST candidate D" (the second fact is already shippable via
+  `outsideSpending`).
+
+Every match carries a confidence tier design must not hide or flatten:
+
+| Confidence | What it means                                                                                        | 2026 cycle so far (first live run) |
+| ---------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `high`     | name match + employer field corroborates (e.g. "GRIFFIN, KENNETH" / employer "CITADEL")               | 456 rows                            |
+| `medium`   | name match, employer blank/generic (retired, self-employed, N/A) — not confirmed, not contradicted    | 205 rows                            |
+| `low`      | name match only, employer points somewhere unrelated — likely a same-name stranger, kept for human review, not meant to surface | 172 rows                            |
+
+**Ship gate, same shape as §4's promise ledger:** rows exist so a human can review them,
+not so a UI can show them unreviewed. Any design must either omit `low` entirely or
+label it unmistakably as unverified; `medium` needs its own explicit call before design
+treats it as confirmed — do not silently promote either tier to look like `high`.
+
+Future serve shape (not yet built — field list for design reference only):
+
+```ts
+interface BillionaireDonorMatch {
+  billionaireName: string;
+  netWorthUsd: string; // as-of a cited source, not live-updated
+  sourceOfWealth: string;
+  committeeType: "candidate" | "pac";
+  candidateId: string | null; // null on every PAC-path row, see above
+  amount: string;
+  contributionDate: string | null;
+  matchConfidence: "high" | "medium" | "low";
+  matchSignals: string; // human-readable — what corroborated or didn't
+  sourceUrl: string; // the FEC bulk file this row came from
+}
+```
