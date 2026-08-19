@@ -1,5 +1,15 @@
 # Handoff: promise-pipeline session, 2026-08-17
 
+> **SUPERSEDED, 2026-08-19.** This doc is a point-in-time snapshot — keep it
+> as history, don't re-fix what it already lists as open. Since it was
+> written: code-review findings 1–6 below were fixed and merged (PR #535,
+> "Part 5: fix code-review findings 1-6"). PR #551 (2026-08-19) closed the
+> 2022 candidate-website-CAPTURE gap (144/451 -> 408/451, 90%) via FEC-ID
+> backfill + Wayback/redirect/Wikidata retries — capture is no longer the
+> blocker this doc describes. The 2022 EXTRACT step (turning those captures
+> into `candidate_promises` rows) is being run as of this note; see the plan
+> doc's Part 5 section for current status.
+
 **For the next Claude session (CLI or web).** Muxin ended the previous
 session (claude.ai/code, `session_01RMzTehJJ2BkzZWX6i5KvPs`) after a long
 night of Part 5 capture-layer work. This doc is the complete state: what

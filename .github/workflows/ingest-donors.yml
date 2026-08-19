@@ -118,6 +118,12 @@ jobs:
         if: ${{ github.event.inputs.federal_only != 'true' }}
         run: npx tsx scripts/ingest/ne-nadc-donors.ts
 
+      - name: Run federal PAC sponsors ingest (Part 6a)
+        run: npx tsx scripts/ingest/federal-pac-sponsors.ts --cycle 2026
+
+      - name: Run federal independent expenditures ingest (Part 6b)
+        run: npx tsx scripts/ingest/federal-independent-expenditures.ts --cycle 2026
+
       - name: Notify on ingest failure
         if: failure()
         env:

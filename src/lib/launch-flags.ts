@@ -108,6 +108,16 @@ export const LAUNCH_FLAG_REGISTRY: readonly LaunchFlagEntry[] = [
     note: "FLIPPED LIVE by Muxin 2026-08-16 (Vercel prod env), after the live 6b ingest run and the 30-committee hand-curation pass (curated summaries + citations, migration 0024) — the two conditions the original dark note required.",
   },
   {
+    envVar: "PROMISE_TRACKER_ENABLED",
+    isLaunchConvention: false,
+    surface: "server",
+    status: "pre_launch_dark",
+    gates:
+      "Part 5 promise-ledger kept/broken verdicts (candidate_promises / promise_actions / promise_verdicts) rendered anywhere",
+    readAt: "src/lib/server/promise-tracker-flag.ts",
+    note: "Confirmed dark: leave UNSET until the rubric §6.4 ship gate clears (independent-annotator gold pass, κ >= 0.70, >= 90% adjudicator agreement, zero kept<->broken polarity flips) AND Muxin signs off regardless of the numbers. No reader/UI exists yet either way (deferred to a separate Claude Design session).",
+  },
+  {
     envVar: "VOTER_ISSUE_EVENTS_ENABLED",
     isLaunchConvention: false,
     surface: "server",

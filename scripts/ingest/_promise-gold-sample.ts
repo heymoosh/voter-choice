@@ -15,10 +15,12 @@
  *                       if no, write the right type in type_correction)
  *     notes           — free text
  *
- * ROUND 2 — "verdict" (meaningful only once the term opens in 2027): the
- *   rubric §6 gold set proper. The worksheet is BLIND — it never shows the
- *   adjudicator's verdict — and the annotator writes their own verdict from
- *   the promise, its declared test, and its linked official-record actions.
+ * ROUND 2 — "verdict": the rubric §6 gold set proper. The worksheet is
+ *   BLIND — it never shows the adjudicator's verdict — and the annotator
+ *   writes their own verdict from the promise, its declared test, and its
+ *   linked official-record actions. Meaningful only for promises whose
+ *   promised window has actually CLOSED (2026-cycle promises stay
+ *   not_yet_testable until 2027-01-03 by rubric §4.1 — see --cycle below).
  *
  * Output (scripts/ingest/_promise-gold/, deliberately untracked):
  *   <round>-round.annotator-a.csv   ← one copy per annotator, identical
@@ -30,6 +32,14 @@
  * Read-only against the DB.
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-gold-sample.ts
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-gold-sample.ts --round verdict
+ *   npx tsx --env-file=.env.local scripts/ingest/_promise-gold-sample.ts --round verdict --cycle 2022
+ * --cycle N scopes to promises made_at within that election cycle's window
+ * (same Jan-1-of-odd-year..Dec-31-of-cycle-year convention as
+ * fetchAlreadyExtracted in promise-extract.ts) — use it for a --round verdict
+ * worksheet so a closed-window cohort (e.g. the 2022 retrospective) isn't
+ * buried under an open-window cohort's not_yet_testable placeholders.
+ * Omit --cycle for the unscoped (all-promises) worksheet, e.g. --round
+ * extraction, which stays meaningful across every cycle at once.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -37,6 +47,7 @@ import { resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 import { sql } from "drizzle-orm";
 import { requireDb } from "../../db/client";
+import { TERM_WINDOW, termWindowForCycle } from "./promise-adjudicate";
 
 const OUT_DIR = "scripts/ingest/_promise-gold";
 
@@ -50,7 +61,13 @@ export interface GoldCase {
   promiseType: string;
   conditionsDeadline: string | null;
   archiveUrl: string | null;
-  /** Round 2 only: the linked official-record actions, rendered one-line. */
+  /** Round 2 only: the promise's promised-term window, "YYYY-MM-DD..YYYY-MM-DD". */
+  promisedWindow: string;
+  /**
+   * Round 2 only: the linked official-record actions, rendered one-line,
+   * each including its own date — an action outside promisedWindow is
+   * excluded at the query level (see main()), never merely unlabeled.
+   */
   linkedActions: string[];
 }
 
@@ -92,6 +109,7 @@ const VERDICT_COLUMNS = [
   "conditions_deadline",
   "promise_text",
   "archive_url",
+  "promised_window",
   "linked_actions",
   // ── annotator fills from here (BLIND — no adjudicator verdict shown) ──
   "verdict (kept/attempted_blocked/compromise/broken/not_yet_testable/not_yet_rated)",
@@ -137,6 +155,7 @@ export function renderVerdictCsv(cases: GoldCase[]): string {
         c.conditionsDeadline,
         c.promiseText,
         c.archiveUrl,
+        c.promisedWindow,
         c.linkedActions.join(" | ") || "(none — no official record)",
         "",
         "",
@@ -156,23 +175,74 @@ async function main(): Promise<void> {
     );
     process.exit(1);
   }
+  const cycleIdx = argv.indexOf("--cycle");
+  let cycle: number | undefined;
+  if (cycleIdx >= 0) {
+    const parsed = Number(argv[cycleIdx + 1]);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      process.stderr.write(
+        `[promise-gold-sample] invalid --cycle value "${argv[cycleIdx + 1]}" — must be a positive integer year.\n`,
+      );
+      process.exit(1);
+    }
+    cycle = parsed;
+  }
+  // --round verdict with no --cycle silently defaults every promise's
+  // promised_window to the 2026 TERM_WINDOW and filters actions to it —
+  // for any other cycle's promises (e.g. the 2022 retrospective) that
+  // window is wrong and their in-window evidence gets dropped, the same
+  // footgun the adjudicate CLI's --promise-without---cycle case was
+  // upgraded to a hard refusal for (2026-08-19). Extraction round has no
+  // window-dependent output, so it stays unscoped by default.
+  if (round === "verdict" && cycle === undefined) {
+    process.stderr.write(
+      "[promise-gold-sample] --round verdict requires --cycle N — without it every promise's " +
+        "promised_window defaults to 2027-01-03..2029-01-03, which silently filters out a " +
+        "different cycle's real evidence.\n",
+    );
+    process.exit(1);
+  }
 
   const db = requireDb();
-  const rows = await db.execute(sql`
-    SELECT p.id, p.promise_text, p.canonical_issue, p.sub_issue,
-           p.promise_type, p.conditions_deadline, p.archive_url,
-           c.full_name AS candidate_name, c.state, c.district
-    FROM candidate_promises p
-    JOIN candidates c ON c.id = p.candidate_id
-    ORDER BY c.state, c.district, p.id
-  `);
+  const rows =
+    cycle !== undefined
+      ? await db.execute(sql`
+          SELECT p.id, p.promise_text, p.canonical_issue, p.sub_issue,
+                 p.promise_type, p.conditions_deadline, p.archive_url,
+                 c.full_name AS candidate_name, c.state, c.district
+          FROM candidate_promises p
+          JOIN candidates c ON c.id = p.candidate_id
+          WHERE p.made_at IS NOT NULL
+            AND p.made_at >= ${`${cycle - 1}-01-01`}::date
+            AND p.made_at <= ${`${cycle}-12-31`}::date
+          ORDER BY c.state, c.district, p.id
+        `)
+      : await db.execute(sql`
+          SELECT p.id, p.promise_text, p.canonical_issue, p.sub_issue,
+                 p.promise_type, p.conditions_deadline, p.archive_url,
+                 c.full_name AS candidate_name, c.state, c.district
+          FROM candidate_promises p
+          JOIN candidates c ON c.id = p.candidate_id
+          ORDER BY c.state, c.district, p.id
+        `);
 
+  // Actions must fall inside the PROMISED TERM window, not just be linked
+  // by candidate+issue — same fix as fetchPromisesWithActions in
+  // promise-adjudicate.ts (2026-08-19 finding: an unfiltered join here would
+  // hand annotators a member's out-of-window votes as if they were evidence
+  // for a different cycle's promise). Sponsorship rows fall back to the
+  // bill's introduced_date since date_cosponsored is null for the sponsor.
+  const window = cycle !== undefined ? termWindowForCycle(cycle) : TERM_WINDOW;
   const actionRows = await db.execute(sql`
     SELECT pa.promise_id, pa.action_type, pa.direction, pa.evidence_level,
-           COALESCE(b.title, pa.bill_id, v.bill_id) AS bill_ref, v.vote_cast
+           COALESCE(b.title, pa.bill_id, v.bill_id) AS bill_ref, v.vote_cast,
+           COALESCE(v.vote_date, bc.date_cosponsored, b.introduced_date) AS action_date
     FROM promise_actions pa
     LEFT JOIN votes v ON v.id = pa.vote_id
     LEFT JOIN bills b ON b.id = COALESCE(pa.bill_id, v.bill_id)
+    LEFT JOIN bill_cosponsors bc ON bc.id = pa.cosponsor_id
+    WHERE COALESCE(v.vote_date, bc.date_cosponsored, b.introduced_date)
+      BETWEEN ${window.start}::date AND ${window.end}::date
   `);
   const actionsByPromise = new Map<string, string[]>();
   for (const r of actionRows.rows as Record<string, unknown>[]) {
@@ -180,7 +250,8 @@ async function main(): Promise<void> {
     const list = actionsByPromise.get(key) ?? [];
     list.push(
       `${String(r.action_type)}${r.vote_cast ? `(${String(r.vote_cast)})` : ""} ` +
-        `${String(r.direction)} [${String(r.evidence_level)}] ${String(r.bill_ref ?? "")}`.trim(),
+        `${String(r.direction)} [${String(r.evidence_level)}] ${String(r.bill_ref ?? "")} ` +
+        `(${r.action_date === null ? "date unknown" : String(r.action_date)})`.trim(),
     );
     actionsByPromise.set(key, list);
   }
@@ -197,6 +268,7 @@ async function main(): Promise<void> {
       conditionsDeadline:
         r.conditions_deadline === null ? null : String(r.conditions_deadline),
       archiveUrl: r.archive_url === null ? null : String(r.archive_url),
+      promisedWindow: `${window.start}..${window.end}`,
       linkedActions: actionsByPromise.get(String(r.id)) ?? [],
     }),
   );
@@ -206,14 +278,18 @@ async function main(): Promise<void> {
     round === "extraction"
       ? renderExtractionCsv(cases)
       : renderVerdictCsv(cases);
+  const scopeSuffix = cycle !== undefined ? `-${cycle}` : "";
   for (const annotator of ["annotator-a", "annotator-b"]) {
-    const path = resolve(OUT_DIR, `${round}-round.${annotator}.csv`);
+    const path = resolve(
+      OUT_DIR,
+      `${round}-round${scopeSuffix}.${annotator}.csv`,
+    );
     writeFileSync(path, csv);
     process.stderr.write(`[promise-gold-sample] wrote ${path}\n`);
   }
   writeFileSync(
-    resolve(OUT_DIR, "cases.json"),
-    JSON.stringify({ round, count: cases.length, cases }, null, 2),
+    resolve(OUT_DIR, `cases${scopeSuffix}.json`),
+    JSON.stringify({ round, cycle, count: cases.length, cases }, null, 2),
   );
   process.stderr.write(
     `[promise-gold-sample] ${cases.length} cases, round=${round}. ` +

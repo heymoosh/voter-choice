@@ -42,11 +42,22 @@
  * NULLS NOT DISTINCT unique on (promise_id, action_type, vote_id, bill_id,
  * cosponsor_id) makes re-runs conflict-and-skip. Kill and restart freely.
  *
- * Usage (dev machine; DB + ANTHROPIC_VOTER_API required, no other network):
+ * Usage (dev machine; DB required):
  *   npx tsx --env-file=.env.local scripts/ingest/promise-link.ts --dry-run
  *   npx tsx --env-file=.env.local scripts/ingest/promise-link.ts
  *   Flags: --promise <id> (repeatable), --limit N, --dry-run,
  *          --json (emit link rows + pole classifications to stdout).
+ *
+ * Running this file directly calls the metered Anthropic API for the pole
+ * classification and is refused unless ALLOW_METERED_ANTHROPIC_API is set
+ * (see the guard at the bottom of this file). For bulk runs, use the
+ * subscription path instead, same three-step split as promise-extract.ts:
+ *   1. npx tsx --env-file=.env.local scripts/ingest/_promise-link-export.ts \
+ *        --out /tmp/link-batches
+ *   2. In a Claude Code session: run _promise-link.workflow.js with
+ *      args = { batchFiles: <manifest.batchFiles>, resultDir: "/tmp/link-results" }
+ *   3. npx tsx --env-file=.env.local scripts/ingest/_promise-link-import.ts \
+ *        --batches /tmp/link-batches --results /tmp/link-results
  */
 
 import { pathToFileURL } from "node:url";
@@ -281,7 +292,7 @@ async function classifyPromiseSide(
 // DB reads
 // ---------------------------------------------------------------------------
 
-async function fetchPromises(
+export async function fetchPromises(
   db: DbClient,
   promiseIds: string[],
   limit: number,
@@ -314,7 +325,7 @@ async function fetchPromises(
   }));
 }
 
-async function fetchVoteMatches(
+export async function fetchVoteMatches(
   db: DbClient,
   candidateId: string,
   canonicalIssue: string,
@@ -334,7 +345,7 @@ async function fetchVoteMatches(
   }));
 }
 
-async function fetchCosponsorMatches(
+export async function fetchCosponsorMatches(
   db: DbClient,
   candidateId: string,
   canonicalIssue: string,
@@ -354,7 +365,7 @@ async function fetchCosponsorMatches(
   }));
 }
 
-async function upsertLinkRows(
+export async function upsertLinkRows(
   db: DbClient,
   rows: LinkRow[],
   dryRun: boolean,
@@ -393,13 +404,13 @@ async function upsertLinkRows(
 // CLI
 // ---------------------------------------------------------------------------
 
-function flagValue(argv: string[], flag: string): string | null {
+export function flagValue(argv: string[], flag: string): string | null {
   const idx = argv.indexOf(flag);
   if (idx < 0 || idx + 1 >= argv.length) return null;
   return argv[idx + 1];
 }
 
-function flagValues(argv: string[], flag: string): string[] {
+export function flagValues(argv: string[], flag: string): string[] {
   const out: string[] = [];
   for (let i = 0; i < argv.length - 1; i++) {
     if (argv[i] === flag) out.push(argv[i + 1]);
@@ -465,14 +476,10 @@ async function main(): Promise<void> {
       continue;
     }
 
-    const [voteMatches, cosponsorMatches] = [
-      await fetchVoteMatches(db, promise.candidateId, promise.canonicalIssue),
-      await fetchCosponsorMatches(
-        db,
-        promise.candidateId,
-        promise.canonicalIssue,
-      ),
-    ];
+    const [voteMatches, cosponsorMatches] = await Promise.all([
+      fetchVoteMatches(db, promise.candidateId, promise.canonicalIssue),
+      fetchCosponsorMatches(db, promise.candidateId, promise.canonicalIssue),
+    ]);
     const rows = buildLinkRows(promise, side, voteMatches, cosponsorMatches);
     if (rows.length === 0) zeroActionCount++;
     try {
@@ -499,19 +506,21 @@ const isDirectRun =
   process.argv[1] !== undefined &&
   import.meta.url === pathToFileURL(process.argv[1]).href;
 
-// Calls the metered Anthropic API directly (no Claude Max subscription
-// equivalent built yet — stage 2 of the extract -> link -> adjudicate
-// pipeline; see promise-extract.ts's header for why bulk LLM work here
-// should not use the metered key). Manual dev-only script (not wired into
-// any GitHub Actions workflow), but gated anyway per standing policy — get
-// sign-off before overriding.
+// Calls the metered Anthropic API directly — stage 2 of the extract -> link
+// -> adjudicate pipeline; see promise-extract.ts's header for why bulk LLM
+// work here should not use the metered key. As of 2026-08-19 the
+// subscription-workflow replacement is scripts/ingest/_promise-link-export.ts
+// -> _promise-link.workflow.js -> _promise-link-import.ts. Manual dev-only
+// script (not wired into any GitHub Actions workflow), but gated anyway per
+// standing policy — get sign-off before overriding.
 const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
 
 if (isDirectRun && !process.env[METERED_OVERRIDE_ENV]) {
   process.stderr.write(
     "[promise-link] refusing to run: this can call the metered Anthropic API directly.\n" +
-      "No subscription-workflow replacement exists for this stage yet — get explicit sign-off " +
-      `before running it, then set ${METERED_OVERRIDE_ENV}=1.\n`,
+      "Use scripts/ingest/_promise-link-export.ts -> _promise-link.workflow.js -> " +
+      "_promise-link-import.ts (subscription path) instead, or get explicit sign-off " +
+      `and set ${METERED_OVERRIDE_ENV}=1.\n`,
   );
   process.exit(1);
 } else if (isDirectRun) {
