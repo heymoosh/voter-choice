@@ -14,7 +14,8 @@
  *   npx tsx scripts/ingest/_corpus-from-manifest.ts \
  *     --corpus spike-tx-2022.json --dir site-snapshots > corpus-tx-2022-cc.json
  */
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
+import { join } from "node:path";
 import { cycleDefaults, toCdxCutoff } from "./_promise-corpus-spike";
 import { loadSnapshotTargets, toCorpusRow } from "./promise-site-snapshot";
 import { defaultSnapshotDir, parseManifest } from "./site-snapshot-store";
@@ -34,6 +35,21 @@ function main(): void {
     process.exit(1);
   }
   const dir = arg("--dir") ?? defaultSnapshotDir();
+  // manifest.jsonl carries no field recording which pipeline wrote each
+  // entry, and this tool hardcodes every row it rebuilds as "commoncrawl"
+  // (see below) -- so if _loc-browser-fetch.ts has ALSO written into this
+  // same store dir, its entries would be silently mislabeled too. That
+  // script's own persistent-profile marker is the only signal available;
+  // refuse rather than guess at provenance.
+  if (existsSync(join(dir, "loc-browser-profile"))) {
+    console.error(
+      `[corpus-from-manifest] refusing: ${dir}/loc-browser-profile exists, meaning ` +
+        "_loc-browser-fetch.ts (LoC) has also written into this store. This tool cannot " +
+        "tell LoC entries from Common Crawl entries in manifest.jsonl and would mislabel " +
+        'them all captureArchive="commoncrawl". Point --dir at a store this tool alone wrote.',
+    );
+    process.exit(1);
+  }
   const cycle = Number(arg("--cycle") ?? 2022);
   const defaults = cycleDefaults(cycle);
   // Excludes any manifest entry outside the retrospective's own capture
@@ -64,16 +80,22 @@ function main(): void {
         .filter((e) => e.original === target.website)
         .sort((a, b) => (a.fetchedAt < b.fetchedAt ? 1 : -1))[0];
       if (!homepage) return null;
-      return toCorpusRow({
-        target,
-        canonicalCaptureUrl: replayUrl(
-          "snapshot",
-          homepage.timestamp,
-          target.website,
-        ),
-        pagesCaptured: forCandidate.length,
-        pagesFailed: 0,
-      });
+      return toCorpusRow(
+        {
+          target,
+          canonicalCaptureUrl: replayUrl(
+            "snapshot",
+            homepage.timestamp,
+            target.website,
+          ),
+          pagesCaptured: forCandidate.length,
+          pagesFailed: 0,
+        },
+        // This recovery tool only ever rebuilds Common Crawl runs (see file
+        // doc) — the default "snapshot" label would misrepresent a genuine
+        // 2022-era third-party crawl as a live self-fetch taken today.
+        "commoncrawl",
+      );
     })
     .filter(Boolean);
 

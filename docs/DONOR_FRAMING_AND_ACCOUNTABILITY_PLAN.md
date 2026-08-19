@@ -7,9 +7,13 @@
 > 2026-08-06 audit follow-up that closed three gaps an independent vet of Parts 1–4 found
 > (see "Audit follow-up — executed"; it also records which findings are deliberate deferrals,
 > so they don't get re-raised).
-> **Part 5 step 0 is built (2026-07-25): the sourcing spike + rubric draft — see "Part 5 —
-> step 0 built". The spike still needs a networked run before the schema is committed.
-> Part 6 is still plan only.**
+> **Part 5: schema + extract/link/adjudicate tooling are built and the 2026-cycle ledger is
+> populated (see "Part 5 — pipeline RUN to completion" and the 2026-08-16/17 amendments); the
+> 2022 retrospective ledger and the rubric §6.4 ship gate (independent-annotator gold pass,
+> requires Muxin + a second human annotator) remain the open items — no reader/UI exists yet
+> either way (`PROMISE_TRACKER_ENABLED` stays off; a UI is a separate, later Design session).**
+> **Part 6 is built and shipped to prod, `PAC_TRANSPARENCY_ENABLED` flipped live 2026-08-16 —
+> see "Part 6" below.**
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
 > surface plus three pieces of unsolicited user feedback about promise-keeping.
 > Prior art this supersedes nothing: `docs/FUNDING_DATA_SPARSENESS.md` remains accurate
@@ -1716,6 +1720,107 @@ campaign promises on file yet — that means we haven't captured any, not that
 none were made." No UI is being built now (explicitly deferred by Muxin);
 this note exists so the empty-state rule survives until the §6.4 ship gate
 is reached.
+
+### Part 5 — 2022 retrospective RUN to completion + backend gaps closed 2026-08-19
+
+Closes the "2022 retrospective has extracted almost nothing yet" gap (prior
+handoff, superseded — see `docs/operations/promise-pipeline-handoff-2026-08-17.md`).
+Backend-only work (UI remains explicitly deferred to a separate Claude Design
+session; §6.4's human gold-labeling step remains explicitly out of AI scope —
+see both notes below).
+
+**Site-capture correction.** PR #551 (2026-08-19) reported 408/451 (90%)
+2022 candidates with a usable capture. A fresh merge with proper dedup and a
+strict "must have `bucket === website_archived` and a real capture URL"
+filter found **353/451 (78%)** — the 408 figure double-counted across
+overlapping retry-round files without full dedup. 353 is the verified
+number; treat 408 as retracted.
+
+**Bugs found and fixed in the capture layer before extracting from it:**
+- `_corpus-from-manifest.ts` (a one-off Common Crawl recovery tool) mislabeled
+  its rebuilt rows `captureArchive: "snapshot"` instead of `"commoncrawl"` —
+  fixed to pass the correct label, and now refuses to run at all against a
+  store dir where `_loc-browser-fetch.ts` has also written (its
+  `loc-browser-profile/` marker), since the shared manifest carries no
+  per-entry provenance field and the tool cannot otherwise tell a Common
+  Crawl capture from an LoC one. (The 58 already-mislabeled 2022 rows this
+  produced in a prior session were relabeled by hand; provenance risk from
+  that specific mislabeling is low — the LoC browser-profile directory
+  predates the working Common Crawl script by about a day and its one
+  documented run mostly failed — but is not exhaustively ruled out.)
+- `promise-adjudicate.ts`'s `fetchPromisesWithActions` had no cycle filter:
+  a bulk `--cycle 2022` adjudication run would have swept in every
+  OTHER-cycle promise already in the table (1,509 2026-cycle rows existed
+  at run time) and judged them against the closed 2023-2025 window — a
+  real, silent mis-adjudication risk, caught before running. Fixed with a
+  `made_at`-scoped cycle filter (same window convention `promise-extract.ts`
+  already used for its own resume-skip logic); `_promise-adjudicate-export.ts`
+  now requires `--cycle` explicitly, no default.
+
+**Subscription-workflow gap closed for stages 2 and 3.** `promise-link.ts`
+and `promise-adjudicate.ts` each self-refused to run once their window was
+open, because both called the metered Anthropic API directly with no
+subscription-workflow replacement built (same policy `promise-extract.ts`
+already followed: bulk LLM work runs on the Claude Max subscription via the
+Workflow tool, never the metered key). Built the same export/workflow/import
+three-step split for both:
+`_promise-link-{export,import}.ts` + `_promise-link.workflow.js` (Haiku,
+pole-side classification only — linking itself stays pure code) and
+`_promise-adjudicate-{export,import}.ts` + `_promise-adjudicate.workflow.js`
+(Sonnet, full rubric application). Both mirror `_promise-extract-export.ts`'s
+resumability and re-validation posture (a downstream import step always
+re-checks agent output — evidence ids, verdict enum, rationale — before any
+DB write).
+
+**Run results (2026-08-19, prod DB):**
+- Export/extract: 353-candidate merged corpus (144 baseline + 209 recovered
+  this effort) → 349 pending after skipping 4 already-extracted → 340
+  candidates successfully exported (9 had zero fetchable pages) → **116
+  verbatim-verified promises** upserted across **59 distinct candidates**
+  (extraction found more raw promise text; the verbatim-quote re-validation
+  gate — the same one that always ran — dropped anything that didn't match
+  the original page text exactly).
+- Link: all 1,509 promises in the table (2022 + 2026 cycles; linking is
+  cycle-blind by design) classified → **6,214 `promise_actions` rows**
+  upserted overall, of which **3,536** belong to the 2022 cohort's 116
+  promises. 152 promises table-wide came back `unclear_side` (flagged, not
+  guessed); 1,168 are legitimately `zero_actions` (challengers with no
+  official record — expected, not a failure).
+- Adjudicate (`--cycle 2022`, window 2023-01-03..2025-01-03, correctly
+  CLOSED as of today): **116/116 promises adjudicated**. Verdict
+  distribution: `not_yet_rated`=56, `not_yet_testable`=48, `kept`=10,
+  `attempted_blocked`=1, `broken`=1. The `not_yet_rated` majority is the
+  rubric working as intended (§5: flag ambiguity, never force a verdict) —
+  it is not evidence of a broken adjudicator.
+
+**`PROMISE_TRACKER_ENABLED` implemented.** Was named only in
+docs/comments/rubric text, not in code. Now a real flag module
+(`src/lib/server/promise-tracker-flag.ts`, mirrors
+`pac-transparency-flag.ts`), registered in `LAUNCH_FLAG_REGISTRY`
+(`src/lib/launch-flags.ts`) and documented in `.env.example`. Still OFF by
+default and still gated on §6.4 clearing — this closes a real "the named
+control doesn't exist" gap, it does not change when the ledger ships.
+
+**§6.4 ship gate remains NOT DONE, and cannot be closed by an AI session.**
+The rubric requires TWO INDEPENDENT HUMAN annotators (Muxin + her husband)
+labeling a blind verdict worksheet, with Cohen's κ ≥ 0.70 agreement and the
+adjudicator matching the agreed human label on ≥ 90% of cases before
+`PROMISE_TRACKER_ENABLED` may even be considered — and even then it stays
+off "regardless of scores" until Muxin explicitly signs off (§6.4, verbatim).
+What backend work COULD do: generate the blind worksheets. Done —
+`scripts/ingest/_promise-gold-sample.ts --round verdict --cycle 2022` now
+supports scoping to one cycle (added 2026-08-19; the unscoped version would
+have buried the 116 real 2022 verdicts under ~1,500 trivial 2026-cycle
+`not_yet_testable` placeholders) and produced
+`scripts/ingest/_promise-gold/verdict-round-2022.{annotator-a,annotator-b}.csv`
+(116 cases, gitignored). Labeling them — independently, per rubric §6.2 — is
+the outstanding human step; no further automation reduces it.
+
+**Part 6 ingest scheduling gap also closed.** `federal-pac-sponsors.ts` and
+`federal-independent-expenditures.ts` (6a/6b) had no scheduled refresh —
+found live only via a one-shot manual run. Added both to
+`.github/workflows/ingest-donors.yml` (weekly, alongside the existing
+federal/state donor ingests).
 
 ---
 

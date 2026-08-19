@@ -15,10 +15,12 @@
  *                       if no, write the right type in type_correction)
  *     notes           — free text
  *
- * ROUND 2 — "verdict" (meaningful only once the term opens in 2027): the
- *   rubric §6 gold set proper. The worksheet is BLIND — it never shows the
- *   adjudicator's verdict — and the annotator writes their own verdict from
- *   the promise, its declared test, and its linked official-record actions.
+ * ROUND 2 — "verdict": the rubric §6 gold set proper. The worksheet is
+ *   BLIND — it never shows the adjudicator's verdict — and the annotator
+ *   writes their own verdict from the promise, its declared test, and its
+ *   linked official-record actions. Meaningful only for promises whose
+ *   promised window has actually CLOSED (2026-cycle promises stay
+ *   not_yet_testable until 2027-01-03 by rubric §4.1 — see --cycle below).
  *
  * Output (scripts/ingest/_promise-gold/, deliberately untracked):
  *   <round>-round.annotator-a.csv   ← one copy per annotator, identical
@@ -30,6 +32,14 @@
  * Read-only against the DB.
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-gold-sample.ts
  *   npx tsx --env-file=.env.local scripts/ingest/_promise-gold-sample.ts --round verdict
+ *   npx tsx --env-file=.env.local scripts/ingest/_promise-gold-sample.ts --round verdict --cycle 2022
+ * --cycle N scopes to promises made_at within that election cycle's window
+ * (same Jan-1-of-odd-year..Dec-31-of-cycle-year convention as
+ * fetchAlreadyExtracted in promise-extract.ts) — use it for a --round verdict
+ * worksheet so a closed-window cohort (e.g. the 2022 retrospective) isn't
+ * buried under an open-window cohort's not_yet_testable placeholders.
+ * Omit --cycle for the unscoped (all-promises) worksheet, e.g. --round
+ * extraction, which stays meaningful across every cycle at once.
  */
 
 import { mkdirSync, writeFileSync } from "node:fs";
@@ -156,16 +166,41 @@ async function main(): Promise<void> {
     );
     process.exit(1);
   }
+  const cycleIdx = argv.indexOf("--cycle");
+  let cycle: number | undefined;
+  if (cycleIdx >= 0) {
+    const parsed = Number(argv[cycleIdx + 1]);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      process.stderr.write(
+        `[promise-gold-sample] invalid --cycle value "${argv[cycleIdx + 1]}" — must be a positive integer year.\n`,
+      );
+      process.exit(1);
+    }
+    cycle = parsed;
+  }
 
   const db = requireDb();
-  const rows = await db.execute(sql`
-    SELECT p.id, p.promise_text, p.canonical_issue, p.sub_issue,
-           p.promise_type, p.conditions_deadline, p.archive_url,
-           c.full_name AS candidate_name, c.state, c.district
-    FROM candidate_promises p
-    JOIN candidates c ON c.id = p.candidate_id
-    ORDER BY c.state, c.district, p.id
-  `);
+  const rows =
+    cycle !== undefined
+      ? await db.execute(sql`
+          SELECT p.id, p.promise_text, p.canonical_issue, p.sub_issue,
+                 p.promise_type, p.conditions_deadline, p.archive_url,
+                 c.full_name AS candidate_name, c.state, c.district
+          FROM candidate_promises p
+          JOIN candidates c ON c.id = p.candidate_id
+          WHERE p.made_at IS NOT NULL
+            AND p.made_at >= ${`${cycle - 1}-01-01`}::date
+            AND p.made_at <= ${`${cycle}-12-31`}::date
+          ORDER BY c.state, c.district, p.id
+        `)
+      : await db.execute(sql`
+          SELECT p.id, p.promise_text, p.canonical_issue, p.sub_issue,
+                 p.promise_type, p.conditions_deadline, p.archive_url,
+                 c.full_name AS candidate_name, c.state, c.district
+          FROM candidate_promises p
+          JOIN candidates c ON c.id = p.candidate_id
+          ORDER BY c.state, c.district, p.id
+        `);
 
   const actionRows = await db.execute(sql`
     SELECT pa.promise_id, pa.action_type, pa.direction, pa.evidence_level,
@@ -206,14 +241,18 @@ async function main(): Promise<void> {
     round === "extraction"
       ? renderExtractionCsv(cases)
       : renderVerdictCsv(cases);
+  const scopeSuffix = cycle !== undefined ? `-${cycle}` : "";
   for (const annotator of ["annotator-a", "annotator-b"]) {
-    const path = resolve(OUT_DIR, `${round}-round.${annotator}.csv`);
+    const path = resolve(
+      OUT_DIR,
+      `${round}-round${scopeSuffix}.${annotator}.csv`,
+    );
     writeFileSync(path, csv);
     process.stderr.write(`[promise-gold-sample] wrote ${path}\n`);
   }
   writeFileSync(
-    resolve(OUT_DIR, "cases.json"),
-    JSON.stringify({ round, count: cases.length, cases }, null, 2),
+    resolve(OUT_DIR, `cases${scopeSuffix}.json`),
+    JSON.stringify({ round, cycle, count: cases.length, cases }, null, 2),
   );
   process.stderr.write(
     `[promise-gold-sample] ${cases.length} cases, round=${round}. ` +

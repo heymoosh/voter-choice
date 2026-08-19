@@ -42,8 +42,7 @@
  * rows (history preserved via the (promise_id, adjudicator_version)
  * unique); same version upserts in place.
  *
- * Usage (dev machine; DB required, ANTHROPIC_VOTER_API only needed once the
- * window is open):
+ * Usage (dev machine; DB required):
  *   npx tsx --env-file=.env.local scripts/ingest/promise-adjudicate.ts --dry-run
  *   npx tsx --env-file=.env.local scripts/ingest/promise-adjudicate.ts
  *   Flags: --promise <id> (repeatable), --limit N, --dry-run, --json,
@@ -51,6 +50,20 @@
  *          --cycle N (adjudicate against that cycle's promised term — the
  *          2022 retrospective runs --cycle 2022 for the closed 2023-2025
  *          window; default is the 2026 TERM_WINDOW).
+ *
+ * WHEN THE WINDOW IS OPEN for the run's --cycle (e.g. --cycle 2022, always;
+ * --cycle 2026 only after 2027-01-03), running this file directly would call
+ * the metered Anthropic API and is refused unless ALLOW_METERED_ANTHROPIC_API
+ * is set (see the guard at the bottom of this file). Use the subscription
+ * path instead, same three-step split as promise-extract.ts:
+ *   1. npx tsx --env-file=.env.local scripts/ingest/_promise-adjudicate-export.ts \
+ *        --cycle 2022 --out /tmp/adjudicate-batches
+ *   2. In a Claude Code session: run _promise-adjudicate.workflow.js with
+ *      args = { batchFiles: <manifest.batchFiles>, resultDir: "/tmp/adjudicate-results" }
+ *   3. npx tsx --env-file=.env.local scripts/ingest/_promise-adjudicate-import.ts \
+ *        --batches /tmp/adjudicate-batches --results /tmp/adjudicate-results
+ * A run whose window is NOT open needs no LLM at all (every verdict is the
+ * deterministic not_yet_testable path) — run this file directly for that case.
  */
 
 import { pathToFileURL } from "node:url";
@@ -390,10 +403,24 @@ async function adjudicateWithModel(
 // DB
 // ---------------------------------------------------------------------------
 
-async function fetchPromisesWithActions(
+/**
+ * cycle, when given, scopes the bulk (no --promise ids) fetch to promises
+ * MADE within that cycle's window (made_at, same convention
+ * fetchAlreadyExtracted in promise-extract.ts uses: Jan 1 of the odd year
+ * through Dec 31 of the cycle year). Without this, a --cycle 2022
+ * (retrospective) adjudication run would also sweep in every current-cycle
+ * (2026) promise already in the table and judge it against the CLOSED
+ * 2023-2025 window — a real, silent mis-adjudication, not just extra work
+ * (2026-08-19 finding). Explicit --promise ids bypass the window: a caller
+ * naming exact ids is trusted to mean it. NULL made_at rows are excluded
+ * from a cycle-scoped fetch (mirrors fetchAlreadyExtracted's false-negative-
+ * over-false-positive posture).
+ */
+export async function fetchPromisesWithActions(
   db: DbClient,
   promiseIds: string[],
   limit: number,
+  cycle?: number,
 ): Promise<PromiseWithActions[]> {
   const promiseRows =
     promiseIds.length > 0
@@ -403,7 +430,18 @@ async function fetchPromisesWithActions(
           FROM candidate_promises
           WHERE id IN ${promiseIds}
         `)
-      : await db.execute(sql`
+      : cycle !== undefined
+        ? await db.execute(sql`
+          SELECT id, candidate_id, canonical_issue, promise_text,
+                 promise_type, conditions_deadline
+          FROM candidate_promises
+          WHERE made_at IS NOT NULL
+            AND made_at >= ${`${cycle - 1}-01-01`}::date
+            AND made_at <= ${`${cycle}-12-31`}::date
+          ORDER BY candidate_id, id
+          LIMIT ${limit}
+        `)
+        : await db.execute(sql`
           SELECT id, candidate_id, canonical_issue, promise_text,
                  promise_type, conditions_deadline
           FROM candidate_promises
@@ -455,7 +493,7 @@ async function fetchPromisesWithActions(
   return promises;
 }
 
-async function upsertVerdict(
+export async function upsertVerdict(
   db: DbClient,
   row: VerdictRow,
   dryRun: boolean,
@@ -492,18 +530,60 @@ async function upsertVerdict(
 // CLI
 // ---------------------------------------------------------------------------
 
-function flagValue(argv: string[], flag: string): string | null {
+export function flagValue(argv: string[], flag: string): string | null {
   const idx = argv.indexOf(flag);
   if (idx < 0 || idx + 1 >= argv.length) return null;
   return argv[idx + 1];
 }
 
-function flagValues(argv: string[], flag: string): string[] {
+export function flagValues(argv: string[], flag: string): string[] {
   const out: string[] = [];
   for (let i = 0; i < argv.length - 1; i++) {
     if (argv[i] === flag) out.push(argv[i + 1]);
   }
   return out;
+}
+
+/**
+ * The run's clock + promised-term window, derived from --now/--cycle. Single
+ * source of truth shared by main() and the direct-run guard below it, so the
+ * guard's "would this call the metered API" decision can never drift from
+ * what main() actually computes for the same argv.
+ */
+export function resolveRunWindow(argv: string[]): {
+  nowIso: string;
+  window: TermWindow;
+  cycle: number | undefined;
+} {
+  const nowIso =
+    flagValue(argv, "--now") ?? new Date().toISOString().slice(0, 10);
+  // --cycle N adjudicates against that cycle's promised term (the 2022
+  // retrospective: --cycle 2022 → window 2023-01-03..2025-01-03, closed).
+  const cycleArg = flagValue(argv, "--cycle");
+  let cycle: number | undefined;
+  if (cycleArg !== null) {
+    const parsed = Number(cycleArg);
+    if (!Number.isInteger(parsed) || parsed <= 0) {
+      process.stderr.write(
+        `[promise-adjudicate] invalid --cycle value "${cycleArg}" — must be a positive integer year.\n`,
+      );
+      process.exit(1);
+    }
+    cycle = parsed;
+  }
+  if (
+    flagValues(argv, "--promise").length > 0 &&
+    argv.indexOf("--promise") >= 0 &&
+    cycleArg === null
+  ) {
+    process.stderr.write(
+      "[promise-adjudicate] warning: --promise given without --cycle — the window defaults to " +
+        "the 2026 TERM_WINDOW, which is wrong for a promise from any other cycle. Pass --cycle " +
+        "explicitly when retrying a specific non-2026 promise.\n",
+    );
+  }
+  const window = cycle !== undefined ? termWindowForCycle(cycle) : TERM_WINDOW;
+  return { nowIso, window, cycle };
 }
 
 async function main(): Promise<void> {
@@ -512,15 +592,10 @@ async function main(): Promise<void> {
   const asJson = argv.includes("--json");
   const limit = Number(flagValue(argv, "--limit") ?? 10_000);
   const promiseIds = flagValues(argv, "--promise");
-  const nowIso =
-    flagValue(argv, "--now") ?? new Date().toISOString().slice(0, 10);
-  // --cycle N adjudicates against that cycle's promised term (the 2022
-  // retrospective: --cycle 2022 → window 2023-01-03..2025-01-03, closed).
-  const cycleArg = flagValue(argv, "--cycle");
-  const window = cycleArg ? termWindowForCycle(Number(cycleArg)) : TERM_WINDOW;
+  const { nowIso, window, cycle } = resolveRunWindow(argv);
 
   const db = requireDb();
-  const promises = await fetchPromisesWithActions(db, promiseIds, limit);
+  const promises = await fetchPromisesWithActions(db, promiseIds, limit, cycle);
   process.stderr.write(
     `[promise-adjudicate] ${promises.length} promises (version=${ADJUDICATOR_VERSION} ` +
       `now=${nowIso} window=${window.start}..${window.end}${dryRun ? " DRY-RUN" : ""})\n`,
@@ -589,22 +664,53 @@ const isDirectRun =
   process.argv[1] !== undefined &&
   import.meta.url === pathToFileURL(process.argv[1]).href;
 
-// Calls the metered Anthropic API directly when the adjudication window is
-// open (no Claude Max subscription equivalent built yet — this is stage 3
-// of the extract -> link -> adjudicate pipeline; see promise-extract.ts's
-// header for why bulk LLM work here should not use the metered key). Manual
-// dev-only script (not wired into any GitHub Actions workflow), but gated
-// anyway per standing policy — get sign-off before overriding.
+// This script calls the metered Anthropic API directly when the
+// adjudication window is open for the run's --cycle. As of 2026-08-19 the
+// subscription-workflow replacement is scripts/ingest/
+// _promise-adjudicate-export.ts -> _promise-adjudicate.workflow.js ->
+// _promise-adjudicate-import.ts (same split as promise-extract.ts; see its
+// header for why bulk LLM work here should not use the metered key) — use
+// that path for any run whose window is actually open (e.g. --cycle 2022).
+// A run whose window is NOT open (e.g. today's default --cycle 2026) never
+// instantiates the Anthropic client at all (see preWindow above), so it is
+// allowed to run directly without the override. Manual dev-only script (not
+// wired into any GitHub Actions workflow); the override remains an
+// explicit-sign-off escape hatch for small ad-hoc runs only.
 const METERED_OVERRIDE_ENV = "ALLOW_METERED_ANTHROPIC_API";
 
-if (isDirectRun && !process.env[METERED_OVERRIDE_ENV]) {
-  process.stderr.write(
-    "[promise-adjudicate] refusing to run: this can call the metered Anthropic API directly.\n" +
-      "No subscription-workflow replacement exists for this stage yet — get explicit sign-off " +
-      `before running it, then set ${METERED_OVERRIDE_ENV}=1.\n`,
-  );
-  process.exit(1);
-} else if (isDirectRun) {
+if (isDirectRun) {
+  const argv = process.argv.slice(2);
+  const { nowIso, window, cycle } = resolveRunWindow(argv);
+  const wouldCallMeteredApi = !windowNotYetOpen(nowIso, window);
+
+  if (wouldCallMeteredApi && !process.env[METERED_OVERRIDE_ENV]) {
+    process.stderr.write(
+      "[promise-adjudicate] refusing to run: this run's window is open, so it would call the " +
+        "metered Anthropic API directly. Use scripts/ingest/_promise-adjudicate-export.ts -> " +
+        "_promise-adjudicate.workflow.js -> _promise-adjudicate-import.ts (subscription path) " +
+        `instead, or get explicit sign-off and set ${METERED_OVERRIDE_ENV}=1.\n`,
+    );
+    process.exit(1);
+  }
+  // A bulk (no --promise ids), non-dry-run, cycle-UNSCOPED write is the one
+  // remaining footgun once the metered-API guard above is narrowed: it
+  // would fetch and re-verdict EVERY cycle's promises under one global
+  // window, silently overwriting already-correct verdicts from a different
+  // cycle's run (2026-08-19 finding — could have clobbered the 2022
+  // retrospective's real verdicts with 2026-window not_yet_testable rows).
+  // Require either --dry-run (inspect first) or an explicit --cycle for any
+  // real bulk write.
+  const isBulkWrite =
+    flagValues(argv, "--promise").length === 0 && !argv.includes("--dry-run");
+  if (isBulkWrite && cycle === undefined) {
+    process.stderr.write(
+      "[promise-adjudicate] refusing to run: a bulk write (no --promise ids, no --dry-run) needs " +
+        "an explicit --cycle N — an unscoped run would re-verdict every cycle's promises under " +
+        "one window and can silently overwrite another cycle's already-correct verdicts. Pass " +
+        "--cycle N, or --dry-run to inspect without writing.\n",
+    );
+    process.exit(1);
+  }
   main().catch((err) => {
     process.stderr.write(
       `[promise-adjudicate] fatal: ${err instanceof Error ? (err.stack ?? err.message) : String(err)}\n`,
