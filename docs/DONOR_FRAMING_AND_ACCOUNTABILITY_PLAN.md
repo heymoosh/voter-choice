@@ -7,11 +7,13 @@
 > 2026-08-06 audit follow-up that closed three gaps an independent vet of Parts 1–4 found
 > (see "Audit follow-up — executed"; it also records which findings are deliberate deferrals,
 > so they don't get re-raised).
-> **Part 5: schema + extract/link/adjudicate tooling are built and the 2026-cycle ledger is
-> populated (see "Part 5 — pipeline RUN to completion" and the 2026-08-16/17 amendments); the
-> 2022 retrospective ledger and the rubric §6.4 ship gate (independent-annotator gold pass,
-> requires Muxin + a second human annotator) remain the open items — no reader/UI exists yet
-> either way (`PROMISE_TRACKER_ENABLED` stays off; a UI is a separate, later Design session).**
+> **Part 5: schema + extract/link/adjudicate tooling are built; the 2026-cycle ledger is
+> populated (see "Part 5 — pipeline RUN to completion" and the 2026-08-16/17 amendments) and
+> the 2022 retrospective ledger has been RUN to completion as of 2026-08-19 (see "Part 5 —
+> 2022 retrospective RUN to completion"). The rubric §6.4 ship gate (independent-annotator
+> gold pass, requires Muxin + a second human annotator) remains the one open item — it cannot
+> be closed by an AI session — and no reader/UI exists yet either way (`PROMISE_TRACKER_ENABLED`
+> stays off; a UI is a separate, later Design session).**
 > **Part 6 is built and shipped to prod, `PAC_TRANSPARENCY_ENABLED` flipped live 2026-08-16 —
 > see "Part 6" below.**
 > Date: 2026-07-23. Author: session with Muxin, from her review notes on the Money-trail
@@ -1787,11 +1789,43 @@ DB write).
   guessed); 1,168 are legitimately `zero_actions` (challengers with no
   official record — expected, not a failure).
 - Adjudicate (`--cycle 2022`, window 2023-01-03..2025-01-03, correctly
-  CLOSED as of today): **116/116 promises adjudicated**. Verdict
+  CLOSED as of today): **116/116 promises adjudicated**. First pass verdict
   distribution: `not_yet_rated`=56, `not_yet_testable`=48, `kept`=10,
-  `attempted_blocked`=1, `broken`=1. The `not_yet_rated` majority is the
-  rubric working as intended (§5: flag ambiguity, never force a verdict) —
-  it is not evidence of a broken adjudicator.
+  `attempted_blocked`=1, `broken`=1.
+
+**Second-round finding + fix, same day: linking is cycle-blind, but
+ADJUDICATION EVIDENCE was too — the mix-cycles bug one layer down.**
+`fetchVoteMatches`/`fetchCosponsorMatches` in `promise-link.ts` join on
+candidate + canonical_issue only, no date filter (intentional — pole
+classification should be cycle-blind). But `fetchPromisesWithActions` then
+handed the adjudicator (and would have handed the human gold-worksheet
+annotators) **every** linked action regardless of when it happened — a
+2022 promise's evidence list could include, and did include, the member's
+2025-2026 (119th Congress) votes on similarly-tagged bills. Verified before
+fixing: **1,790 of 3,424** vote-linked actions for the 2022 cohort (52%)
+carried a `vote_date` outside the 2023-01-03..2025-01-03 window. Fixed by
+window-filtering the action query in `fetchPromisesWithActions`
+(`promise-adjudicate.ts`) and in `_promise-gold-sample.ts`'s action query —
+votes by `vote_date`, (co)sponsorships by `date_cosponsored` falling back to
+the bill's `introduced_date` for the sponsor row. Re-ran the adjudicate
+export/workflow/import for all 116 2022 promises against the corrected,
+window-filtered evidence (1,694 in-window actions, down from 3,536
+unfiltered): **corrected verdict distribution: `not_yet_testable`=66,
+`not_yet_rated`=40, `kept`=8, `attempted_blocked`=1, `compromise`=1,
+`broken`=0** — the single `broken` verdict from the first pass turned out to
+rest entirely on out-of-window evidence and is gone. Spot-checked all 51
+evidence ids cited by the corrected positive verdicts: every one falls
+inside 2023-01-03..2025-01-03. Regenerated
+`verdict-round-2022.{annotator-a,annotator-b}.csv` from the corrected data
+(added a `promised_window` column and per-action dates so annotators aren't
+relying on an unstated window either) — the earlier worksheet was NOT handed
+to anyone and should be discarded if it was saved anywhere else. Also
+upgraded `--promise <id>` without `--cycle` on a real (non-dry-run) write
+from a warning to a hard refusal — same clobber risk as the bulk-write case,
+smaller blast radius, now closed the same way. The `not_yet_rated`/
+`not_yet_testable` majority is the rubric working as intended (§5: flag
+ambiguity, never force a verdict) — it is not evidence of a broken
+adjudicator.
 
 **`PROMISE_TRACKER_ENABLED` implemented.** Was named only in
 docs/comments/rubric text, not in code. Now a real flag module

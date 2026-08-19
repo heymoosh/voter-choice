@@ -463,6 +463,18 @@ export async function fetchPromisesWithActions(
   );
   if (promises.length === 0) return [];
 
+  // The action's own date must fall inside the PROMISED TERM window, not
+  // just be linked by candidate+issue. Linking (promise-link.ts) is
+  // deliberately cycle-blind for POLE classification, but attaching a
+  // member's out-of-window votes/(co)sponsorships as adjudication evidence
+  // for a promise from a DIFFERENT cycle is the same mix-cycles bug one
+  // layer down (2026-08-19 finding: 1,790/3,424 vote-linked actions for the
+  // 2022 retrospective cohort carried a vote_date outside 2023-01-03..
+  // 2025-01-03 — over half). Vote actions use vote_date; (co)sponsorship
+  // actions use date_cosponsored, falling back to the bill's introduced_date
+  // for the sponsor row (date_cosponsored is null for the sponsor by
+  // schema convention).
+  const window = cycle !== undefined ? termWindowForCycle(cycle) : TERM_WINDOW;
   const ids = promises.map((p) => p.id);
   const actionRows = await db.execute(sql`
     SELECT pa.id AS action_id, pa.promise_id, pa.action_type, pa.direction,
@@ -471,7 +483,10 @@ export async function fetchPromisesWithActions(
     FROM promise_actions pa
     LEFT JOIN votes v ON v.id = pa.vote_id
     LEFT JOIN bills b ON b.id = COALESCE(pa.bill_id, v.bill_id)
+    LEFT JOIN bill_cosponsors bc ON bc.id = pa.cosponsor_id
     WHERE pa.promise_id IN ${ids}
+      AND COALESCE(v.vote_date, bc.date_cosponsored, b.introduced_date)
+        BETWEEN ${window.start}::date AND ${window.end}::date
   `);
   const byPromise = new Map<string, LinkedAction[]>();
   for (const r of actionRows.rows as Record<string, unknown>[]) {
@@ -708,6 +723,22 @@ if (isDirectRun) {
         "an explicit --cycle N — an unscoped run would re-verdict every cycle's promises under " +
         "one window and can silently overwrite another cycle's already-correct verdicts. Pass " +
         "--cycle N, or --dry-run to inspect without writing.\n",
+    );
+    process.exit(1);
+  }
+  // A --promise <id> real write (no --dry-run) with no --cycle has the same
+  // clobber risk on a single row: the window silently defaults to the 2026
+  // TERM_WINDOW, and a promise from any other cycle gets overwritten with a
+  // wrong deterministic verdict under the same (promise_id,
+  // adjudicator_version) unique the correct verdict already occupies.
+  const isTargetedWrite =
+    flagValues(argv, "--promise").length > 0 && !argv.includes("--dry-run");
+  if (isTargetedWrite && cycle === undefined) {
+    process.stderr.write(
+      "[promise-adjudicate] refusing to run: a --promise write (no --dry-run) needs an explicit " +
+        "--cycle N too — without it the window defaults to 2026 and can overwrite a different " +
+        "cycle's already-correct verdict for that exact promise id. Pass --cycle N, or --dry-run " +
+        "to inspect without writing.\n",
     );
     process.exit(1);
   }
