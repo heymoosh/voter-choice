@@ -82,6 +82,20 @@ export default function MethodologyPage() {
           out separately if it has a public stated agenda we can cite.
         </li>
       </ul>
+      <p>
+        <b>How we count donations.</b> Federal law requires a donor&rsquo;s name
+        and employer to be itemized once their giving to a campaign passes a
+        reporting threshold set by the FEC; below that line, the FEC publishes
+        one undifferentiated lump sum with no per-donor detail, so we
+        can&rsquo;t split &ldquo;small&rdquo; donors further no matter where the
+        line sits. Corporations cannot donate to a federal candidate directly
+        (52 U.S.C. §30118) — corporate money reaches a candidate only through a
+        company-sponsored PAC, which is why our &ldquo;Large donors&rdquo;
+        bucket is still individual people, never a company. Industry breakdowns
+        (e.g. &ldquo;Healthcare industry&rdquo;) come from the{" "}
+        <i>employer field</i> on individual donations — people who work in that
+        sector — not a company writing a check.
+      </p>
 
       <h2>
         Step 4 &middot; &ldquo;With you / against you&rdquo; is your stance vs.
