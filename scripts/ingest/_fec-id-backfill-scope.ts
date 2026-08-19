@@ -31,25 +31,35 @@ import { requireDb } from "../../db/client";
 import { candidates } from "../../db/schema";
 import { and, eq, isNull, like } from "drizzle-orm";
 
-const LEGISLATORS_API_URL =
-  "https://api.github.com/repos/unitedstates/congress-legislators/contents/legislators-current.yaml";
+const LEGISLATORS_FILES = ["legislators-current.yaml", "legislators-historical.yaml"];
+const LEGISLATORS_API_URL = (file: string) =>
+  `https://api.github.com/repos/unitedstates/congress-legislators/contents/${file}`;
 
 interface LegislatorRecord {
   id?: { bioguide?: string; fec?: string[] };
   name?: { first?: string; last?: string };
 }
 
-async function fetchLegislators(): Promise<LegislatorRecord[]> {
-  const res = await fetch(LEGISLATORS_API_URL, {
+async function fetchLegislators(file: string): Promise<LegislatorRecord[]> {
+  const res = await fetch(LEGISLATORS_API_URL(file), {
     headers: { accept: "application/vnd.github.raw+json" },
   });
   if (!res.ok) {
-    throw new Error(`legislators-current.yaml fetch failed: ${res.status}`);
+    throw new Error(`${file} fetch failed: ${res.status}`);
   }
   const text = await res.text();
   const parsed = yaml.load(text);
-  if (!Array.isArray(parsed)) throw new Error("unexpected legislators YAML shape");
+  if (!Array.isArray(parsed)) throw new Error(`unexpected legislators YAML shape in ${file}`);
   return parsed as LegislatorRecord[];
+}
+
+/** legislators-historical.yaml covers departed members; current.yaml wins on overlap. */
+async function fetchAllLegislators(): Promise<LegislatorRecord[]> {
+  const all: LegislatorRecord[] = [];
+  for (const file of [...LEGISLATORS_FILES].reverse()) {
+    all.push(...(await fetchLegislators(file)));
+  }
+  return all;
 }
 
 async function main(): Promise<void> {
@@ -57,7 +67,7 @@ async function main(): Promise<void> {
   const sampleSize =
     sampleArgIdx >= 0 ? Number(process.argv[sampleArgIdx + 1]) : 10;
 
-  const legislators = await fetchLegislators();
+  const legislators = await fetchAllLegislators();
   const bioguideToFec = new Map<string, string>();
   for (const l of legislators) {
     const bioguide = l.id?.bioguide;
@@ -67,8 +77,8 @@ async function main(): Promise<void> {
     bioguideToFec.set(bioguide, fecIds[fecIds.length - 1]);
   }
   process.stderr.write(
-    `[fec-id-backfill-scope] legislators-current.yaml: ${legislators.length} rows, ` +
-      `${bioguideToFec.size} with a bioguide+fec crosswalk\n`,
+    `[fec-id-backfill-scope] legislators-current.yaml + legislators-historical.yaml: ` +
+      `${legislators.length} rows, ${bioguideToFec.size} with a bioguide+fec crosswalk\n`,
   );
 
   const db = requireDb();
