@@ -119,18 +119,6 @@ export function evaluateCorporatePacClaim(
     sourceUrl: summary.sourceUrl,
   };
 
-  // A filed zero is the strongest claim available and needs no committee-level
-  // evidence at all: there is no money to attribute.
-  if (summary.pacTotal <= 0) {
-    return {
-      ...base,
-      verdict: "no_pac_money",
-      corporateDollars: 0,
-      unclassifiedDollars: 0,
-      reconciledShare: 1,
-    };
-  }
-
   let corporateDollars = 0;
   let unclassifiedDollars = 0;
   let namedTotal = 0;
@@ -141,6 +129,33 @@ export function evaluateCorporatePacClaim(
       continue;
     }
     if (isPledgeCorporate(row.sponsorClass)) corporateDollars += row.amount;
+  }
+
+  // A filed zero is the strongest claim available and needs no committee-level
+  // evidence — UNLESS our own committee-level rows contradict it. The two FEC
+  // files carry independent coverage dates (the per-committee contribution
+  // file can be weeks fresher than a candidate's summary), so "summary says
+  // $0" plus "we hold named PAC contributions" means the summary is stale, not
+  // that the candidate took nothing. Saying `no_pac_money` there would print
+  // the strongest badge on a page that can also list those very dollars.
+  if (summary.pacTotal <= 0) {
+    if (namedTotal > 0) {
+      return {
+        ...base,
+        verdict: "unverified",
+        reason: "unreconciled_total",
+        corporateDollars,
+        unclassifiedDollars,
+        reconciledShare: 0,
+      };
+    }
+    return {
+      ...base,
+      verdict: "no_pac_money",
+      corporateDollars: 0,
+      unclassifiedDollars: 0,
+      reconciledShare: 1,
+    };
   }
 
   const reconciledShare = namedTotal / summary.pacTotal;

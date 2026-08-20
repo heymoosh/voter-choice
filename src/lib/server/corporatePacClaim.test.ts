@@ -31,6 +31,20 @@ describe("evaluateCorporatePacClaim", () => {
     expect(canClaimNoCorporatePac(claim)).toBe(true);
   });
 
+  it("refuses a filed zero that our own committee rows contradict", () => {
+    // The two FEC files carry independent coverage dates, so a stale summary
+    // can read $0 while the per-committee file already holds contributions.
+    // The badge must not be stronger than the money we can see.
+    const claim = evaluate({
+      summary: summary(0),
+      contributions: [{ sponsorClass: "corporate", amount: 5_000 }],
+    });
+    expect(claim.verdict).toBe("unverified");
+    expect(claim.reason).toBe("unreconciled_total");
+    expect(claim.corporateDollars).toBe(5_000);
+    expect(canClaimNoCorporatePac(claim)).toBe(false);
+  });
+
   it("clears a candidate whose PAC money is entirely labor and leadership", () => {
     const claim = evaluate({
       summary: summary(10_000),
