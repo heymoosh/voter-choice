@@ -1325,6 +1325,67 @@ export const promiseVerdicts = pgTable(
 // donor_aggregates bucket. Read paths must never add these amounts to
 // totalRaised or any funding-mix total — that would double-count.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// candidate_fec_summaries — per-candidate, per-cycle FEC summary financials
+// from the "all candidates" bulk file (weball<yy>.zip). See
+// db/migrations/0027_add_candidate_fec_summaries.sql.
+//
+// This is what lets a "$0 corporate PAC money" claim be a FACT: pac_total is
+// stored even when it is 0, and coverage_end_date says what the filing covers
+// through. A candidate MISSING for a cycle has no FEC summary on file — that
+// is "no filing yet", never $0.
+//
+// NEVER part of totalRaised or any funding-mix figure; it sits beside
+// donor_aggregates, not inside it.
+// ---------------------------------------------------------------------------
+export const candidateFecSummaries = pgTable(
+  "candidate_fec_summaries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    electionCycle: text("election_cycle").notNull(),
+    fecCandidateId: text("fec_candidate_id").notNull(),
+    /** TTL_RECEIPTS. */
+    totalReceipts: numeric("total_receipts", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    /** TTL_INDIV_CONTRIB — total only; the bulk file has no itemized split. */
+    individualTotal: numeric("individual_total", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    /** OTHER_POL_CMTE_CONTRIB — all non-party committee money, 0 included. */
+    pacTotal: numeric("pac_total", { precision: 15, scale: 2 }).notNull(),
+    /** POL_PTY_CONTRIB. */
+    partyTotal: numeric("party_total", { precision: 15, scale: 2 }).notNull(),
+    /** CAND_CONTRIB — the candidate's own money. */
+    candidateSelfTotal: numeric("candidate_self_total", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    /** CVG_END_DT — what the filing covers through. Every claim is dated. */
+    coverageEndDate: date("coverage_end_date"),
+    source: text("source").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("candidate_fec_summaries_uidx").on(
+      t.candidateId,
+      t.electionCycle,
+    ),
+    index("candidate_fec_summaries_cycle_idx").on(t.electionCycle),
+  ],
+);
+
 export const pacCommittees = pgTable(
   "pac_committees",
   {
