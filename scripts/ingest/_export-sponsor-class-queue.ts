@@ -57,8 +57,10 @@ async function main() {
   const limit = Number(parseValueFlag(argv, "--limit") ?? DEFAULT_LIMIT);
   const outPath = parseValueFlag(argv, "--out") ?? DEFAULT_OUT_PATH;
   const cycle = parseValueFlag(argv, "--cycle") ?? DEFAULT_CYCLE;
-  if (!Number.isFinite(limit) || limit <= 0) {
-    console.error(`Invalid --limit value: ${limit}`);
+  // Integer, not merely finite: Postgres rejects a fractional LIMIT, so 2.5
+  // would sail past validation and die in the query instead of here.
+  if (!Number.isInteger(limit) || limit <= 0) {
+    console.error(`Invalid --limit value: ${limit} — expected a whole number`);
     process.exit(1);
   }
 

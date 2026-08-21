@@ -5,11 +5,12 @@
  * that stand between a curator's JSON file and pac_committees.
  *
  * The sponsor-class half matters more than it looks: marking a committee
- * corporate/trade only ever BLOCKS a "$0 corporate PAC" badge, but marking it
- * labor/membership/non_connected can CLEAR one. A typo'd class name silently
- * written through would put a false absence claim in front of a voter, so the
- * vocabulary is validated against its single source of truth rather than
- * trusted from the file.
+ * corporate/trade/unknown only ever BLOCKS a "$0 corporate PAC" badge, but
+ * marking it labor/membership/leadership/party/non_connected can CLEAR one,
+ * and no later pass will revisit a 'human' row. A typo'd class name — or a
+ * clearing class written casually — would put a false absence claim in front
+ * of a voter, so the vocabulary is validated against its single source of
+ * truth and the clearing direction needs an explicit --allow-clearing.
  */
 
 import { describe, it, expect } from "vitest";
@@ -17,8 +18,12 @@ import {
   rowHasWork,
   rowError,
   buildSet,
+  BLOCKING_SPONSOR_CLASSES,
   describe as describeRow,
 } from "./_apply-pac-curation";
+
+/** Curator opt-in to the unrecoverable direction. */
+const ALLOW_CLEARING = { allowClearing: true };
 
 /** Render a drizzle SET fragment list down to comparable text. */
 function setText(sets: ReturnType<typeof buildSet>): string {
@@ -94,6 +99,60 @@ describe("rowError", () => {
       rowError({ committeeId: "C1", verdict: null, sponsorClass: "unknown" }),
     ).toBeNull();
   });
+
+  it("refuses a badge-CLEARING class unless a human asked for it", () => {
+    // labor/membership/leadership/party/non_connected all make
+    // isPledgeCorporate() false, so writing one to a corporate SSF would hand
+    // that candidate a "$0 corporate PAC" badge they have not earned — and
+    // nothing downstream revisits a 'human' row, so only hand-written SQL
+    // could take it back. The one-directional property was file discipline
+    // before this guard; now it is enforced.
+    for (const cls of [
+      "labor",
+      "membership",
+      "leadership",
+      "party",
+      "non_connected",
+    ]) {
+      const err = rowError({
+        committeeId: "C1",
+        verdict: null,
+        sponsorClass: cls,
+      });
+      expect(err).toContain("CLEAR");
+      expect(err).toContain("--allow-clearing");
+      // Still a valid class name — the objection is direction, not spelling.
+      expect(err).not.toContain("invalid sponsorClass");
+    }
+  });
+
+  it("accepts a clearing class once --allow-clearing is passed", () => {
+    expect(
+      rowError(
+        { committeeId: "C1", verdict: null, sponsorClass: "labor" },
+        ALLOW_CLEARING,
+      ),
+    ).toBeNull();
+  });
+
+  it("still rejects an unknown class name even with --allow-clearing", () => {
+    expect(
+      rowError(
+        { committeeId: "C1", verdict: null, sponsorClass: "corporation" },
+        ALLOW_CLEARING,
+      ),
+    ).toContain("invalid sponsorClass");
+  });
+
+  it("keeps the blocking vocabulary tied to the pledge scope", () => {
+    // If CORPORATE_PLEDGE_CLASSES ever widens, the safe-by-default set has to
+    // widen with it rather than drift into a second hand-maintained list.
+    expect([...BLOCKING_SPONSOR_CLASSES].sort()).toEqual([
+      "corporate",
+      "trade",
+      "unknown",
+    ]);
+  });
 });
 
 describe("buildSet", () => {
@@ -109,9 +168,28 @@ describe("buildSet", () => {
 
   it("leaves status untouched on a sponsor-class-only row", () => {
     const text = setText(
-      buildSet({ committeeId: "C1", verdict: null, sponsorClass: "labor" }),
+      buildSet(
+        { committeeId: "C1", verdict: null, sponsorClass: "labor" },
+        ALLOW_CLEARING,
+      ),
     );
     expect(text).not.toContain("status =");
+  });
+
+  it("validates rather than trusting its caller", () => {
+    // buildSet is exported, so it is reachable without main()'s validation
+    // loop. It used to carry a `satisfies string as PacSponsorClass` cast that
+    // read like a check and asserted nothing at runtime; the guard now runs.
+    expect(() =>
+      buildSet({ committeeId: "C1", verdict: null, sponsorClass: "labor" }),
+    ).toThrow(/--allow-clearing/u);
+    expect(() =>
+      buildSet({
+        committeeId: "C1",
+        verdict: null,
+        sponsorClass: "corporatio",
+      }),
+    ).toThrow(/invalid sponsorClass/u);
   });
 
   it("leaves sponsor_class untouched on a status-only row", () => {
