@@ -56,7 +56,7 @@ export type PacSponsorClass =
   | "leadership"
   /** CMTE_TP X/Y/Z — party committee. */
   | "party"
-  /** CMTE_DSGN U with no connected organization — non-connected PAC. */
+  /** CMTE_TP O — an independent-expenditure-only committee (super PAC). */
   | "non_connected"
   /** Not resolvable from the filing. Blocks any $0-corporate claim. */
   | "unknown";
@@ -86,8 +86,11 @@ const ORG_TYPE_CLASSES: Record<string, PacSponsorClass> = {
 
 const PARTY_COMMITTEE_TYPES = new Set(["X", "Y", "Z"]);
 
-/** Committee types a non-connected PAC files under (PAC, hybrid, IE-only). */
-const NON_CONNECTED_COMMITTEE_TYPES = new Set(["N", "O", "Q", "V", "W"]);
+/**
+ * CMTE_TP O — independent-expenditure-only committee (super PAC). The one
+ * committee type this module will clear from a blank filing; see rule 4.
+ */
+const IE_ONLY_COMMITTEE_TYPE = "O";
 
 const norm = (value: string | null): string =>
   (value ?? "").trim().toUpperCase();
@@ -109,6 +112,10 @@ export function classifyPacSponsor(
   if (declared) return { sponsorClass: declared, method: "org-type-v1" };
 
   // 2. Party committees are a committee-type fact, not a sponsor inference.
+  //    Never fires on the Part 6a contribution path — federal-pac-sponsors.ts
+  //    drops X/Y/Z in isAttributablePacCommittee before a row gets here. It IS
+  //    live for the Part 6b independent-expenditure ingest, which shares
+  //    buildCommitteeRow and does attribute party spenders. Not dead code.
   if (PARTY_COMMITTEE_TYPES.has(committeeType)) {
     return { sponsorClass: "party", method: "committee-type-v1" };
   }
@@ -122,17 +129,37 @@ export function classifyPacSponsor(
     return { sponsorClass: "leadership", method: "designation-v1" };
   }
 
-  // 4. Non-connected PACs: CMTE_DSGN U (unauthorized) with no CONNECTED_ORG.
-  //    An SSF must name the organization that sponsors it, so a PAC filing as
-  //    unauthorized with that field blank has no corporate sponsor to name.
-  //    Note the deliberate asymmetry: designation B (registered-filer SSFs
-  //    such as the Ernst & Young and Deloitte PACs) is NOT covered here, and
-  //    neither is a U committee that did name a connected org — both stay
-  //    `unknown` rather than being called non-corporate.
+  // 4. Non-connected PACs — CMTE_DSGN U with no CONNECTED_ORG, and
+  //    deliberately ONLY committee type O (independent-expenditure-only).
+  //
+  //    The tempting wider predicate (types N/Q/V/W too) reads as "an SSF must
+  //    name its sponsor, so U + blank means there is no corporate sponsor to
+  //    name". It does not. That is the ordinary filing shape of industry and
+  //    trade-association PACs: UNITED EGG ASSOCIATION EGGPAC (C00172841)
+  //    files designation U, type Q, no ORG_TP, no connected org — and
+  //    AMERICAN FRUIT & VEGETABLE PAC (C00828806), which gave $65k to 2026
+  //    candidate committees, files the same shape with CONNECTED_ORG_NM
+  //    literally "NONE", which arrives here blank because
+  //    federal-pac-sponsors.ts normalizes the FEC's NONE/N/A placeholders to
+  //    null. Two ABSENT fields would become `non_connected` — a class
+  //    isPledgeCorporate() reports false for, i.e. a badge-CLEARING verdict
+  //    read off missing data. Nothing downstream can catch that either:
+  //    _export-sponsor-class-queue.ts only re-queues rows that are NULL or
+  //    'unknown', so a committee auto-cleared here never reaches a human.
+  //
+  //    Type O is the one place a clearing verdict is structurally safe rather
+  //    than merely likely: an IE-only committee may not contribute to a
+  //    candidate committee at all, so no contribution row can ever rest on
+  //    this answer. N/Q (ordinary PACs) and V/W (hybrids, which hold a
+  //    contribution account) all can give, so they fall through to `unknown`.
+  //
+  //    The cost is real and intended: every contributing committee the wider
+  //    rule used to clear returns to the `unknown` pool, where it blocks the
+  //    claim AND surfaces in the curation queue for a human to settle.
   if (
     designation === "U" &&
     !connectedOrg &&
-    NON_CONNECTED_COMMITTEE_TYPES.has(committeeType)
+    committeeType === IE_ONLY_COMMITTEE_TYPE
   ) {
     return { sponsorClass: "non_connected", method: "designation-v1" };
   }

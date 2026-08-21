@@ -15,6 +15,11 @@
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/backfill-pac-sponsor-class.ts --dry-run
  *   DATABASE_URL=<neon> npx tsx scripts/ingest/backfill-pac-sponsor-class.ts
  *   Flags: --dry-run, --limit N
+ *
+ * --limit is a SMOKE-TEST AID, not a way to phase a production backfill. It
+ * takes the first N committees in committee_id order, so a phased run would
+ * re-scan the same head of the table on every pass and never reach the tail.
+ * The full pass is cheap (one SELECT, chunked UPDATEs) — just run it.
  */
 
 import { pathToFileURL } from "node:url";
@@ -63,7 +68,11 @@ export async function backfillSponsorClass(
       sponsorClass: pacCommittees.sponsorClass,
       sponsorClassMethod: pacCommittees.sponsorClassMethod,
     })
-    .from(pacCommittees)) as Array<{
+    .from(pacCommittees)
+    // Ordered so --limit takes a reproducible slice: an unordered SELECT hands
+    // back whatever the planner returns, which makes a smoke test unrepeatable
+    // and a "same run again" comparison meaningless.
+    .orderBy(pacCommittees.committeeId)) as Array<{
     committeeId: string;
     orgType: string | null;
     designation: string | null;

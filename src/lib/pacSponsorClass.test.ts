@@ -70,15 +70,45 @@ describe("classifyPacSponsor", () => {
     }
   });
 
-  it("classifies an unauthorized committee with no connected org as non-connected", () => {
+  it("clears an IE-only committee (CMTE_TP O) as non-connected", () => {
+    // A super PAC cannot contribute to a candidate committee at all, so no
+    // contribution row can ever rest on this verdict — the one place a
+    // clearing answer read off a blank filing is structurally safe.
     expect(
-      classifyPacSponsor(filing({ designation: "U", committeeType: "Q" })),
+      classifyPacSponsor(filing({ designation: "U", committeeType: "O" })),
     ).toEqual({ sponsorClass: "non_connected", method: "designation-v1" });
     expect(
       classifyPacSponsor(
         filing({ designation: "U", committeeType: "O", connectedOrg: "   " }),
       ).sponsorClass,
     ).toBe("non_connected");
+  });
+
+  it("leaves a contributing committee with a blank filing unknown, never non-connected", () => {
+    // The trade-PAC filing shape: designation U, committee type Q, no ORG_TP,
+    // no connected org. UNITED EGG ASSOCIATION EGGPAC (C00172841) files it,
+    // and AMERICAN FRUIT & VEGETABLE PAC (C00828806) files it with
+    // CONNECTED_ORG_NM="NONE", which federal-pac-sponsors.ts normalizes to
+    // null before this runs — that one gave $65k to 2026 candidates. Both are
+    // trade money. Calling them `non_connected` would CLEAR a "$0 corporate
+    // PAC" badge off two absent fields, and the queue export would never show
+    // them to a human again.
+    for (const committeeType of ["N", "Q", "V", "W"]) {
+      const verdict = classifyPacSponsor(
+        filing({ designation: "U", committeeType }),
+      );
+      expect(verdict).toEqual({
+        sponsorClass: "unknown",
+        method: "unresolved-v1",
+      });
+      expect(isPledgeCorporate(verdict.sponsorClass)).toBe(false);
+    }
+    // Same shape with the FEC's literal placeholder already normalized away.
+    expect(
+      classifyPacSponsor(
+        filing({ designation: "U", committeeType: "Q", connectedOrg: null }),
+      ).sponsorClass,
+    ).toBe("unknown");
   });
 
   it("leaves an unauthorized committee that DID name a sponsor unknown", () => {
