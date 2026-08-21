@@ -45,6 +45,26 @@ describe("sendChatTurn — server path", () => {
     expect(onError).not.toHaveBeenCalled();
   });
 
+  // Regression: a sustained upstream Anthropic-account block (org spend cap /
+  // self-set spend limit / billing hold — route.ts's
+  // isUpstreamAccountExhausted) must open the SAME continuity flow as a
+  // community-budget block, even though it's a completely different cause.
+  // CHAT_BUDGET_CODES is what makes that true — this locks in that the new
+  // code is actually a member, not just present in the server's contract.
+  it("routes BUDGET_UPSTREAM_EXHAUSTED to onBudgetBlock, never onError", async () => {
+    streamChatReply.mockImplementation(async (_a, cb) =>
+      cb.onError("unavailable", {
+        status: 503,
+        code: "BUDGET_UPSTREAM_EXHAUSTED",
+      }),
+    );
+    const onBudgetBlock = vi.fn();
+    const onError = vi.fn();
+    await sendChatTurn(ARGS, { onText: vi.fn(), onError, onBudgetBlock });
+    expect(onBudgetBlock).toHaveBeenCalledWith("BUDGET_UPSTREAM_EXHAUSTED");
+    expect(onError).not.toHaveBeenCalled();
+  });
+
   it("passes non-budget block codes through to onError with meta", async () => {
     streamChatReply.mockImplementation(async (_a, cb) =>
       cb.onError("unavailable", { status: 503, code: "SESSION_LIMIT" }),

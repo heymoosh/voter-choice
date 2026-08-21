@@ -539,15 +539,22 @@ function App2Inner() {
               m._id === aiId ? { ...m, text: m.text + chunk } : m,
             ),
           })),
-        onBudgetBlock: () => {
+        onBudgetBlock: (code) => {
           // Drop the empty bubble, stash the refused turn for "Retry with my
           // key", and open the budget modal in its blocked framing.
+          // BUDGET_UPSTREAM_EXHAUSTED is a DIFFERENT cause than the other
+          // BUDGET_* codes — the Anthropic account itself is capped, not our
+          // own tracked community budget — so the modal must say so honestly
+          // instead of claiming the community budget is what's used up.
           setChatMessages((prev) => ({
             ...prev,
             [seatId]: (prev[seatId] || []).filter((m) => m._id !== aiId),
           }));
           pendingRetryRef.current = () => runChatStream(seatId, apiMessages);
-          setBudgetModal({ blocked: true });
+          setBudgetModal({
+            blocked: true,
+            upstream: code === "BUDGET_UPSTREAM_EXHAUSTED",
+          });
         },
         onError: (reason, meta) => {
           // Drop the (empty/partial) AI bubble first — whichever surface shows.
@@ -576,10 +583,15 @@ function App2Inner() {
   }
 
   // An issue-conversation turn (intake or edit modal) hit the budget gate:
-  // the loop preserved its state and handed us a zero-arg replay.
-  function handleConvoBudgetBlock(retry) {
+  // the loop preserved its state and handed us a zero-arg replay, plus the
+  // block code so the modal can tell a real community-budget block apart
+  // from an upstream-account block (see the seat-chat onBudgetBlock above).
+  function handleConvoBudgetBlock(retry, code) {
     pendingRetryRef.current = retry;
-    setBudgetModal({ blocked: true });
+    setBudgetModal({
+      blocked: true,
+      upstream: code === "BUDGET_UPSTREAM_EXHAUSTED",
+    });
   }
 
   // "Retry with my key": explicit BYOK opt-in, then replay the refused turn
@@ -1129,6 +1141,7 @@ function App2Inner() {
       {budgetModal && (
         <BudgetModal
           blocked={budgetModal.blocked}
+          upstream={budgetModal.upstream}
           prompt={buildScorecardHandoffPrompt({
             seats,
             issues,

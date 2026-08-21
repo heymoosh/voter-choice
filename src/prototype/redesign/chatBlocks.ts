@@ -33,11 +33,17 @@ export const CHAT_BLOCK_MESSAGES: Record<string, string> = {
   API_RATE_LIMIT: "The AI is busy right now — try again in a moment.",
 };
 
-/** Budget block codes route to the budget/handoff modal, not a banner. */
+/** Budget block codes route to the budget/handoff modal, not a banner.
+ *  BUDGET_UPSTREAM_EXHAUSTED is a distinct sustained block — the Anthropic
+ *  account itself (spend cap / self-set spend limit / billing) can't serve
+ *  ANY request, not our own $50/mo community-budget tracker — but the voter
+ *  needs the exact same continuity flow (tip jar / BYOK / handoff), so it
+ *  routes here too. See route.ts's isUpstreamAccountExhausted. */
 export const CHAT_BUDGET_CODES = new Set([
   "BUDGET_SOFT_CLOSE",
   "BUDGET_HANDOFF",
   "BUDGET_EXHAUSTED",
+  "BUDGET_UPSTREAM_EXHAUSTED",
 ]);
 
 export interface ChatBlockResolution {
