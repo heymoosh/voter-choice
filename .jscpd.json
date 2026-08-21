@@ -4,6 +4,7 @@
   "output": ".jscpd-report",
   "pattern": "{src,e2e/helpers,scripts/design}/**/*.{ts,tsx}",
   "ignore": [
+    "docs/archive/**",
     "node_modules",
     ".next",
     "coverage",
