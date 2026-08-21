@@ -217,6 +217,71 @@ describe("lookupPacSponsors", () => {
   });
 });
 
+describe("funding-mix display gate", () => {
+  /** Capture the condition handed to `.where()` so the gate can be asserted. */
+  function makeWhereCapturingDbMock(rows: Record<string, unknown>[]) {
+    const captured: unknown[] = [];
+    const chain: Record<string, unknown> = {};
+    for (const m of ["from", "innerJoin", "orderBy"]) {
+      chain[m] = vi.fn().mockReturnValue(chain);
+    }
+    chain.where = vi.fn((condition: unknown) => {
+      captured.push(condition);
+      return chain;
+    });
+    (chain as { then?: unknown }).then = (resolve: (v: unknown[]) => void) =>
+      resolve(rows);
+    return {
+      db: { select: vi.fn().mockReturnValue(chain) } as unknown as ReturnType<
+        typeof getDb
+      >,
+      captured,
+    };
+  }
+
+  /** Flatten a drizzle condition tree into the SQL fragments it carries.
+   *  Drizzle nodes hold back-references to their table, so the walk needs a
+   *  seen-set and a depth cap or it recurses forever. */
+  function sqlText(
+    node: unknown,
+    seen = new Set<unknown>(),
+    depth = 0,
+  ): string {
+    if (depth > 30 || node === null || typeof node !== "object") return "";
+    if (seen.has(node)) return "";
+    seen.add(node);
+    const rec = node as Record<string, unknown>;
+    // Param: a bound value. StringChunk: raw SQL text, held as string[].
+    if (typeof rec.value === "string") return rec.value;
+    if (
+      Array.isArray(rec.value) &&
+      rec.value.every((v) => typeof v === "string")
+    ) {
+      return (rec.value as string[]).join(" ");
+    }
+    const parts = Array.isArray(rec.queryChunks)
+      ? rec.queryChunks
+      : Object.values(rec);
+    return parts.map((p) => sqlText(p, seen, depth + 1)).join(" ");
+  }
+
+  it("restricts the query to candidates that also have a funding mix", async () => {
+    const { db, captured } = makeWhereCapturingDbMock([contributionRow()]);
+    mockedGetDb.mockReturnValue(db);
+    await lookupPacSponsors(["federal-A"]);
+
+    // The ingest now stores PAC rows for EVERY federal candidate, so this
+    // gate is the only thing keeping a PAC list off a candidate who has no
+    // funding mix for it to be a breakdown of. Losing it would silently turn
+    // the block into the headline funding figure — the exact failure the
+    // file's "BREAKDOWN, NEVER A NEW TOTAL" contract forbids.
+    const where = captured.map((c) => sqlText(c)).join(" ");
+    expect(where).toContain("donor_aggregates");
+    expect(where).toContain("bucket_label");
+    expect(where).toContain("election_cycle");
+  });
+});
+
 /** Unwrap the single-candidate result the fixtures above produce. */
 function out<T>(map: Map<string, T>): T {
   const value = map.get("federal-A");
