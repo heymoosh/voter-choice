@@ -65,6 +65,8 @@ describe("VoterChoiceApp TRANSLATIONS (redesign i18n)", () => {
     ["scorecardPrint", "aligned"],
     ["scorecardPrint", "reviewBefore"],
     ["delegationError", "geocodeFailTitle"],
+    ["delegationError", "geocoderDownTitle"],
+    ["delegationError", "geocoderDownBody"],
     ["delegationError", "noRepTitle"],
     ["delegationError", "dbErrorTitle"],
     ["intake", "updatedFallback"],

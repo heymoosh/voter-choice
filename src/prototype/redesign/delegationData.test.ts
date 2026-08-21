@@ -1,4 +1,4 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   seatOverviewAlignmentPct,
   seatIssueAlignmentRows,
@@ -6,6 +6,7 @@ import {
   deriveMoneyInfluence,
   deriveIssueMoneyVerdict,
   deriveVoteLinkage,
+  fetchDelegation,
   type UserIssue,
   type DonorCoalitionSlice,
 } from "./delegationData";
@@ -582,5 +583,73 @@ describe("issue-PAC keyed by relevantToIssue (real mock-data shape parity)", () 
       n: 1,
       dots: ["w"],
     });
+  });
+});
+
+describe("fetchDelegation — retryable is derived from HTTP status class", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  function stubFetchResolved(status: number, body: unknown = {}) {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: status >= 200 && status < 300,
+        status,
+        json: async () => body,
+      }),
+    );
+  }
+
+  // 400: our own request was malformed (e.g. address too short) — not an
+  // outage, and retrying won't help. Must render the honest "bad address"
+  // copy, not "our service is down".
+  it("a 400 is NOT retryable", async () => {
+    stubFetchResolved(400, { error: "Invalid address" });
+    const result = await fetchDelegation("ab");
+    expect(result).toEqual({ status: "geocode_failed", retryable: false });
+  });
+
+  // 429: the shared rate limiter tripped. Not an outage either, and a
+  // "Try again" button here would just re-trip the limiter.
+  it("a 429 is NOT retryable", async () => {
+    stubFetchResolved(429, { error: "Too many requests" });
+    const result = await fetchDelegation("123 Main St, Austin, TX 78701");
+    expect(result).toEqual({ status: "geocode_failed", retryable: false });
+  });
+
+  // 502: geocodeAddressToDistrict itself failed — the one case the route
+  // doc calls out as "geocoder down (retryable)".
+  it("a 502 IS retryable", async () => {
+    stubFetchResolved(502, { status: "geocode_failed" });
+    const result = await fetchDelegation("123 Main St, Austin, TX 78701");
+    expect(result).toEqual({ status: "geocode_failed", retryable: true });
+  });
+
+  // Any other 5xx should be treated the same as the 502 case.
+  it("a 500 IS retryable", async () => {
+    stubFetchResolved(500, {});
+    const result = await fetchDelegation("123 Main St, Austin, TX 78701");
+    expect(result).toEqual({ status: "geocode_failed", retryable: true });
+  });
+
+  // A thrown network/abort error (offline, DNS failure, etc.) never reaches
+  // an HTTP status at all — that's still our/network's fault, retryable.
+  it("a thrown network error IS retryable", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockRejectedValue(new TypeError("Failed to fetch")),
+    );
+    const result = await fetchDelegation("123 Main St, Austin, TX 78701");
+    expect(result).toEqual({ status: "geocode_failed", retryable: true });
+  });
+
+  // A 200 whose body says the address didn't match: genuine no-match,
+  // not retryable — the existing (pre-PR) behavior, still correct.
+  it("a 200 geocode_failed body is NOT retryable", async () => {
+    stubFetchResolved(200, { status: "geocode_failed" });
+    const result = await fetchDelegation("not a real address");
+    expect(result).toEqual({ status: "geocode_failed", retryable: false });
   });
 });

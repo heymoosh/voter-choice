@@ -149,6 +149,16 @@ describe("geocodeAddressToDistrict — non-voting areas", () => {
 });
 
 describe("geocodeAddressToDistrict — failure modes", () => {
+  // The 5xx and fetch-rejection cases below hit the same retryable path as
+  // "transient-failure retry" (both attempts fail identically), so they
+  // sleep through a real jittered backoff unless timers are faked too.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
   it("returns no_match for an unmatched address", async () => {
     stubFetchJson({ result: { input: {}, addressMatches: [] } });
     const out = await geocodeAddressToDistrict("asdf qwerty zxcv");
@@ -157,7 +167,9 @@ describe("geocodeAddressToDistrict — failure modes", () => {
 
   it("returns error on a 5xx response", async () => {
     stubFetchJson({}, false, 503);
-    const out = await geocodeAddressToDistrict("123 Main St");
+    const promise = geocodeAddressToDistrict("123 Main St");
+    await vi.runAllTimersAsync();
+    const out = await promise;
     expect(out).toEqual({ status: "error" });
   });
 
@@ -166,7 +178,9 @@ describe("geocodeAddressToDistrict — failure modes", () => {
       "fetch",
       vi.fn().mockRejectedValue(new Error("network down")),
     );
-    const out = await geocodeAddressToDistrict("123 Main St");
+    const promise = geocodeAddressToDistrict("123 Main St");
+    await vi.runAllTimersAsync();
+    const out = await promise;
     expect(out).toEqual({ status: "error" });
   });
 
@@ -198,5 +212,133 @@ describe("geocodeAddressToDistrict — failure modes", () => {
     expect(url.searchParams.get("benchmark")).toBe("Public_AR_Current");
     expect(url.searchParams.get("vintage")).toBe("Current_Current");
     expect(url.searchParams.get("address")).toBe("123 Main St, Trenton NJ");
+  });
+});
+
+describe("geocodeAddressToDistrict — transient-failure retry", () => {
+  // The retry's jittered backoff (~300-500ms) sleeps for real between
+  // attempts; fake timers + runAllTimersAsync let these resolve instantly
+  // instead of making this file take seconds to run.
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("retries once after a 5xx and succeeds on the second attempt", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce({ ok: false, status: 503, json: vi.fn() })
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(
+          censusPayload({
+            States: [{ STUSAB: "NJ", NAME: "New Jersey" }],
+            "119th Congressional Districts": [{ CD119: "5" }],
+          }),
+        ),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const promise = geocodeAddressToDistrict("123 Main St, Trenton NJ");
+    await vi.runAllTimersAsync();
+    const out = await promise;
+    expect(out.status).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("retries once after a thrown network error and succeeds on the second attempt", async () => {
+    const fetchMock = vi
+      .fn()
+      .mockRejectedValueOnce(new Error("network down"))
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 200,
+        json: vi.fn().mockResolvedValue(
+          censusPayload({
+            States: [{ STUSAB: "TX", NAME: "Texas" }],
+            "119th Congressional Districts": [{ CD119: "21" }],
+          }),
+        ),
+      });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const promise = geocodeAddressToDistrict("Austin TX");
+    await vi.runAllTimersAsync();
+    const out = await promise;
+    expect(out.status).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("gives up after a persistent 5xx and returns error after exactly MAX_ATTEMPTS calls", async () => {
+    const fetchMock = stubFetchJson({}, false, 500);
+    const promise = geocodeAddressToDistrict("123 Main St");
+    await vi.runAllTimersAsync();
+    const out = await promise;
+    expect(out).toEqual({ status: "error" });
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+  });
+
+  it("does not retry a 4xx — our own request was malformed", async () => {
+    const fetchMock = stubFetchJson({}, false, 400);
+    const promise = geocodeAddressToDistrict("123 Main St");
+    await vi.runAllTimersAsync();
+    const out = await promise;
+    expect(out).toEqual({ status: "error" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not retry a clean 200 with zero address matches (no_match, not an upstream failure)", async () => {
+    const fetchMock = stubFetchJson({
+      result: { input: {}, addressMatches: [] },
+    });
+    const promise = geocodeAddressToDistrict("asdf qwerty zxcv");
+    await vi.runAllTimersAsync();
+    const out = await promise;
+    expect(out).toEqual({ status: "no_match" });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe("geocodeAddressToDistrict — attempt/overall timeout budget", () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  // Regression test for the halved-timeout bug: ATTEMPT_TIMEOUT_MS was
+  // briefly dropped 8000ms -> 4000ms alongside the retry, which would have
+  // turned this slow-but-working 6s response into a false failure.
+  it("a slow-but-successful response inside the per-attempt window still succeeds", async () => {
+    const fetchMock = vi.fn().mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          setTimeout(
+            () =>
+              resolve({
+                ok: true,
+                status: 200,
+                json: vi.fn().mockResolvedValue(
+                  censusPayload({
+                    States: [{ STUSAB: "NJ", NAME: "New Jersey" }],
+                    "119th Congressional Districts": [{ CD119: "5" }],
+                  }),
+                ),
+              }),
+            6000,
+          );
+        }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const promise = geocodeAddressToDistrict("123 Main St, Trenton NJ");
+    await vi.advanceTimersByTimeAsync(6000);
+    const out = await promise;
+    expect(out.status).toBe("ok");
+    expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 });
