@@ -19,6 +19,11 @@ import {
   recordBlock,
   type BlockReason,
 } from "../../../lib/server/usage-telemetry";
+import {
+  isUpstreamAccountExhausted,
+  UPSTREAM_EXHAUSTED_CODE,
+  upstreamExhaustedResponse,
+} from "../../../lib/server/upstream-exhaustion";
 import { recordChatUsage } from "../../../lib/server/chat-usage-metrics";
 import {
   lookupDonorCoalition,
@@ -1641,65 +1646,6 @@ async function checkGates(
   return budgetResponse;
 }
 
-/**
- * Fields the Anthropic error body carries for the two sustained,
- * account-level blocks below — narrower than (and not covered by) the SDK's
- * own typed `ErrorObject` union, which doesn't model the 429 spend-cap
- * `details.error_code` field. Shapes verified against the current API docs
- * (platform.claude.com/docs/en/api/errors and .../api/rate-limits), not
- * assumed from memory.
- */
-interface UpstreamErrorBody {
-  error?: {
-    type?: string;
-    message?: string;
-    details?: { error_code?: string };
-  };
-}
-
-/**
- * True when `err` is a SUSTAINED, account-level block on the shared
- * Anthropic key — it stays blocked until someone raises a limit or fixes
- * billing — as opposed to a transient per-minute rate limit that clears on
- * its own within seconds. This is a DIFFERENT system from our own $50/mo
- * community budget (budget.ts): the two can be out of step, e.g. our tracked
- * spend reads 0% while the org's Anthropic account is capped. Three
- * documented shapes:
- *
- *   - 429 rate_limit_error, the usage tier's monthly spend cap: the response
- *     carries `error.details.error_code === "enforced_spend_limit_reached"`
- *     and — the docs' own fallback signal, in case that field ever moves —
- *     NO `retry-after` header ("the response has no retry-after header...
- *     [r]etrying... fails until access resumes"). An ordinary rate-limit 429
- *     always carries `retry-after`, so it never matches here.
- *   - 400 invalid_request_error, a self-configured org/workspace spend
- *     limit: message begins "You have reached your specified" (the two
- *     documented variants are "...API usage limits" and "...workspace API
- *     usage limits"). This is exactly what "raise the limit and it's fixed"
- *     describes.
- *   - 402 billing_error: a payment/billing problem on the account.
- */
-function isUpstreamAccountExhausted(
-  err: InstanceType<typeof Anthropic.APIError>,
-): boolean {
-  const body = err.error as UpstreamErrorBody | undefined;
-  const type = body?.error?.type;
-  const message = body?.error?.message ?? "";
-  if (err.status === 429) {
-    if (body?.error?.details?.error_code === "enforced_spend_limit_reached") {
-      return true;
-    }
-    return type === "rate_limit_error" && !err.headers?.["retry-after"];
-  }
-  if (err.status === 400) {
-    return (
-      type === "invalid_request_error" &&
-      message.startsWith("You have reached your specified")
-    );
-  }
-  return err.status === 402 && type === "billing_error";
-}
-
 async function handleAnthropicError(
   err: unknown,
   ctx: { ip: string; sessionId: string },
@@ -1716,20 +1662,13 @@ async function handleAnthropicError(
     // exhausted (it may be nowhere near it; this is Anthropic's account-level
     // limit, tracked separately from budget.ts).
     if (isUpstreamAccountExhausted(err)) {
-      recordBlock("BUDGET_UPSTREAM_EXHAUSTED", {
+      recordBlock(UPSTREAM_EXHAUSTED_CODE, {
         route: "chat",
         ip: ctx.ip,
         sessionId: ctx.sessionId,
         detail: { status: err.status },
       });
-      return Response.json(
-        {
-          error:
-            "Voter Choice's shared AI access is temporarily on hold — this isn't our community budget (that's tracked separately and may still be healthy), it's a limit on the shared account itself. Paste your own Anthropic key below to keep going right now, or continue in another chatbot.",
-          code: "BUDGET_UPSTREAM_EXHAUSTED",
-        },
-        { status: 503 },
-      );
+      return upstreamExhaustedResponse();
     }
 
     if (err.status === 429) {

@@ -70,7 +70,7 @@ const ALL_BLOCK_REASONS: readonly BlockReason[] = [
 ];
 
 export interface BlockContext {
-  route: "chat" | "extract-ballot";
+  route: "chat" | "extract-ballot" | "research-candidate";
   /** Raw client IP. Hashed before logging — never logged in the clear. */
   ip?: string;
   sessionId?: string;

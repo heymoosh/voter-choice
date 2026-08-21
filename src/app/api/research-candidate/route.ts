@@ -31,6 +31,12 @@ import { getClientIP } from "../../../lib/server/client-ip";
 import { validateOrigin } from "../../../lib/server/validate-origin";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
+import { recordBlock } from "../../../lib/server/usage-telemetry";
+import {
+  isUpstreamAccountExhausted,
+  UPSTREAM_EXHAUSTED_CODE,
+  upstreamExhaustedResponse,
+} from "../../../lib/server/upstream-exhaustion";
 
 const MAX_FIELD = 300;
 const MAX_ISSUES = 10;
@@ -132,7 +138,19 @@ export async function POST(request: NextRequest) {
       return Response.json({ unavailable: true });
     }
     return Response.json({ scores });
-  } catch {
+  } catch (err) {
+    // A sustained account-level block on the shared Anthropic key (same
+    // detector /api/chat uses) must surface the same continuity payload as
+    // chat, not the generic RESEARCH_ERROR — otherwise this route's own
+    // catch-all silently swallows it into an indistinguishable 502.
+    if (err instanceof Anthropic.APIError && isUpstreamAccountExhausted(err)) {
+      recordBlock(UPSTREAM_EXHAUSTED_CODE, {
+        route: "research-candidate",
+        ip,
+        detail: { status: err.status },
+      });
+      return upstreamExhaustedResponse();
+    }
     return Response.json(
       { error: "Research failed", code: "RESEARCH_ERROR" },
       { status: 502 },
