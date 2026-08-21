@@ -276,13 +276,15 @@ holds on its own:
   95% of the filed PAC total. The gap exists because the bulk contribution file and the
   summary file carry independent coverage dates, and small transaction types outside
   24K/24P/24Z sit inside the filed total.
-- `MAX_UNRECONCILED_DOLLARS = 5_000` — and no more than $5,000 of the filed total may be
-  unaccounted for in absolute dollars. A share scales with the candidate; $5,000 does
-  not. 95% of a $3M PAC total leaves $150,000 invisible, which is 15-30 corporate PACs at
-  max-out — exactly what the badge would be denying. $5,000 is a multicandidate PAC's
-  maximum contribution per election, so below that gap no single corporate PAC can hide.
-  (Threshold pending product-owner confirmation; the mechanism is the point, the number
-  is a dial.)
+- `MAX_UNRECONCILED_DOLLARS = 5_000` — and the unaccounted dollars must come to
+  **strictly less than** $5,000 in absolute terms. A share scales with the candidate;
+  $5,000 does not. 95% of a $3M PAC total leaves $150,000 invisible, which is 15-30
+  corporate PACs at max-out — exactly what the badge would be denying. $5,000 is a
+  multicandidate PAC's maximum contribution per election, so a gap strictly under it
+  cannot hold even one corporate PAC's max-out. The bound excludes its own value on
+  purpose: a gap of exactly $5,000 **is** one max-out, so a gap of $4,999 clears and a
+  gap of $5,000 does not. (Threshold pending product-owner confirmation; the mechanism is
+  the point, the number is a dial.)
 
 Named money that **exceeds** the filed total is refused too, not passed: a share above 1
 means the summary is stale or the contribution rows are a partial load, which is the same
@@ -325,7 +327,7 @@ its existence but not its dollars, so every reported figure stays finite.
    `unreconciled_total`
 5. an unclassified or missing-committee row exists → `unverified` /
    `unclassified_committees`
-6. share above 1, or below `MIN_RECONCILED_SHARE`, or gap above
+6. share above 1, or below `MIN_RECONCILED_SHARE`, or gap at or above
    `MAX_UNRECONCILED_DOLLARS` → `unverified` / `unreconciled_total`
 7. otherwise → dated ? `no_corporate_pac` : `unverified` / `undated_filing`
 

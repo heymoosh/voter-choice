@@ -171,6 +171,35 @@ describe("evaluateCorporatePacClaim", () => {
     expect(canClaimNoCorporatePac(claim)).toBe(false);
   });
 
+  it("draws the dollar bound strictly: a gap that IS one corporate max-out refuses", () => {
+    // The constant is a multicandidate PAC's per-election maximum, and the
+    // claim made for it is that no single corporate PAC can hide in the gap.
+    // At exactly $5,000 one can — so the bound has to exclude its own value.
+    // Share is ~0.995 in all three, well clear of MIN_RECONCILED_SHARE, so the
+    // dollar bound is the only thing deciding.
+    const withGap = (gap: number) =>
+      evaluate({
+        summary: summary(1_000_000),
+        contributions: [{ sponsorClass: "labor", amount: 1_000_000 - gap }],
+      });
+
+    expect(withGap(MAX_UNRECONCILED_DOLLARS - 1).verdict).toBe(
+      "no_corporate_pac",
+    );
+    expect(withGap(MAX_UNRECONCILED_DOLLARS).verdict).toBe("unverified");
+    expect(withGap(MAX_UNRECONCILED_DOLLARS).reason).toBe("unreconciled_total");
+    expect(withGap(MAX_UNRECONCILED_DOLLARS + 1).verdict).toBe("unverified");
+    for (const gap of [
+      MAX_UNRECONCILED_DOLLARS,
+      MAX_UNRECONCILED_DOLLARS + 1,
+    ]) {
+      expect(withGap(gap).reconciledShare).toBeGreaterThan(
+        MIN_RECONCILED_SHARE,
+      );
+      expect(canClaimNoCorporatePac(withGap(gap))).toBe(false);
+    }
+  });
+
   it("still clears a large filer whose unaccounted remainder is under the dollar cap", () => {
     // The dollar bound must not become a de facto ban on big filers: a $3M
     // total with $1,000 unnamed is as complete as evidence gets.

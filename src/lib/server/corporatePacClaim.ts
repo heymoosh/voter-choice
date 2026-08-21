@@ -56,13 +56,15 @@ import { isPledgeCorporate, type PacSponsorClass } from "../pacSponsorClass";
 export const MIN_RECONCILED_SHARE = 0.95;
 
 /**
- * The most filed PAC money that may stay unaccounted for and still allow an
- * absence claim, in dollars. A share cannot bound this on its own, because a
- * share scales with the candidate: 95% of a $3M PAC total leaves $150,000
- * invisible — room for 15-30 corporate PACs at max-out, which is precisely
- * what the badge denies. $5,000 is a multicandidate PAC's maximum contribution
- * per election, so under this gap no single corporate PAC can hide inside the
- * remainder. BOTH bounds must hold; either one failing returns `unverified`.
+ * The size of gap that DISQUALIFIES an absence claim: the unaccounted dollars
+ * must come to LESS than this, strictly. A share cannot bound this on its own,
+ * because a share scales with the candidate: 95% of a $3M PAC total leaves
+ * $150,000 invisible — room for 15-30 corporate PACs at max-out, which is
+ * precisely what the badge denies. $5,000 is a multicandidate PAC's maximum
+ * contribution per election, so a gap strictly under it cannot hold even one
+ * corporate PAC's max-out. The strictness is the whole point of the number: a
+ * gap of EXACTLY $5,000 is exactly one max-out, so clearing it would make the
+ * sentence above false. BOTH bounds must hold; either failing is `unverified`.
  */
 export const MAX_UNRECONCILED_DOLLARS = 5_000;
 
@@ -299,11 +301,14 @@ export function evaluateCorporatePacClaim(
   // Both bounds, not either: the share catches a candidate whose named rows
   // cover only a fraction of the filing, and the dollar cap catches the large
   // filer whose 5% remainder is still enough for a room full of corporate
-  // PACs. Phrased as negations of the passing condition so that a value which
-  // is not a usable number fails CLOSED even if it ever reaches this line.
+  // PACs. The dollar bound is STRICT — a gap of exactly $5,000 is exactly one
+  // corporate max-out, so admitting it would leave room for the very thing the
+  // constant was chosen to exclude. Phrased as negations of the passing
+  // condition so that a value which is not a usable number fails CLOSED even
+  // if it ever reaches this line.
   if (
     !(reconciledShare >= MIN_RECONCILED_SHARE) ||
-    !(unreconciledDollars <= MAX_UNRECONCILED_DOLLARS)
+    !(unreconciledDollars < MAX_UNRECONCILED_DOLLARS)
   ) {
     return unreconciled();
   }
