@@ -58,6 +58,7 @@ import {
   UPSERT_CHUNK_SIZE,
   bulkZipUrl,
   ensureBulkZip,
+  isoDateFromParts,
   loadFederalCandidateMap,
   parsePositiveInteger,
   parseValueFlag,
@@ -111,29 +112,19 @@ export function resolveConfig(
 
 /**
  * MMDDYYYY (FEC TRANSACTION_DT) -> "YYYY-MM-DD", or null if unparseable OR
- * not a real calendar date. FEC bulk files do contain garbage dates (e.g.
- * "02312026"); a naive range check on month/day alone would still emit an
- * impossible date that Postgres rejects at insert time, failing the whole
- * upsert chunk. Roundtripping through Date.UTC and comparing back catches
- * that (Date.UTC normalizes Feb 31 -> Mar 3, so a mismatch means invalid).
+ * not a real calendar date. The calendar validation lives in
+ * `isoDateFromParts` (_fec-bulk.ts) because the candidate-summary ingest
+ * needs the identical check on a different wire format; its docblock explains
+ * why a month/day range check alone is not enough.
  */
 export function parseFecDate(raw: string): string | null {
   const trimmed = raw.trim();
   if (!/^\d{8}$/u.test(trimmed)) return null;
-  const month = Number(trimmed.slice(0, 2));
-  const day = Number(trimmed.slice(2, 4));
-  const year = Number(trimmed.slice(4, 8));
-  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
-
-  const date = new Date(Date.UTC(year, month - 1, day));
-  if (
-    date.getUTCFullYear() !== year ||
-    date.getUTCMonth() !== month - 1 ||
-    date.getUTCDate() !== day
-  ) {
-    return null;
-  }
-  return `${trimmed.slice(4, 8)}-${trimmed.slice(0, 2)}-${trimmed.slice(2, 4)}`;
+  return isoDateFromParts(
+    Number(trimmed.slice(4, 8)),
+    Number(trimmed.slice(0, 2)),
+    Number(trimmed.slice(2, 4)),
+  );
 }
 
 export type CommitteeType = "candidate" | "pac";

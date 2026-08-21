@@ -1313,19 +1313,6 @@ export const promiseVerdicts = pgTable(
 );
 
 // ---------------------------------------------------------------------------
-// Part 6a — PAC money attributed to sponsor + industry. pac_committees is the
-// first-class committee table the plan mandates (committee_id → PAC name →
-// parent/sponsor → sector → evidence_url → status) instead of growing the
-// raw_metadata.committees[] JSON; pac_candidate_contributions carries the
-// per-committee × candidate × cycle totals. Spec:
-// docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md Part 6a.
-// See db/migrations/0022_add_pac_committees.sql.
-//
-// DISPLAY-LAYER ONLY: this money is a named breakdown of the existing "PACs"
-// donor_aggregates bucket. Read paths must never add these amounts to
-// totalRaised or any funding-mix total — that would double-count.
-// ---------------------------------------------------------------------------
-// ---------------------------------------------------------------------------
 // candidate_fec_summaries — per-candidate, per-cycle FEC summary financials
 // from the "all candidates" bulk file (weball<yy>.zip). See
 // db/migrations/0027_add_candidate_fec_summaries.sql.
@@ -1378,14 +1365,24 @@ export const candidateFecSummaries = pgTable(
       .defaultNow(),
   },
   (t) => [
-    uniqueIndex("candidate_fec_summaries_uidx").on(
-      t.candidateId,
-      t.electionCycle,
-    ),
+    unique("candidate_fec_summaries_uidx").on(t.candidateId, t.electionCycle),
     index("candidate_fec_summaries_cycle_idx").on(t.electionCycle),
   ],
 );
 
+// ---------------------------------------------------------------------------
+// Part 6a — PAC money attributed to sponsor + industry. pac_committees is the
+// first-class committee table the plan mandates (committee_id → PAC name →
+// parent/sponsor → sector → evidence_url → status) instead of growing the
+// raw_metadata.committees[] JSON; pac_candidate_contributions carries the
+// per-committee × candidate × cycle totals. Spec:
+// docs/DONOR_FRAMING_AND_ACCOUNTABILITY_PLAN.md Part 6a.
+// See db/migrations/0022_add_pac_committees.sql.
+//
+// DISPLAY-LAYER ONLY: this money is a named breakdown of the existing "PACs"
+// donor_aggregates bucket. Read paths must never add these amounts to
+// totalRaised or any funding-mix total — that would double-count.
+// ---------------------------------------------------------------------------
 export const pacCommittees = pgTable(
   "pac_committees",
   {
