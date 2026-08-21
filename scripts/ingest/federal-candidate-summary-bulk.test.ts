@@ -341,8 +341,9 @@ describe("createSummaryCollector", () => {
     collector.onLine(withField(PELTOLA, 0, "H9ZZ99999"));
     collector.onLine(withField(PELTOLA, 0, "H9ZZ99998"));
     expect(collector.onLine(PELTOLA)).toBe(false); // limit reached, stop
-    expect(() => collector.finish()).not.toThrow();
-    expect(collector.finish().counts.fileRows).toBe(2);
+    const { rows, counts } = collector.finish();
+    expect(rows).toHaveLength(0);
+    expect(counts.fileRows).toBe(2); // the third line was never read
   });
 
   it("counts filed zeros and positives off the deduped rows", () => {
