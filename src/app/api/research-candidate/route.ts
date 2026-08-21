@@ -45,23 +45,43 @@ function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+/** The 503 body every community-budget-exhausted response here uses. */
+function communityBudgetExhaustedResponse(): Response {
+  return Response.json(
+    { error: "Community AI budget exhausted", code: "BUDGET_EXHAUSTED" },
+    { status: 503 },
+  );
+}
+
 /**
- * Response for OUR community budget being exhausted or in the handoff tier —
- * null when it isn't. Shared by the pre-flight gate below AND the post-hoc
- * re-check inside the catch block (see isUpstreamAccountExhausted's call
- * site) so a race where the community pool crosses into "exhausted" WHILE
- * this request was mid-flight (e.g. a concurrent chat turn's spend pushes
- * the tally over) still gets the correct cause, not the upstream-account
- * copy — same precedence fix as chat's communityBudgetAlreadyExhausted.
+ * PRE-FLIGHT gate only (below, before any billable work): null unless OUR
+ * tier is "exhausted" OR "handoff". Research is billable, so it has always
+ * refused at handoff too — this is pre-existing behavior, unrelated to the
+ * upstream-account precedence check below. Do not conflate the two: at this
+ * point in the request nothing has failed yet, so there's no "cause" to get
+ * wrong.
  */
 function communityBudgetGateResponse(
   budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
 ): Response | null {
   if (budget.tier !== "exhausted" && budget.tier !== "handoff") return null;
-  return Response.json(
-    { error: "Community AI budget exhausted", code: "BUDGET_EXHAUSTED" },
-    { status: 503 },
-  );
+  return communityBudgetExhaustedResponse();
+}
+
+/**
+ * POST-UPSTREAM re-check only (inside the catch, after
+ * isUpstreamAccountExhausted has already matched — see its call site): null
+ * unless OUR tier is EXACTLY "exhausted", matching chat's
+ * communityBudgetAlreadyExhausted. At "handoff" the pool is NOT yet spent
+ * (still serving requests, just near the cap) — an upstream-account block
+ * IS the honest cause there, so it must NOT be overridden. Only "exhausted"
+ * means OUR budget genuinely explains the block.
+ */
+function communityBudgetExhaustedRecheck(
+  budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
+): Response | null {
+  if (budget.tier !== "exhausted") return null;
+  return communityBudgetExhaustedResponse();
 }
 
 export async function POST(request: NextRequest) {
@@ -161,11 +181,12 @@ export async function POST(request: NextRequest) {
     // catch-all silently swallows it into an indistinguishable 502.
     if (err instanceof Anthropic.APIError && isUpstreamAccountExhausted(err)) {
       // The two states are correlated by construction — see
-      // communityBudgetGateResponse's doc comment. When OUR tier has ALSO
-      // crossed into exhausted/handoff by the time we get here, that cause
-      // must win: it's true in this state, while the upstream copy's "this
-      // is NOT the community budget" claim would be false.
-      const communityExhausted = communityBudgetGateResponse(
+      // communityBudgetExhaustedRecheck's doc comment. When OUR tier has
+      // ALSO crossed into "exhausted" (not just "handoff") by the time we
+      // get here, that cause must win: it's true in this state, while the
+      // upstream copy's "this is NOT the community budget" claim would be
+      // false.
+      const communityExhausted = communityBudgetExhaustedRecheck(
         await getBudgetStatusAsync(),
       );
       if (communityExhausted) {

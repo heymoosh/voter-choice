@@ -185,5 +185,28 @@ describe("/api/research-candidate", () => {
       const body = (await response.json()) as { code?: string };
       expect(body.code).toBe("BUDGET_EXHAUSTED");
     });
+
+    it("keeps the upstream 503 (does NOT promote) when OUR tier is only 'handoff', not 'exhausted', at the re-check", async () => {
+      // At handoff the pool is NOT yet spent — still serving requests, just
+      // near the cap — so an upstream-account block is the honest cause and
+      // must NOT be overridden by a false community-budget claim. Only
+      // "exhausted" (the case above) should promote.
+      mockedResearch.mockRejectedValue(
+        apiError(429, {
+          type: "rate_limit_error",
+          message: "You have reached your API usage limits.",
+          details: { error_code: "enforced_spend_limit_reached" },
+        }),
+      );
+      mockedBudget
+        .mockResolvedValueOnce({ tier: "healthy" } as never)
+        .mockResolvedValue({ tier: "handoff" } as never);
+
+      const response = await POST(researchRequest(validBody));
+
+      expect(response.status).toBe(503);
+      const body = (await response.json()) as { code?: string };
+      expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+    });
   });
 });

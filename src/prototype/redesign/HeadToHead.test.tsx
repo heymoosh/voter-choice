@@ -365,16 +365,19 @@ describe("HeadToHead — Frame 6 challenger empty states", () => {
     expect(mockResearch).toHaveBeenCalled();
   });
 
-  it("shows the research-paused state with a working budget-options link", () => {
+  it("shows the research-paused state (title + community-budget cause sentence) with a working budget-options link", () => {
     const onShowBudgetOptions = vi.fn();
     mockGetResearch.mockReturnValue({
       status: "budget_blocked",
       upstream: false,
     });
     renderDuel(mkSeat(), { onShowBudgetOptions });
-    expect(screen.getByTestId("duel-budget-blocked")).toHaveTextContent(
-      "Live research is paused this month",
-    );
+    const panel = screen.getByTestId("duel-budget-blocked");
+    expect(panel).toHaveTextContent("Live research is paused this month");
+    // The cause sentence, not just the cause-neutral title — this is what
+    // actually names community budget vs. upstream, so it's the line that
+    // must flip with `upstream`.
+    expect(panel).toHaveTextContent("The community AI budget is used up");
     fireEvent.click(screen.getByText("More options →"));
     expect(onShowBudgetOptions).toHaveBeenCalledWith(false);
   });
