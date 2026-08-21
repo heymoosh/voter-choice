@@ -7,7 +7,8 @@
  * 2025 and its voterinfo endpoint only answers during active elections, so
  * "who represents me right now" has to come from Census geographies.
  *
- * One GET per lookup:
+ * One GET per lookup (retried once on transient upstream trouble — see
+ * below):
  *   https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress
  *     ?address=…&benchmark=Public_AR_Current&vintage=Current_Current
  *     &format=json&layers=all
@@ -16,13 +17,23 @@
  * Congressional Districts" today). We match the key by suffix so the
  * 119th→120th vintage rollover doesn't break the parser.
  *
+ * The geocoder is a free government service with no reliability SLA: it
+ * throws connection errors, 5xx responses, and truncated bodies under
+ * ordinary load, not just outages. A single blip used to surface straight
+ * to the voter as "the lookup service is having trouble" (honest, but
+ * needless — see /api/delegation's 502 vs 200 split) on the very first
+ * attempt. We now retry once on a retryable failure (network error, 5xx,
+ * unparseable JSON) with jittered backoff before giving up. A 4xx (our
+ * request was malformed) is not retried — trying again won't change it.
+ *
  * This module is server-only. Never import it from client components.
  */
 
 const CENSUS_GEOCODER_URL =
   "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress";
 
-const FETCH_TIMEOUT_MS = 8000;
+const FETCH_TIMEOUT_MS = 4000;
+const MAX_ATTEMPTS = 2;
 
 /** Territories / districts with no voting member of Congress. */
 const NON_VOTING_AREAS = new Set(["DC", "PR", "GU", "VI", "AS", "MP"]);
@@ -134,13 +145,17 @@ function parseGeocodeResponse(payload: unknown): CensusGeocodeOutcome {
   };
 }
 
-/**
- * Geocode a free-form address to state + county + congressional district.
- * Never throws — network/parse failures come back as `{ status: "error" }`.
- */
-export async function geocodeAddressToDistrict(
+type FetchAttemptResult =
+  | { kind: "payload"; payload: unknown }
+  /** Non-2xx client error (bad request) — retrying changes nothing. */
+  | { kind: "client_error" }
+  /** Network failure, 5xx, or unparseable body — worth one retry. */
+  | { kind: "retryable_error" };
+
+/** One HTTP round trip. Never throws. Never logs the address (PRIVACY). */
+async function fetchGeocodePayload(
   address: string,
-): Promise<CensusGeocodeOutcome> {
+): Promise<FetchAttemptResult> {
   const params = new URLSearchParams({
     address,
     benchmark: "Public_AR_Current",
@@ -154,16 +169,50 @@ export async function geocodeAddressToDistrict(
     response = await fetch(`${CENSUS_GEOCODER_URL}?${params.toString()}`, {
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-  } catch {
-    return { status: "error" };
+  } catch (err) {
+    console.error(
+      "[census-geocode] upstream fetch failed:",
+      err instanceof Error ? err.name : String(err),
+    );
+    return { kind: "retryable_error" };
   }
-  if (!response.ok) return { status: "error" };
 
-  let payload: unknown;
-  try {
-    payload = await response.json();
-  } catch {
-    return { status: "error" };
+  if (!response.ok) {
+    console.error(`[census-geocode] upstream returned ${response.status}`);
+    return response.status >= 500
+      ? { kind: "retryable_error" }
+      : { kind: "client_error" };
   }
-  return parseGeocodeResponse(payload);
+
+  try {
+    return { kind: "payload", payload: await response.json() };
+  } catch {
+    console.error("[census-geocode] malformed JSON payload from upstream");
+    return { kind: "retryable_error" };
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Geocode a free-form address to state + county + congressional district.
+ * Never throws — network/parse failures come back as `{ status: "error" }`
+ * after one retry (see module doc). A malformed-but-2xx payload (unexpected
+ * shape) is not retried; that's a parsing bug, not upstream flakiness.
+ */
+export async function geocodeAddressToDistrict(
+  address: string,
+): Promise<CensusGeocodeOutcome> {
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    const result = await fetchGeocodePayload(address);
+    if (result.kind === "payload") return parseGeocodeResponse(result.payload);
+    if (result.kind === "client_error") return { status: "error" };
+    if (attempt < MAX_ATTEMPTS) {
+      const backoffMs = 300 * attempt + Math.random() * 200;
+      await sleep(backoffMs);
+    }
+  }
+  return { status: "error" };
 }
