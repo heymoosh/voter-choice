@@ -1345,7 +1345,7 @@ const TRANSLATIONS = {
         'Prueba con la dirección completa, ciudad y código postal — la búsqueda de distrito necesita una dirección real para encontrar a tus representantes.',
       geocoderDownTitle: 'Nuestra búsqueda de direcciones no está disponible en este momento',
       geocoderDownBody:
-        'Esto no se trata de tu dirección — el servicio de búsqueda está temporalmente caído. Intenta de nuevo en un minuto.',
+        'No es por tu dirección — el servicio de búsqueda no está funcionando por ahora. Inténtalo de nuevo en un minuto.',
       noRepTitle: '{territory} elige un {repTitle} sin voto a la Cámara de Representantes de EE. UU.',
       noRepTitleFallback: 'Tu área',
       repTitleDelegate: 'Delegado',
