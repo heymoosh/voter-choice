@@ -163,5 +163,27 @@ describe("/api/research-candidate", () => {
       const body = (await response.json()) as { code?: string };
       expect(body.code).toBe("RESEARCH_ERROR");
     });
+
+    it("prefers the community-budget-exhausted response over the upstream 503 when OUR tier crossed into exhausted mid-flight (correlated-by-construction race)", async () => {
+      mockedResearch.mockRejectedValue(
+        apiError(429, {
+          type: "rate_limit_error",
+          message: "You have reached your API usage limits.",
+          details: { error_code: "enforced_spend_limit_reached" },
+        }),
+      );
+      // Pre-flight gate sees "healthy" (request is allowed through); a
+      // concurrent chat turn then pushes the durable tally to "exhausted"
+      // before Anthropic's rejection comes back.
+      mockedBudget
+        .mockResolvedValueOnce({ tier: "healthy" } as never)
+        .mockResolvedValue({ tier: "exhausted" } as never);
+
+      const response = await POST(researchRequest(validBody));
+
+      expect(response.status).toBe(503);
+      const body = (await response.json()) as { code?: string };
+      expect(body.code).toBe("BUDGET_EXHAUSTED");
+    });
   });
 });

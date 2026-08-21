@@ -622,7 +622,9 @@ function ChallengerRow({
       {research?.status === "budget_blocked" && (
         <div className="cv2-norecord" data-testid="challenger-budget-blocked">
           <p>
-            {t("repCard.liveResearchPaused")}{" "}
+            {research.upstream
+              ? t("repCard.liveResearchPausedUpstream")
+              : t("repCard.liveResearchPaused")}{" "}
             {onShowBudgetOptions && (
               <button
                 className="linklike"

@@ -390,6 +390,17 @@ describe("HeadToHead — Frame 6 challenger empty states", () => {
     expect(onShowBudgetOptions).toHaveBeenCalledWith(true);
   });
 
+  it("never shows the community-budget claim in the duel panel for an upstream block — this is the honesty bug the audit caught (copy was blaming the pool even when upstream:true reached the component)", () => {
+    mockGetResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: true,
+    });
+    renderDuel(mkSeat());
+    const panel = screen.getByTestId("duel-budget-blocked");
+    expect(panel).not.toHaveTextContent(/community ai budget/i);
+    expect(panel).toHaveTextContent("shared AI access is temporarily on hold");
+  });
+
   it("shows the no-FEC-match state in the money column instead of a fabricated $0", () => {
     const seat = mkSeat({
       challengers: [

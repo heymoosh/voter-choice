@@ -578,20 +578,24 @@ function App2Inner() {
   }
 
   // Shared `onShowBudgetOptions` handler for BOTH the soft-tier ribbon "See
-  // options →" (nothing refused yet — called with no args) AND a
-  // budget_blocked research card's "More options →" (a research call WAS
-  // refused — called with the SeatResearch entry's `upstream` flag). Only
-  // the latter opens the refused-turn framing, and only when `upstream` is
-  // the literal boolean `true` — several callers still do a bare
-  // `onClick={onShowBudgetOptions}`, which hands React's SyntheticEvent as
-  // the first arg; a loose truthy check would misread that as "upstream"
-  // and show the wrong (refused-turn) modal for a plain ribbon click.
+  // options →" (nothing refused yet — called with no args, or with a bare
+  // `onClick={onShowBudgetOptions}` that hands React's SyntheticEvent as the
+  // first arg) AND a budget_blocked research card's "More options →" (a
+  // research call WAS actually refused — called with the SeatResearch
+  // entry's `upstream` flag, always a real `true`/`false`, never omitted).
+  // `typeof upstream === "boolean"` is what tells the two apart — NOT a
+  // truthy check, which would misread a SyntheticEvent object as "blocked".
+  // A community-budget research refusal (`upstream === false`) must still
+  // open the REFUSED-turn framing (blocked:true) — research really was
+  // denied for a genuinely spent pool, so the soft "budget is running low"
+  // ribbon copy (and its hidden tip jar, gated on `blocked`) would
+  // understate what happened.
   function handleBudgetBlock(upstream) {
-    setBudgetModal(
-      upstream === true
-        ? { blocked: true, upstream: true }
-        : { blocked: false },
-    );
+    if (typeof upstream === "boolean") {
+      setBudgetModal({ blocked: true, upstream });
+    } else {
+      setBudgetModal({ blocked: false });
+    }
   }
 
   // An issue-conversation turn (intake or edit modal) hit the budget gate:

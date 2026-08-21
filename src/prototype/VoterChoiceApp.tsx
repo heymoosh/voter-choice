@@ -537,6 +537,13 @@ const TRANSLATIONS = {
         "No citable public statements found on your issues — we'd rather say so than guess.",
       liveResearchPaused:
         'Live research is paused — the community AI budget for this month is used up.',
+      // Sustained Anthropic-account block (BUDGET_UPSTREAM_EXHAUSTED) —
+      // a DIFFERENT cause than the community budget above, so it needs its
+      // own copy. Reuses the framing already agreed in
+      // upstream-exhaustion.ts's UPSTREAM_EXHAUSTED_MESSAGE / BudgetModal's
+      // upstream copy — do not invent a new story here.
+      liveResearchPausedUpstream:
+        "Live research is paused — Voter Choice's shared AI access is temporarily on hold. This isn't the community budget, which may still be healthy.",
       moreOptions: 'More options →',
       runningForSeat: 'Running for this seat in 2026',
       fecRankedByFunds: 'FEC filings · ranked by funds raised',
@@ -772,6 +779,12 @@ const TRANSLATIONS = {
       emptyBudgetPausedTitle: 'Live research is paused this month',
       emptyBudgetPausedSentence:
         'The community AI budget is used up — it resets monthly.',
+      // Sustained Anthropic-account block — see liveResearchPausedUpstream's
+      // comment above. The kicker/title stay generic "paused" copy that's
+      // true either way; only this sentence names a cause, so only it needs
+      // an upstream variant.
+      emptyBudgetPausedSentenceUpstream:
+        "Voter Choice's shared AI access is temporarily on hold. This isn't the community budget, which may still be healthy.",
       ledgerIncumbentBlindLabel: 'This incumbent',
       ledgerOnYourIssues: 'On your issues',
       challengerFallback: 'Challenger',
@@ -1436,6 +1449,8 @@ const TRANSLATIONS = {
         'No encontramos declaraciones públicas citables sobre tus temas — preferimos decirlo así a adivinar.',
       liveResearchPaused:
         'La investigación en vivo está en pausa — el presupuesto comunitario de IA de este mes se agotó.',
+      liveResearchPausedUpstream:
+        'La investigación en vivo está en pausa — el acceso compartido de Voter Choice a la IA está temporalmente suspendido. Esto no es el presupuesto comunitario, que puede seguir sano.',
       moreOptions: 'Más opciones →',
       runningForSeat: 'Compitiendo por este puesto en 2026',
       fecRankedByFunds: 'Presentaciones ante la FEC · ordenadas por fondos recaudados',
@@ -1646,6 +1661,8 @@ const TRANSLATIONS = {
       emptyBudgetPausedTitle: 'La investigación en vivo está pausada este mes',
       emptyBudgetPausedSentence:
         'El presupuesto de IA comunitario se agotó — se reinicia cada mes.',
+      emptyBudgetPausedSentenceUpstream:
+        'El acceso compartido de Voter Choice a la IA está temporalmente suspendido. Esto no es el presupuesto comunitario, que puede seguir sano.',
       ledgerIncumbentBlindLabel: 'Este titular',
       ledgerOnYourIssues: 'En tus temas',
       challengerFallback: 'Retador',
@@ -6987,12 +7004,22 @@ const CHAT_BLOCK_MESSAGES = {
 };
 
 // Budget block codes route to the BudgetExhaustedModal (handoff), not a banner.
+//
 // BUDGET_UPSTREAM_EXHAUSTED (a sustained Anthropic-account block, distinct
 // from our own community budget — see route.ts's isUpstreamAccountExhausted)
-// routes here too, same as the redesign's CHAT_BUDGET_CODES
-// (src/prototype/redesign/chatBlocks.ts) — this Set is a deliberate separate
-// copy, not shared, so both need the same code added.
-const CHAT_BUDGET_CODES = new Set(['BUDGET_SOFT_CLOSE', 'BUDGET_HANDOFF', 'BUDGET_EXHAUSTED', 'BUDGET_UPSTREAM_EXHAUSTED']);
+// is DELIBERATELY NOT included here, unlike the redesign's CHAT_BUDGET_CODES
+// (src/prototype/redesign/chatBlocks.ts), which does route it to its
+// upstream-aware BudgetModal. This legacy shell's budgetExhausted state is a
+// single boolean threaded through WorkspaceView → BallotPaneInner →
+// BudgetExhaustedFoot (and separately gates BudgetExhaustedModal) with
+// hard-coded, non-i18n English copy ("Community AI budget used up" /
+// "burn through ours") and no test coverage — correctly distinguishing cause
+// here would mean a new state var, prop-drilling through 2+ components, and
+// new copy in 2+ places with no safety net, not a prop-and-conditional. A
+// generic retry banner (the fallback below, for any code NOT in this Set) is
+// more honest than routing an upstream block into UI that would wrongly
+// blame the community pool. Only wire this in if that shell gets rebuilt.
+const CHAT_BUDGET_CODES = new Set(['BUDGET_SOFT_CLOSE', 'BUDGET_HANDOFF', 'BUDGET_EXHAUSTED']);
 
 // Resolve a block `code` → { budget } (open the budget modal) OR a banner
 // `message` string (null = generic retry banner).

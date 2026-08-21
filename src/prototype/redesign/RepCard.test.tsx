@@ -611,6 +611,32 @@ describe("RepCard challenger research — budget_blocked honesty", () => {
 
     expect(onShowBudgetOptions).toHaveBeenCalledWith(true);
   });
+
+  it("shows the community-budget wording on the CARD for a community-caused block", () => {
+    mockGetChallengerResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: false,
+    });
+
+    renderStrip(seatWithOneChallenger());
+
+    expect(screen.getByTestId("challenger-budget-blocked")).toHaveTextContent(
+      "the community AI budget for this month is used up",
+    );
+  });
+
+  it("never shows the community-budget claim on the CARD for an upstream block — this is the honesty bug the audit caught (copy was blaming the pool even when upstream:true reached the component)", () => {
+    mockGetChallengerResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: true,
+    });
+
+    renderStrip(seatWithOneChallenger());
+
+    const card = screen.getByTestId("challenger-budget-blocked");
+    expect(card).not.toHaveTextContent(/community ai budget/i);
+    expect(card).toHaveTextContent("shared AI access is temporarily on hold");
+  });
 });
 
 describe("RepCard runoff-pending challengers", () => {

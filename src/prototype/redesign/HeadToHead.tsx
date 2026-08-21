@@ -663,7 +663,9 @@ export function HeadToHead({
                       {t("headToHead.emptyBudgetPausedTitle")}
                     </div>
                     <div className="s">
-                      {t("headToHead.emptyBudgetPausedSentence")}{" "}
+                      {research.upstream
+                        ? t("headToHead.emptyBudgetPausedSentenceUpstream")
+                        : t("headToHead.emptyBudgetPausedSentence")}{" "}
                       {onShowBudgetOptions && (
                         <button
                           type="button"
