@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 vi.mock("../../../db/client", () => {
   const DB_NOT_CONFIGURED = "DB_NOT_CONFIGURED" as const;
@@ -16,6 +17,7 @@ vi.mock("../../../db/client", () => {
 
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { lookupPacSponsors, MAX_SPONSORS_SHOWN } from "./pac-sponsors";
+import { FUNDING_MIX_LABELS } from "./donors";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -214,6 +216,77 @@ describe("lookupPacSponsors", () => {
     mockedGetDb.mockReturnValue(makeDbMock([contributionRow()]));
     const res = out(await lookupPacSponsors(["federal-A"], "2024"));
     expect(res.electionCycle).toBe("2024");
+  });
+});
+
+describe("funding-mix display gate", () => {
+  /** Capture the condition handed to `.where()` so the gate can be asserted. */
+  function makeWhereCapturingDbMock(rows: Record<string, unknown>[]) {
+    const captured: unknown[] = [];
+    const chain: Record<string, unknown> = {};
+    for (const m of ["from", "innerJoin", "orderBy"]) {
+      chain[m] = vi.fn().mockReturnValue(chain);
+    }
+    chain.where = vi.fn((condition: unknown) => {
+      captured.push(condition);
+      return chain;
+    });
+    (chain as { then?: unknown }).then = (resolve: (v: unknown[]) => void) =>
+      resolve(rows);
+    return {
+      db: { select: vi.fn().mockReturnValue(chain) } as unknown as ReturnType<
+        typeof getDb
+      >,
+      captured,
+    };
+  }
+
+  /** Compile the captured predicate into the SQL Postgres would actually
+   *  run. Asserting on the RENDERED text + bound params — rather than on
+   *  substrings of the builder, which come from the gate's own literals and
+   *  so survive any mutation short of deleting it — is what makes these
+   *  assertions able to fail. */
+  function compileWhere(condition: unknown) {
+    return new PgDialect().sqlToQuery(condition as never);
+  }
+
+  /** The gate is the last term of the `and()`, so everything from `EXISTS`
+   *  onward is the gate body. Scoping to it matters: the outer terms render
+   *  the same qualified column names, so a whole-query match would pass even
+   *  for a gate correlated to itself. */
+  function gateBody(rendered: { sql: string }) {
+    const at = rendered.sql.toLowerCase().indexOf("exists");
+    expect(at).toBeGreaterThanOrEqual(0);
+    return rendered.sql.slice(at);
+  }
+
+  async function renderedWhere() {
+    const { db, captured } = makeWhereCapturingDbMock([contributionRow()]);
+    mockedGetDb.mockReturnValue(db);
+    await lookupPacSponsors(["federal-A"]);
+    expect(captured).toHaveLength(1);
+    return compileWhere(captured[0]);
+  }
+
+  it("correlates the funding-mix EXISTS to the outer contribution row", async () => {
+    // A gate that correlated to itself (`funding_mix.candidate_id =
+    // funding_mix.candidate_id`) would be true whenever ANY funding mix
+    // exists anywhere, so every candidate with stored PAC rows would render
+    // a PAC list with no funding mix behind it. The correlation has to name
+    // the OUTER table for the gate to mean anything.
+    const body = gateBody(await renderedWhere());
+    expect(body).toContain('"pac_candidate_contributions"."candidate_id"');
+    expect(body).toContain('"pac_candidate_contributions"."election_cycle"');
+    expect(body).toContain("donor_aggregates");
+  });
+
+  it("binds exactly the funding-mix bucket labels donors.ts defines", async () => {
+    // Labels drifting from FUNDING_MIX_LABELS would match no donor_aggregates
+    // row, hiding every PAC block sitewide — a silent fail-closed.
+    const rendered = await renderedWhere();
+    expect(rendered.params).toEqual(
+      expect.arrayContaining(Object.values(FUNDING_MIX_LABELS)),
+    );
   });
 });
 
