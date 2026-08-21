@@ -13,6 +13,24 @@
  *     "what this PAC is about / who is behind it" line and its citation.
  *     They travel TOGETHER — a summary without a source link is refused,
  *     because an uncited claim is exactly what this product does not do.
+ *   - "sponsorClass" (migration 0026): who is behind the committee, in the
+ *     vocabulary the corporate-PAC pledge is scored in — corporate | trade |
+ *     labor | membership | leadership | party | non_connected | unknown.
+ *     Written with sponsor_class_method='human', which the bulk ingest is
+ *     forbidden to overwrite. This is the ONLY way to resolve a committee the
+ *     FEC left ORG_TP blank on (Ernst & Young's and Deloitte's PACs both file
+ *     it empty), and each one left 'unknown' blocks a "$0 corporate PAC"
+ *     claim for every candidate it gave to.
+ *
+ *     A sponsorClass row does NOT need a status verdict — classifying who is
+ *     behind a committee and ratifying its filed sponsor/sector display are
+ *     different judgements, and forcing them to travel together would make a
+ *     curator ratify a display claim they were not asked to look at.
+ *
+ *     GET IT WRONG SAFELY. Marking a committee corporate/trade only ever
+ *     BLOCKS a clean badge; marking it labor/membership/non_connected can
+ *     CLEAR one. So when the evidence is thin, leave it unknown — never
+ *     guess a candidate into a claim they cannot back.
  *
  * Rules enforced here (0022/0024 migration contracts):
  *   - Only status transitions to 'verified'/'rejected' happen — this script
@@ -26,10 +44,20 @@
  */
 
 import * as fs from "node:fs";
+import { pathToFileURL } from "node:url";
 import { sql, type SQL } from "drizzle-orm";
 import { requireDb } from "../../db/client";
+import {
+  PAC_SPONSOR_CLASS_LABELS,
+  type PacSponsorClass,
+} from "../../src/lib/pacSponsorClass";
 
 const VALID_VERDICTS = new Set(["verified", "rejected"]);
+
+/** The sponsor-class vocabulary, taken from its single source of truth. */
+const VALID_SPONSOR_CLASSES = new Set<string>(
+  Object.keys(PAC_SPONSOR_CLASS_LABELS),
+);
 
 interface VerdictInput {
   committeeId: string;
@@ -37,6 +65,7 @@ interface VerdictInput {
   sector?: string | null;
   summary?: string | null;
   sourceUrl?: string | null;
+  sponsorClass?: string | null;
 }
 
 function cleanOptional(value: string | null | undefined): string | null {
@@ -45,10 +74,29 @@ function cleanOptional(value: string | null | undefined): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
+/** True when the row asks for anything at all — a status verdict, a sponsor
+ *  class, or both. Rows that ask for nothing are skipped, not failed. */
+export function rowHasWork(r: VerdictInput): boolean {
+  return (
+    (r.verdict !== null && r.verdict !== undefined) ||
+    cleanOptional(r.sponsorClass) !== null
+  );
+}
+
 /** Validate one row; returns an error string or null. */
-function rowError(r: VerdictInput): string | null {
-  if (!VALID_VERDICTS.has(r.verdict as string)) {
+export function rowError(r: VerdictInput): string | null {
+  const sponsorClass = cleanOptional(r.sponsorClass);
+  const hasVerdict = r.verdict !== null && r.verdict !== undefined;
+  // A sponsor-class-only row is legitimate: see the header note on why the
+  // two judgements travel separately.
+  if (hasVerdict && !VALID_VERDICTS.has(r.verdict as string)) {
     return `invalid verdict "${r.verdict}" — must be "verified" or "rejected"`;
+  }
+  if (sponsorClass !== null && !VALID_SPONSOR_CLASSES.has(sponsorClass)) {
+    return (
+      `invalid sponsorClass "${sponsorClass}" — must be one of ` +
+      [...VALID_SPONSOR_CLASSES].join(", ")
+    );
   }
   const summary = cleanOptional(r.summary);
   const sourceUrl = cleanOptional(r.sourceUrl);
@@ -61,8 +109,20 @@ function rowError(r: VerdictInput): string | null {
   return null;
 }
 
-function buildSet(r: VerdictInput): SQL[] {
-  const sets: SQL[] = [sql`status = ${r.verdict}`, sql`updated_at = now()`];
+export function buildSet(r: VerdictInput): SQL[] {
+  const sets: SQL[] = [sql`updated_at = now()`];
+  if (r.verdict !== null && r.verdict !== undefined) {
+    sets.push(sql`status = ${r.verdict}`);
+  }
+  const sponsorClass = cleanOptional(r.sponsorClass);
+  if (sponsorClass !== null) {
+    sets.push(
+      sql`sponsor_class = ${sponsorClass satisfies string as PacSponsorClass}`,
+      // 'human' is the one value the bulk ingest refuses to overwrite, so a
+      // curated class survives every later re-run of federal-pac-sponsors.
+      sql`sponsor_class_method = 'human'`,
+    );
+  }
   const sector = cleanOptional(r.sector);
   if (sector !== null) {
     sets.push(sql`sector = ${sector}`, sql`classification_method = 'human'`);
@@ -77,8 +137,13 @@ function buildSet(r: VerdictInput): SQL[] {
   return sets;
 }
 
-function describe(r: VerdictInput, previousStatus: string): string {
-  const parts = [`${previousStatus} -> ${r.verdict}`];
+export function describe(r: VerdictInput, previousStatus: string): string {
+  const parts: string[] = [];
+  if (r.verdict !== null && r.verdict !== undefined) {
+    parts.push(`${previousStatus} -> ${r.verdict}`);
+  }
+  const sponsorClass = cleanOptional(r.sponsorClass);
+  if (sponsorClass !== null) parts.push(`sponsor_class -> ${sponsorClass}`);
   const sector = cleanOptional(r.sector);
   if (sector !== null) parts.push(`sector -> ${sector}`);
   const summary = cleanOptional(r.summary);
@@ -106,9 +171,7 @@ async function main() {
     process.exit(1);
   }
 
-  const withVerdict = raw.filter(
-    (r) => r.verdict !== null && r.verdict !== undefined,
-  );
+  const withVerdict = raw.filter(rowHasWork);
   const skipped = raw.length - withVerdict.length;
 
   let invalid = 0;
@@ -123,7 +186,7 @@ async function main() {
 
   if (withVerdict.length === 0) {
     console.log(
-      `No verdicts to apply (${skipped} rows still null) — fill in "verdict" fields first.`,
+      `Nothing to apply (${skipped} rows still null) — fill in "verdict" or "sponsorClass" fields first.`,
     );
     return;
   }
@@ -173,7 +236,11 @@ async function main() {
   }
 }
 
-main().catch((e) => {
-  console.error("Error:", e.message);
-  process.exit(1);
-});
+// Only run when invoked directly — the pure helpers above are imported by
+// _apply-pac-curation.test.ts, which must not trigger a database write.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((e) => {
+    console.error("Error:", e.message);
+    process.exit(1);
+  });
+}
