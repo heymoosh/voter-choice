@@ -261,13 +261,13 @@ not corporate money under this definition. The scope lives in one constant,
 is only affirmative when the evidence is COMPLETE. Any dollar we cannot attribute
 returns `unverified`. A missing badge is a better outcome than a false "$0".
 
-| Verdict             | Means                                                                                                                                                                              | Design must show                                                                    |
-| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
-| `no_pac_money`      | Filed a **dated** summary reporting **no PAC contributions of any kind**, with no named committee rows of ours contradicting it                                                    | Strongest form — "No PAC contributions of any kind in FEC filings through `<date>`" |
-| `no_corporate_pac`  | Took PAC money, none of it corporate, every contributing committee classified, the filed total reconciled to **both** thresholds below, and the filing **dated**                   | "No corporate PAC contributions in FEC filings through `<date>`"                    |
-| `has_corporate_pac` | A named contributing committee is corporate/trade-association (the row's existence, not its net dollars — a refund can net one to zero)                                            | The corporate figure, not a badge                                                   |
-| `unverified`        | Anything short of the above: a committee unclassified or missing, a total that won't reconcile, a figure that isn't usable, or a filing with no coverage date. `reason` says which | "PAC sources not fully identified yet" — **never** a $0 claim                       |
-| `no_filing`         | No FEC summary on file for this cycle                                                                                                                                              | "No FEC filing yet" — **never** $0                                                  |
+| Verdict             | Means                                                                                                                                                                                                                                          | Design must show                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `no_pac_money`      | Filed a **dated** summary reporting **no PAC contributions of any kind**, with no named committee rows of ours contradicting it                                                                                                                | Strongest form — "No PAC contributions of any kind in FEC filings through `<date>`" |
+| `no_corporate_pac`  | Took PAC money, none of it corporate, every contributing committee classified, the filed total reconciled to **both** thresholds below, and the filing **dated**                                                                               | "No corporate PAC contributions in FEC filings through `<date>`"                    |
+| `has_corporate_pac` | A named contributing committee is corporate/trade-association (the row's existence, not its net dollars — a refund can net one to zero). Settled before the summary is even read, so it survives an unusable filed total and an undated filing | The corporate figure, not a badge                                                   |
+| `unverified`        | Anything short of the above: a committee unclassified or missing, a total that won't reconcile, a figure that isn't usable, or a filing with no coverage date. `reason` says which                                                             | "PAC sources not fully identified yet" — **never** a $0 claim                       |
+| `no_filing`         | No FEC summary on file for this cycle                                                                                                                                                                                                          | "No FEC filing yet" — **never** $0                                                  |
 
 **What "reconciled" means, exactly.** Two bounds, both required, because neither one
 holds on its own:
@@ -301,11 +301,33 @@ row typically carries, i.e. the same cohort as `no_pac_money`). An affirmative v
 with no date is downgraded to `unverified` / `undated_filing` rather than printed
 undated.
 
-**Degenerate figures buy silence, not a badge.** A negative filed PAC total is FEC refund
-arithmetic (`OTHER_POL_CMTE_CONTRIB` goes negative when refunds exceed the period's
-receipts) and means the candidate _did_ receive PAC money — it is `unverified`, never
-read as zero. A figure that is not a usable number is `unverified` for the same reason.
-Every gate is phrased so that an unusable value fails closed.
+**Degenerate figures buy silence, not a badge — but never suppress a positive finding.**
+A negative filed PAC total is FEC refund arithmetic (`OTHER_POL_CMTE_CONTRIB` goes
+negative when refunds exceed the period's receipts) and means the candidate _did_ receive
+PAC money; a non-finite figure is unreadable. Neither may clear a candidate, so both
+return `unverified` — every gate is phrased so an unusable value fails closed. They do
+**not** suppress `has_corporate_pac`, which is settled first: that verdict rests on the
+existence of a contribution row inside the pledge scope and does not read the filed total
+at all, so a summary we cannot read cannot make the row stop existing. When the filed
+total is unusable, `pacDollars` is `null` (the same "we hold nothing usable" as
+`no_filing`) and `reconciledShare` is `0` — the render layer is never handed a NaN or a
+negative to print. Likewise a contribution row whose own amount is unreadable contributes
+its existence but not its dollars, so every reported figure stays finite.
+
+**Order of decision** (first match wins), for anyone tracing a verdict:
+
+1. no summary → `no_filing`
+2. filed total is exactly 0 → any named rows of ours → `unverified` / `unreconciled_total`
+   (with the computed dollars); no rows → dated ? `no_pac_money` : `unverified` /
+   `undated_filing`
+3. a corporate/trade row exists → `has_corporate_pac` (regardless of the summary)
+4. filed total non-finite or negative, or any row amount unreadable → `unverified` /
+   `unreconciled_total`
+5. an unclassified or missing-committee row exists → `unverified` /
+   `unclassified_committees`
+6. share above 1, or below `MIN_RECONCILED_SHARE`, or gap above
+   `MAX_UNRECONCILED_DOLLARS` → `unverified` / `unreconciled_total`
+7. otherwise → dated ? `no_corporate_pac` : `unverified` / `undated_filing`
 
 **A contributing committee we hold no filing for blocks the claim.** The read path
 left-joins `pac_committees`, so a contribution row with no matching committee arrives
@@ -332,7 +354,7 @@ interface CorporatePacClaim {
     | "no_filing";
   // only on unverified
   reason?: "unclassified_committees" | "unreconciled_total" | "undated_filing";
-  pacDollars: number | null; // filed PAC total; null = nothing on file
+  pacDollars: number | null; // filed PAC total; null = nothing on file OR not a usable figure
   corporateDollars: number;
   unclassifiedDollars: number;
   reconciledShare: number; // how much of the filed total is named; 0-1 (above 1 is refused)

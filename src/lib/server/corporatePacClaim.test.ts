@@ -205,13 +205,18 @@ describe("evaluateCorporatePacClaim", () => {
     const claim = evaluate({ summary: summary(Number.NaN), contributions: [] });
     expect(claim.verdict).toBe("unverified");
     expect(claim.reason).toBe("unreconciled_total");
+    // Never handed to the render layer as a NaN to print.
+    expect(claim.pacDollars).toBeNull();
+    expect(claim.reconciledShare).toBe(0);
     expect(canClaimNoCorporatePac(claim)).toBe(false);
   });
 
   it("refuses a contribution amount that is not a usable number", () => {
     // Worst shape: the unusable amount belongs to an UNCLASSIFIED committee,
     // so a NaN that slips past the guards would have that committee clearing
-    // the candidate rather than blocking them.
+    // the candidate rather than blocking them. This case must NOT move with
+    // the positive finding — an unreadable amount on a committee we cannot
+    // classify is exactly the evidence gap the claim is about.
     const claim = evaluate({
       summary: summary(10_000),
       contributions: [
@@ -220,6 +225,7 @@ describe("evaluateCorporatePacClaim", () => {
       ],
     });
     expect(claim.verdict).toBe("unverified");
+    expect(Number.isFinite(claim.unclassifiedDollars)).toBe(true);
     expect(canClaimNoCorporatePac(claim)).toBe(false);
   });
 
@@ -231,7 +237,80 @@ describe("evaluateCorporatePacClaim", () => {
     const claim = evaluate({ summary: summary(-1_200), contributions: [] });
     expect(claim.verdict).toBe("unverified");
     expect(claim.reason).toBe("unreconciled_total");
+    expect(claim.pacDollars).toBeNull();
     expect(canClaimNoCorporatePac(claim)).toBe(false);
+  });
+
+  it("still names corporate money when the filed total is not a usable number", () => {
+    // The positive finding does not read `pacTotal` at all: it rests on the
+    // existence of a row inside the pledge scope, and a summary we cannot read
+    // does not make that row stop existing. Refusing here would suppress a
+    // fact we hold — show the thin record, never hide it.
+    const claim = evaluate({
+      summary: summary(Number.NaN),
+      contributions: [
+        { sponsorClass: "corporate", amount: 2_500 },
+        { sponsorClass: "labor", amount: 1_000 },
+      ],
+    });
+    expect(claim.verdict).toBe("has_corporate_pac");
+    expect(claim.corporateDollars).toBe(2_500);
+    expect(claim.pacDollars).toBeNull();
+    expect(claim.reconciledShare).toBe(0);
+  });
+
+  it("still names corporate money when the filed total is negative", () => {
+    const claim = evaluate({
+      summary: summary(-1_200),
+      contributions: [{ sponsorClass: "trade", amount: 2_500 }],
+    });
+    expect(claim.verdict).toBe("has_corporate_pac");
+    expect(claim.corporateDollars).toBe(2_500);
+    expect(claim.pacDollars).toBeNull();
+  });
+
+  it("still names corporate money when the corporate row's own amount is unusable", () => {
+    // The dollar figure is dropped from the totals — every reported number
+    // stays finite — but the committee is still named on the filing.
+    const claim = evaluate({
+      summary: summary(10_000),
+      contributions: [
+        { sponsorClass: "corporate", amount: Number.NaN },
+        { sponsorClass: "labor", amount: 9_000 },
+      ],
+    });
+    expect(claim.verdict).toBe("has_corporate_pac");
+    expect(claim.corporateDollars).toBe(0);
+    expect(Number.isFinite(claim.reconciledShare)).toBe(true);
+  });
+
+  it("never clears a candidate on a summary or an amount it cannot read", () => {
+    // The other half of the reorder: nothing degenerate may move in the
+    // CLEARING direction, whatever else moves.
+    const degenerate: CorporatePacClaimInput[] = [
+      { summary: summary(Number.NaN), contributions: [] },
+      { summary: summary(-1_200), contributions: [] },
+      {
+        summary: summary(Number.NaN),
+        contributions: [{ sponsorClass: "labor", amount: 10_000 }],
+      },
+      {
+        summary: summary(10_000),
+        contributions: [{ sponsorClass: "labor", amount: Number.NaN }],
+      },
+      {
+        summary: summary(10_000),
+        contributions: [
+          { sponsorClass: "labor", amount: 10_000 },
+          { sponsorClass: "leadership", amount: Number.POSITIVE_INFINITY },
+        ],
+      },
+    ];
+    for (const input of degenerate) {
+      const claim = evaluate(input);
+      expect(claim.verdict).toBe("unverified");
+      expect(canClaimNoCorporatePac(claim)).toBe(false);
+    }
   });
 
   it("reports corporate money whose dollars a refund has netted away", () => {
@@ -286,13 +365,21 @@ describe("evaluateCorporatePacClaim", () => {
   });
 
   it("still reports corporate money on an undated filing", () => {
-    // The date gate guards AFFIRMATIVE claims only. A positive finding is not
-    // improved by silence.
-    const claim = evaluate({
-      summary: undatedSummary(10_000),
-      contributions: [{ sponsorClass: "corporate", amount: 10_000 }],
-    });
-    expect(claim.verdict).toBe("has_corporate_pac");
+    // The date gate guards AFFIRMATIVE ABSENCE claims only. A positive finding
+    // is not improved by silence — including when the filing is undated AND
+    // its total is unreadable, the two suppressing conditions stacked.
+    const shapes = [
+      undatedSummary(10_000),
+      undatedSummary(Number.NaN),
+      undatedSummary(-1_200),
+    ];
+    for (const filing of shapes) {
+      const claim = evaluate({
+        summary: filing,
+        contributions: [{ sponsorClass: "corporate", amount: 10_000 }],
+      });
+      expect(claim.verdict).toBe("has_corporate_pac");
+    }
   });
 });
 

@@ -16,6 +16,12 @@
  * guard phrased as a share lets an arbitrarily large number of dollars hide
  * inside a rounding allowance. Both shapes are avoided deliberately here.
  *
+ * Fail-closed applies to the ABSENCE claims only. `has_corporate_pac` is a
+ * POSITIVE finding resting on the existence of a contribution row, not on the
+ * filed summary, so it is settled first and survives a summary we cannot read.
+ * Refusing it would suppress a fact we hold, which protects nobody — the
+ * standing rule is to show the thin record, never to hide it.
+ *
  * Three inputs, all already ingested:
  *   candidate_fec_summaries        the FILED PAC total (0 included) + the date
  *                                  the filing covers through   (migration 0027)
@@ -162,51 +168,27 @@ export function evaluateCorporatePacClaim(
     };
   }
 
+  // A filed total that is not a usable figure is reported as null — the same
+  // "we hold nothing usable" the `no_filing` case reports — rather than handed
+  // to the render layer as a NaN or a negative for it to print. Two ways it
+  // gets there:
+  //   * NON-FINITE. Unreachable through the DB today (the column is numeric
+  //     NOT NULL), but `evaluateCorporatePacClaim` is public API, and NaN
+  //     defeats every comparison below — `x > 0` and `x < limit` are BOTH
+  //     false for it — so an unguarded NaN would fall through the completeness
+  //     gates and clear the candidate.
+  //   * NEGATIVE. FEC refund arithmetic: OTHER_POL_CMTE_CONTRIB goes negative
+  //     when refunds exceed the period's receipts, which means the candidate
+  //     DID receive PAC money. Read as zero it would print the strongest badge
+  //     on the evidence of the opposite fact.
+  const pacTotalUsable =
+    Number.isFinite(summary.pacTotal) && summary.pacTotal >= 0;
+
   const base = {
-    pacDollars: summary.pacTotal,
+    pacDollars: pacTotalUsable ? summary.pacTotal : null,
     asOf: summary.coverageEndDate,
     sourceUrl: summary.sourceUrl,
   };
-
-  const unreconciled = (
-    totals: Pick<
-      CorporatePacClaim,
-      "corporateDollars" | "unclassifiedDollars" | "reconciledShare"
-    >,
-  ): CorporatePacClaim => ({
-    ...base,
-    ...totals,
-    verdict: "unverified",
-    reason: "unreconciled_total",
-  });
-
-  // Degenerate figures are not evidence in either direction, so they buy
-  // silence, not a badge.
-  //   * A non-finite figure defeats every comparison below — `x > 0` and
-  //     `x < limit` are BOTH false for NaN — so an unguarded NaN would fall
-  //     through the completeness gates and clear the candidate. This is
-  //     unreachable through the DB today (both columns are numeric NOT NULL),
-  //     but `evaluateCorporatePacClaim` is public API and a fail-closed module
-  //     must not have its guards written in the one direction that fails open.
-  //   * A negative filed total is FEC refund arithmetic:
-  //     OTHER_POL_CMTE_CONTRIB goes negative when refunds exceed the period's
-  //     receipts — which means the candidate DID receive PAC money. Swallowing
-  //     it into the filed-zero branch would print the strongest badge on the
-  //     evidence of the opposite fact.
-  if (!Number.isFinite(summary.pacTotal) || summary.pacTotal < 0) {
-    return unreconciled({
-      corporateDollars: 0,
-      unclassifiedDollars: 0,
-      reconciledShare: 0,
-    });
-  }
-  if (contributions.some((row) => !Number.isFinite(row.amount))) {
-    return unreconciled({
-      corporateDollars: 0,
-      unclassifiedDollars: 0,
-      reconciledShare: 0,
-    });
-  }
 
   let corporateDollars = 0;
   let unclassifiedDollars = 0;
@@ -217,18 +199,38 @@ export function evaluateCorporatePacClaim(
   // existence is the fact; its sign is accounting.
   let hasCorporateRow = false;
   let hasUnclassifiedRow = false;
+  // A row whose amount is not a usable number contributes its EXISTENCE but
+  // not its dollars: excluding it from the sums keeps every reported figure
+  // finite, and this flag — not a NaN propagating through the comparisons —
+  // is what blocks the absence claim below.
+  let hasUnusableAmount = false;
   for (const row of contributions) {
-    namedTotal += row.amount;
+    const usableAmount = Number.isFinite(row.amount) ? row.amount : 0;
+    if (!Number.isFinite(row.amount)) hasUnusableAmount = true;
+    namedTotal += usableAmount;
     if (row.sponsorClass === null || row.sponsorClass === "unknown") {
-      unclassifiedDollars += row.amount;
+      unclassifiedDollars += usableAmount;
       hasUnclassifiedRow = true;
       continue;
     }
     if (isPledgeCorporate(row.sponsorClass)) {
-      corporateDollars += row.amount;
+      corporateDollars += usableAmount;
       hasCorporateRow = true;
     }
   }
+
+  // Undefined against a zero or unusable denominator; reported as 0 so the
+  // field stays a finite number inside its declared range.
+  const reconciledShare =
+    pacTotalUsable && summary.pacTotal > 0 ? namedTotal / summary.pacTotal : 0;
+  const totals = { corporateDollars, unclassifiedDollars, reconciledShare };
+
+  const unreconciled = (): CorporatePacClaim => ({
+    ...base,
+    ...totals,
+    verdict: "unverified",
+    reason: "unreconciled_total",
+  });
 
   // A filed zero is the strongest claim available and needs no committee-level
   // evidence — UNLESS our own committee-level rows contradict it. The two FEC
@@ -241,13 +243,9 @@ export function evaluateCorporatePacClaim(
   // (a contribution and its refund) is still a named PAC committee on file.
   if (summary.pacTotal === 0) {
     if (contributions.length > 0) {
-      return unreconciled({
-        corporateDollars,
-        unclassifiedDollars,
-        // The ratio is undefined against a zero denominator; reported as 0 so
-        // the field stays inside its declared range.
-        reconciledShare: 0,
-      });
+      // The dollars we computed still go out on this refusal — the named rows
+      // are exactly what the reader needs to see under it.
+      return unreconciled();
     }
     return onlyIfDated({
       ...base,
@@ -258,14 +256,26 @@ export function evaluateCorporatePacClaim(
     });
   }
 
-  const reconciledShare = namedTotal / summary.pacTotal;
-  const unreconciledDollars = summary.pacTotal - namedTotal;
-  const totals = { corporateDollars, unclassifiedDollars, reconciledShare };
-
-  // Corporate money found: a positive finding needs no completeness check.
+  // Corporate money found: a positive finding needs no completeness check, and
+  // it is settled BEFORE the degenerate-summary guards below on purpose. This
+  // verdict does not read `pacTotal` at all — it rests on the EXISTENCE of a
+  // contribution row inside the pledge scope, and a malformed or negative
+  // filed summary cannot make that row stop existing. "Corporate PAC
+  // contributions in FEC filings" stays true in that state, so refusing to say
+  // it would suppress a fact we hold rather than protect the reader. Only the
+  // ABSENCE claims need the summary to be sound; nothing below this line can
+  // move in the clearing direction.
   if (hasCorporateRow) {
     return { ...base, ...totals, verdict: "has_corporate_pac" };
   }
+
+  // Past here every verdict either clears the candidate or refuses, so a
+  // summary or an amount we cannot read is disqualifying: it buys silence.
+  if (!pacTotalUsable || hasUnusableAmount) {
+    return unreconciled();
+  }
+
+  const unreconciledDollars = summary.pacTotal - namedTotal;
 
   if (hasUnclassifiedRow) {
     return {
@@ -283,7 +293,7 @@ export function evaluateCorporatePacClaim(
   // against a stale summary: a fraction of the labor rows can outrun a small
   // filed total while the corporate rows are simply not loaded yet.
   if (reconciledShare > 1 + RECONCILED_SHARE_EPSILON) {
-    return unreconciled(totals);
+    return unreconciled();
   }
 
   // Both bounds, not either: the share catches a candidate whose named rows
@@ -295,7 +305,7 @@ export function evaluateCorporatePacClaim(
     !(reconciledShare >= MIN_RECONCILED_SHARE) ||
     !(unreconciledDollars <= MAX_UNRECONCILED_DOLLARS)
   ) {
-    return unreconciled(totals);
+    return unreconciled();
   }
 
   return onlyIfDated({ ...base, ...totals, verdict: "no_corporate_pac" });
