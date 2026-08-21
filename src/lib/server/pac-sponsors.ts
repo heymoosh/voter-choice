@@ -122,10 +122,13 @@ export function emptyPacSponsors(electionCycle?: string): PacSponsorsResult {
  * So the ingest now stores every federal candidate's PAC contributions, and
  * the display guarantee moves here, stated out loud: without a funding mix
  * to sit inside, a PAC list would be the ONLY funding figure on the page and
- * would read as a total. Server-side consumers that reconcile against a
- * filed FEC total (the corporate-PAC claim) deliberately bypass this gate —
- * they have their own denominator and do not render a headline dollar
- * figure.
+ * would read as a total.
+ *
+ * The rule for future consumers: this gate guards DISPLAY, so a server-side
+ * consumer that reconciles stored PAC rows against a filed FEC total — it
+ * has its own denominator and renders no headline dollar figure — should
+ * read `pac_candidate_contributions` directly rather than through
+ * `lookupPacSponsors`, and must not relax this gate to do so.
  */
 const FUNDING_MIX_GATE = sql`EXISTS (
   SELECT 1 FROM donor_aggregates funding_mix

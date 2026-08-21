@@ -511,7 +511,13 @@ export async function ingestFederalPacSponsors({
   // never ingested is indistinguishable from one who took none, so scoping
   // the ingest silently converted "we didn't look" into "nothing there".
   // Reading every candidate keeps unknown as unknown.
-  const candidateByFecId = await loadFederalCandidateMap(db);
+  //
+  // The cycle is passed so that an FEC id sitting on both a rendered
+  // candidate row and a voteless duplicate resolves to the row that carries
+  // the funding mix — deterministically, every run. Dropping the ingest's
+  // funding-mix scoping dropped that attribution guarantee with it; the
+  // loader's ordering is what puts it back.
+  const candidateByFecId = await loadFederalCandidateMap(db, config.cycle);
 
   // Stream PAS2, aggregating per (committee, candidate) pair.
   const pairs = new Map<string, PairAggregate>();

@@ -8,6 +8,7 @@
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { PgDialect } from "drizzle-orm/pg-core";
 
 vi.mock("../../../db/client", () => {
   const DB_NOT_CONFIGURED = "DB_NOT_CONFIGURED" as const;
@@ -16,6 +17,7 @@ vi.mock("../../../db/client", () => {
 
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import { lookupPacSponsors, MAX_SPONSORS_SHOWN } from "./pac-sponsors";
+import { FUNDING_MIX_LABELS } from "./donors";
 
 const mockedGetDb = vi.mocked(getDb);
 
@@ -239,46 +241,52 @@ describe("funding-mix display gate", () => {
     };
   }
 
-  /** Flatten a drizzle condition tree into the SQL fragments it carries.
-   *  Drizzle nodes hold back-references to their table, so the walk needs a
-   *  seen-set and a depth cap or it recurses forever. */
-  function sqlText(
-    node: unknown,
-    seen = new Set<unknown>(),
-    depth = 0,
-  ): string {
-    if (depth > 30 || node === null || typeof node !== "object") return "";
-    if (seen.has(node)) return "";
-    seen.add(node);
-    const rec = node as Record<string, unknown>;
-    // Param: a bound value. StringChunk: raw SQL text, held as string[].
-    if (typeof rec.value === "string") return rec.value;
-    if (
-      Array.isArray(rec.value) &&
-      rec.value.every((v) => typeof v === "string")
-    ) {
-      return (rec.value as string[]).join(" ");
-    }
-    const parts = Array.isArray(rec.queryChunks)
-      ? rec.queryChunks
-      : Object.values(rec);
-    return parts.map((p) => sqlText(p, seen, depth + 1)).join(" ");
+  /** Compile the captured predicate into the SQL Postgres would actually
+   *  run. Asserting on the RENDERED text + bound params — rather than on
+   *  substrings of the builder, which come from the gate's own literals and
+   *  so survive any mutation short of deleting it — is what makes these
+   *  assertions able to fail. */
+  function compileWhere(condition: unknown) {
+    return new PgDialect().sqlToQuery(condition as never);
   }
 
-  it("restricts the query to candidates that also have a funding mix", async () => {
+  /** The gate is the last term of the `and()`, so everything from `EXISTS`
+   *  onward is the gate body. Scoping to it matters: the outer terms render
+   *  the same qualified column names, so a whole-query match would pass even
+   *  for a gate correlated to itself. */
+  function gateBody(rendered: { sql: string }) {
+    const at = rendered.sql.toLowerCase().indexOf("exists");
+    expect(at).toBeGreaterThanOrEqual(0);
+    return rendered.sql.slice(at);
+  }
+
+  async function renderedWhere() {
     const { db, captured } = makeWhereCapturingDbMock([contributionRow()]);
     mockedGetDb.mockReturnValue(db);
     await lookupPacSponsors(["federal-A"]);
+    expect(captured).toHaveLength(1);
+    return compileWhere(captured[0]);
+  }
 
-    // The ingest now stores PAC rows for EVERY federal candidate, so this
-    // gate is the only thing keeping a PAC list off a candidate who has no
-    // funding mix for it to be a breakdown of. Losing it would silently turn
-    // the block into the headline funding figure — the exact failure the
-    // file's "BREAKDOWN, NEVER A NEW TOTAL" contract forbids.
-    const where = captured.map((c) => sqlText(c)).join(" ");
-    expect(where).toContain("donor_aggregates");
-    expect(where).toContain("bucket_label");
-    expect(where).toContain("election_cycle");
+  it("correlates the funding-mix EXISTS to the outer contribution row", async () => {
+    // A gate that correlated to itself (`funding_mix.candidate_id =
+    // funding_mix.candidate_id`) would be true whenever ANY funding mix
+    // exists anywhere, so every candidate with stored PAC rows would render
+    // a PAC list with no funding mix behind it. The correlation has to name
+    // the OUTER table for the gate to mean anything.
+    const body = gateBody(await renderedWhere());
+    expect(body).toContain('"pac_candidate_contributions"."candidate_id"');
+    expect(body).toContain('"pac_candidate_contributions"."election_cycle"');
+    expect(body).toContain("donor_aggregates");
+  });
+
+  it("binds exactly the funding-mix bucket labels donors.ts defines", async () => {
+    // Labels drifting from FUNDING_MIX_LABELS would match no donor_aggregates
+    // row, hiding every PAC block sitewide — a silent fail-closed.
+    const rendered = await renderedWhere();
+    expect(rendered.params).toEqual(
+      expect.arrayContaining(Object.values(FUNDING_MIX_LABELS)),
+    );
   });
 });
 
