@@ -62,7 +62,7 @@ import {
   FEC_BULK_SOURCE,
   UPSERT_CHUNK_SIZE,
   downloadIfMissing,
-  loadFederalCandidateMapWithFundingMix,
+  loadFederalCandidateMap,
   parsePositiveInteger,
   parseValueFlag,
   streamZipLines,
@@ -497,10 +497,27 @@ export async function ingestFederalPacSponsors({
     LOG_PREFIX,
   );
 
-  const candidateByFecId = await loadFederalCandidateMapWithFundingMix(
-    db,
-    config.cycle,
-  );
+  // EVERY tracked federal candidate, not just those that already carry a
+  // funding-mix row. The old funding-mix scoping was a DISPLAY safeguard
+  // wearing an ingest costume: it kept "Top PACs" from becoming the only —
+  // and therefore headline — funding figure on a breakdown-less candidate.
+  // That safeguard now lives where it belongs, as an explicit funding-mix
+  // gate in the read path (src/lib/server/pac-sponsors.ts), so the visible
+  // behaviour is unchanged while the stored data stops being lopsided.
+  //
+  // Why the stored data has to be complete: the corporate-PAC claim is an
+  // ABSENCE claim ("no corporate PAC money"), and an absence claim can only
+  // be made from complete evidence. A challenger whose PAC contributions we
+  // never ingested is indistinguishable from one who took none, so scoping
+  // the ingest silently converted "we didn't look" into "nothing there".
+  // Reading every candidate keeps unknown as unknown.
+  //
+  // The cycle is passed so that an FEC id sitting on both a rendered
+  // candidate row and a voteless duplicate resolves to the row that carries
+  // the funding mix — deterministically, every run. Dropping the ingest's
+  // funding-mix scoping dropped that attribution guarantee with it; the
+  // loader's ordering is what puts it back.
+  const candidateByFecId = await loadFederalCandidateMap(db, config.cycle);
 
   // Stream PAS2, aggregating per (committee, candidate) pair.
   const pairs = new Map<string, PairAggregate>();

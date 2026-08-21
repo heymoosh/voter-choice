@@ -28,13 +28,14 @@
  * Server-only. Never import it from client components.
  */
 
-import { and, desc, eq, inArray, isNotNull, ne, or } from "drizzle-orm";
+import { and, desc, eq, inArray, isNotNull, ne, or, sql } from "drizzle-orm";
 import { getDb, DB_NOT_CONFIGURED } from "../../../db/client";
 import * as schema from "../../../db/schema";
 import {
   PAC_COMMITTEE_DISPLAY_COLUMNS,
   type CuratedAttribution,
 } from "./curated-attribution";
+import { FUNDING_MIX_LABELS } from "./donors";
 
 /** Committee rows a human has rejected are never displayed. */
 const REJECTED_STATUS = "rejected";
@@ -106,6 +107,39 @@ export function emptyPacSponsors(electionCycle?: string): PacSponsorsResult {
 }
 
 /**
+ * A candidate is shown their PAC breakdown only when we also hold their
+ * funding mix.
+ *
+ * This is the read-path half of the "THIS IS A BREAKDOWN, NEVER A NEW TOTAL"
+ * contract at the top of this file. Until 2026-08, the same guarantee was
+ * enforced by scoping the INGEST to funding-mix candidates
+ * (`loadFederalCandidateMapWithFundingMix`) — which meant a candidate we
+ * hadn't fully ingested had no stored PAC rows at all. That was fine for
+ * display and wrong for everything else: an absence claim ("no corporate PAC
+ * money") read from deliberately-partial data cannot tell "took none" from
+ * "we never looked".
+ *
+ * So the ingest now stores every federal candidate's PAC contributions, and
+ * the display guarantee moves here, stated out loud: without a funding mix
+ * to sit inside, a PAC list would be the ONLY funding figure on the page and
+ * would read as a total.
+ *
+ * The rule for future consumers: this gate guards DISPLAY, so a server-side
+ * consumer that reconciles stored PAC rows against a filed FEC total — it
+ * has its own denominator and renders no headline dollar figure — should
+ * read `pac_candidate_contributions` directly rather than through
+ * `lookupPacSponsors`, and must not relax this gate to do so.
+ */
+const FUNDING_MIX_GATE = sql`EXISTS (
+  SELECT 1 FROM donor_aggregates funding_mix
+  WHERE funding_mix.candidate_id = ${schema.pacCandidateContributions.candidateId}
+    AND funding_mix.election_cycle = ${schema.pacCandidateContributions.electionCycle}
+    AND funding_mix.bucket_label IN (
+      ${FUNDING_MIX_LABELS.small}, ${FUNDING_MIX_LABELS.large}, ${FUNDING_MIX_LABELS.pac}
+    )
+)`;
+
+/**
  * Top PAC contributors for a set of candidate ids, keyed by candidate id.
  *
  * Candidates with no rows are simply absent from the map — callers must
@@ -155,6 +189,9 @@ export async function lookupPacSponsors(
             ne(schema.pacCommittees.status, REJECTED_STATUS),
             isNotNull(schema.pacCommittees.curatedSummary),
           ),
+          // See FUNDING_MIX_GATE: a PAC breakdown renders only alongside the
+          // funding mix it is a breakdown OF.
+          FUNDING_MIX_GATE,
         ),
       )
       .orderBy(desc(schema.pacCandidateContributions.amountTotal));
