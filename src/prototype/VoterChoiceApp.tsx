@@ -440,6 +440,9 @@ const TRANSLATIONS = {
       geocodeFailTitle: "We couldn't place that address",
       geocodeFailBody:
         'Try the full street address, city, and ZIP — the district lookup needs a real street address to find your representatives.',
+      geocoderDownTitle: 'Our address lookup is unavailable right now',
+      geocoderDownBody:
+        "This isn't about your address — the lookup service is temporarily down. Try again in a minute.",
       noRepTitle: '{territory} elects a non-voting {repTitle} to the US House',
       noRepTitleFallback: 'Your area',
       repTitleDelegate: 'Delegate',
@@ -1340,6 +1343,9 @@ const TRANSLATIONS = {
       geocodeFailTitle: 'No pudimos ubicar esa dirección',
       geocodeFailBody:
         'Prueba con la dirección completa, ciudad y código postal — la búsqueda de distrito necesita una dirección real para encontrar a tus representantes.',
+      geocoderDownTitle: 'Nuestra búsqueda de direcciones no está disponible en este momento',
+      geocoderDownBody:
+        'Esto no se trata de tu dirección — el servicio de búsqueda está temporalmente caído. Intenta de nuevo en un minuto.',
       noRepTitle: '{territory} elige un {repTitle} sin voto a la Cámara de Representantes de EE. UU.',
       noRepTitleFallback: 'Tu área',
       repTitleDelegate: 'Delegado',

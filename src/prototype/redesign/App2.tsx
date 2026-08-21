@@ -853,15 +853,27 @@ function App2Inner() {
       );
     }
     if (stage === "geocodefail") {
+      // retryable === true means the Census geocoder itself failed/errored
+      // (an upstream outage) — not that the address was bad. Blaming the
+      // address in that case is dishonest, so it gets its own copy + an
+      // "error" tone (matching dberror below) instead of the genuine
+      // no-match "warn" copy.
+      const isOutage = failure?.retryable;
       return (
         <DelegationErrorView
-          tone="warn"
-          title={t("delegationError.geocodeFailTitle")}
-          body={t("delegationError.geocodeFailBody")}
+          tone={isOutage ? "error" : "warn"}
+          title={t(
+            isOutage
+              ? "delegationError.geocoderDownTitle"
+              : "delegationError.geocodeFailTitle",
+          )}
+          body={t(
+            isOutage
+              ? "delegationError.geocoderDownBody"
+              : "delegationError.geocodeFailBody",
+          )}
           onEditAddress={() => setStage("home")}
-          onRetry={
-            failure?.retryable ? () => void startLookup(address) : undefined
-          }
+          onRetry={isOutage ? () => void startLookup(address) : undefined}
         />
       );
     }
