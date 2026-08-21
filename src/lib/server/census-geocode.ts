@@ -26,13 +26,33 @@
  * unparseable JSON) with jittered backoff before giving up. A 4xx (our
  * request was malformed) is not retried — trying again won't change it.
  *
+ * Timeouts: ATTEMPT_TIMEOUT_MS is 8000ms — the single-attempt budget this
+ * module shipped with before the retry existed, and the one this endpoint
+ * has actually been proven against (the onelineaddress geocoder can take
+ * several seconds under load). Do not shrink this to "make room" for the
+ * retry: a shorter per-attempt window turns slow-but-working responses into
+ * failures, which is worse than the outage the retry exists to paper over.
+ * Instead, the retry is bounded by a separate OVERALL_BUDGET_MS (12000ms)
+ * covering both attempts plus backoff — each attempt's actual timeout is
+ * min(ATTEMPT_TIMEOUT_MS, time left in the overall budget), and the retry
+ * is skipped outright (not just cut short) once the remaining budget drops
+ * below MIN_RETRY_BUDGET_MS, since a doomed sub-second attempt isn't worth
+ * making the voter wait for. Worst case end-to-end latency is therefore
+ * bounded by OVERALL_BUDGET_MS (~12s), not MAX_ATTEMPTS * ATTEMPT_TIMEOUT_MS
+ * (~16s).
+ *
  * This module is server-only. Never import it from client components.
  */
 
 const CENSUS_GEOCODER_URL =
   "https://geocoding.geo.census.gov/geocoder/geographies/onelineaddress";
 
-const FETCH_TIMEOUT_MS = 4000;
+/** Proven single-attempt budget — see the timeouts note above. */
+const ATTEMPT_TIMEOUT_MS = 8000;
+/** Hard ceiling on total latency across every attempt + backoff. */
+const OVERALL_BUDGET_MS = 12000;
+/** Below this much remaining budget, a retry can't do anything useful. */
+const MIN_RETRY_BUDGET_MS = 1000;
 const MAX_ATTEMPTS = 2;
 
 /** Territories / districts with no voting member of Congress. */
@@ -155,6 +175,7 @@ type FetchAttemptResult =
 /** One HTTP round trip. Never throws. Never logs the address (PRIVACY). */
 async function fetchGeocodePayload(
   address: string,
+  timeoutMs: number,
 ): Promise<FetchAttemptResult> {
   const params = new URLSearchParams({
     address,
@@ -167,7 +188,7 @@ async function fetchGeocodePayload(
   let response: Response;
   try {
     response = await fetch(`${CENSUS_GEOCODER_URL}?${params.toString()}`, {
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(timeoutMs),
     });
   } catch (err) {
     console.error(
@@ -205,12 +226,21 @@ function sleep(ms: number): Promise<void> {
 export async function geocodeAddressToDistrict(
   address: string,
 ): Promise<CensusGeocodeOutcome> {
+  const deadline = Date.now() + OVERALL_BUDGET_MS;
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    const result = await fetchGeocodePayload(address);
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) break;
+    const timeoutMs = Math.min(ATTEMPT_TIMEOUT_MS, remaining);
+    const result = await fetchGeocodePayload(address, timeoutMs);
     if (result.kind === "payload") return parseGeocodeResponse(result.payload);
     if (result.kind === "client_error") return { status: "error" };
     if (attempt < MAX_ATTEMPTS) {
-      const backoffMs = 300 * attempt + Math.random() * 200;
+      const budgetLeft = deadline - Date.now();
+      if (budgetLeft < MIN_RETRY_BUDGET_MS) break;
+      const backoffMs = Math.min(
+        300 * attempt + Math.random() * 200,
+        budgetLeft - 1,
+      );
       await sleep(backoffMs);
     }
   }

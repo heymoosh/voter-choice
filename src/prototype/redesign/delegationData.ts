@@ -185,9 +185,13 @@ export async function fetchDelegation(
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ address }),
     });
-    if (res.status === 502)
-      return { status: "geocode_failed", retryable: true };
-    if (!res.ok) return { status: "geocode_failed", retryable: true };
+    if (!res.ok) {
+      // 5xx (502 = geocoder itself is down) is our/upstream's fault and
+      // worth retrying. 4xx (400 bad address, 429 rate-limited, …) is not
+      // an outage — showing "our service is down" there would be false,
+      // and offering Retry on a 429 would just re-trip the limiter.
+      return { status: "geocode_failed", retryable: res.status >= 500 };
+    }
     const body = await res.json();
     if (body.status === "geocode_failed") {
       return { status: "geocode_failed", retryable: false };
