@@ -23,7 +23,7 @@ import { pipeline } from "node:stream/promises";
 import type { ReadableStream as NodeReadableStream } from "node:stream/web";
 import { promisify } from "node:util";
 import { execFile } from "node:child_process";
-import { sql } from "drizzle-orm";
+import { desc, sql } from "drizzle-orm";
 import type { DbClient } from "../../db/client";
 import { candidates, donorAggregates } from "../../db/schema";
 
@@ -261,10 +261,37 @@ export async function loadFederalCandidateMapWithFundingMix(
  * re-cut of the funding mix (e.g. billionaire-donor-match.ts, which persists
  * raw matched contributions rather than a bucket total that could clobber a
  * funding-mix row at the same unique key).
+ *
+ * RESOLUTION IS DETERMINISTIC, AND FUNDING-MIX-FIRST WHEN GIVEN A CYCLE.
+ * One FEC id can sit on more than one candidate row — a rendered row and a
+ * voteless duplicate, the same duplicate class that once mis-resolved House
+ * alignment onto a seat with no votes. Resolution is first-wins, so with no
+ * ORDER BY the winner was whatever Postgres happened to return that run, and
+ * a later run could silently move a candidate's stored rows onto the
+ * duplicate while the rows written on the earlier one stayed behind. Rows are
+ * therefore ordered funding-mix-carrying first (when `cycle` is passed), then
+ * by candidate id: the winner is reproducible across runs, and for a caller
+ * that passes a cycle it is the row the funding mix lives on — the attribution
+ * guarantee the old funding-mix ingest scoping used to provide for free.
+ * `resolveFecCandidateMap` warns on every id that matched more than one row.
  */
 export async function loadFederalCandidateMap(
   db: DbClient,
+  cycle?: string,
 ): Promise<Map<string, string>> {
+  const fundingMixFirst = cycle
+    ? [
+        desc(sql`EXISTS (
+          SELECT 1 FROM donor_aggregates funding_mix
+          WHERE funding_mix.candidate_id = ${candidates.id}
+            AND funding_mix.election_cycle = ${cycle}
+            AND funding_mix.bucket_label IN (${sql.join(
+              FUNDING_MIX_BUCKET_LABELS.map((label) => sql`${label}`),
+              sql`, `,
+            )})
+        )`),
+      ]
+    : [];
   const rows = (await db
     .select({
       id: candidates.id,
@@ -275,12 +302,38 @@ export async function loadFederalCandidateMap(
     .from(candidates)
     .where(
       sql`${candidates.jurisdiction} IN ('federal-house', 'federal-senate')`,
-    )) as CandidateFecRow[];
+    )
+    .orderBy(...fundingMixFirst, candidates.id)) as CandidateFecRow[];
 
-  const map = new Map<string, string>();
+  return resolveFecCandidateMap(rows);
+}
+
+/**
+ * First-wins FEC-id → candidate-id resolution over rows the caller has
+ * already ordered by preference, warning whenever one FEC id matched more
+ * than one candidate row so the ambiguity stops being silent. Exported for
+ * tests; callers should go through `loadFederalCandidateMap`.
+ */
+export function resolveFecCandidateMap(
+  rows: CandidateFecRow[],
+): Map<string, string> {
+  const candidatesByFecId = new Map<string, string[]>();
   for (const row of rows) {
     for (const fecId of fecCandidateIdsForRow(row)) {
-      if (!map.has(fecId)) map.set(fecId, row.id);
+      const ids = candidatesByFecId.get(fecId) ?? [];
+      if (!ids.includes(row.id)) ids.push(row.id);
+      candidatesByFecId.set(fecId, ids);
+    }
+  }
+
+  const map = new Map<string, string>();
+  for (const [fecId, ids] of candidatesByFecId) {
+    map.set(fecId, ids[0]);
+    if (ids.length > 1) {
+      console.warn(
+        `[fec-bulk] FEC id ${fecId} resolves to ${ids.length} candidate rows; ` +
+          `attributing to ${ids[0]} (also matched: ${ids.slice(1).join(", ")})`,
+      );
     }
   }
   return map;

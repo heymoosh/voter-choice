@@ -551,7 +551,19 @@ export async function runCandidateSummaryIngest(
     logPrefix: LOG_PREFIX,
   });
 
-  const candidateByFecId = await loadFederalCandidateMap(db);
+  // The cycle is load-bearing, not decoration. One FEC id can sit on two
+  // candidate rows — a rendered one and a voteless duplicate — and passing the
+  // cycle makes the loader prefer the row the funding mix lives on. Every
+  // ingest that writes per-(candidate, cycle) evidence for this claim must
+  // resolve an id to the SAME row: federal-pac-sponsors.ts writes the named
+  // corporate contributions, this one writes the filed total that can CLEAR
+  // the claim. Disagree, and the summary lands on the duplicate while the
+  // contributions land on the real row — so the duplicate reads as
+  // "no PAC contributions of any kind" on a candidate who took them, and the
+  // namedTotal > 0 contradiction check cannot fire because the contributions
+  // are on the other id. Re-running does not heal it: the upsert keys on
+  // (candidate_id, election_cycle), so the wrong row persists.
+  const candidateByFecId = await loadFederalCandidateMap(db, config.cycle);
   console.log(`${LOG_PREFIX} tracked federal FEC ids=${candidateByFecId.size}`);
 
   // The all-candidates file is one small row per candidate (~200KB zipped), so
