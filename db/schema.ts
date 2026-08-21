@@ -1345,6 +1345,18 @@ export const pacCommittees = pgTable(
     sector: text("sector"),
     // Provenance of the sector inference, e.g. "connected-org-keyword-v1".
     classificationMethod: text("classification_method"),
+    // WHO is behind the committee, derived only from its own filed fields
+    // (org_type/designation/committee_type/connected_org) by
+    // src/lib/pacSponsorClass.ts: corporate | trade | labor | membership |
+    // leadership | party | non_connected | unknown. This — not `sector` — is
+    // what a "$0 corporate PAC" claim reads; `unknown` blocks the claim
+    // rather than being treated as "not corporate".
+    // See db/migrations/0026_add_pac_sponsor_class.sql.
+    sponsorClass: text("sponsor_class"),
+    // Which rule made the call (org-type-v1 / designation-v1 /
+    // committee-type-v1 / unresolved-v1), or 'human' for a hand override,
+    // which ingest re-runs must never recompute.
+    sponsorClassMethod: text("sponsor_class_method"),
     // 'auto' (re-runs may reclassify) | 'verified' | 'rejected' (human
     // decisions — re-runs must never clobber these; read paths must exclude
     // 'rejected' sponsor relationships).
@@ -1372,6 +1384,7 @@ export const pacCommittees = pgTable(
   (t) => [
     index("pac_committees_sector_idx").on(t.sector),
     index("pac_committees_connected_org_idx").on(t.connectedOrg),
+    index("pac_committees_sponsor_class_idx").on(t.sponsorClass),
   ],
 );
 

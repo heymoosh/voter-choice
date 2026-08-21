@@ -13,6 +13,40 @@
  *     "what this PAC is about / who is behind it" line and its citation.
  *     They travel TOGETHER — a summary without a source link is refused,
  *     because an uncited claim is exactly what this product does not do.
+ *   - "sponsorClass" (migration 0026): who is behind the committee, in the
+ *     vocabulary the corporate-PAC pledge is scored in — corporate | trade |
+ *     labor | membership | leadership | party | non_connected | unknown.
+ *     Written with sponsor_class_method='human', which the bulk ingest is
+ *     forbidden to overwrite. This is the ONLY way to resolve a committee the
+ *     FEC left ORG_TP blank on (Ernst & Young's and Deloitte's PACs both file
+ *     it empty), and each one left 'unknown' blocks a "$0 corporate PAC"
+ *     claim for every candidate it gave to.
+ *
+ *     A sponsorClass row does NOT need a status verdict — classifying who is
+ *     behind a committee and ratifying its filed sponsor/sector display are
+ *     different judgements, and forcing them to travel together would make a
+ *     curator ratify a display claim they were not asked to look at.
+ *
+ *     GET IT WRONG SAFELY, AND THE CODE HOLDS YOU TO IT. Marking a committee
+ *     corporate/trade/unknown only ever BLOCKS a clean badge; marking it
+ *     labor/membership/leadership/party/non_connected can CLEAR one, and a
+ *     cleared row is effectively permanent — the ingest upsert refuses to
+ *     recompute a 'human' row, the backfill skips it, and the queue export
+ *     will not re-queue it, so only hand-written SQL could undo a mistake.
+ *     This script therefore accepts only the BLOCKING classes by default;
+ *     writing a clearing class needs an explicit --allow-clearing, which is
+ *     a curator saying "I know this direction is unrecoverable".
+ *
+ * WHERE THE EVIDENCE LIVES (deliberate, 2026-08-21). A curation file's "note"
+ * and "evidenceUrl" keys are read by nothing here: only "summary"/"sourceUrl"
+ * are written, into curated_summary/curated_source_url. That is a choice, not
+ * a dropped field. curated_summary is rendered to readers by
+ * src/lib/server/pac-sponsors.ts, so mapping a curator's private working note
+ * into it would change user-visible copy — and this repo is under a design
+ * freeze that forbids that. The provenance of each hand classification
+ * therefore lives in git, next to the diff that made it, which is a durable
+ * and reviewable home. Revisit when the freeze lifts and the display of a
+ * curated sponsor note has actually been designed.
  *
  * Rules enforced here (0022/0024 migration contracts):
  *   - Only status transitions to 'verified'/'rejected' happen — this script
@@ -23,13 +57,45 @@
  * DRY-RUN BY DEFAULT — prints what would change. Pass --confirm to write.
  *   npx tsx --env-file=.env.local scripts/ingest/_apply-pac-curation.ts <verdicts.json>
  *   npx tsx --env-file=.env.local scripts/ingest/_apply-pac-curation.ts <verdicts.json> --confirm
+ *   Add --allow-clearing to permit labor/membership/leadership/party/
+ *   non_connected classes — see the badge-clearing note above.
  */
 
 import * as fs from "node:fs";
+import { pathToFileURL } from "node:url";
 import { sql, type SQL } from "drizzle-orm";
+import type { BatchItem } from "drizzle-orm/batch";
 import { requireDb } from "../../db/client";
+import {
+  CORPORATE_PLEDGE_CLASSES,
+  PAC_SPONSOR_CLASS_LABELS,
+} from "../../src/lib/pacSponsorClass";
 
 const VALID_VERDICTS = new Set(["verified", "rejected"]);
+
+/** The full sponsor-class vocabulary, from its single source of truth. */
+const ALL_SPONSOR_CLASSES = new Set<string>(
+  Object.keys(PAC_SPONSOR_CLASS_LABELS),
+);
+
+/**
+ * The classes a curation file may write without ceremony: each one can only
+ * ever BLOCK a "$0 corporate PAC" badge, never clear one. Everything else in
+ * the vocabulary moves in the unrecoverable direction and needs
+ * --allow-clearing. Derived from CORPORATE_PLEDGE_CLASSES so that widening or
+ * narrowing the pledge scope moves this set with it.
+ */
+export const BLOCKING_SPONSOR_CLASSES: ReadonlySet<string> = new Set<string>([
+  ...CORPORATE_PLEDGE_CLASSES,
+  "unknown",
+]);
+
+export interface ApplyOptions {
+  /** Accept classes that can clear a badge. Off unless a human asked. */
+  allowClearing: boolean;
+}
+
+const STRICT: ApplyOptions = { allowClearing: false };
 
 interface VerdictInput {
   committeeId: string;
@@ -37,6 +103,7 @@ interface VerdictInput {
   sector?: string | null;
   summary?: string | null;
   sourceUrl?: string | null;
+  sponsorClass?: string | null;
 }
 
 function cleanOptional(value: string | null | undefined): string | null {
@@ -45,10 +112,45 @@ function cleanOptional(value: string | null | undefined): string | null {
   return trimmed.length > 0 ? trimmed : null;
 }
 
-/** Validate one row; returns an error string or null. */
-function rowError(r: VerdictInput): string | null {
-  if (!VALID_VERDICTS.has(r.verdict as string)) {
+/** True when the row asks for anything at all — a status verdict, a sponsor
+ *  class, or both. Rows that ask for nothing are skipped, not failed. */
+export function rowHasWork(r: VerdictInput): boolean {
+  return (
+    (r.verdict !== null && r.verdict !== undefined) ||
+    cleanOptional(r.sponsorClass) !== null
+  );
+}
+
+/** Validate one row; returns an error string or null. Strict by default. */
+export function rowError(
+  r: VerdictInput,
+  options: ApplyOptions = STRICT,
+): string | null {
+  const sponsorClass = cleanOptional(r.sponsorClass);
+  const hasVerdict = r.verdict !== null && r.verdict !== undefined;
+  // A sponsor-class-only row is legitimate: see the header note on why the
+  // two judgements travel separately.
+  if (hasVerdict && !VALID_VERDICTS.has(r.verdict as string)) {
     return `invalid verdict "${r.verdict}" — must be "verified" or "rejected"`;
+  }
+  if (sponsorClass !== null && !ALL_SPONSOR_CLASSES.has(sponsorClass)) {
+    return (
+      `invalid sponsorClass "${sponsorClass}" — must be one of ` +
+      [...ALL_SPONSOR_CLASSES].join(", ")
+    );
+  }
+  if (
+    sponsorClass !== null &&
+    !options.allowClearing &&
+    !BLOCKING_SPONSOR_CLASSES.has(sponsorClass)
+  ) {
+    return (
+      `sponsorClass "${sponsorClass}" can CLEAR a "$0 corporate PAC" badge, ` +
+      `and nothing downstream can undo it — the ingest, the backfill and the ` +
+      `queue export all refuse to revisit a 'human' row. Pass ` +
+      `--allow-clearing if that is genuinely what the evidence supports; ` +
+      `otherwise use one of: ${[...BLOCKING_SPONSOR_CLASSES].join(", ")}`
+    );
   }
   const summary = cleanOptional(r.summary);
   const sourceUrl = cleanOptional(r.sourceUrl);
@@ -61,8 +163,32 @@ function rowError(r: VerdictInput): string | null {
   return null;
 }
 
-function buildSet(r: VerdictInput): SQL[] {
-  const sets: SQL[] = [sql`status = ${r.verdict}`, sql`updated_at = now()`];
+/**
+ * Build the SET fragments for one row. Validates first — buildSet is exported
+ * and callable on its own, and the previous `satisfies string as
+ * PacSponsorClass` cast read like a check while asserting nothing at runtime.
+ * The vocabulary guard has to be the thing that actually runs.
+ */
+export function buildSet(
+  r: VerdictInput,
+  options: ApplyOptions = STRICT,
+): SQL[] {
+  const error = rowError(r, options);
+  if (error !== null) throw new Error(`${r.committeeId}: ${error}`);
+
+  const sets: SQL[] = [sql`updated_at = now()`];
+  if (r.verdict !== null && r.verdict !== undefined) {
+    sets.push(sql`status = ${r.verdict}`);
+  }
+  const sponsorClass = cleanOptional(r.sponsorClass);
+  if (sponsorClass !== null) {
+    sets.push(
+      sql`sponsor_class = ${sponsorClass}`,
+      // 'human' is the one value the bulk ingest refuses to overwrite, so a
+      // curated class survives every later re-run of federal-pac-sponsors.
+      sql`sponsor_class_method = 'human'`,
+    );
+  }
   const sector = cleanOptional(r.sector);
   if (sector !== null) {
     sets.push(sql`sector = ${sector}`, sql`classification_method = 'human'`);
@@ -77,8 +203,13 @@ function buildSet(r: VerdictInput): SQL[] {
   return sets;
 }
 
-function describe(r: VerdictInput, previousStatus: string): string {
-  const parts = [`${previousStatus} -> ${r.verdict}`];
+export function describe(r: VerdictInput, previousStatus: string): string {
+  const parts: string[] = [];
+  if (r.verdict !== null && r.verdict !== undefined) {
+    parts.push(`${previousStatus} -> ${r.verdict}`);
+  }
+  const sponsorClass = cleanOptional(r.sponsorClass);
+  if (sponsorClass !== null) parts.push(`sponsor_class -> ${sponsorClass}`);
   const sector = cleanOptional(r.sector);
   if (sector !== null) parts.push(`sector -> ${sector}`);
   const summary = cleanOptional(r.summary);
@@ -93,9 +224,12 @@ function describe(r: VerdictInput, previousStatus: string): string {
 async function main() {
   const filePath = process.argv[2];
   const confirm = process.argv.includes("--confirm");
+  const options: ApplyOptions = {
+    allowClearing: process.argv.includes("--allow-clearing"),
+  };
   if (!filePath || filePath.startsWith("--")) {
     console.error(
-      "Usage: npx tsx _apply-pac-curation.ts <verdicts.json> [--confirm]",
+      "Usage: npx tsx _apply-pac-curation.ts <verdicts.json> [--confirm] [--allow-clearing]",
     );
     process.exit(1);
   }
@@ -106,14 +240,12 @@ async function main() {
     process.exit(1);
   }
 
-  const withVerdict = raw.filter(
-    (r) => r.verdict !== null && r.verdict !== undefined,
-  );
+  const withVerdict = raw.filter(rowHasWork);
   const skipped = raw.length - withVerdict.length;
 
   let invalid = 0;
   for (const r of withVerdict) {
-    const error = rowError(r);
+    const error = rowError(r, options);
     if (error !== null) {
       console.error(`${r.committeeId}: ${error}`);
       invalid++;
@@ -123,7 +255,7 @@ async function main() {
 
   if (withVerdict.length === 0) {
     console.log(
-      `No verdicts to apply (${skipped} rows still null) — fill in "verdict" fields first.`,
+      `Nothing to apply (${skipped} rows still null) — fill in "verdict" or "sponsorClass" fields first.`,
     );
     return;
   }
@@ -153,27 +285,38 @@ async function main() {
     `${confirm ? "APPLYING" : "DRY-RUN (pass --confirm to write)"}: ` +
       `${withVerdict.length} verdict(s), ${skipped} row(s) left null (skipped).`,
   );
-  let applied = 0;
   for (const r of withVerdict) {
     console.log(
       `  ${r.committeeId}: ${describe(r, knownStatus.get(r.committeeId) ?? "?")}`,
     );
-    if (!confirm) continue;
-    await db.execute(
-      sql`UPDATE pac_committees
-          SET ${sql.join(buildSet(r), sql`, `)}
+  }
+  if (!confirm) return;
+
+  // All or nothing. A sponsor-class-only row leaves no status change to eyeball
+  // afterwards, so a half-applied file would be invisible: some committees
+  // carrying a 'human' class the ingest will never recompute, the rest still
+  // queued, and no way to tell which from the outside. db.batch is the
+  // atomic primitive on this driver — neon-http has no interactive
+  // transaction, so db.transaction() would throw at runtime.
+  const updates = withVerdict.map(
+    (r) =>
+      db.execute(
+        sql`UPDATE pac_committees
+          SET ${sql.join(buildSet(r, options), sql`, `)}
           WHERE committee_id = ${r.committeeId}`,
-    );
-    applied++;
-  }
-  if (confirm) {
-    console.log(
-      `Applied ${applied} verdict(s). Re-run the queue export to see what's left.`,
-    );
-  }
+      ) as BatchItem<"pg">,
+  );
+  await db.batch(updates as [BatchItem<"pg">, ...BatchItem<"pg">[]]);
+  console.log(
+    `Applied ${updates.length} verdict(s). Re-run the queue export to see what's left.`,
+  );
 }
 
-main().catch((e) => {
-  console.error("Error:", e.message);
-  process.exit(1);
-});
+// Only run when invoked directly — the pure helpers above are imported by
+// _apply-pac-curation.test.ts, which must not trigger a database write.
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((e) => {
+    console.error("Error:", e.message);
+    process.exit(1);
+  });
+}
