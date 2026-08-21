@@ -577,9 +577,21 @@ function App2Inner() {
     );
   }
 
-  // Soft-tier "See options →" (nothing refused yet) → informational framing.
-  function handleBudgetBlock() {
-    setBudgetModal({ blocked: false });
+  // Shared `onShowBudgetOptions` handler for BOTH the soft-tier ribbon "See
+  // options →" (nothing refused yet — called with no args) AND a
+  // budget_blocked research card's "More options →" (a research call WAS
+  // refused — called with the SeatResearch entry's `upstream` flag). Only
+  // the latter opens the refused-turn framing, and only when `upstream` is
+  // the literal boolean `true` — several callers still do a bare
+  // `onClick={onShowBudgetOptions}`, which hands React's SyntheticEvent as
+  // the first arg; a loose truthy check would misread that as "upstream"
+  // and show the wrong (refused-turn) modal for a plain ribbon click.
+  function handleBudgetBlock(upstream) {
+    setBudgetModal(
+      upstream === true
+        ? { blocked: true, upstream: true }
+        : { blocked: false },
+    );
   }
 
   // An issue-conversation turn (intake or edit modal) hit the budget gate:

@@ -96,12 +96,73 @@ describe("isUpstreamAccountExhausted", () => {
     expect(isUpstreamAccountExhausted(err)).toBe(true);
   });
 
+  // Prepaid credits exhausted — a real, still-occurring message (verified via
+  // live anthropics/claude-code GitHub issues, not in the current official
+  // docs) that's a DIFFERENT cause than the self-set spend limit above.
+  // Matched on message text alone since the `error.type` for this shape is
+  // unconfirmed in the wild — see isUpstreamAccountExhausted's doc comment.
+  it("is true for a 400 low-credit-balance block regardless of error.type", () => {
+    const err = apiError(400, {
+      type: "invalid_request_error",
+      message: "Your credit balance is too low to access the Anthropic API.",
+    });
+    expect(isUpstreamAccountExhausted(err)).toBe(true);
+  });
+
+  it("is true for the low-credit-balance message even under an unexpected error.type", () => {
+    const err = apiError(400, {
+      type: "insufficient_balance_error",
+      message: "Your credit balance is too low to access the Anthropic API.",
+    });
+    expect(isUpstreamAccountExhausted(err)).toBe(true);
+  });
+
+  it("is true for a 403 permission_error (account/org-level by definition)", () => {
+    const err = apiError(403, {
+      type: "permission_error",
+      message:
+        "Your API key does not have permission to use the specified resource.",
+    });
+    expect(isUpstreamAccountExhausted(err)).toBe(true);
+  });
+
   it("is false for a plain 500", () => {
     const err = apiError(500, {
       type: "api_error",
       message: "Internal server error",
     });
     expect(isUpstreamAccountExhausted(err)).toBe(false);
+  });
+
+  // -------------------------------------------------------------------------
+  // A real `Headers`-like object (only `.get`, no bracket/enumerable keys) —
+  // what a future SDK version could hand us instead of today's plain-object
+  // Proxy. A plain-object-only reader would silently read `undefined` here
+  // and turn this ordinary rate limit into a false "account exhausted"
+  // match; these tests fail loudly if that regresses.
+  // -------------------------------------------------------------------------
+  it("is false for an ordinary 429 when headers is a real Headers object carrying retry-after", () => {
+    const err = apiError(
+      429,
+      {
+        type: "rate_limit_error",
+        message: "Number of requests has exceeded your rate limit.",
+      },
+      new Headers({ "retry-after": "2" }) as unknown as Record<string, string>,
+    );
+    expect(isUpstreamAccountExhausted(err)).toBe(false);
+  });
+
+  it("is true for a spend-cap 429 when headers is a real Headers object with no retry-after", () => {
+    const err = apiError(
+      429,
+      {
+        type: "rate_limit_error",
+        message: "You have reached your API usage limits.",
+      },
+      new Headers() as unknown as Record<string, string>,
+    );
+    expect(isUpstreamAccountExhausted(err)).toBe(true);
   });
 });
 

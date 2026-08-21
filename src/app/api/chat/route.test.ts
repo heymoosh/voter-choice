@@ -1345,6 +1345,56 @@ describe("POST /api/chat — upstream account-level exhaustion vs. transient rat
     const body = (await res.json()) as { code?: string };
     expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
   });
+
+  it("prefers the community-budget-exhausted continuity payload over the upstream 503 when OUR tier is ALSO exhausted (correlated-by-construction race)", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(429, {
+        type: "rate_limit_error",
+        message: "You have reached your API usage limits.",
+        details: { error_code: "enforced_spend_limit_reached" },
+      }),
+    );
+    // Our own tracked spend reads "normal" at the top of the request (the
+    // gate check + the pre-call read both see it), then a sibling request
+    // pushes the durable tally to "exhausted" before THIS request's
+    // Anthropic call comes back — the same race the 429-branch check below
+    // guards against, just triggered via the upstream-shaped error instead
+    // of a plain 429.
+    vi.mocked(getBudgetStatusAsync)
+      .mockResolvedValueOnce({
+        tier: "normal",
+        percent: 12,
+        estimatedSpendUSD: 6,
+      })
+      .mockResolvedValueOnce({
+        tier: "normal",
+        percent: 12,
+        estimatedSpendUSD: 6,
+      })
+      .mockResolvedValue({
+        tier: "exhausted",
+        percent: 100,
+        estimatedSpendUSD: 50.5,
+      });
+
+    const res = await POST(makeChatRequest() as never);
+
+    // Community-budget payload, NOT the upstream 503 — both are true here,
+    // but only the community one is HONEST: it doesn't claim our budget is
+    // healthy while it's actually the state that's exhausted.
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      status?: string;
+      resetAt?: string;
+      handoffPrompt?: string;
+      code?: string;
+    };
+    expect(body.status).toBe("budget_exhausted");
+    expect(body.code).toBeUndefined();
+    expect(typeof body.resetAt).toBe("string");
+    expect((body.handoffPrompt ?? "").length).toBeGreaterThan(0);
+  });
 });
 
 // ---------------------------------------------------------------------------

@@ -624,7 +624,10 @@ function ChallengerRow({
           <p>
             {t("repCard.liveResearchPaused")}{" "}
             {onShowBudgetOptions && (
-              <button className="linklike" onClick={onShowBudgetOptions}>
+              <button
+                className="linklike"
+                onClick={() => onShowBudgetOptions(research.upstream)}
+              >
                 {t("repCard.moreOptions")}
               </button>
             )}

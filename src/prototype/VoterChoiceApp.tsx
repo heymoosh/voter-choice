@@ -6987,7 +6987,12 @@ const CHAT_BLOCK_MESSAGES = {
 };
 
 // Budget block codes route to the BudgetExhaustedModal (handoff), not a banner.
-const CHAT_BUDGET_CODES = new Set(['BUDGET_SOFT_CLOSE', 'BUDGET_HANDOFF', 'BUDGET_EXHAUSTED']);
+// BUDGET_UPSTREAM_EXHAUSTED (a sustained Anthropic-account block, distinct
+// from our own community budget — see route.ts's isUpstreamAccountExhausted)
+// routes here too, same as the redesign's CHAT_BUDGET_CODES
+// (src/prototype/redesign/chatBlocks.ts) — this Set is a deliberate separate
+// copy, not shared, so both need the same code added.
+const CHAT_BUDGET_CODES = new Set(['BUDGET_SOFT_CLOSE', 'BUDGET_HANDOFF', 'BUDGET_EXHAUSTED', 'BUDGET_UPSTREAM_EXHAUSTED']);
 
 // Resolve a block `code` → { budget } (open the budget modal) OR a banner
 // `message` string (null = generic retry banner).

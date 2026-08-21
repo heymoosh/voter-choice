@@ -1,11 +1,35 @@
 // @vitest-environment jsdom
-import { describe, it, expect, beforeAll, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import "@testing-library/jest-dom";
 import React from "react";
 import { I18nProvider } from "../VoterChoiceApp";
+
+// getChallengerResearch is mocked ONLY so the budget_blocked "More options"
+// tests below can force a specific research status without depending on
+// network/timing — same approach as HeadToHead.test.tsx. Every other
+// delegationData export (including researchChallenger, used by the
+// unrelated "Research positions" flow) stays real.
+vi.mock("./delegationData", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("./delegationData")>();
+  return {
+    ...actual,
+    getChallengerResearch: vi.fn(),
+  };
+});
+
 import { ChallengersStrip, RepCard } from "./RepCard";
+import { getChallengerResearch } from "./delegationData";
 import type { DelegationSeatVM, UserIssue } from "./delegationData";
+
+const mockGetChallengerResearch = vi.mocked(getChallengerResearch);
+
+// Default to "no research attempted yet" — the real getChallengerResearch's
+// behavior for an unseeded challenger id — so every test that doesn't care
+// about research state renders exactly as it did before this mock existed.
+beforeEach(() => {
+  mockGetChallengerResearch.mockReturnValue(undefined);
+});
 
 // RepCard's money-trail disclosure starts open on desktop widths — force
 // that path so the money-gap scale is present without a click.
@@ -129,14 +153,17 @@ function renderCard(
   );
 }
 
-function renderStrip(seat: DelegationSeatVM) {
+function renderStrip(
+  seat: DelegationSeatVM,
+  onShowBudgetOptions: (upstream?: boolean) => void = () => {},
+) {
   return render(
     <I18nProvider>
       <ChallengersStrip
         seat={seat}
         userIssues={userIssues}
         stateCode="TX"
-        onShowBudgetOptions={() => {}}
+        onShowBudgetOptions={onShowBudgetOptions}
       />
     </I18nProvider>,
   );
@@ -540,6 +567,49 @@ describe("RepCard roster provenance containment", () => {
 
     expect(onOpenDuel).toHaveBeenCalledWith(seat.id);
     expect(onVerdict).not.toHaveBeenCalled();
+  });
+});
+
+describe("RepCard challenger research — budget_blocked honesty", () => {
+  function seatWithOneChallenger() {
+    return mkSeat({
+      challengers: [
+        {
+          id: "verified",
+          name: "Verified Challenger",
+          party: "Democrat",
+          totalReceipts: 50000,
+          rosterProvenance: verifiedRosterProvenance,
+        },
+      ],
+    });
+  }
+
+  it("passes upstream:false through to onShowBudgetOptions for a community-budget block", () => {
+    mockGetChallengerResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: false,
+    });
+    const onShowBudgetOptions = vi.fn();
+
+    renderStrip(seatWithOneChallenger(), onShowBudgetOptions);
+    screen.getByTestId("challenger-budget-blocked");
+    fireEvent.click(screen.getByText("More options →"));
+
+    expect(onShowBudgetOptions).toHaveBeenCalledWith(false);
+  });
+
+  it("passes upstream:true through when the block was a sustained Anthropic-account exhaustion, not the community budget", () => {
+    mockGetChallengerResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: true,
+    });
+    const onShowBudgetOptions = vi.fn();
+
+    renderStrip(seatWithOneChallenger(), onShowBudgetOptions);
+    fireEvent.click(screen.getByText("More options →"));
+
+    expect(onShowBudgetOptions).toHaveBeenCalledWith(true);
   });
 });
 

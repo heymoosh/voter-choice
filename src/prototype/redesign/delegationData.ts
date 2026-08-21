@@ -1035,9 +1035,12 @@ export type SeatResearch =
   | { status: "loading" }
   | { status: "done"; scores: AlignmentScore[] }
   | { status: "unavailable" }
-  /** The server refused on the community-budget gate — research is paused,
-   *  not failed; the UI offers the budget options instead of a retry. */
-  | { status: "budget_blocked" };
+  /** The server refused on a budget gate — research is paused, not failed;
+   *  the UI offers the budget options instead of a retry. `upstream` marks
+   *  a sustained Anthropic-account block (BUDGET_UPSTREAM_EXHAUSTED) as
+   *  distinct from our own community budget (BUDGET_EXHAUSTED) — the modal
+   *  must not blame the community budget when it isn't the cause. */
+  | { status: "budget_blocked"; upstream: boolean };
 
 const seatResearch = new Map<string, SeatResearch>();
 
@@ -1092,7 +1095,10 @@ export function preloadSeatResearch(
       if (res && res.scores && res.scores.length > 0) {
         seatResearch.set(seat.id, { status: "done", scores: res.scores });
       } else if (res?.blocked) {
-        seatResearch.set(seat.id, { status: "budget_blocked" });
+        seatResearch.set(seat.id, {
+          status: "budget_blocked",
+          upstream: !!res.upstream,
+        });
       } else {
         seatResearch.set(seat.id, { status: "unavailable" });
       }
@@ -1168,7 +1174,10 @@ export function researchChallenger(
         scores: res.scores,
       });
     } else if (res?.blocked) {
-      challengerResearchStore.set(challenger.id, { status: "budget_blocked" });
+      challengerResearchStore.set(challenger.id, {
+        status: "budget_blocked",
+        upstream: !!res.upstream,
+      });
     } else {
       challengerResearchStore.set(challenger.id, { status: "unavailable" });
     }

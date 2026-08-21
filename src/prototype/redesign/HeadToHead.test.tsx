@@ -367,13 +367,27 @@ describe("HeadToHead — Frame 6 challenger empty states", () => {
 
   it("shows the research-paused state with a working budget-options link", () => {
     const onShowBudgetOptions = vi.fn();
-    mockGetResearch.mockReturnValue({ status: "budget_blocked" });
+    mockGetResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: false,
+    });
     renderDuel(mkSeat(), { onShowBudgetOptions });
     expect(screen.getByTestId("duel-budget-blocked")).toHaveTextContent(
       "Live research is paused this month",
     );
     fireEvent.click(screen.getByText("More options →"));
-    expect(onShowBudgetOptions).toHaveBeenCalled();
+    expect(onShowBudgetOptions).toHaveBeenCalledWith(false);
+  });
+
+  it("passes upstream:true through to onShowBudgetOptions when the block was a sustained Anthropic-account exhaustion, not the community budget", () => {
+    const onShowBudgetOptions = vi.fn();
+    mockGetResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: true,
+    });
+    renderDuel(mkSeat(), { onShowBudgetOptions });
+    fireEvent.click(screen.getByText("More options →"));
+    expect(onShowBudgetOptions).toHaveBeenCalledWith(true);
   });
 
   it("shows the no-FEC-match state in the money column instead of a fabricated $0", () => {

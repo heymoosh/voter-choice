@@ -668,7 +668,7 @@ export function HeadToHead({
                         <button
                           type="button"
                           className="linklike"
-                          onClick={onShowBudgetOptions}
+                          onClick={() => onShowBudgetOptions(research.upstream)}
                         >
                           {t("repCard.moreOptions")}
                         </button>
