@@ -196,6 +196,17 @@ export const LAUNCH_FLAG_REGISTRY: readonly LaunchFlagEntry[] = [
     readAt: "src/lib/server/rate-limit.ts",
     note: "A value change (100 -> 10 before launch), not a flag flip. Already tracked as its own line item on the Go-live EPIC.",
   },
+  {
+    envVar: "NEXT_PUBLIC_LAUNCH_ON_DEVICE_AI",
+    isLaunchConvention: true,
+    surface: "client",
+    status: "pre_launch_dark",
+    gates:
+      "Dev-only on-device (WebLLM) theme-extraction comparison surface: the /dev/on-device-ai page and its /api/dev/theme-extraction-compare reference API route",
+    readAt:
+      "src/app/dev/on-device-ai/page.tsx and src/app/api/dev/theme-extraction-compare/route.ts",
+    note: "Confirmed dark: isolated, flag-gated on-device-AI spike (evaluation only, no live-app caller). Leave UNSET — both surfaces 404 when off. Flipping ON only exposes an internal dev/test comparison tool, not a voter-facing feature.",
+  },
 ] as const;
 
 /**

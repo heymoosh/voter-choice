@@ -22,6 +22,22 @@ import { resolve } from "path";
  *     (src/lib/useGooglePlacesAutocomplete.ts) and pings/loads icons from
  *     these hosts. Missed on the first pass; caught by the report-only
  *     violations on the home page before this ever reached enforce mode.
+ *   - https://huggingface.co / https://*.hf.co / https://raw.githubusercontent.com
+ *     — the flag-gated on-device-AI dev spike (/dev/on-device-ai,
+ *     src/lib/onDeviceAI/webllmClient.ts) loads @mlc-ai/web-llm model
+ *     weights from huggingface.co (verified against the installed package's
+ *     source: node_modules/@mlc-ai/web-llm/lib/index.js model URLs) and
+ *     compiled model libs (WASM) from raw.githubusercontent.com
+ *     (mlc-ai/binary-mlc-llm-libs). *.huggingface.co / *.hf.co cover
+ *     Hugging Face's LFS/CDN subdomains (e.g. cdn-lfs.huggingface.co) that
+ *     the base-domain URLs in the package's source redirect through for the
+ *     actual model-weight bytes. worker-src 'self' blob: covers the
+ *     package's WASM execution. This is a single, additive widening of the
+ *     one global CSP entry (not a second route-scoped header — Next.js
+ *     applies ALL matching headers() entries and the browser intersects
+ *     same-named headers, so a narrower per-route addition would not
+ *     actually relax anything). Report-only today, so these widen an
+ *     observational policy, not an enforced one.
  *
  * script-src allows 'unsafe-inline' because Next.js's App Router injects
  * inline hydration/RSC-payload scripts without nonces by default; tightening
@@ -34,7 +50,8 @@ const CSP_REPORT_ONLY = [
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://maps.gstatic.com",
-  "connect-src 'self' https://api.anthropic.com https://maps.googleapis.com",
+  "connect-src 'self' https://api.anthropic.com https://maps.googleapis.com https://huggingface.co https://*.huggingface.co https://*.hf.co https://raw.githubusercontent.com",
+  "worker-src 'self' blob:",
   "frame-ancestors 'none'",
 ].join("; ");
 
