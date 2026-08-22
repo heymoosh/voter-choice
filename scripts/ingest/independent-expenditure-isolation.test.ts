@@ -201,7 +201,16 @@ describe("independent expenditures never enter funding-mix math", () => {
       .map((file) => relative(REPO_ROOT, file).split(sep).join("/"))
       .filter((file) => !ALLOWED_REFERENCE_FILES.has(file))
       .filter((file) => {
-        const source = readFileSync(resolve(REPO_ROOT, file), "utf8");
+        // Comments stripped: this repo-wide sweep covers hundreds of files,
+        // and a module documenting WHY it keeps outside spending out (see
+        // corporatePacClaim.ts's "OUT OF SCOPE - independent expenditures"
+        // note) is practising the discipline, not breaking it. Only real
+        // identifiers and imports count as a reference - which is what
+        // IE_USAGE_PATTERNS says above. The curated FUNDING_MIX_MODULES
+        // sweep deliberately still reads raw source: that list is eight
+        // hand-picked money modules where even a prose mention is worth a
+        // human look.
+        const source = codeOnly(readFileSync(resolve(REPO_ROOT, file), "utf8"));
         return IE_USAGE_PATTERNS.some((pattern) => pattern.test(source));
       });
     expect(offenders).toEqual([]);

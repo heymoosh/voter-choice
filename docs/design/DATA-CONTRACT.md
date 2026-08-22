@@ -207,7 +207,7 @@ fabricated number:
 
 - **Direct-to-candidate** — a billionaire personally wrote the candidate's committee a
   check (capped ~$3,300/cycle by law). Carries `candidateId`.
-- **Via a Super PAC** — a billionaire gave to a PAC that is *separately* known (via §1's
+- **Via a Super PAC** — a billionaire gave to a PAC that is _separately_ known (via §1's
   `outsideSpending` / `topPacs` data) to have spent money supporting or opposing a
   candidate. `candidateId` is deliberately NULL on these rows — a PAC pools many donors'
   money, so this never claims "this billionaire's exact dollars funded the ad against
@@ -217,11 +217,11 @@ fabricated number:
 
 Every match carries a confidence tier design must not hide or flatten:
 
-| Confidence | What it means                                                                                        | 2026 cycle so far (first live run) |
-| ---------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------- |
-| `high`     | name match + employer field corroborates (e.g. "GRIFFIN, KENNETH" / employer "CITADEL")               | 456 rows                            |
-| `medium`   | name match, employer blank/generic (retired, self-employed, N/A) — not confirmed, not contradicted    | 205 rows                            |
-| `low`      | name match only, employer points somewhere unrelated — likely a same-name stranger, kept for human review, not meant to surface | 172 rows                            |
+| Confidence | What it means                                                                                                                   | 2026 cycle so far (first live run) |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------- |
+| `high`     | name match + employer field corroborates (e.g. "GRIFFIN, KENNETH" / employer "CITADEL")                                         | 456 rows                           |
+| `medium`   | name match, employer blank/generic (retired, self-employed, N/A) — not confirmed, not contradicted                              | 205 rows                           |
+| `low`      | name match only, employer points somewhere unrelated — likely a same-name stranger, kept for human review, not meant to surface | 172 rows                           |
 
 **Ship gate, same shape as §4's promise ledger:** rows exist so a human can review them,
 not so a UI can show them unreviewed. Any design must either omit `low` entirely or
@@ -244,3 +244,140 @@ interface BillionaireDonorMatch {
   sourceUrl: string; // the FEC bulk file this row came from
 }
 ```
+
+## 9. "$0 corporate PAC money" — the claim, and when we may make it (DB SPEC · serve shape SPEC)
+
+The design asks whether a challenger can be shown as **"100% Grassroots / $0 corporate
+PAC"**. It can — but only for a subset of candidates, and only as a **dated** statement.
+This section is the contract for which.
+
+**Scope of "corporate"**: the End Citizens United **"No Corporate PAC"** pledge
+definition (Muxin, 2026-08-20) — business-connected PACs, i.e. corporations **plus**
+trade associations and co-ops. Labor, membership, leadership and non-connected PACs are
+not corporate money under this definition. The scope lives in one constant,
+`CORPORATE_PLEDGE_CLASSES` (`src/lib/pacSponsorClass.ts`).
+
+**The rule is inverted from normal display logic.** This is a claim about ABSENCE, so it
+is only affirmative when the evidence is COMPLETE. Any dollar we cannot attribute
+returns `unverified`. A missing badge is a better outcome than a false "$0".
+
+| Verdict             | Means                                                                                                                                                                                                                                          | Design must show                                                                    |
+| ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| `no_pac_money`      | Filed a **dated** summary reporting **no PAC contributions of any kind**, with no named committee rows of ours contradicting it                                                                                                                | Strongest form — "No PAC contributions of any kind in FEC filings through `<date>`" |
+| `no_corporate_pac`  | Took PAC money, none of it corporate, every contributing committee classified, the filed total reconciled to **both** thresholds below, and the filing **dated**                                                                               | "No corporate PAC contributions in FEC filings through `<date>`"                    |
+| `has_corporate_pac` | A named contributing committee is corporate/trade-association (the row's existence, not its net dollars — a refund can net one to zero). Settled before the summary is even read, so it survives an unusable filed total and an undated filing | The corporate figure, not a badge                                                   |
+| `unverified`        | Anything short of the above: a committee unclassified or missing, a total that won't reconcile, a figure that isn't usable, or a filing with no coverage date. `reason` says which                                                             | "PAC sources not fully identified yet" — **never** a $0 claim                       |
+| `no_filing`         | No FEC summary on file for this cycle                                                                                                                                                                                                          | "No FEC filing yet" — **never** $0                                                  |
+
+**What "reconciled" means, exactly.** Two bounds, both required, because neither one
+holds on its own:
+
+- `MIN_RECONCILED_SHARE = 0.95` — the named per-committee rows must account for at least
+  95% of the filed PAC total. The gap exists because the bulk contribution file and the
+  summary file carry independent coverage dates, and small transaction types outside
+  24K/24P/24Z sit inside the filed total.
+- `MAX_UNRECONCILED_DOLLARS = 5_000` — and the unaccounted dollars must come to
+  **strictly less than** $5,000 in absolute terms. A share scales with the candidate;
+  $5,000 does not. 95% of a $3M PAC total leaves $150,000 invisible, which is 15-30
+  corporate PACs at max-out — exactly what the badge would be denying. $5,000 is a
+  multicandidate PAC's maximum contribution per election, so a gap strictly under it
+  cannot hold even one corporate PAC's max-out. The bound excludes its own value on
+  purpose: a gap of exactly $5,000 **is** one max-out, so a gap of $4,999 clears and a
+  gap of $5,000 does not. (Threshold pending product-owner confirmation; the mechanism is
+  the point, the number is a dial.)
+
+Named money that **exceeds** the filed total is refused too, not passed: a share above 1
+means the summary is stale or the contribution rows are a partial load, which is the same
+contradiction the filed-zero branch refuses. `reconciledShare` is therefore 0-1 on every
+verdict that survives.
+
+**Never say "$0" for a candidate with no filing.** Absence of a filing is absence of
+evidence, and the two read identically to a voter unless the copy distinguishes them.
+
+**Every affirmative claim carries a date — enforced in code, not by convention.** FEC
+coverage end dates vary per candidate; some filings run through June, others through
+February of the same year. The claim is "through `<date>` filings", never an unqualified
+present tense. `coverage_end_date` is nullable, and the ingest parser drops any
+`CVG_END_DT` that is not MM/DD/YYYY (blank included — which is what an all-zero weball
+row typically carries, i.e. the same cohort as `no_pac_money`). An affirmative verdict
+with no date is downgraded to `unverified` / `undated_filing` rather than printed
+undated.
+
+**Degenerate figures buy silence, not a badge — but never suppress a positive finding.**
+A negative filed PAC total is FEC refund arithmetic (`OTHER_POL_CMTE_CONTRIB` goes
+negative when refunds exceed the period's receipts) and means the candidate _did_ receive
+PAC money; a non-finite figure is unreadable. Neither may clear a candidate, so both
+return `unverified` — every gate is phrased so an unusable value fails closed. They do
+**not** suppress `has_corporate_pac`, which is settled first: that verdict rests on the
+existence of a contribution row inside the pledge scope and does not read the filed total
+at all, so a summary we cannot read cannot make the row stop existing. When the filed
+total is unusable, `pacDollars` is `null` (the same "we hold nothing usable" as
+`no_filing`) and `reconciledShare` is `0` — the render layer is never handed a NaN or a
+negative to print. Likewise a contribution row whose own amount is unreadable contributes
+its existence but not its dollars, so every reported figure stays finite.
+
+**Order of decision** (first match wins), for anyone tracing a verdict:
+
+1. no summary → `no_filing`
+2. filed total is exactly 0 → any named rows of ours → `unverified` / `unreconciled_total`
+   (with the computed dollars); no rows → dated ? `no_pac_money` : `unverified` /
+   `undated_filing`
+3. a corporate/trade row exists → `has_corporate_pac` (regardless of the summary)
+4. filed total non-finite or negative, or any row amount unreadable → `unverified` /
+   `unreconciled_total`
+5. an unclassified or missing-committee row exists → `unverified` /
+   `unclassified_committees`
+6. share above 1, or below `MIN_RECONCILED_SHARE`, or gap at or above
+   `MAX_UNRECONCILED_DOLLARS` → `unverified` / `unreconciled_total`
+7. otherwise → dated ? `no_corporate_pac` : `unverified` / `undated_filing`
+
+**A contributing committee we hold no filing for blocks the claim.** The read path
+left-joins `pac_committees`, so a contribution row with no matching committee arrives
+with a null sponsor class and lands in `unclassified_committees`. An inner join would
+delete the row instead — turning money we cannot attribute into money we cannot see.
+Likewise `pac_committees.status` is read as an allow-list (`auto`, `verified`); any other
+status blocks rather than clears.
+
+**Independent expenditures are a separate sentence.** A corporate super PAC spending
+_for_ a candidate is not a contribution _to_ them. That money lives in
+`independent_expenditures` and must never be folded into this verdict in either
+direction — it neither creates nor cancels a "$0 corporate PAC" claim.
+
+Serve shape (built as a server helper, `src/lib/server/corporatePacClaim.ts`; not yet
+exposed on an endpoint):
+
+```ts
+interface CorporatePacClaim {
+  verdict:
+    | "no_pac_money"
+    | "no_corporate_pac"
+    | "has_corporate_pac"
+    | "unverified"
+    | "no_filing";
+  // only on unverified
+  reason?: "unclassified_committees" | "unreconciled_total" | "undated_filing";
+  pacDollars: number | null; // filed PAC total; null = nothing on file OR not a usable figure
+  corporateDollars: number;
+  unclassifiedDollars: number;
+  reconciledShare: number; // how much of the filed total is named; 0-1 (above 1 is refused)
+  asOf: string | null; // ISO date the filing covers through
+  sourceUrl: string | null; // the FEC candidate page
+}
+```
+
+**How many candidates this covers** (prod, cycle 2026, 2,594 federal non-incumbents,
+measured 2026-08-20):
+
+- **1,206** have a filed **$0 PAC total** → `no_pac_money`, the strongest claim. (2,517
+  of 2,574 appear in the FEC summary file at all; the other 57 are `no_filing`.) Treat
+  this as an **upper bound**: it was measured before the date gate above, and an all-zero
+  weball row often carries a blank `CVG_END_DT`, so an unknown share of these 1,206 now
+  resolve to `unverified` / `undated_filing` until a dated filing lands. Re-measure
+  against the shipped helper before quoting a coverage number to design.
+- **~142** took PAC money that is fully classified and non-corporate → `no_corporate_pac`
+  (rules applied by hand against `donor_aggregates` as the denominator; the shipped
+  helper uses the filed summary total, so expect small movement). Before sponsor
+  classification this was **34** — a curated pass over the 179 still-unclassified
+  committees is the remaining lever, worth roughly another 70 candidates.
+- **~497** took corporate PAC money → no badge, show the figure.
+- The rest are `unverified` or `no_filing`.

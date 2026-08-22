@@ -56,6 +56,7 @@ import { pathToFileURL } from "node:url";
 import { sql } from "drizzle-orm";
 import { requireDb, type DbClient } from "../../db/client";
 import { pacCandidateContributions, pacCommittees } from "../../db/schema";
+import { classifyPacSponsor } from "../../src/lib/pacSponsorClass";
 import {
   DEFAULT_FEC_BULK_DIR,
   FEC_BULK_BASE_URL,
@@ -377,6 +378,12 @@ export async function upsertCommittees(
           connectedOrg: r.connectedOrg,
           sector: r.sector,
           classificationMethod: r.classificationMethod,
+          // Sponsor class is a pure function of the four filed fields above,
+          // so it is recomputed on every pass (src/lib/pacSponsorClass.ts).
+          ...(() => {
+            const { sponsorClass, method } = classifyPacSponsor(r);
+            return { sponsorClass, sponsorClassMethod: method };
+          })(),
           evidenceUrl: r.evidenceUrl,
           lastSeenCycle: r.lastSeenCycle,
         })),
@@ -393,6 +400,10 @@ export async function upsertCommittees(
           // 'verified'/'rejected' are human decisions and keep their sector.
           sector: sql`CASE WHEN ${pacCommittees.status} = 'auto' THEN excluded.sector ELSE ${pacCommittees.sector} END`,
           classificationMethod: sql`CASE WHEN ${pacCommittees.status} = 'auto' THEN excluded.classification_method ELSE ${pacCommittees.classificationMethod} END`,
+          // Sponsor class is derived from the filed fields, so a re-run may
+          // always refresh it — EXCEPT where a human wrote it by hand.
+          sponsorClass: sql`CASE WHEN ${pacCommittees.sponsorClassMethod} = 'human' THEN ${pacCommittees.sponsorClass} ELSE excluded.sponsor_class END`,
+          sponsorClassMethod: sql`CASE WHEN ${pacCommittees.sponsorClassMethod} = 'human' THEN ${pacCommittees.sponsorClassMethod} ELSE excluded.sponsor_class_method END`,
           evidenceUrl: sql`excluded.evidence_url`,
           lastSeenCycle: sql`excluded.last_seen_cycle`,
           updatedAt: sql`now()`,
