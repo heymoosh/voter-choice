@@ -207,13 +207,16 @@ export function useIssueConversation({
             ]);
           }
         },
-        onBudgetBlock: () => {
+        onBudgetBlock: (code) => {
           // Preserve the conversation; the host opens the budget modal and
-          // may hand back a retry that replays this very turn.
+          // may hand back a retry that replays this very turn. Forward the
+          // code too — BUDGET_UPSTREAM_EXHAUSTED means the Anthropic account
+          // itself is blocked (not our tracked community budget), and the
+          // modal needs that to avoid claiming the wrong thing ran out.
           setBusy(false);
           setLog((prev) => prev.slice(0, -1));
           setDraft(text);
-          onBudgetBlock?.(() => send(text));
+          onBudgetBlock?.(() => send(text), code);
         },
         onError: (reason) => {
           setBusy(false);

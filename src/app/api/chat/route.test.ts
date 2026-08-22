@@ -106,6 +106,12 @@ vi.mock("@anthropic-ai/sdk", async () => {
 // ---------------------------------------------------------------------------
 
 import { POST } from "./route";
+// Runtime (not type-only) import of the mocked SDK — needed to build real
+// Anthropic.APIError instances via APIError.generate() for the
+// upstream-account-exhaustion tests below. The mock preserves the real
+// APIError class (see the vi.mock block above), so this constructs actual
+// error instances, not a stand-in.
+import AnthropicSDK from "@anthropic-ai/sdk";
 import { SAFETY_HEADER } from "../../../lib/prompts/safety-header";
 import { checkRateLimitAsync } from "../../../lib/server/rate-limit";
 import {
@@ -1180,6 +1186,214 @@ describe("POST /api/chat — Phase 9 budget exhaustion returns structured 200", 
     expect(body.status).toBe("budget_exhausted");
     // The hard-stop must prevent any model call (no billing).
     expect(messagesCreateMock).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Upstream-account exhaustion (org spend cap / self-set spend limit /
+// billing hold) vs. a transient per-minute rate limit.
+// ---------------------------------------------------------------------------
+//
+// Root cause: our own $50/mo community budget (budget.ts) and the org's real
+// Anthropic account are two separate systems that can be out of step — the
+// reported bug was the community budget reading ~0% while the shared
+// account had actually hit ITS OWN spend cap. Before this fix, every 4xx/402
+// from Anthropic that wasn't a plain 429/529 fell into the generic 500 "Chat
+// service error" catch-all, which the client renders as a bare red line
+// instead of the continuity flow (tip jar / BYOK / handoff) it gets for a
+// real community-budget block.
+//
+// Shapes below are taken from the current Anthropic API docs
+// (platform.claude.com/docs/en/api/errors, .../api/rate-limits), not
+// assumed — see isUpstreamAccountExhausted's doc comment in route.ts.
+
+/** Build a real Anthropic.APIError (or subclass) via the SDK's own
+ *  `.generate()`, exactly as core.js does when a real response comes back
+ *  non-OK. `headers` defaults to no `retry-after`, matching the documented
+ *  spend-cap / spend-limit shapes. */
+function apiError(
+  status: number,
+  errorBody: { type?: string; message?: string; details?: unknown },
+  headers: Record<string, string> = {},
+): Error {
+  return (
+    AnthropicSDK as unknown as {
+      APIError: { generate: (...args: unknown[]) => Error };
+    }
+  ).APIError.generate(
+    status,
+    { type: "error", error: errorBody, request_id: "req_test" },
+    undefined,
+    headers,
+  );
+}
+
+describe("POST /api/chat — upstream account-level exhaustion vs. transient rate limit", () => {
+  it("treats a 429 tier spend-cap block (enforced_spend_limit_reached, no retry-after) as upstream exhaustion — opens the continuity flow, not a generic error", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(429, {
+        type: "rate_limit_error",
+        message:
+          "You have reached your API usage limits: your organization has crossed its monthly API usage threshold, set based on your organization's API tier. You will regain access on 2026-09-01 at 00:00 UTC.",
+        details: { error_code: "enforced_spend_limit_reached" },
+      }),
+    );
+
+    const res = await POST(makeChatRequest() as never);
+
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as {
+      code?: string;
+      status?: string;
+      budget?: unknown;
+      error?: string;
+    };
+    expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+    // Must NOT reuse the community-budget-exhausted payload shape or claim a
+    // fabricated community-budget number — our own tracked spend may be
+    // nowhere near this.
+    expect(body.status).toBeUndefined();
+    expect(body.budget).toBeUndefined();
+    expect(body.error ?? "").not.toMatch(/community budget is used up/i);
+  });
+
+  it("treats the SAME spend-cap block via the retry-after fallback when details.error_code is absent", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(429, {
+        type: "rate_limit_error",
+        message: "You have reached your API usage limits.",
+        // No `details` field — exercises the documented fallback signal:
+        // a spend-cap 429 never carries retry-after.
+      }),
+    );
+
+    const res = await POST(makeChatRequest() as never);
+
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+  });
+
+  it("still treats an ordinary 429 rate limit (has retry-after, no spend-cap error_code) as transient — same API_RATE_LIMIT 429 as before", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(
+        429,
+        {
+          type: "rate_limit_error",
+          message: "Number of requests has exceeded your rate limit.",
+        },
+        { "retry-after": "2" },
+      ),
+    );
+
+    const res = await POST(makeChatRequest() as never);
+
+    expect(res.status).toBe(429);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("API_RATE_LIMIT");
+  });
+
+  it("treats a 400 self-set org/workspace spend-limit block as upstream exhaustion", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(400, {
+        type: "invalid_request_error",
+        message:
+          "You have reached your specified API usage limits. You will regain access on 2026-09-01 at 00:00 UTC.",
+      }),
+    );
+
+    const res = await POST(makeChatRequest() as never);
+
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+  });
+
+  it("does NOT treat an ordinary malformed-request 400 as upstream exhaustion — falls through to the existing generic 500 unchanged", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(400, {
+        type: "invalid_request_error",
+        message: "messages: at least one message is required.",
+      }),
+    );
+
+    const res = await POST(makeChatRequest() as never);
+
+    expect(res.status).toBe(500);
+    const body = (await res.json()) as { code?: string; error?: string };
+    expect(body.code).not.toBe("BUDGET_UPSTREAM_EXHAUSTED");
+    expect(body.error).toBe("Chat service error");
+  });
+
+  it("treats a 402 billing_error as upstream exhaustion", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(402, {
+        type: "billing_error",
+        message: "There's an issue with your billing or payment information.",
+      }),
+    );
+
+    const res = await POST(makeChatRequest() as never);
+
+    expect(res.status).toBe(503);
+    const body = (await res.json()) as { code?: string };
+    expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+  });
+
+  it("prefers the community-budget-exhausted continuity payload over the upstream 503 when OUR tier is ALSO exhausted (correlated-by-construction race)", async () => {
+    messagesCreateMock.mockReset();
+    messagesCreateMock.mockRejectedValueOnce(
+      apiError(429, {
+        type: "rate_limit_error",
+        message: "You have reached your API usage limits.",
+        details: { error_code: "enforced_spend_limit_reached" },
+      }),
+    );
+    // Our own tracked spend reads "normal" at the top of the request (the
+    // gate check + the pre-call read both see it), then a sibling request
+    // pushes the durable tally to "exhausted" before THIS request's
+    // Anthropic call comes back — the same race the 429-branch check below
+    // guards against, just triggered via the upstream-shaped error instead
+    // of a plain 429.
+    vi.mocked(getBudgetStatusAsync)
+      .mockResolvedValueOnce({
+        tier: "normal",
+        percent: 12,
+        estimatedSpendUSD: 6,
+      })
+      .mockResolvedValueOnce({
+        tier: "normal",
+        percent: 12,
+        estimatedSpendUSD: 6,
+      })
+      .mockResolvedValue({
+        tier: "exhausted",
+        percent: 100,
+        estimatedSpendUSD: 50.5,
+      });
+
+    const res = await POST(makeChatRequest() as never);
+
+    // Community-budget payload, NOT the upstream 503 — both are true here,
+    // but only the community one is HONEST: it doesn't claim our budget is
+    // healthy while it's actually the state that's exhausted.
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as {
+      status?: string;
+      resetAt?: string;
+      handoffPrompt?: string;
+      code?: string;
+    };
+    expect(body.status).toBe("budget_exhausted");
+    expect(body.code).toBeUndefined();
+    expect(typeof body.resetAt).toBe("string");
+    expect((body.handoffPrompt ?? "").length).toBeGreaterThan(0);
   });
 });
 

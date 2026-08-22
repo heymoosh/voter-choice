@@ -864,10 +864,17 @@ export interface CandidateResearchResult {
   scores?: AlignmentScore[];
   /** Set when no citable sources were found for any issue. */
   unavailable?: boolean;
-  /** Set when the server refused the research on a community-budget gate
-   *  (BUDGET_EXHAUSTED) — distinct from unavailable so the UI can offer the
-   *  budget options instead of a pointless retry. */
+  /** Set when the server refused the research on a budget gate — either our
+   *  own community budget (BUDGET_EXHAUSTED) or a sustained upstream
+   *  Anthropic-account block (BUDGET_UPSTREAM_EXHAUSTED) — distinct from
+   *  unavailable so the UI can offer the budget options instead of a
+   *  pointless retry. */
   blocked?: boolean;
+  /** Set alongside `blocked` when the cause was specifically the upstream
+   *  Anthropic-account block, NOT our own community budget — the UI must not
+   *  claim the community budget is what's exhausted in that case (see
+   *  BudgetModal's `upstream` prop). */
+  upstream?: boolean;
   /** Legacy prose summary — present in older responses; ignored by new UI. */
   summary?: string;
 }
@@ -907,11 +914,16 @@ export async function fetchCandidateResearch(input: {
       signal: controller.signal,
     });
     if (!res.ok) {
-      // Surface the budget gate distinctly (503 + BUDGET_EXHAUSTED); every
-      // other failure keeps the legacy null contract for old-app callers.
+      // Surface the budget gate distinctly (503 + BUDGET_EXHAUSTED, or 503 +
+      // BUDGET_UPSTREAM_EXHAUSTED for a sustained Anthropic-account block —
+      // same detector /api/chat uses); every other failure keeps the legacy
+      // null contract for old-app callers.
       try {
         const body = (await res.json()) as { code?: string };
         if (body?.code === "BUDGET_EXHAUSTED") return { blocked: true };
+        if (body?.code === "BUDGET_UPSTREAM_EXHAUSTED") {
+          return { blocked: true, upstream: true };
+        }
       } catch {
         /* non-JSON error body */
       }

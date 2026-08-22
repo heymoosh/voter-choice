@@ -195,3 +195,28 @@ describe("useIssueConversation — disambiguation question-cap counting (#175)",
     );
   });
 });
+
+// Regression: the host's onBudgetBlock must learn WHICH block code fired, not
+// just that the turn failed. BUDGET_UPSTREAM_EXHAUSTED means the Anthropic
+// account itself is on hold — a different cause than the community budget's
+// own BUDGET_* codes — and App2's BudgetModal needs the code to avoid
+// blaming the wrong thing (see App2.tsx's handleConvoBudgetBlock).
+describe("useIssueConversation — forwards the block code to the host's onBudgetBlock", () => {
+  it("passes the retry function AND the block code through unchanged", () => {
+    const onBudgetBlock = vi.fn();
+    const { result } = renderHook(() =>
+      useIssueConversation({ seedIssues: SEED_ISSUES, onBudgetBlock }),
+    );
+
+    sendChatTurn.mockImplementationOnce((_args: any, cb: any) => {
+      cb.onBudgetBlock("BUDGET_UPSTREAM_EXHAUSTED");
+      return Promise.resolve();
+    });
+    act(() => result.current.send("also housing costs"));
+
+    expect(onBudgetBlock).toHaveBeenCalledTimes(1);
+    const [retry, code] = onBudgetBlock.mock.calls[0];
+    expect(typeof retry).toBe("function");
+    expect(code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+  });
+});

@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from "vitest";
 import {
   fetchBallotFromAddress,
   fetchBallotFromText,
+  fetchCandidateResearch,
   stateCodeFrom,
   racesSpanMultipleParties,
   filterRacesByParty,
@@ -168,6 +169,69 @@ describe("ballot roster provenance", () => {
       ballotStatus: "verified_current_ballot",
       selectableAsReplacement: true,
     });
+  });
+});
+
+/**
+ * fetchCandidateResearch — the `/api/research-candidate` client. Both budget
+ * codes the server can 503 with must surface distinctly: BUDGET_EXHAUSTED is
+ * OUR community budget; BUDGET_UPSTREAM_EXHAUSTED is a sustained Anthropic-
+ * account block that must NOT be reported (or rendered) as the community
+ * budget being the cause — see BudgetModal's `upstream` prop.
+ */
+describe("fetchCandidateResearch — budget-gate codes", () => {
+  const input = {
+    candidateName: "Jane Doe",
+    jurisdiction: "U.S. House — CD-1, NJ",
+    issues: [{ canonicalIssue: "healthcare_affordability" }],
+  };
+
+  it("maps BUDGET_EXHAUSTED to { blocked: true } with no upstream flag", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          error: "Community AI budget exhausted",
+          code: "BUDGET_EXHAUSTED",
+        }),
+      }),
+    );
+
+    const result = await fetchCandidateResearch(input);
+    expect(result).toEqual({ blocked: true });
+  });
+
+  it("maps BUDGET_UPSTREAM_EXHAUSTED to { blocked: true, upstream: true }", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          error: "shared AI access is temporarily on hold",
+          code: "BUDGET_UPSTREAM_EXHAUSTED",
+        }),
+      }),
+    );
+
+    const result = await fetchCandidateResearch(input);
+    expect(result).toEqual({ blocked: true, upstream: true });
+  });
+
+  it("still returns null for an ordinary failure (legacy contract unchanged)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn().mockResolvedValue({
+        ok: false,
+        json: async () => ({
+          error: "Research failed",
+          code: "RESEARCH_ERROR",
+        }),
+      }),
+    );
+
+    const result = await fetchCandidateResearch(input);
+    expect(result).toBeNull();
   });
 });
 

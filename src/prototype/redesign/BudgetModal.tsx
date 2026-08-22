@@ -22,6 +22,12 @@ import { useNav } from "../VoterChoiceApp";
 export function BudgetModal({
   /** true → a turn was actually refused; false → opened from the soft ribbon. */
   blocked,
+  /** true → the block is Anthropic's shared ACCOUNT hitting its own spend
+   *  cap / self-set limit / billing hold (route.ts's
+   *  isUpstreamAccountExhausted), NOT our own tracked $50/mo community
+   *  budget — that budget may be nowhere near used up. Same continuity flow
+   *  either way, but the copy must not blame the wrong thing. */
+  upstream = false,
   /** Portable prompt (same builder the handoff modal uses). */
   prompt,
   onClose,
@@ -32,6 +38,13 @@ export function BudgetModal({
   const textareaRef = useRef(null);
   const [keyReady, setKeyReady] = useState(hasByokKey());
   const nav = useNav();
+  // `onRetryWithKey` is only ever wired up for a refused CHAT/intake turn
+  // (App2's pendingRetryRef) — a research-triggered block (card-level
+  // "More options →") never has anything stashed to replay, and research
+  // never runs under BYOK at all (chatTransport.ts). Without a real retry,
+  // the "keep going right now" promise below would be false: saving a key
+  // helps the voter's NEXT chat message, not this research call.
+  const canRetryNow = Boolean(onRetryWithKey);
 
   function copyToClipboard() {
     if (!textareaRef.current) return;
@@ -57,11 +70,15 @@ export function BudgetModal({
       <div className="be-modal" onClick={(e) => e.stopPropagation()}>
         <header className="be-head">
           <div>
-            <div className="be-eyebrow">Community AI budget</div>
+            <div className="be-eyebrow">
+              {blocked && upstream ? "AI service" : "Community AI budget"}
+            </div>
             <h3 id="budget-title">
-              {blocked
-                ? "The shared budget is used up — here's how to keep going."
-                : "Keep going — your scorecard is safe."}
+              {blocked && upstream
+                ? "Our shared AI access is temporarily on hold — here's how to keep going."
+                : blocked
+                  ? "The shared budget is used up — here's how to keep going."
+                  : "Keep going — your scorecard is safe."}
             </h3>
           </div>
           <button className="be-x" onClick={onClose} aria-label="Close">
@@ -70,9 +87,15 @@ export function BudgetModal({
         </header>
 
         <p className="be-lede">
-          {blocked
-            ? "The shared community AI budget is used up for this month — this site runs on a fixed monthly pool that everyone shares, and it’s hit its limit. Everything you’ve reviewed is still safe on this device. The budget resets on the 1st of next month. To keep going right now, paste your own Anthropic API key below — free to create, you only pay for what you use."
-            : "The community AI budget is running low. Your scorecard is safe either way — here are your options if it runs out:"}
+          {blocked && upstream
+            ? canRetryNow
+              ? "Voter Choice's shared AI access has hit a temporary hold on Anthropic's side — this is NOT the community budget (that's tracked separately and may still be healthy). Everything you've reviewed is still safe on this device. To keep going right now, paste your own Anthropic API key below — free to create, you only pay for what you use."
+              : "Voter Choice's shared AI access has hit a temporary hold on Anthropic's side — this is NOT the community budget (that's tracked separately and may still be healthy). Everything you've reviewed is still safe on this device. Research on this card is paused until the shared account recovers — pasting your own Anthropic API key below won't resume it, but it does let you keep chatting elsewhere in the app right now."
+            : blocked
+              ? canRetryNow
+                ? "The shared community AI budget is used up for this month — this site runs on a fixed monthly pool that everyone shares, and it’s hit its limit. Everything you’ve reviewed is still safe on this device. The budget resets on the 1st of next month. To keep going right now, paste your own Anthropic API key below — free to create, you only pay for what you use."
+                : "The shared community AI budget is used up for this month — this site runs on a fixed monthly pool that everyone shares, and it’s hit its limit. Everything you’ve reviewed is still safe on this device. The budget resets on the 1st of next month. Research on this card is paused until then — pasting your own Anthropic API key below won't resume it, but it does let you keep chatting elsewhere in the app right now."
+              : "The community AI budget is running low. Your scorecard is safe either way — here are your options if it runs out:"}
         </p>
 
         <ByokCard onKeySaved={() => setKeyReady(true)} onClose={onClose} />

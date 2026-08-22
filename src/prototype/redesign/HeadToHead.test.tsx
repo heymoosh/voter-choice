@@ -365,15 +365,43 @@ describe("HeadToHead — Frame 6 challenger empty states", () => {
     expect(mockResearch).toHaveBeenCalled();
   });
 
-  it("shows the research-paused state with a working budget-options link", () => {
+  it("shows the research-paused state (title + community-budget cause sentence) with a working budget-options link", () => {
     const onShowBudgetOptions = vi.fn();
-    mockGetResearch.mockReturnValue({ status: "budget_blocked" });
+    mockGetResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: false,
+    });
     renderDuel(mkSeat(), { onShowBudgetOptions });
-    expect(screen.getByTestId("duel-budget-blocked")).toHaveTextContent(
-      "Live research is paused this month",
-    );
+    const panel = screen.getByTestId("duel-budget-blocked");
+    expect(panel).toHaveTextContent("Live research is paused this month");
+    // The cause sentence, not just the cause-neutral title — this is what
+    // actually names community budget vs. upstream, so it's the line that
+    // must flip with `upstream`.
+    expect(panel).toHaveTextContent("The community AI budget is used up");
     fireEvent.click(screen.getByText("More options →"));
-    expect(onShowBudgetOptions).toHaveBeenCalled();
+    expect(onShowBudgetOptions).toHaveBeenCalledWith(false);
+  });
+
+  it("passes upstream:true through to onShowBudgetOptions when the block was a sustained Anthropic-account exhaustion, not the community budget", () => {
+    const onShowBudgetOptions = vi.fn();
+    mockGetResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: true,
+    });
+    renderDuel(mkSeat(), { onShowBudgetOptions });
+    fireEvent.click(screen.getByText("More options →"));
+    expect(onShowBudgetOptions).toHaveBeenCalledWith(true);
+  });
+
+  it("never shows the community-budget claim in the duel panel for an upstream block — this is the honesty bug the audit caught (copy was blaming the pool even when upstream:true reached the component)", () => {
+    mockGetResearch.mockReturnValue({
+      status: "budget_blocked",
+      upstream: true,
+    });
+    renderDuel(mkSeat());
+    const panel = screen.getByTestId("duel-budget-blocked");
+    expect(panel).not.toHaveTextContent(/community ai budget/i);
+    expect(panel).toHaveTextContent("shared AI access is temporarily on hold");
   });
 
   it("shows the no-FEC-match state in the money column instead of a fabricated $0", () => {

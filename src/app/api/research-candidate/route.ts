@@ -31,12 +31,57 @@ import { getClientIP } from "../../../lib/server/client-ip";
 import { validateOrigin } from "../../../lib/server/validate-origin";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
+import { recordBlock } from "../../../lib/server/usage-telemetry";
+import {
+  isUpstreamAccountExhausted,
+  UPSTREAM_EXHAUSTED_CODE,
+  upstreamExhaustedResponse,
+} from "../../../lib/server/upstream-exhaustion";
 
 const MAX_FIELD = 300;
 const MAX_ISSUES = 10;
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
+}
+
+/** The 503 body every community-budget-exhausted response here uses. */
+function communityBudgetExhaustedResponse(): Response {
+  return Response.json(
+    { error: "Community AI budget exhausted", code: "BUDGET_EXHAUSTED" },
+    { status: 503 },
+  );
+}
+
+/**
+ * PRE-FLIGHT gate only (below, before any billable work): null unless OUR
+ * tier is "exhausted" OR "handoff". Research is billable, so it has always
+ * refused at handoff too — this is pre-existing behavior, unrelated to the
+ * upstream-account precedence check below. Do not conflate the two: at this
+ * point in the request nothing has failed yet, so there's no "cause" to get
+ * wrong.
+ */
+function communityBudgetGateResponse(
+  budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
+): Response | null {
+  if (budget.tier !== "exhausted" && budget.tier !== "handoff") return null;
+  return communityBudgetExhaustedResponse();
+}
+
+/**
+ * POST-UPSTREAM re-check only (inside the catch, after
+ * isUpstreamAccountExhausted has already matched — see its call site): null
+ * unless OUR tier is EXACTLY "exhausted", matching chat's
+ * communityBudgetAlreadyExhausted. At "handoff" the pool is NOT yet spent
+ * (still serving requests, just near the cap) — an upstream-account block
+ * IS the honest cause there, so it must NOT be overridden. Only "exhausted"
+ * means OUR budget genuinely explains the block.
+ */
+function communityBudgetExhaustedRecheck(
+  budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
+): Response | null {
+  if (budget.tier !== "exhausted") return null;
+  return communityBudgetExhaustedResponse();
 }
 
 export async function POST(request: NextRequest) {
@@ -55,13 +100,10 @@ export async function POST(request: NextRequest) {
   // Budget gate: research spawns a web_search sub-agent (real spend). At the
   // handoff/exhausted tiers it must surface the SAME BUDGET_EXHAUSTED code the
   // chat route uses so the client routes to the budget modal, not a retry.
-  const budget = await getBudgetStatusAsync();
-  if (budget.tier === "exhausted" || budget.tier === "handoff") {
-    return Response.json(
-      { error: "Community AI budget exhausted", code: "BUDGET_EXHAUSTED" },
-      { status: 503 },
-    );
-  }
+  const gateResponse = communityBudgetGateResponse(
+    await getBudgetStatusAsync(),
+  );
+  if (gateResponse) return gateResponse;
 
   let body: unknown;
   try {
@@ -132,7 +174,36 @@ export async function POST(request: NextRequest) {
       return Response.json({ unavailable: true });
     }
     return Response.json({ scores });
-  } catch {
+  } catch (err) {
+    // A sustained account-level block on the shared Anthropic key (same
+    // detector /api/chat uses) must surface the same continuity payload as
+    // chat, not the generic RESEARCH_ERROR — otherwise this route's own
+    // catch-all silently swallows it into an indistinguishable 502.
+    if (err instanceof Anthropic.APIError && isUpstreamAccountExhausted(err)) {
+      // The two states are correlated by construction — see
+      // communityBudgetExhaustedRecheck's doc comment. When OUR tier has
+      // ALSO crossed into "exhausted" (not just "handoff") by the time we
+      // get here, that cause must win: it's true in this state, while the
+      // upstream copy's "this is NOT the community budget" claim would be
+      // false.
+      const communityExhausted = communityBudgetExhaustedRecheck(
+        await getBudgetStatusAsync(),
+      );
+      if (communityExhausted) {
+        recordBlock("BUDGET_EXHAUSTED", {
+          route: "research-candidate",
+          ip,
+          detail: { via: "anthropic_upstream" },
+        });
+        return communityExhausted;
+      }
+      recordBlock(UPSTREAM_EXHAUSTED_CODE, {
+        route: "research-candidate",
+        ip,
+        detail: { status: err.status },
+      });
+      return upstreamExhaustedResponse();
+    }
     return Response.json(
       { error: "Research failed", code: "RESEARCH_ERROR" },
       { status: 502 },

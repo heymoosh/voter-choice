@@ -43,7 +43,8 @@ export type BlockReason =
   | "BUDGET_HANDOFF" // ≥90%
   | "BUDGET_EXHAUSTED" // ≥100%
   // Upstream Anthropic
-  | "API_RATE_LIMIT" // 429 from Anthropic
+  | "API_RATE_LIMIT" // 429 from Anthropic (transient per-minute throttle)
+  | "BUDGET_UPSTREAM_EXHAUSTED" // sustained account-level block: org spend cap (429), a self-set spend limit (400), or a billing issue (402) — distinct from our own $50/mo community budget
   | "API_OVERLOADED" // 503/529 from Anthropic
   | "AI_ERROR" // 500 — other / unknown AI error
   // Extraction
@@ -62,13 +63,14 @@ const ALL_BLOCK_REASONS: readonly BlockReason[] = [
   "BUDGET_HANDOFF",
   "BUDGET_EXHAUSTED",
   "API_RATE_LIMIT",
+  "BUDGET_UPSTREAM_EXHAUSTED",
   "API_OVERLOADED",
   "AI_ERROR",
   "EXTRACTION_FAILED",
 ];
 
 export interface BlockContext {
-  route: "chat" | "extract-ballot";
+  route: "chat" | "extract-ballot" | "research-candidate";
   /** Raw client IP. Hashed before logging — never logged in the clear. */
   ip?: string;
   sessionId?: string;

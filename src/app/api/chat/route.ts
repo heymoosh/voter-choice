@@ -19,6 +19,11 @@ import {
   recordBlock,
   type BlockReason,
 } from "../../../lib/server/usage-telemetry";
+import {
+  isUpstreamAccountExhausted,
+  UPSTREAM_EXHAUSTED_CODE,
+  upstreamExhaustedResponse,
+} from "../../../lib/server/upstream-exhaustion";
 import { recordChatUsage } from "../../../lib/server/chat-usage-metrics";
 import {
   lookupDonorCoalition,
@@ -840,15 +845,7 @@ function budgetGateResponse(
     // Phase 1 explicitly retained it as the handoff template; we forward the
     // full text so the screen can pre-populate a copyable textarea
     // without an extra round-trip.
-    return Response.json(
-      {
-        status: "budget_exhausted",
-        resetAt: defaultBudgetResetAtISO(),
-        handoffPrompt: BALLOT_PROMPTS.en,
-        budget,
-      },
-      { status: 200 },
-    );
+    return communityBudgetExhaustedResponse(budget);
   }
   if ((tier === "soft_close" || tier === "handoff") && isNewSession) {
     return Response.json(
@@ -862,6 +859,28 @@ function budgetGateResponse(
     );
   }
   return null;
+}
+
+/**
+ * The structured 200 continuity payload for a hard-stop on OUR $50/mo
+ * community budget. Shared by the gate path above and the two places
+ * `handleAnthropicError` can independently discover the tier is already
+ * "exhausted" (an ordinary 429 that raced the tally past 100%, or an
+ * Anthropic account-level block arriving while our own tracked spend
+ * already reads 100%) — same continuity screen either way.
+ */
+function communityBudgetExhaustedResponse(
+  budget: Awaited<ReturnType<typeof getBudgetStatusAsync>>,
+): Response {
+  return Response.json(
+    {
+      status: "budget_exhausted",
+      resetAt: defaultBudgetResetAtISO(),
+      handoffPrompt: BALLOT_PROMPTS.en,
+      budget,
+    },
+    { status: 200 },
+  );
 }
 
 function ssePayload(data: Record<string, unknown>): string {
@@ -1521,6 +1540,23 @@ function createSSEStream(
           ),
         );
       } catch (err) {
+        // NOT COVERED by isUpstreamAccountExhausted / handleAnthropicError.
+        // Those only catch a throw from the FIRST `messages.create` call
+        // (the try/catch around the whole POST handler, below). This catch
+        // is the tool-continuation round INSIDE the already-open SSE stream
+        // (createContinuationStream above) — by the time we're here the
+        // response has already started (200 + text/event-stream), so a
+        // sustained account-level block here can only be reported as an SSE
+        // event, not a fresh HTTP status/code. Today that event forwards
+        // `err.message` VERBATIM with no `code` (realData.ts's chat stream
+        // reader passes it through as `reason`, and App2.tsx's onError
+        // renders it as-is) — so a voter mid-conversation can still see a
+        // raw "400 You have reached your specified API usage limits..."
+        // banner instead of the continuity flow. Giving the SSE `error`
+        // event a `code` field (and having the client special-case it,
+        // the way onBudgetBlock already does for the initial-call path)
+        // would close this gap, but that's a client-side contract change —
+        // out of scope here; left as a known gap, not fixed.
         const message = err instanceof Error ? err.message : "Stream error";
         controller.enqueue(
           encoder.encode(ssePayload({ type: "error", error: message })),
@@ -1641,42 +1677,86 @@ async function checkGates(
   return budgetResponse;
 }
 
+/**
+ * Checks whether OUR community budget has independently hit "exhausted" and,
+ * if so, records BUDGET_EXHAUSTED (tagged `via` for observability) and
+ * returns the shared continuity payload — null when it hasn't, so the
+ * caller falls through to its own status-specific handling. Shared by BOTH
+ * `handleAnthropicError` branches that can discover this race — an ordinary
+ * 429, or an upstream account-level block — so the community-budget-
+ * exhausted state always wins over either signal (see the doc comments at
+ * each call site for why).
+ */
+async function communityBudgetAlreadyExhausted(
+  via: string,
+  ctx: { ip: string; sessionId: string },
+): Promise<Response | null> {
+  const budget = await getBudgetStatusAsync();
+  if (budget.tier !== "exhausted") return null;
+  recordBlock("BUDGET_EXHAUSTED", {
+    route: "chat",
+    ip: ctx.ip,
+    sessionId: ctx.sessionId,
+    detail: { percent: budget.percent, via },
+  });
+  return communityBudgetExhaustedResponse(budget);
+}
+
 async function handleAnthropicError(
   err: unknown,
   ctx: { ip: string; sessionId: string },
 ): Promise<Response> {
   if (err instanceof Anthropic.APIError) {
     console.error(`Anthropic API error: ${err.status} ${err.message}`);
+
+    // Sustained account-level block (org spend cap / self-set spend limit /
+    // billing issue) — checked BEFORE the transient-429 branch below, since
+    // it's a stricter subset of "status === 429" plus the two statuses that
+    // branch never sees (400, 402). The shared key can't serve ANYONE right
+    // now, exactly like our own community budget hitting 100% — same
+    // continuity flow, but the copy must not claim OUR budget is what's
+    // exhausted (it may be nowhere near it; this is Anthropic's account-level
+    // limit, tracked separately from budget.ts).
+    if (isUpstreamAccountExhausted(err)) {
+      // The two states are correlated by construction — our tracked spend
+      // and this account-level block both derive from the SAME Anthropic
+      // account — so they can coincide (a sibling request can push our
+      // tally to "exhausted" while this one is mid-flight, the same race
+      // the 429-branch check below guards against). When our own tier has
+      // already hit "exhausted", the community-budget continuity payload
+      // MUST win: it's true in this state (the pool really is spent), while
+      // the upstream copy's "this is NOT the community budget" claim would
+      // be false.
+      const communityExhausted = await communityBudgetAlreadyExhausted(
+        "anthropic_upstream",
+        ctx,
+      );
+      if (communityExhausted) return communityExhausted;
+      recordBlock(UPSTREAM_EXHAUSTED_CODE, {
+        route: "chat",
+        ip: ctx.ip,
+        sessionId: ctx.sessionId,
+        detail: { status: err.status },
+      });
+      return upstreamExhaustedResponse();
+    }
+
     if (err.status === 429) {
-      // Anthropic per-minute rate limit — this is temporary, NOT a budget issue.
-      // Check if the actual budget is exhausted before claiming so.
-      const budget = await getBudgetStatusAsync();
-      if (budget.tier === "exhausted") {
-        // Phase 9 — surface the same structured continuity payload the
-        // gate path produces. A 429 from Anthropic that coincides with
-        // exhausted community budget must NOT surface as a 503 error;
-        // the client renders the BudgetExhausted screen from this body.
-        // Record as BUDGET_EXHAUSTED, not API_RATE_LIMIT: this is a budget
-        // state. The budget gate did NOT count it — to reach this handler the
-        // gate returned null, which for an exhausted budget only happens when
-        // the handoff hasn't been served yet (so this completion is the
-        // reserved handoff). Counting here keeps the tally complete.
-        recordBlock("BUDGET_EXHAUSTED", {
-          route: "chat",
-          ip: ctx.ip,
-          sessionId: ctx.sessionId,
-          detail: { percent: budget.percent, via: "anthropic_429" },
-        });
-        return Response.json(
-          {
-            status: "budget_exhausted",
-            resetAt: defaultBudgetResetAtISO(),
-            handoffPrompt: BALLOT_PROMPTS.en,
-            budget,
-          },
-          { status: 200 },
-        );
-      }
+      // Anthropic per-minute rate limit — this is temporary, NOT a budget
+      // issue. Phase 9 — surface the same structured continuity payload the
+      // gate path produces if the actual budget is ALSO exhausted: a 429
+      // from Anthropic that coincides with exhausted community budget must
+      // NOT surface as a 503 error; the client renders the BudgetExhausted
+      // screen from this body. The budget gate did NOT count it — to reach
+      // this handler the gate returned null, which for an exhausted budget
+      // only happens when the handoff hasn't been served yet (so this
+      // completion is the reserved handoff) — recording BUDGET_EXHAUSTED
+      // here (not API_RATE_LIMIT) keeps the tally complete.
+      const communityExhausted = await communityBudgetAlreadyExhausted(
+        "anthropic_429",
+        ctx,
+      );
+      if (communityExhausted) return communityExhausted;
       recordBlock("API_RATE_LIMIT", {
         route: "chat",
         ip: ctx.ip,

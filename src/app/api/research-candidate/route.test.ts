@@ -17,15 +17,31 @@ vi.mock("../../../lib/server/budget", () => ({
 vi.mock("../../../lib/server/candidate-data", () => ({
   researchAndPersistCandidate: vi.fn(),
 }));
-vi.mock("@anthropic-ai/sdk", () => ({
-  default: vi.fn().mockImplementation(() => ({})),
-}));
+// Preserve the real APIError class (via importActual) so the route's
+// `instanceof Anthropic.APIError` branch remains exercisable, same approach
+// as the chat route's test — see src/app/api/chat/route.test.ts.
+vi.mock("@anthropic-ai/sdk", async () => {
+  const actual =
+    await vi.importActual<typeof import("@anthropic-ai/sdk")>(
+      "@anthropic-ai/sdk",
+    );
+  function AnthropicCtor() {
+    return {};
+  }
+  (AnthropicCtor as unknown as { APIError: unknown }).APIError =
+    actual.default.APIError;
+  return { default: AnthropicCtor };
+});
 
 import { POST } from "./route";
 import { checkRaceDataRateLimit } from "../../../lib/server/race-data-rate-limit";
 import { checkResearchSpendLimit } from "../../../lib/server/research-spend-limit";
 import { getBudgetStatusAsync } from "../../../lib/server/budget";
 import { researchAndPersistCandidate } from "../../../lib/server/candidate-data";
+// Runtime (not type-only) import of the mocked SDK — needed to build real
+// Anthropic.APIError instances via APIError.generate() for the
+// upstream-account-exhaustion test below.
+import AnthropicSDK from "@anthropic-ai/sdk";
 
 const mockedRateLimit = vi.mocked(checkRaceDataRateLimit);
 const mockedSpend = vi.mocked(checkResearchSpendLimit);
@@ -95,5 +111,102 @@ describe("/api/research-candidate", () => {
     const response = await POST(researchRequest(validBody));
     expect(response.status).toBe(200);
     expect(mockedResearch).toHaveBeenCalledTimes(1);
+  });
+
+  // -------------------------------------------------------------------------
+  // Upstream account-level exhaustion — same detector /api/chat uses. Before
+  // this, an account-level Anthropic block here was indistinguishable from
+  // any other research failure: both fell into the generic RESEARCH_ERROR
+  // 502, hiding a sustained shared-key block behind a plain retry-me error.
+  // -------------------------------------------------------------------------
+  describe("upstream account-level exhaustion", () => {
+    /** Build a real Anthropic.APIError via the SDK's own `.generate()`. */
+    function apiError(
+      status: number,
+      errorBody: { type?: string; message?: string; details?: unknown },
+      headers: Record<string, string> = {},
+    ): Error {
+      return (
+        AnthropicSDK as unknown as {
+          APIError: { generate: (...args: unknown[]) => Error };
+        }
+      ).APIError.generate(
+        status,
+        { type: "error", error: errorBody, request_id: "req_test" },
+        undefined,
+        headers,
+      );
+    }
+
+    it("returns the shared 503 BUDGET_UPSTREAM_EXHAUSTED payload for a sustained account-level block", async () => {
+      mockedResearch.mockRejectedValue(
+        apiError(429, {
+          type: "rate_limit_error",
+          message: "You have reached your API usage limits.",
+          details: { error_code: "enforced_spend_limit_reached" },
+        }),
+      );
+
+      const response = await POST(researchRequest(validBody));
+
+      expect(response.status).toBe(503);
+      const body = (await response.json()) as { code?: string };
+      expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+    });
+
+    it("still returns the plain RESEARCH_ERROR 502 for an ordinary failure", async () => {
+      mockedResearch.mockRejectedValue(new Error("boom"));
+
+      const response = await POST(researchRequest(validBody));
+
+      expect(response.status).toBe(502);
+      const body = (await response.json()) as { code?: string };
+      expect(body.code).toBe("RESEARCH_ERROR");
+    });
+
+    it("prefers the community-budget-exhausted response over the upstream 503 when OUR tier crossed into exhausted mid-flight (correlated-by-construction race)", async () => {
+      mockedResearch.mockRejectedValue(
+        apiError(429, {
+          type: "rate_limit_error",
+          message: "You have reached your API usage limits.",
+          details: { error_code: "enforced_spend_limit_reached" },
+        }),
+      );
+      // Pre-flight gate sees "healthy" (request is allowed through); a
+      // concurrent chat turn then pushes the durable tally to "exhausted"
+      // before Anthropic's rejection comes back.
+      mockedBudget
+        .mockResolvedValueOnce({ tier: "healthy" } as never)
+        .mockResolvedValue({ tier: "exhausted" } as never);
+
+      const response = await POST(researchRequest(validBody));
+
+      expect(response.status).toBe(503);
+      const body = (await response.json()) as { code?: string };
+      expect(body.code).toBe("BUDGET_EXHAUSTED");
+    });
+
+    it("keeps the upstream 503 (does NOT promote) when OUR tier is only 'handoff', not 'exhausted', at the re-check", async () => {
+      // At handoff the pool is NOT yet spent — still serving requests, just
+      // near the cap — so an upstream-account block is the honest cause and
+      // must NOT be overridden by a false community-budget claim. Only
+      // "exhausted" (the case above) should promote.
+      mockedResearch.mockRejectedValue(
+        apiError(429, {
+          type: "rate_limit_error",
+          message: "You have reached your API usage limits.",
+          details: { error_code: "enforced_spend_limit_reached" },
+        }),
+      );
+      mockedBudget
+        .mockResolvedValueOnce({ tier: "healthy" } as never)
+        .mockResolvedValue({ tier: "handoff" } as never);
+
+      const response = await POST(researchRequest(validBody));
+
+      expect(response.status).toBe(503);
+      const body = (await response.json()) as { code?: string };
+      expect(body.code).toBe("BUDGET_UPSTREAM_EXHAUSTED");
+    });
   });
 });
