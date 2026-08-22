@@ -1,0 +1,37 @@
+-- ---------------------------------------------------------------------------
+-- Sponsor class for PAC committees — the field a "$0 corporate PAC" claim
+-- actually needs.
+--
+-- `sector` answers "which industry" and is deliberately conservative: on prod
+-- (2026-08-20) it leaves 1,645 of 3,809 committees NULL, which is $61.8M of
+-- unclassified PAC money to 2026 federal non-incumbents — enough to block any
+-- honest claim about the ABSENCE of corporate money.
+--
+-- `sponsor_class` answers the narrower, more answerable question — corporate-
+-- connected or not — from fields the committee itself filed (ORG_TP,
+-- CMTE_DSGN, CMTE_TP, CONNECTED_ORG_NM). Rules and the ECU pledge scope live
+-- in src/lib/pacSponsorClass.ts. Applying them to today's rows cuts the
+-- unclassified dollars from $61.8M to $13.9M across 179 committees.
+--
+-- Values: corporate | trade | labor | membership | leadership | party |
+--         non_connected | unknown. NULL = not yet stamped.
+--
+-- `sponsor_class_method` records WHICH rule made the call (org-type-v1,
+-- designation-v1, committee-type-v1, unresolved-v1), so a rule change is
+-- auditable and a human override is distinguishable: a row whose method is
+-- 'human' is never recomputed by an ingest re-run.
+--
+-- Additive only: two nullable columns plus one index, no existing rows
+-- touched. NOT applied to any database by this migration file — ships in the
+-- PR, applied separately per repo convention (raw SQL; there is no drizzle
+-- journal).
+--
+-- Next free migration number as of this branch (origin/main): 0025 exists, so
+-- this is 0026. Verify with `git log --oneline main -- db/migrations/` before
+-- applying on prod — do not renumber if another migration lands first.
+-- ---------------------------------------------------------------------------
+ALTER TABLE "pac_committees" ADD COLUMN "sponsor_class" text;
+--> statement-breakpoint
+ALTER TABLE "pac_committees" ADD COLUMN "sponsor_class_method" text;
+--> statement-breakpoint
+CREATE INDEX IF NOT EXISTS "pac_committees_sponsor_class_idx" ON "pac_committees" ("sponsor_class");

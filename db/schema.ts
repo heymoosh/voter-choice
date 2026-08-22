@@ -1313,6 +1313,64 @@ export const promiseVerdicts = pgTable(
 );
 
 // ---------------------------------------------------------------------------
+// candidate_fec_summaries — per-candidate, per-cycle FEC summary financials
+// from the "all candidates" bulk file (weball<yy>.zip). See
+// db/migrations/0027_add_candidate_fec_summaries.sql.
+//
+// This is what lets a "$0 corporate PAC money" claim be a FACT: pac_total is
+// stored even when it is 0, and coverage_end_date says what the filing covers
+// through. A candidate MISSING for a cycle has no FEC summary on file — that
+// is "no filing yet", never $0.
+//
+// NEVER part of totalRaised or any funding-mix figure; it sits beside
+// donor_aggregates, not inside it.
+// ---------------------------------------------------------------------------
+export const candidateFecSummaries = pgTable(
+  "candidate_fec_summaries",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    candidateId: text("candidate_id")
+      .notNull()
+      .references(() => candidates.id),
+    electionCycle: text("election_cycle").notNull(),
+    fecCandidateId: text("fec_candidate_id").notNull(),
+    /** TTL_RECEIPTS. */
+    totalReceipts: numeric("total_receipts", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    /** TTL_INDIV_CONTRIB — total only; the bulk file has no itemized split. */
+    individualTotal: numeric("individual_total", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    /** OTHER_POL_CMTE_CONTRIB — all non-party committee money, 0 included. */
+    pacTotal: numeric("pac_total", { precision: 15, scale: 2 }).notNull(),
+    /** POL_PTY_CONTRIB. */
+    partyTotal: numeric("party_total", { precision: 15, scale: 2 }).notNull(),
+    /** CAND_CONTRIB — the candidate's own money. */
+    candidateSelfTotal: numeric("candidate_self_total", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
+    /** CVG_END_DT — what the filing covers through. Every claim is dated. */
+    coverageEndDate: date("coverage_end_date"),
+    source: text("source").notNull(),
+    sourceUrl: text("source_url").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    unique("candidate_fec_summaries_uidx").on(t.candidateId, t.electionCycle),
+    index("candidate_fec_summaries_cycle_idx").on(t.electionCycle),
+  ],
+);
+
+// ---------------------------------------------------------------------------
 // Part 6a — PAC money attributed to sponsor + industry. pac_committees is the
 // first-class committee table the plan mandates (committee_id → PAC name →
 // parent/sponsor → sector → evidence_url → status) instead of growing the
@@ -1345,6 +1403,18 @@ export const pacCommittees = pgTable(
     sector: text("sector"),
     // Provenance of the sector inference, e.g. "connected-org-keyword-v1".
     classificationMethod: text("classification_method"),
+    // WHO is behind the committee, derived only from its own filed fields
+    // (org_type/designation/committee_type/connected_org) by
+    // src/lib/pacSponsorClass.ts: corporate | trade | labor | membership |
+    // leadership | party | non_connected | unknown. This — not `sector` — is
+    // what a "$0 corporate PAC" claim reads; `unknown` blocks the claim
+    // rather than being treated as "not corporate".
+    // See db/migrations/0026_add_pac_sponsor_class.sql.
+    sponsorClass: text("sponsor_class"),
+    // Which rule made the call (org-type-v1 / designation-v1 /
+    // committee-type-v1 / unresolved-v1), or 'human' for a hand override,
+    // which ingest re-runs must never recompute.
+    sponsorClassMethod: text("sponsor_class_method"),
     // 'auto' (re-runs may reclassify) | 'verified' | 'rejected' (human
     // decisions — re-runs must never clobber these; read paths must exclude
     // 'rejected' sponsor relationships).
@@ -1372,6 +1442,7 @@ export const pacCommittees = pgTable(
   (t) => [
     index("pac_committees_sector_idx").on(t.sector),
     index("pac_committees_connected_org_idx").on(t.connectedOrg),
+    index("pac_committees_sponsor_class_idx").on(t.sponsorClass),
   ],
 );
 

@@ -435,3 +435,33 @@ export function parsePositiveInteger(value: string | null): number | null {
   const parsed = Number.parseInt(value, 10);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
+
+/**
+ * Build "YYYY-MM-DD" from calendar parts, or null when they do not describe a
+ * real day. FEC bulk files do contain impossible dates (e.g. "02312026",
+ * "13/45/2026"); a naive range check on month/day alone would still emit a
+ * date Postgres rejects at insert time, failing the whole upsert chunk.
+ * Roundtripping through Date.UTC and comparing back catches that — Date.UTC
+ * normalizes Feb 31 -> Mar 3, so a mismatch means the input was invalid.
+ *
+ * Shared because two ingests parse dates out of these files in different wire
+ * formats (MMDDYYYY in billionaire-donor-match.ts, MM/DD/YYYY in
+ * federal-candidate-summary-bulk.ts) but need identical calendar validation.
+ */
+export function isoDateFromParts(
+  year: number,
+  month: number,
+  day: number,
+): string | null {
+  if (month < 1 || month > 12 || day < 1 || day > 31) return null;
+  const date = new Date(Date.UTC(year, month - 1, day));
+  if (
+    date.getUTCFullYear() !== year ||
+    date.getUTCMonth() !== month - 1 ||
+    date.getUTCDate() !== day
+  ) {
+    return null;
+  }
+  const pad = (value: number): string => String(value).padStart(2, "0");
+  return `${String(year).padStart(4, "0")}-${pad(month)}-${pad(day)}`;
+}
